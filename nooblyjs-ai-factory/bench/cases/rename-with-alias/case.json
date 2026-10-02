@@ -1,0 +1,8 @@
+{
+  "id": "rename-with-alias",
+  "title": "Rename getUsr to getUser",
+  "tags": [
+    "refactor"
+  ],
+  "budgetUsd": 1.0
+}

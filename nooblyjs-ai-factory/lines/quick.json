@@ -1,0 +1,21 @@
+{
+  "name": "quick",
+  "description": "No triage: build, verify, deliver. For work that is already clear (and for tests of the later stations).",
+  "stations": [
+    {
+      "id": "build",
+      "kind": "build"
+    },
+    {
+      "id": "verify",
+      "kind": "verify",
+      "retries": 1,
+      "when": "build.agent.outcome == 'success'"
+    },
+    {
+      "id": "deliver",
+      "kind": "deliver",
+      "retries": 2
+    }
+  ]
+}

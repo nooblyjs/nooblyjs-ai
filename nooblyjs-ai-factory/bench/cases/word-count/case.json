@@ -1,0 +1,9 @@
+{
+  "id": "word-count",
+  "title": "wordCount counts empty strings",
+  "tags": [
+    "bug",
+    "strings"
+  ],
+  "budgetUsd": 1.0
+}

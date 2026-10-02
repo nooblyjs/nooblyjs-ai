@@ -1,0 +1,8 @@
+{
+  "description": "Implement a function from a written specification.",
+  "prompt": "Implement isPalindrome in strings.js, following the specification in README.md.",
+  "tags": [
+    "feature",
+    "spec"
+  ]
+}

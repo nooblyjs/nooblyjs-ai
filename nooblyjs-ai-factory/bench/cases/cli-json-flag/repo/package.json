@@ -1,0 +1,6 @@
+{
+  "name": "cli-json-flag",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

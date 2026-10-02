@@ -1,0 +1,6 @@
+{
+  "name": "parse-duration",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

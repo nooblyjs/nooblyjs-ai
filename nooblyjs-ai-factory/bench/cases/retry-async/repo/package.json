@@ -1,0 +1,6 @@
+{
+  "name": "retry-async",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

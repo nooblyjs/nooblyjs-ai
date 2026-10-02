@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.DS_Store
+bench/results/*.json
+!bench/results/reference-*.json
+bench/proposed/

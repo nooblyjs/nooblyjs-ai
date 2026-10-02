@@ -1,0 +1,4 @@
+[
+  { "text": "I'll start a changelog.", "tools": [{ "name": "Write", "input": { "file_path": "CHANGELOG.md", "content": "# Changelog\n\n## Unreleased\n\n- Added a greeting.\n" } }] },
+  { "text": "Added CHANGELOG.md." }
+]

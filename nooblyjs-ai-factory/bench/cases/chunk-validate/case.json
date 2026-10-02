@@ -1,0 +1,9 @@
+{
+  "id": "chunk-validate",
+  "title": "chunk loops forever on size 0",
+  "tags": [
+    "bug",
+    "arrays"
+  ],
+  "budgetUsd": 1.0
+}

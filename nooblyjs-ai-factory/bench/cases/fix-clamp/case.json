@@ -1,0 +1,9 @@
+{
+  "id": "fix-clamp",
+  "title": "clamp ignores the maximum",
+  "tags": [
+    "bug",
+    "small"
+  ],
+  "budgetUsd": 1.0
+}

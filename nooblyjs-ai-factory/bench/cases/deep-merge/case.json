@@ -1,0 +1,9 @@
+{
+  "id": "deep-merge",
+  "title": "Add mergeDeep",
+  "tags": [
+    "feature",
+    "objects"
+  ],
+  "budgetUsd": 1.0
+}

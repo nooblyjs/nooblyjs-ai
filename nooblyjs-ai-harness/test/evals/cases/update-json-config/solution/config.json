@@ -1,0 +1,14 @@
+{
+  "name": "widget-server",
+  "port": 8080,
+  "debug": true,
+  "plugins": [
+    "auth",
+    "logging"
+  ],
+  "limits": {
+    "requestsPerMinute": 120,
+    "maxBodyKb": 512
+  },
+  "host": "0.0.0.0"
+}

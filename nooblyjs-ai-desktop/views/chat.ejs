@@ -1,0 +1,132 @@
+<%- include('partials/head', { title, nav: 'projects', layout: 'shell' }) %>
+<div class="app-shell"
+     data-project-id="<%= project.id %>"
+     data-chat-id="<%= chat.id %>">
+
+  <aside class="app-sidebar">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a href="/">Projects</a></li>
+        <li class="breadcrumb-item active text-truncate" aria-current="page"><a href="/projects/<%= project.id %>"><%= project.name %></a></li>
+      </ol>
+    </nav>
+    <div class="d-grid gap-2">
+      <button class="btn btn-primary btn-sm" data-new-chat>
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> New chat
+      </button>
+      <a class="btn btn-secondary btn-sm" href="/projects/<%= project.id %>/documents">
+        <i class="bi bi-journal-text" aria-hidden="true"></i> Documents
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Chats</div>
+      <nav class="chat-nav" aria-label="Chats in this project">
+        <% chats.forEach((c) => { %>
+          <a class="sidebar-item <%= c.id === chat.id ? 'active' : '' %>"
+             href="/projects/<%= project.id %>/chats/<%= c.id %>"
+             <%- c.id === chat.id ? 'aria-current="page"' : '' %>>
+            <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+            <span class="chat-title text-truncate"><%= c.title %></span>
+          </a>
+        <% }) %>
+      </nav>
+    </div>
+
+    <details class="context-peek">
+      <summary><i class="bi bi-card-text" aria-hidden="true"></i> Project context</summary>
+      <% if (project.description.trim()) { %>
+        <pre class="description-body"><%= project.description %></pre>
+      <% } else { %>
+        <p class="text-muted fst-italic small mb-0">No description set.</p>
+      <% } %>
+    </details>
+  </aside>
+
+  <section class="app-main">
+    <header class="app-main-head">
+      <div class="app-main-title">
+        <h1 data-chat-title><%= chat.title %></h1>
+        <button class="icon-btn" data-rename-chat aria-label="Rename chat" title="Rename chat">
+          <i class="bi bi-pencil" aria-hidden="true"></i>
+        </button>
+      </div>
+      <%- include('partials/modelPicker', {
+        idPrefix: 'chat',
+        providers,
+        selectedProvider: activeProvider,
+        selectedModel: activeModel,
+        allowInherit: false,
+        size: 'sm'
+      }) %>
+    </header>
+
+    <% if (!anyProviderConfigured) { %>
+      <div class="alert alert-warning small py-2 m-3 mb-0" role="alert">
+        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+        <div>No provider configured — <a href="/settings">add an API key</a> and restart to send messages.</div>
+      </div>
+    <% } %>
+
+    <div class="transcript" data-transcript role="log" aria-live="polite" aria-label="Conversation">
+      <% if (chat.messages.length === 0) { %>
+        <div class="empty-state" data-empty-state>
+          <i class="bi bi-chat-square-dots empty-icon" aria-hidden="true"></i>
+          <p class="text-muted">
+            This chat already knows about <strong><%= project.name %></strong>.
+            <% if (project.description.trim()) { %>Ask away — no need to repeat the project context.<% } %>
+          </p>
+        </div>
+      <% } %>
+
+      <% chat.messages.forEach((m) => { %>
+        <article class="message message-<%= m.role %> <%= m.meta && m.meta.error ? 'is-error' : '' %>">
+          <div class="message-role">
+            <i class="bi <%= m.role === 'user' ? 'bi-person-circle' : 'bi-stars' %>" aria-hidden="true"></i>
+            <%= m.role === 'user' ? 'You' : 'Assistant' %>
+          </div>
+          <div class="message-body <%= m.role === 'assistant' ? 'markdown-body' : '' %>" <%= m.role === 'assistant' ? 'data-markdown' : '' %>><%= m.content %></div>
+          <% if (m.meta) { %>
+            <div class="message-meta">
+              <%= m.meta.model || m.meta.provider || '' %>
+              <% if (m.meta.outputTokens) { %> · <%= m.meta.inputTokens %> in / <%= m.meta.outputTokens %> out<% } %>
+              <% if (m.meta.latencyMs) { %> · <%= (m.meta.latencyMs / 1000).toFixed(1) %>s<% } %>
+              <% if (m.meta.finishReason === 'aborted') { %> · stopped<% } %>
+              <% if (m.meta.truncatedHistory) { %> · earlier turns trimmed<% } %>
+            </div>
+          <% } %>
+          <% if (m.meta && m.meta.sources && m.meta.sources.length) { %>
+            <div class="message-sources">
+              <span class="small text-muted">Sources:</span>
+              <% m.meta.sources.forEach((s) => { %>
+                <span class="source-chip is-<%= s.kind === 'referenced-truncated' ? 'referenced' : s.kind %>"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> <%= s.heading ? s.path + ' › ' + s.heading : s.path %></span>
+              <% }) %>
+            </div>
+          <% } %>
+        </article>
+      <% }) %>
+    </div>
+
+    <div class="composer-wrap">
+      <div class="alert alert-warning small py-2 stream-banner" data-stream-banner role="status" hidden></div>
+      <form class="composer" data-composer>
+        <label class="visually-hidden" for="composer-input">Message</label>
+        <textarea id="composer-input" class="form-control" data-composer-input rows="1"
+          placeholder="Ask something about <%= project.name %>…"
+          <%= anyProviderConfigured ? '' : 'disabled' %>></textarea>
+        <div class="composer-actions">
+          <span class="small text-muted me-auto composer-hint">Enter to send · Shift+Enter for a new line · <kbd>@</kbd> to reference a document</span>
+          <button type="button" class="btn btn-danger-ghost btn-sm" data-stop hidden>
+            <i class="bi bi-stop-circle" aria-hidden="true"></i> Stop
+          </button>
+          <button type="submit" class="btn btn-primary btn-sm" data-send <%= anyProviderConfigured ? '' : 'disabled' %>>
+            <i class="bi bi-send" aria-hidden="true"></i> Send
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="/static/js/chat.js"></script>
+<%- include('partials/foot') %>

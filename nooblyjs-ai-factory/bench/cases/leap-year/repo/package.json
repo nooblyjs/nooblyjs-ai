@@ -1,0 +1,6 @@
+{
+  "name": "leap-year",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

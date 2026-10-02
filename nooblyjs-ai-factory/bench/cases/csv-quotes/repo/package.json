@@ -1,0 +1,6 @@
+{
+  "name": "csv-quotes",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

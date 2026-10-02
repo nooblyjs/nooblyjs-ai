@@ -1,0 +1,41 @@
+{
+  "name": "nooblyjs-ai-common",
+  "version": "0.1.0",
+  "description": "Shared AI building blocks for the nooblyjs AI projects: one way to call every model provider, the model catalogue, tokens, cost, retry, SSE, frontmatter (and, phase by phase, MCP and retrieval)",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./cost": "./src/cost.js",
+    "./errors": "./src/errors.js",
+    "./frontmatter": "./src/frontmatter.js",
+    "./models": "./src/models.js",
+    "./providers": "./src/providers/index.js",
+    "./providers/anthropic": "./src/providers/anthropic.js",
+    "./providers/cache": "./src/providers/cache.js",
+    "./providers/events": "./src/providers/events.js",
+    "./providers/images": "./src/providers/images.js",
+    "./providers/mock": "./src/providers/mock.js",
+    "./providers/openai-compatible": "./src/providers/openai-compatible.js",
+    "./providers/openai-responses": "./src/providers/openai-responses.js",
+    "./retry": "./src/retry.js",
+    "./sse": "./src/sse.js",
+    "./tokens": "./src/tokens.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "check": "tsc -p ."
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "typescript": "^5.9.3"
+  }
+}

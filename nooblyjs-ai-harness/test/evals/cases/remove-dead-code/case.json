@@ -1,0 +1,8 @@
+{
+  "description": "Delete an unused function without breaking anything.",
+  "prompt": "Remove the unused function legacyFormat from utils.js. Nothing else should change.",
+  "tags": [
+    "refactor",
+    "edit"
+  ]
+}

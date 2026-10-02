@@ -1,0 +1,9 @@
+{
+  "id": "cli-json-flag",
+  "title": "Add --json to the report CLI",
+  "tags": [
+    "feature",
+    "cli"
+  ],
+  "budgetUsd": 1.0
+}

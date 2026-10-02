@@ -1,0 +1,8 @@
+{
+  "description": "Search the code and write the findings to a file.",
+  "prompt": "Write a file TODOS.md that lists every TODO comment in src/, one per line, as `- <file>:<line>: <text>` (file paths relative to the project).",
+  "tags": [
+    "search",
+    "create"
+  ]
+}

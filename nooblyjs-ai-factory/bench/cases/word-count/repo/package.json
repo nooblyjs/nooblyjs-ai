@@ -1,0 +1,6 @@
+{
+  "name": "word-count",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

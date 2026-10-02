@@ -1,0 +1,53 @@
+To stay on top of an autonomous AI coding harness, you need to shift the AI's role from a producer to a systems-level instructor. Because you already have technical context but are losing track of the fast-paced architectural changes, standard code comments won't cut it.
+You should instruct your AI harness to use the following advanced adult learning strategies to teach you what it has built:
+## 1. Progressive Disclosure (The "Zoom-In" Strategy)
+Adults learn best by scanning the big picture before diving into technical details. Prevent cognitive overload by forcing the AI to explain its changes in layers.
+
+* 
+* The Strategy: Require the AI to present changes in a fixed, three-tiered hierarchy:
+1. System Impact (Macro): What business logic or user flow changed? (e.g., "Added a caching layer to the user authentication flow").
+   2. Architectural Change (Meso): What files, modules, or APIs were modified or created?
+   3. Implementation Details (Micro): The specific code snippets or logic shifts, provided only if you ask to see them.
+* 
+
+## 2. Inquiry-Based Learning via "Concept Checks"
+Instead of passively reading what the AI did, force an interactive dialogue where the AI verifies your understanding of the architecture it just built.
+
+* 
+* The Strategy: Instruct your AI harness to end every generation summary with 1 or 2 high-level architectural questions for you.
+* Example Prompt to add to your harness: "After deploying a set of changes, summarize them. Then, ask me a question about how this change impacts our data model or scaling to test if I fully grasp the new system architecture."
+* 
+
+## 3. Case-Based Retrieval Practice (The "Why" Audit)
+Adult learners need immediate relevance and rationale. You need to know why a design decision was made, not just what lines of code were written.
+
+* 
+* The Strategy: Implement an automated "Design Decisions Log." Have your AI maintain a running markdown file (DESIGN_LOG.md) in your repository. For every major routine it builds, it must document:
+* The Problem: What it was trying to solve.
+   * The Trade-offs: What alternative approaches it rejected and why.
+   * The Risk: What you need to look out for when maintaining this specific code block.
+* 
+
+## 4. Direct Comparison: Before vs. After State
+When code changes rapidly, tracking differentials is much easier than re-learning entire modules. A tabular system snapshot helps you instantly evaluate systemic evolution.
+
+| Dimension | "Before" State (Old System) | "After" State (Current System) | Impact / Why It Matters |
+|---|---|---|---|
+| Data Flow | Synchronous API calls to database. | Event-driven architecture via a message queue. | Prevents API timeouts during high-traffic spikes. |
+| State Management | Local component state. | Centralized global store. | Allows data persistence across multi-page user forms. |
+| Dependencies | Hardcoded configurations. | Environment-variable driven injection. | Enables seamless multi-environment (Dev/Prod) deployment. |
+
+------------------------------
+## How to Implement This in Your AI Harness System Prompt
+To operationalize this, inject this structural mandate into your AI harness's core system prompt or user instructions:
+
+# Role: Architectural InstructorYou are an advanced AI software architect teaching a human engineer. When summarizing the code you have just written or modified, you must follow these rules:1. Executive Summary First: Start with a 2-sentence summary of the business impact.2. System Topology: Briefly list the changed files and how they interact using a scannable bulleted list.3. The Trade-Off: Explicitly state ONE engineering trade-off you made in this implementation.4. Active Recall: End your response with one architectural question for the user to ensure they understand the system's new state.
+
+To help tailor these prompts directly to your environment, could you share:
+
+* 
+* What language or framework your AI harness is primarily generating?
+* How you currently interact with the harness (e.g., via a custom CLI, a Slack/Discord bot, or code repository commits)?
+* 
+
+

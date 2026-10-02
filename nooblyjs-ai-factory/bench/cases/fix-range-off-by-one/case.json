@@ -1,0 +1,9 @@
+{
+  "id": "fix-range-off-by-one",
+  "title": "range(n) includes n",
+  "tags": [
+    "bug",
+    "small"
+  ],
+  "budgetUsd": 1.0
+}

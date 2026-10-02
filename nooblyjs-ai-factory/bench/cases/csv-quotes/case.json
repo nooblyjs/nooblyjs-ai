@@ -1,0 +1,9 @@
+{
+  "id": "csv-quotes",
+  "title": "parseCsvLine breaks on quoted commas",
+  "tags": [
+    "bug",
+    "parsing"
+  ],
+  "budgetUsd": 1.0
+}

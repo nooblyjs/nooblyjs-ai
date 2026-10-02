@@ -1,0 +1,10 @@
+<%- include('partials/head', { title }) %>
+<div class="container app-page app-narrow">
+  <div class="empty-state">
+    <p class="empty-code"><%= status %></p>
+    <h1><%= title %></h1>
+    <p class="text-muted"><%= message %></p>
+    <a class="btn btn-secondary" href="/"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to projects</a>
+  </div>
+</div>
+<%- include('partials/foot') %>

@@ -1,0 +1,6 @@
+{
+  "name": "add-subtract",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

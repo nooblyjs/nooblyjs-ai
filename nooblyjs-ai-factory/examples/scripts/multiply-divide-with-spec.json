@@ -1,0 +1,150 @@
+{
+  "triage": [
+    {
+      "text": "calc has add.js and a test. Two new functions plus a design decision about division by zero.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"medium\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"Two functions, two test files, and one decision (division by zero).\"\n}\n```"
+    }
+  ],
+  "spec": [
+    {
+      "text": "Reading add.js to match its style.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "add.js"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Writing the spec.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/requirements.md",
+            "content": "# Requirements: multiply and divide\n\n## R1: Multiply two numbers\nAs a calc user, I want to multiply two numbers, so that I can scale values.\n- R1.1 WHEN multiply(a, b) is called with two numbers THE SYSTEM SHALL return a times b\n\n## R2: Divide two numbers\nAs a calc user, I want to divide two numbers, so that I can compute ratios.\n- R2.1 WHEN divide(a, b) is called with two numbers and b is not 0 THE SYSTEM SHALL return a divided by b\n- R2.2 IF divide(a, b) is called with b equal to 0 THEN THE SYSTEM SHALL throw a RangeError with the message \"division by zero\"\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/design.md",
+            "content": "# Design\n\nTwo new files in the style of `add.js`: `multiply.js` and `divide.js`, each exporting one arrow function.\n\n- `divide` checks `b === 0` first and throws `RangeError('division by zero')`. Decision: throw rather than return `NaN`/`Infinity`, because the issue asks for division by zero not to be silent, and a thrown error can't be ignored by accident.\n- Tests in `test/`, one file per function, using `node:test` like `test/add.test.js`.\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/tasks.md",
+            "content": "# Tasks\n\n- [ ] T1: Add multiply()\n  - Requirements: R1.1\n  - Paths: multiply.js, test/multiply.test.js\n  - Depends on: none\n- [ ] T2: Add divide()\n  - Requirements: R2.1\n  - Paths: divide.js, test/divide.test.js\n  - Depends on: none\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Spec written: multiply, divide, and division by zero throws a RangeError."
+    },
+    {
+      "text": "Reading tasks.md before fixing it.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": ".factory/specs/issue-1/tasks.md"
+          }
+        }
+      ]
+    },
+    {
+      "text": "T2 must also cover R2.2.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/tasks.md",
+            "content": "# Tasks\n\n- [ ] T1: Add multiply()\n  - Requirements: R1.1\n  - Paths: multiply.js, test/multiply.test.js\n  - Depends on: none\n- [ ] T2: Add divide()\n  - Requirements: R2.1, R2.2\n  - Paths: divide.js, test/divide.test.js\n  - Depends on: none\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Fixed: T2 now covers R2.2 (division by zero)."
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Both functions meet their criteria; division by zero throws as R2.2 requires, and each criterion has a named test.\", \"findings\": [{\"severity\": \"minor\", \"file\": \"divide.js\", \"line\": 2, \"rationale\": \"The RangeError message is not covered by R2.2's test (only the type is checked by name).\", \"suggestion\": \"assert the message too\"}]}\n```"
+    }
+  ],
+  "build:T1": [
+    {
+      "text": "Reading the tasks.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": ".factory/specs/issue-1/tasks.md"
+          }
+        }
+      ]
+    },
+    {
+      "text": "T1: multiply.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "multiply.js",
+            "content": "export const multiply = (a, b) => a * b;\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/multiply.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { multiply } from '../multiply.js';\n\ntest('R1.1 multiply', () => assert.equal(multiply(4, 3), 12));\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Implemented T1: multiply.js with a test for R1.1."
+    }
+  ],
+  "build:T2": [
+    {
+      "text": "Reading the tasks.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": ".factory/specs/issue-1/tasks.md"
+          }
+        }
+      ]
+    },
+    {
+      "text": "T2: divide, throwing on zero.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "divide.js",
+            "content": "export const divide = (a, b) => {\n  if (b === 0) throw new RangeError('division by zero');\n  return a / b;\n};\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/divide.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { divide } from '../divide.js';\n\ntest('R2.1 divide', () => assert.equal(divide(12, 3), 4));\ntest('R2.2 divide by zero throws', () => assert.throws(() => divide(1, 0), { name: 'RangeError', message: 'division by zero' }));\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Implemented T2: divide.js (RangeError on zero, R2.2) with tests for R2.1 and R2.2."
+    }
+  ]
+}

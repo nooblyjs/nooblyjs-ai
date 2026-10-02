@@ -1,0 +1,4 @@
+[
+  { "text": "Let me look at the package file.", "tools": [{ "name": "Read", "input": { "file_path": "package.json" } }] },
+  { "text": "This is the factory's package.json: one dependency, the noobly harness.", "usage": { "input_tokens": 1200, "output_tokens": 40 } }
+]

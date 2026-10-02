@@ -1,0 +1,8 @@
+{
+  "description": "A precise edit to a JSON file, keeping everything else.",
+  "prompt": "In config.json, change the port to 8080 and add \"host\": \"0.0.0.0\". Keep all other settings exactly as they are.",
+  "tags": [
+    "edit",
+    "config"
+  ]
+}

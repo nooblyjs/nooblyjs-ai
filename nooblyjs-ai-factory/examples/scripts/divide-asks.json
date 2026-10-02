@@ -1,0 +1,71 @@
+{
+  "_comment": "Phase F17/F16 demo: the builder asks a person before choosing what divide(x, 0) does; the run parks until it's answered (factory inbox, or the dashboard).",
+  "triage": [
+    {
+      "text": "```json\n{\"kind\":\"feature\",\"size\":\"small\",\"clear\":true,\"outOfScope\":false,\"questions\":[],\"reason\":\"One new function, like add.js.\"}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "Before I write divide: the issue doesn't say what dividing by zero should do.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "add.js"
+          }
+        },
+        {
+          "name": "mcp__factory__ask_human",
+          "input": {
+            "question": "What should divide(x, 0) do?",
+            "options": [
+              "throw a RangeError",
+              "return Infinity (plain JavaScript)"
+            ]
+          }
+        }
+      ],
+      "delayMs": 1500
+    },
+    {
+      "text": "Waiting for an answer."
+    }
+  ],
+  "build#2": [
+    {
+      "text": "The answer says: throw a RangeError. Writing it and its tests.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "divide.js",
+            "content": "export const divide = (a, b) => {\n  if (b === 0) throw new RangeError('division by zero');\n  return a / b;\n};\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/divide.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { divide } from '../divide.js';\n\ntest('divide', () => assert.equal(divide(12, 3), 4));\ntest('divide by zero throws', () => assert.throws(() => divide(1, 0), RangeError));\n"
+          }
+        },
+        {
+          "name": "mcp__factory__record_decision",
+          "input": {
+            "title": "divide(x, 0) throws a RangeError",
+            "rationale": "A person chose it over returning Infinity when asked (see the inbox)."
+          }
+        }
+      ]
+    },
+    {
+      "text": "Added divide; dividing by zero throws a RangeError, as the person answered."
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Does what the issue asks; tests pass.\", \"findings\": []}\n```"
+    }
+  ]
+}

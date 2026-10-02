@@ -1,0 +1,6 @@
+{
+  "name": "todo-remove-toggle",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

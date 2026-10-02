@@ -1,0 +1,25 @@
+<div class="model-picker d-flex flex-wrap gap-2" data-model-picker>
+  <label class="visually-hidden" for="<%= idPrefix %>-provider">Provider</label>
+  <select id="<%= idPrefix %>-provider" class="form-select <%= typeof size !== 'undefined' && size === 'sm' ? 'form-select-sm' : '' %>" data-provider-select>
+    <% if (allowInherit) { %>
+      <option value="" <%= !selectedProvider ? 'selected' : '' %>>Inherit default</option>
+    <% } %>
+    <% providers.forEach((p) => { %>
+      <option value="<%= p.id %>"
+        <%= p.configured ? '' : 'disabled' %>
+        <%= selectedProvider === p.id ? 'selected' : '' %>>
+        <%= p.label %><%= p.configured ? '' : ' — set ' + p.apiKeyEnvVar %>
+      </option>
+    <% }) %>
+  </select>
+
+  <label class="visually-hidden" for="<%= idPrefix %>-model">Model</label>
+  <select id="<%= idPrefix %>-model" class="form-select <%= typeof size !== 'undefined' && size === 'sm' ? 'form-select-sm' : '' %>" data-model-select>
+    <% providers.forEach((p) => { %>
+      <% p.models.forEach((m) => { %>
+        <option value="<%= m.id %>" data-provider="<%= p.id %>"
+          <%= selectedModel === m.id ? 'selected' : '' %>><%= m.label %></option>
+      <% }) %>
+    <% }) %>
+  </select>
+</div>

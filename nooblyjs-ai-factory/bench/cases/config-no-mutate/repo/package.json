@@ -1,0 +1,6 @@
+{
+  "name": "config-no-mutate",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

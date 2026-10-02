@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- Phase F17: the dashboard. One page, no framework, no build step. Data from /api, live from /api/events (SSE). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Factory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a href="#/" class="brand"><span class="mark" aria-hidden="true"><i></i><i></i></span>factory</a>
+      <button id="menu" class="icon-btn" aria-label="Menu" aria-expanded="false" aria-controls="sidebar"></button>
+    </header>
+    <aside id="sidebar" class="sidebar">
+      <a href="#/" class="brand"><span class="mark" aria-hidden="true"><i></i><i></i></span>factory</a>
+      <nav id="nav" aria-label="Main">
+        <a href="#/" data-icon="line">Line</a>
+        <a href="#/runs" data-icon="runs">Runs</a>
+        <a href="#/inbox" data-icon="inbox">Inbox <span id="inbox-count" class="count"></span></a>
+        <a href="#/campaigns" data-icon="flag">Campaigns</a>
+        <a href="#/metrics" data-icon="chart">Metrics</a>
+      </nav>
+      <section id="system" class="system" aria-label="The factory right now"></section>
+    </aside>
+    <main id="view"><p class="muted">Loading…</p></main>
+  </div>
+  <dialog id="dialog"></dialog>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

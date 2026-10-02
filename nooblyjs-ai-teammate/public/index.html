@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teammates</title>
+  <meta name="description" content="Hire, manage and pay for your digital teammates.">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/teammates.css">
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="shell" id="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Primary">
+      <a class="logo" href="/team" data-link>
+        <span class="logo-circles" aria-hidden="true"><span class="logo-circle logo-circle-1"></span><span class="logo-circle logo-circle-2"></span></span>
+        <span>Teammates</span>
+      </a>
+      <nav id="nav" aria-label="Main"></nav>
+      <div class="sidebar-footer">
+        <div class="budget-mini" id="budget-mini" aria-live="polite"></div>
+        <div class="owner-block" id="owner"></div>
+      </div>
+    </aside>
+    <button class="scrim" type="button" id="scrim" aria-label="Close menu" tabindex="-1"></button>
+    <header class="topbar">
+      <a class="logo" href="/team" data-link>
+        <span class="logo-circles" aria-hidden="true"><span class="logo-circle logo-circle-1"></span><span class="logo-circle logo-circle-2"></span></span>
+        <span>Teammates</span>
+      </a>
+      <button type="button" class="icon-btn" id="menu-toggle" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false"></button>
+    </header>
+    <main class="main-content" id="main" tabindex="-1">
+      <div id="view"></div>
+    </main>
+  </div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</body>
+</html>

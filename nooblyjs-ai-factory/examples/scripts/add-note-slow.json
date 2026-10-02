@@ -1,0 +1,36 @@
+{
+  "triage": [
+    {
+      "text": "I read the issue and the code.\n\n```json\n{\n  \"kind\": \"chore\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"One new Markdown file.\"\n}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "Thinking about where the note should go\u2026",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "README.md"
+          }
+        }
+      ],
+      "delayMs": 2500
+    },
+    {
+      "text": "Writing it.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "NOTES.md",
+            "content": "# Notes\n\nA note, written by a factory agent.\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Added NOTES.md."
+    }
+  ]
+}

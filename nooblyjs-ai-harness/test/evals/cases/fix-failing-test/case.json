@@ -1,0 +1,8 @@
+{
+  "description": "A bug makes the tests fail; fix the code, not the tests.",
+  "prompt": "Running `npm test` fails. Find the bug and fix it in the code. Do not change the tests.",
+  "tags": [
+    "debug",
+    "edit"
+  ]
+}

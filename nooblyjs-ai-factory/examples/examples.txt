@@ -1,0 +1,13 @@
+# <phase> <issue in examples/issues> <script in examples/scripts> <extra flags, "=" for spaces, or -> <expected status>
+F03 add-greeting.md resolve-greeting-issue.json - delivered
+F04 add-subtract.md subtract-buggy.json - gate_failed
+F04 add-subtract.md subtract-self-fix.json - delivered
+F05 add-subtract.md subtract-slow.json - delivered
+F07 make-it-better.md triage-unclear.json - needs_info
+F08 add-multiply-divide.md multiply-divide-with-spec.json --autonomy=L2 delivered
+F09 add-subtract.md subtract-priced.json - delivered
+F10 add-three-operations.md three-operations-fanout.json --autonomy=L2 delivered
+F11 add-divide.md divide-misses-criterion.json --autonomy=L2 changes_requested
+F12 add-parse.md parse-with-approval.json - parked
+F13 add-subtract.md subtract-repaired.json - delivered
+F16 add-divide.md divide-asks.json --autonomy=L2 parked

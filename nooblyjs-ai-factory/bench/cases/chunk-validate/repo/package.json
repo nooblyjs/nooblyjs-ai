@@ -1,0 +1,6 @@
+{
+  "name": "chunk-validate",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

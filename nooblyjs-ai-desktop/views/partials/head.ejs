@@ -1,0 +1,44 @@
+<!doctype html>
+<% const active = typeof nav !== 'undefined' ? nav : ''; %>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · LLM Projects</title>
+  <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/css/desktop.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>◈</text></svg>">
+</head>
+<body class="<%= typeof layout !== 'undefined' && layout === 'shell' ? 'layout-shell' : '' %>">
+  <a class="visually-hidden-focusable skip-link" href="#main">Skip to content</a>
+  <nav class="navbar navbar-expand sticky-top app-navbar" aria-label="Main">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <span class="brand-mark" aria-hidden="true"><i class="bi bi-diamond-half"></i></span>
+        <span class="brand-text">
+          <span class="brand-main">LLM Projects</span>
+          <span class="brand-sub">Noobly Desktop</span>
+        </span>
+      </a>
+      <ul class="navbar-nav ms-auto gap-1">
+        <li class="nav-item">
+          <a class="nav-link <%= active === 'projects' ? 'active' : '' %>" href="/" <%- active === 'projects' ? 'aria-current="page"' : '' %>>
+            <i class="bi bi-folder2" aria-hidden="true"></i><span class="d-none d-sm-inline"> Projects</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= active === 'settings' ? 'active' : '' %>" href="/settings" <%- active === 'settings' ? 'aria-current="page"' : '' %>>
+            <i class="bi bi-gear" aria-hidden="true"></i><span class="d-none d-sm-inline"> Settings</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/services/" title="nooblyjs-core service dashboards">
+            <i class="bi bi-hdd-stack" aria-hidden="true"></i><span class="d-none d-sm-inline"> Services</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <main id="main">

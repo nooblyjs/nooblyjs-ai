@@ -1,0 +1,5 @@
+{
+  "name": "calc",
+  "type": "module",
+  "scripts": { "test": "node spec/math.spec.js" }
+}

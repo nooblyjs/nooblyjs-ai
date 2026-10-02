@@ -1,0 +1,44 @@
+{
+  "triage": [
+    {
+      "text": "I read the issue and the code.\n\n```json\n{\n  \"kind\": \"chore\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"One new Markdown file at the root; README.md exists to link to.\"\n}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "Let me read the README first.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "README.md"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Now I'll add the greeting.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "GREETING.md",
+            "content": "# Welcome!\n\nThanks for stopping by. Start with the [README](README.md): it explains what this project is and how to run it.\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Added GREETING.md at the root. It welcomes new contributors and links to README.md. I checked the README exists and the link is relative, so it works on any forge.",
+      "usage": {
+        "input_tokens": 2400,
+        "output_tokens": 60
+      }
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Does what the issue asks; tests pass.\", \"findings\": []}\n```"
+    }
+  ]
+}

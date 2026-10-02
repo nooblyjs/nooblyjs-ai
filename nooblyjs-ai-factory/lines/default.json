@@ -1,0 +1,61 @@
+{
+  "name": "default",
+  "description": "Triage; a spec for anything bigger than small (approved by a person at L1); build (parallel waves for multi-task specs); verify on a clean checkout; review (+ security when sensitive); repair what failed, then check again (bounded); deliver a PR; at L3 merge it.",
+  "stations": [
+    {
+      "id": "triage",
+      "kind": "triage",
+      "retries": 1
+    },
+    {
+      "id": "spec",
+      "kind": "spec",
+      "when": "triage.size != 'small'",
+      "retries": 1
+    },
+    {
+      "id": "approve",
+      "kind": "approval",
+      "gate": "plan"
+    },
+    {
+      "id": "build",
+      "kind": "build"
+    },
+    {
+      "id": "verify",
+      "kind": "verify",
+      "retries": 1,
+      "when": "build.agent.outcome == 'success'"
+    },
+    {
+      "id": "review",
+      "kind": "review",
+      "role": "reviewer",
+      "retries": 1,
+      "when": "build.agent.outcome == 'success' && verify.passed != false"
+    },
+    {
+      "id": "security",
+      "kind": "review",
+      "role": "security-reviewer",
+      "retries": 1,
+      "when": "review.sensitive == true"
+    },
+    {
+      "id": "repair",
+      "kind": "repair",
+      "when": "build.agent.outcome == 'success' && (verify.passed == false || review.blocking > 0 || security.blocking > 0 || run.humanReview != null)"
+    },
+    {
+      "id": "deliver",
+      "kind": "deliver",
+      "retries": 2
+    },
+    {
+      "id": "merge",
+      "kind": "merge",
+      "when": "autonomy == 'L3'"
+    }
+  ]
+}

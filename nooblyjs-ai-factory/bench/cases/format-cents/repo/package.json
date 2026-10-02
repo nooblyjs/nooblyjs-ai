@@ -1,0 +1,6 @@
+{
+  "name": "format-cents",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

@@ -1,0 +1,118 @@
+{
+  "triage": [
+    {
+      "text": "```json\n{\"kind\": \"feature\", \"size\": \"medium\", \"clear\": true, \"outOfScope\": false, \"questions\": [], \"reason\": \"Three independent functions, each with a test.\"}\n```"
+    }
+  ],
+  "spec": [
+    {
+      "text": "Writing the spec.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/requirements.md",
+            "content": "# Requirements: multiply, divide, power\n\n## R1: Multiply\nAs a calc user, I want to multiply, so that I can scale values.\n- R1.1 WHEN multiply(a, b) is called with two numbers THE SYSTEM SHALL return a times b\n\n## R2: Divide\nAs a calc user, I want to divide, so that I can compute ratios.\n- R2.1 WHEN divide(a, b) is called with b not 0 THE SYSTEM SHALL return a divided by b\n- R2.2 IF divide(a, b) is called with b equal to 0 THEN THE SYSTEM SHALL throw a RangeError\n\n## R3: Power\nAs a calc user, I want powers, so that I can compute squares and cubes.\n- R3.1 WHEN power(a, b) is called with two numbers THE SYSTEM SHALL return a to the power b\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/design.md",
+            "content": "# Design\n\nThree files like add.js; divide throws RangeError on 0. The three are independent, so their tasks can be built in parallel.\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/tasks.md",
+            "content": "# Tasks\n\n- [ ] T1: Add multiply()\n  - Requirements: R1.1\n  - Paths: multiply.js, test/multiply.test.js\n  - Depends on: none\n- [ ] T2: Add divide()\n  - Requirements: R2.1, R2.2\n  - Paths: divide.js, test/divide.test.js\n  - Depends on: none\n- [ ] T3: Add power()\n  - Requirements: R3.1\n  - Paths: power.js, test/power.test.js\n  - Depends on: none\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Spec: three independent tasks."
+    }
+  ],
+  "build:T1": [
+    {
+      "text": "Implementing multiply, carefully (slowly).",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "multiply.js",
+            "content": "export const multiply = (a, b) => a * b;\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/multiply.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { multiply } from '../multiply.js';\n\ntest('R1.1', () => assert.equal(multiply(4, 3), 12));\n"
+          }
+        }
+      ],
+      "delayMs": 2500
+    },
+    {
+      "text": "Added multiply.js with a test."
+    }
+  ],
+  "build:T2": [
+    {
+      "text": "Implementing divide, carefully (slowly).",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "divide.js",
+            "content": "export const divide = (a, b) => {\n  if (b === 0) throw new RangeError('division by zero');\n  return a / b;\n};\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/divide.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { divide } from '../divide.js';\n\ntest('R2.1', () => assert.equal(divide(12, 3), 4));\ntest('R2.2', () => assert.throws(() => divide(1, 0), RangeError));\n"
+          }
+        }
+      ],
+      "delayMs": 2500
+    },
+    {
+      "text": "Added divide.js with a test."
+    }
+  ],
+  "build:T3": [
+    {
+      "text": "Implementing power, carefully (slowly).",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "power.js",
+            "content": "export const power = (a, b) => a ** b;\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/power.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { power } from '../power.js';\n\ntest('R3.1', () => assert.equal(power(2, 10), 1024));\n"
+          }
+        }
+      ],
+      "delayMs": 2500
+    },
+    {
+      "text": "Added power.js with a test."
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Does what the issue asks; tests pass.\", \"findings\": []}\n```"
+    }
+  ]
+}

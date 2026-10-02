@@ -1,0 +1,9 @@
+{
+  "id": "leap-year",
+  "title": "isLeapYear is wrong for 1900",
+  "tags": [
+    "bug",
+    "dates"
+  ],
+  "budgetUsd": 1.0
+}

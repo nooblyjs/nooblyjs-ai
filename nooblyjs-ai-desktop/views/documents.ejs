@@ -1,0 +1,77 @@
+<%- include('partials/head', { title, nav: 'projects', layout: 'shell' }) %>
+<div class="app-shell app-shell-docs" data-project-id="<%= project.id %>">
+
+  <aside class="app-sidebar">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a href="/">Projects</a></li>
+        <li class="breadcrumb-item active text-truncate" aria-current="page"><a href="/projects/<%= project.id %>"><%= project.name %></a></li>
+      </ol>
+    </nav>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-secondary btn-sm flex-fill" data-new-document>
+        <i class="bi bi-file-earmark-plus" aria-hidden="true"></i> Document
+      </button>
+      <button class="btn btn-secondary btn-sm flex-fill" data-new-folder>
+        <i class="bi bi-folder-plus" aria-hidden="true"></i> Folder
+      </button>
+    </div>
+
+    <p class="small text-muted mb-0">Drag items to move them between folders.</p>
+
+    <div class="doc-tree" data-tree role="tree" aria-label="Project documents" tabindex="0">
+      <p class="text-muted fst-italic small py-3 mb-0">Loading…</p>
+    </div>
+
+    <div class="doc-root-drop" data-drop-root>
+      <i class="bi bi-box-arrow-in-up" aria-hidden="true"></i> Drop here to move to the top level
+    </div>
+  </aside>
+
+  <section class="app-main">
+    <header class="app-main-head">
+      <div class="app-main-title flex-column align-items-start gap-0">
+        <h1 data-doc-title>No document open</h1>
+        <span class="small text-muted text-truncate" data-doc-path></span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="small text-muted" data-save-status aria-live="polite"></span>
+        <div class="btn-group segmented" role="group" aria-label="View mode">
+          <button class="btn btn-sm active" data-mode="edit" aria-pressed="true">
+            <i class="bi bi-pencil" aria-hidden="true"></i> Edit
+          </button>
+          <button class="btn btn-sm" data-mode="preview" aria-pressed="false">
+            <i class="bi bi-eye" aria-hidden="true"></i> Preview
+          </button>
+        </div>
+        <button class="btn btn-sm btn-primary" data-save disabled>
+          <i class="bi bi-floppy" aria-hidden="true"></i> Save
+        </button>
+      </div>
+    </header>
+
+    <div class="docs-body">
+      <div class="empty-state docs-empty" data-docs-empty>
+        <i class="bi bi-journal-text empty-icon" aria-hidden="true"></i>
+        <h2>Project documents</h2>
+        <p class="text-muted">
+          Markdown files stored as real files on disk, under
+          <code>documents/</code> in this project's folder.
+          Chats in this project search them automatically, and you can point at one
+          directly by typing <code>@</code> in the composer.
+        </p>
+        <button class="btn btn-primary" data-new-document>
+          <i class="bi bi-file-earmark-plus" aria-hidden="true"></i> Create a document
+        </button>
+      </div>
+
+      <label class="visually-hidden" for="doc-editor">Document content</label>
+      <textarea id="doc-editor" class="doc-editor" data-editor spellcheck="true" hidden></textarea>
+      <div class="doc-preview markdown-body" data-preview hidden></div>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="/static/js/documents.js"></script>
+<%- include('partials/foot') %>

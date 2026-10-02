@@ -1,0 +1,8 @@
+{
+  "description": "Add a command-line flag without changing the default behaviour.",
+  "prompt": "Add a --shout flag to greet.js that prints the greeting in upper case. It may come before or after the name. Without the flag, the output must stay exactly the same.",
+  "tags": [
+    "feature",
+    "cli"
+  ]
+}

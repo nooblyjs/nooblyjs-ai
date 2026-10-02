@@ -1,0 +1,3 @@
+{
+  "gates": [{ "name": "test", "run": "node --test" }]
+}

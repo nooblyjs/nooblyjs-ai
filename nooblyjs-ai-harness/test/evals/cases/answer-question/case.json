@@ -1,0 +1,8 @@
+{
+  "description": "A read-only question about the code; nothing may change.",
+  "prompt": "Which function calculates the shipping cost of an order, and in which file is it? Answer with the function name and the file path. Don't change any files.",
+  "tags": [
+    "read-only",
+    "search"
+  ]
+}

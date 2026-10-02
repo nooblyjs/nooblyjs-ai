@@ -1,0 +1,38 @@
+{
+  "name": "nooblyjs-learn-harness",
+  "version": "1.0.0",
+  "description": "A learning-first AI coding CLI harness, built one concept at a time",
+  "homepage": "https://github.com/nooblyjs/nooblyjs-learn-harness#readme",
+  "bugs": {
+    "url": "https://github.com/nooblyjs/nooblyjs-learn-harness/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nooblyjs/nooblyjs-learn-harness.git"
+  },
+  "type": "module",
+  "bin": {
+    "noobly": "bin/noobly.js"
+  },
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node bin/noobly.js",
+    "test": "node --import tsx --import ./test/no-color.js --test \"test/**/*.test.js\" \"test/**/*.test.jsx\"",
+    "eval": "node test/evals/run.js"
+  },
+  "dependencies": {
+    "nooblyjs-ai-common": "file:../nooblyjs-ai-common",
+    "ink": "^7.1.1",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "marked": "^18.0.14",
+    "react": "^19.3.0",
+    "tsx": "^4.23.15"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

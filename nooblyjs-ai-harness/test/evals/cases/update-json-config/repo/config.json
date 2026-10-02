@@ -1,0 +1,13 @@
+{
+  "name": "widget-server",
+  "port": 3000,
+  "debug": true,
+  "plugins": [
+    "auth",
+    "logging"
+  ],
+  "limits": {
+    "requestsPerMinute": 120,
+    "maxBodyKb": 512
+  }
+}

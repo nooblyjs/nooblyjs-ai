@@ -1,0 +1,44 @@
+{
+  "name": "llm-project-desktop",
+  "version": "1.0.0",
+  "description": "This is an opportunity to create the project aspects of claude code for any llm",
+  "homepage": "https://github.com/StephenBooysen/llm-project-desktop#readme",
+  "bugs": {
+    "url": "https://github.com/StephenBooysen/llm-project-desktop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StephenBooysen/llm-project-desktop.git"
+  },
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "clean": "rimraf node_modules dist",
+    "build": "node ./scripts/build.js",
+    "start": "node ./app.js",
+    "dev": "nodemon --watch ./src ./app.js",
+    "dev:noauth": "nodemon --watch ./src ./app-noauth.js",
+    "kill": "node scripts/kill-port.js",
+    "kill-test": "node scripts/kill-test-port.js",
+    "test": "node --test test/*.test.js",
+    "coverage": "node --test --experimental-test-coverage test/*.test.js",
+    "dev:mock": "node --watch scripts/dev-mock.js"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
+    "dompurify": "^3.4.15",
+    "dotenv": "^17.4.2",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "marked": "^18.0.12",
+    "nooblyjs-core": "file:../../nooblyjs-core",
+    "nooblyjs-ai-common": "file:../nooblyjs-ai-common"
+  },
+  "devDependencies": {
+    "supertest": "^7.2.2"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

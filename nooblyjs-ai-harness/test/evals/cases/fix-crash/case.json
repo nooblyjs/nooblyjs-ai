@@ -1,0 +1,7 @@
+{
+  "description": "The program crashes on start; find and fix the cause.",
+  "prompt": "`node index.js` crashes. Fix it so it runs and prints the settings.",
+  "tags": [
+    "debug"
+  ]
+}

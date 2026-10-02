@@ -1,0 +1,177 @@
+<%- include('partials/head', { title, nav: 'projects' }) %>
+<div class="container-xl app-page" data-project-id="<%= project.id %>">
+
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/"><i class="bi bi-folder2" aria-hidden="true"></i> Projects</a></li>
+      <li class="breadcrumb-item active" aria-current="page"><%= project.name %></li>
+    </ol>
+  </nav>
+
+  <div class="page-head">
+    <div class="page-head-main">
+      <label class="visually-hidden" for="project-name">Project name</label>
+      <div class="editable editable-title">
+        <input id="project-name" class="inline-title" data-project-name
+               value="<%= project.name %>" maxlength="100" autocomplete="off"
+               placeholder="Untitled project">
+        <i class="bi bi-pencil editable-icon" aria-hidden="true"></i>
+      </div>
+      <p class="text-muted page-head-sub mb-0">
+        <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+        <%= chats.length %> <%= chats.length === 1 ? 'chat' : 'chats' %>
+        <span class="save-status" data-save-status aria-live="polite"></span>
+      </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-secondary btn-sm" href="/projects/<%= project.id %>/documents">
+        <i class="bi bi-journal-text" aria-hidden="true"></i> Documents
+      </a>
+      <button class="btn btn-danger-ghost btn-sm" data-delete-project="<%= project.id %>"
+              data-name="<%= project.name %>">
+        <i class="bi bi-trash3" aria-hidden="true"></i> Delete project
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-4 align-items-start">
+    <div class="col-lg-6 d-flex flex-column gap-4">
+
+      <section class="card panel">
+        <div class="panel-head">
+          <h2>Project context</h2>
+          <span class="small text-muted">Sent with every message in this project</span>
+        </div>
+        <label class="visually-hidden" for="project-description">Project description</label>
+        <div class="editable editable-description">
+          <textarea id="project-description" class="inline-description" data-project-description
+                    maxlength="20000" rows="3"
+                    placeholder="Describe this project. Every chat inherits this as context, so you never have to repeat it."><%= project.description %></textarea>
+          <i class="bi bi-pencil editable-icon" aria-hidden="true"></i>
+        </div>
+        <p class="form-text mb-0">Changes save as you type, and apply to chats you have already started.</p>
+
+        <div class="panel-head panel-head-sub">
+          <h2>Default model</h2>
+          <span class="small text-muted">New chats start here</span>
+        </div>
+        <%- include('partials/modelPicker', {
+          idPrefix: 'proj',
+          providers,
+          selectedProvider: project.defaults.provider,
+          selectedModel: project.defaults.model,
+          allowInherit: true
+        }) %>
+        <p class="form-text mb-0" id="defaults-status" aria-live="polite"></p>
+      </section>
+
+      <section class="card panel" id="documents">
+        <div class="panel-head">
+          <h2>Documents</h2>
+          <div class="d-flex gap-2">
+            <button class="btn btn-secondary btn-sm" data-new-document>
+              <i class="bi bi-file-earmark-plus" aria-hidden="true"></i> New document
+            </button>
+            <button class="btn btn-secondary btn-sm" data-new-folder>
+              <i class="bi bi-folder-plus" aria-hidden="true"></i> New folder
+            </button>
+          </div>
+        </div>
+        <p class="form-text mt-0">
+          Searched automatically when you chat. Click a document to edit it; drag to reorganise.
+        </p>
+        <div class="doc-tree compact" data-tree role="tree" aria-label="Project documents">
+          <p class="text-muted fst-italic small py-3 mb-0">Loading…</p>
+        </div>
+        <div class="doc-root-drop" data-drop-root>
+          <i class="bi bi-box-arrow-in-up" aria-hidden="true"></i> Drop here to move to the top level
+        </div>
+      </section>
+
+    </div>
+
+    <div class="col-lg-6">
+      <section class="card panel">
+        <div class="panel-head">
+          <h2>Chats</h2>
+          <button class="btn btn-primary btn-sm" data-new-chat>
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> New chat
+          </button>
+        </div>
+
+        <% if (!anyProviderConfigured) { %>
+          <div class="alert alert-warning small py-2" role="alert">
+            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+            <div>No provider configured — <a href="/settings">add an API key</a> before starting a chat.</div>
+          </div>
+        <% } %>
+
+        <% if (chats.length === 0) { %>
+          <p class="text-muted fst-italic py-3 mb-0">No chats yet.</p>
+        <% } else { %>
+          <ul class="list-group list-group-flush chat-list">
+            <% chats.forEach((c) => { %>
+              <li class="list-group-item chat-item">
+                <a href="/projects/<%= project.id %>/chats/<%= c.id %>">
+                  <span class="chat-title"><i class="bi bi-chat-left-text text-muted" aria-hidden="true"></i> <%= c.title %></span>
+                  <% if (c.preview) { %><span class="chat-preview"><%= c.preview %></span><% } %>
+                  <span class="chat-meta">
+                    <%= c.messageCount %> <%= c.messageCount === 1 ? 'message' : 'messages' %>
+                    <% if (c.model) { %> · <%= c.model %><% } %>
+                    · <span data-relative-time="<%= c.updatedAt %>"><%= c.updatedAt.slice(0, 10) %></span>
+                  </span>
+                </a>
+                <button class="icon-btn icon-btn-danger" data-delete-chat="<%= c.id %>" data-title="<%= c.title %>" aria-label="Delete chat" title="Delete chat">
+                  <i class="bi bi-trash3" aria-hidden="true"></i>
+                </button>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="document-editor" tabindex="-1" aria-labelledby="doc-editor-title" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content doc-modal">
+      <div class="modal-header gap-3">
+        <div class="doc-modal-title me-auto">
+          <h2 class="modal-title text-truncate" id="doc-editor-title" data-doc-title>Document</h2>
+          <div class="small text-muted text-truncate" data-doc-path></div>
+        </div>
+        <span class="small text-muted" data-doc-status aria-live="polite"></span>
+        <div class="btn-group segmented" role="group" aria-label="View mode">
+          <button type="button" class="btn btn-sm active" data-mode="edit" aria-pressed="true">
+            <i class="bi bi-pencil" aria-hidden="true"></i> Edit
+          </button>
+          <button type="button" class="btn btn-sm" data-mode="preview" aria-pressed="false">
+            <i class="bi bi-eye" aria-hidden="true"></i> Preview
+          </button>
+        </div>
+        <button type="button" class="btn-close" data-doc-close aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body doc-modal-body">
+        <label class="visually-hidden" for="doc-editor">Document content</label>
+        <textarea id="doc-editor" class="doc-editor" data-editor spellcheck="true"></textarea>
+        <div class="doc-preview markdown-body" data-preview hidden></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger-ghost btn-sm me-auto" data-doc-delete>
+          <i class="bi bi-trash3" aria-hidden="true"></i> Delete
+        </button>
+        <span class="small text-muted"><kbd>⌘/Ctrl</kbd> + <kbd>S</kbd> to save</span>
+        <button type="button" class="btn btn-secondary btn-sm" data-doc-close>Close</button>
+        <button type="button" class="btn btn-primary btn-sm" data-doc-save disabled>
+          <i class="bi bi-floppy" aria-hidden="true"></i> Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/static/js/project.js"></script>
+<%- include('partials/foot') %>

@@ -1,0 +1,7 @@
+{
+  "triage": [
+    {
+      "text": "I looked at calc: add.js and one test. \"Better\" could mean many things.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"medium\",\n  \"clear\": false,\n  \"outOfScope\": false,\n  \"questions\": [\n    \"Which part should be better: new operations (subtract, multiply\\u2026), input checking, performance, or documentation?\",\n    \"How will we know it is better? A concrete example of what should work afterwards would help (e.g. `subtract(5, 3)` returns 2).\",\n    \"Is a breaking change to `add` allowed, or must existing callers keep working?\"\n  ],\n  \"reason\": \"The request names no behaviour to change and no way to check the result.\"\n}\n```"
+    }
+  ]
+}

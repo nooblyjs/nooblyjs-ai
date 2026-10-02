@@ -1,0 +1,22 @@
+{
+  "name": "nooblyjs-learn-factory",
+  "version": "0.1.0",
+  "description": "A learning-first agentic software factory, built one concept at a time on top of the noobly harness",
+  "type": "module",
+  "bin": {
+    "factory": "bin/factory.js"
+  },
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node bin/factory.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "check:examples": "scripts/check-examples.sh"
+  },
+  "dependencies": {
+    "nooblyjs-ai-harness": "file:../nooblyjs-ai-harness",
+    "nooblyjs-ai-common": "file:../nooblyjs-ai-common"
+  }
+}

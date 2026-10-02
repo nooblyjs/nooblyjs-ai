@@ -1,0 +1,6 @@
+{
+  "name": "temperature",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

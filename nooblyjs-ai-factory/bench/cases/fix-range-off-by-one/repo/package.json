@@ -1,0 +1,6 @@
+{
+  "name": "fix-range-off-by-one",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

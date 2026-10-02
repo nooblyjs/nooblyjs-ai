@@ -1,0 +1,9 @@
+{
+  "id": "todo-remove-toggle",
+  "title": "TodoStore: remove and toggle",
+  "tags": [
+    "feature",
+    "classes"
+  ],
+  "budgetUsd": 1.0
+}

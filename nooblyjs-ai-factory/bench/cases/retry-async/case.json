@@ -1,0 +1,9 @@
+{
+  "id": "retry-async",
+  "title": "Add retry for flaky async calls",
+  "tags": [
+    "feature",
+    "async"
+  ],
+  "budgetUsd": 1.0
+}

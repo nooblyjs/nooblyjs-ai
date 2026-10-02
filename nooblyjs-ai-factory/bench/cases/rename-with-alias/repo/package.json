@@ -1,0 +1,6 @@
+{
+  "name": "rename-with-alias",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

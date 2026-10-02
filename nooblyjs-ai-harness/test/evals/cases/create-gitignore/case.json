@@ -1,0 +1,7 @@
+{
+  "description": "Create a new file from a short description.",
+  "prompt": "Create a .gitignore for this project that ignores node_modules, every .log file, and the dist folder.",
+  "tags": [
+    "create"
+  ]
+}

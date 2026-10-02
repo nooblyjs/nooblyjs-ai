@@ -1,0 +1,6 @@
+{
+  "name": "roman-numerals",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

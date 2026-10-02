@@ -1,0 +1,5 @@
+{
+  "servers": {
+    "echo": { "command": "node", "args": ["test/fixtures/echo-mcp.js"] }
+  }
+}

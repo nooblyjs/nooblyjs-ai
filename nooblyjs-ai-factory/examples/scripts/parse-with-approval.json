@@ -1,0 +1,119 @@
+{
+  "triage": [
+    {
+      "text": "```json\n{\"kind\": \"feature\", \"size\": \"medium\", \"clear\": true, \"outOfScope\": false, \"questions\": [], \"reason\": \"A new function with input handling to decide.\"}\n```"
+    }
+  ],
+  "spec": [
+    {
+      "text": "Writing the spec.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/requirements.md",
+            "content": "## R1: Parse numbers\nAs a calc user, I want to turn text into numbers, so that I can calculate with user input.\n- R1.1 WHEN parse(s) is called with a numeric string THE SYSTEM SHALL return that number\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/design.md",
+            "content": "# Design\n\n`parse.js` exports `parse(s)`, using `Number(s)`.\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/tasks.md",
+            "content": "- [ ] T1: Add parse()\n  - Requirements: R1\n  - Paths: parse.js, test/parse.test.js\n  - Depends on: none\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Spec: parse(s) returns the number for a numeric string."
+    }
+  ],
+  "spec#2": [
+    {
+      "text": "Reading the rejected version.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": ".factory/specs/issue-1/requirements.md"
+          }
+        },
+        {
+          "name": "Read",
+          "input": {
+            "file_path": ".factory/specs/issue-1/design.md"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Adding the empty-input case the reviewer asked for.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/requirements.md",
+            "content": "## R1: Parse numbers\nAs a calc user, I want to turn text into numbers, so that I can calculate with user input.\n- R1.1 WHEN parse(s) is called with a numeric string THE SYSTEM SHALL return that number\n- R1.2 IF parse(s) is called with an empty string (or only spaces) THEN THE SYSTEM SHALL throw a TypeError with the message \"empty input\"\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": ".factory/specs/issue-1/design.md",
+            "content": "# Design\n\n`parse.js` exports `parse(s)`. It trims `s`; an empty result throws `TypeError('empty input')` (R1.2), because `Number('')` is 0, which would silently turn no input into a zero.\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Revised: R1.2 makes empty input (and only spaces) a TypeError instead of Number('') === 0."
+    }
+  ],
+  "build": [
+    {
+      "text": "Reading the spec.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": ".factory/specs/issue-1/requirements.md"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Implementing both criteria.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "parse.js",
+            "content": "export const parse = (s) => {\n  if (String(s).trim() === '') throw new TypeError('empty input');\n  return Number(s);\n};\n"
+          }
+        },
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/parse.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { parse } from '../parse.js';\n\ntest('R1.1', () => assert.equal(parse('42'), 42));\ntest('R1.2', () => assert.throws(() => parse('  '), { name: 'TypeError', message: 'empty input' }));\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Implemented parse() for R1.1 and R1.2, with a test for each."
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Both criteria are implemented and tested.\", \"findings\": []}\n```"
+    }
+  ]
+}

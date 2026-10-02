@@ -1,0 +1,8 @@
+{
+  "description": "Rename a function across several files.",
+  "prompt": "Rename the function getUsr to getUser everywhere in this project.",
+  "tags": [
+    "refactor",
+    "multi-file"
+  ]
+}

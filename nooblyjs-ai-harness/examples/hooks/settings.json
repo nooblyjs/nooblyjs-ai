@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "PreToolUse": [{ "matcher": "Bash", "command": "node examples/hooks/block-rm-rf.js" }],
+    "PostToolUse": [{ "matcher": "Edit|Write", "command": "node examples/hooks/check-syntax-after-edit.js" }],
+    "Stop": [{ "command": "node examples/hooks/tests-must-pass.js", "timeout": 180 }]
+  }
+}

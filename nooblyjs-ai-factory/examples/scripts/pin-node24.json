@@ -1,0 +1,9 @@
+{
+  "_comment": "Phase F25 demo: a scripted agent that only adds .nvmrc (the engines field and real fixes need a model).",
+  "triage": [{ "text": "```json\n{\"kind\":\"chore\",\"size\":\"small\",\"clear\":true,\"outOfScope\":false,\"questions\":[],\"reason\":\"Pin the Node version.\",\"confidence\":0.9}\n```" }],
+  "build": [
+    { "text": "Pinning Node 24.", "tools": [{ "name": "Write", "input": { "file_path": ".nvmrc", "content": "24\n" } }] },
+    { "text": "Added .nvmrc (24)." }
+  ],
+  "review": [{ "text": "```json\n{\"verdict\":\"approve\",\"summary\":\"Pins Node 24.\",\"findings\":[]}\n```" }]
+}

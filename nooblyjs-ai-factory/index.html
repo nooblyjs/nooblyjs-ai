@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- Phase F17: the dashboard. One page, no framework, no build step. Data from /api, live from /api/events (SSE). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Factory</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <a href="#/" class="brand">🏭 factory</a>
+    <nav>
+      <a href="#/">Line</a>
+      <a href="#/runs">Runs</a>
+      <a href="#/inbox">Inbox <span id="inbox-count" class="badge"></span></a>
+      <a href="#/campaigns">Campaigns</a>
+      <a href="#/metrics">Metrics</a>
+    </nav>
+    <div id="system"></div>
+    <span id="live" class="live" title="live updates">●</span>
+  </header>
+  <main id="view"><p class="dim">Loading…</p></main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

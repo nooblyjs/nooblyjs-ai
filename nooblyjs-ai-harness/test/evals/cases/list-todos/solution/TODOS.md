@@ -1,0 +1,3 @@
+- src/server.js:3: read the port from an environment variable
+- src/db/query.js:2: use parameterised queries
+- src/db/pool.js:3: make the pool size configurable

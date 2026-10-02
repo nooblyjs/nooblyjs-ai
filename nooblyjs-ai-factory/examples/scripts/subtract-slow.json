@@ -1,0 +1,53 @@
+{
+  "triage": [
+    {
+      "text": "I read the issue and the code.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"One new function in the style of add.js, plus a test.\"\n}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "I'll look at how add is written. Reading slowly, so there's time to kill me\u2026",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "add.js"
+          }
+        }
+      ],
+      "delayMs": 4000
+    },
+    {
+      "text": "Adding subtract, in the same style.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "subtract.js",
+            "content": "export const subtract = (a, b) => a - b;\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "And a test.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/subtract.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { subtract } from '../subtract.js';\n\ntest('subtract', () => assert.equal(subtract(5, 3), 2));\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Added subtract(a, b) in subtract.js with a test in test/subtract.test.js."
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Does what the issue asks; tests pass.\", \"findings\": []}\n```"
+    }
+  ]
+}

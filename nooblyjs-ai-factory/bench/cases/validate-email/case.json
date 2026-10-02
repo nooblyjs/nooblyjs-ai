@@ -1,0 +1,9 @@
+{
+  "id": "validate-email",
+  "title": "Add a simple email check",
+  "tags": [
+    "feature",
+    "validation"
+  ],
+  "budgetUsd": 1.0
+}

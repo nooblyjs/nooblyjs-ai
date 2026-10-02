@@ -1,0 +1,22 @@
+{
+  "name": "nooblyjs-digital-teammate",
+  "version": "0.1.0",
+  "description": "Procure, configure and pay for AI digital teammates. Express + vanilla JS, Markdown on the file system.",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "test": "node --test test/*.test.js",
+    "smoke:live": "node --env-file-if-exists=.env scripts/live-smoke.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.2.1",
+    "js-yaml": "^4.3.2",
+    "nooblyjs-ai-common": "file:../nooblyjs-ai-common"
+  }
+}

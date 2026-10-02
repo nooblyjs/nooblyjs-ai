@@ -1,0 +1,9 @@
+{
+  "id": "config-no-mutate",
+  "title": "withDefaults modifies its input",
+  "tags": [
+    "bug",
+    "objects"
+  ],
+  "budgetUsd": 1.0
+}

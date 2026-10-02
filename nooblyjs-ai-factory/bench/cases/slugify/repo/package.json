@@ -1,0 +1,6 @@
+{
+  "name": "slugify",
+  "type": "module",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}

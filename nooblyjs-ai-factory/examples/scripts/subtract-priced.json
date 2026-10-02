@@ -1,0 +1,95 @@
+{
+  "triage": [
+    {
+      "text": "I read the issue and the code.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"One new function in the style of add.js, plus a test.\"\n}\n```",
+      "usage": {
+        "input_tokens": 5000,
+        "output_tokens": 150
+      }
+    }
+  ],
+  "build": [
+    {
+      "text": "I'll look at how add is written.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "add.js"
+          }
+        }
+      ],
+      "usage": {
+        "input_tokens": 6000,
+        "output_tokens": 400
+      }
+    },
+    {
+      "text": "Adding subtract, in the same style.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "subtract.js",
+            "content": "export const subtract = (a, b) => a + b;\n"
+          }
+        }
+      ],
+      "usage": {
+        "input_tokens": 9000,
+        "output_tokens": 400
+      }
+    },
+    {
+      "text": "And a test.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/subtract.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { subtract } from '../subtract.js';\n\ntest('subtract', () => assert.equal(subtract(5, 3), 2));\n"
+          }
+        }
+      ],
+      "usage": {
+        "input_tokens": 12000,
+        "output_tokens": 400
+      }
+    },
+    {
+      "text": "Added subtract(a, b) with a test.",
+      "usage": {
+        "input_tokens": 15000,
+        "output_tokens": 400
+      }
+    },
+    {
+      "text": "The check says subtract(5, 3) returned 8: I copied the + from add. Fixing.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "subtract.js",
+            "content": "export const subtract = (a, b) => a - b;\n"
+          }
+        }
+      ],
+      "usage": {
+        "input_tokens": 18000,
+        "output_tokens": 400
+      }
+    },
+    {
+      "text": "Added subtract(a, b) in subtract.js, in the style of add.js, with a test in test/subtract.test.js. My first version copied the + from add; the factory's check caught it and I fixed it. The test suite passes now.",
+      "usage": {
+        "input_tokens": 21000,
+        "output_tokens": 400
+      }
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Does what the issue asks; tests pass.\", \"findings\": []}\n```"
+    }
+  ]
+}

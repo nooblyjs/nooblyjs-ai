@@ -1,0 +1,9 @@
+{
+  "id": "slugify",
+  "title": "Add slugify",
+  "tags": [
+    "feature",
+    "strings"
+  ],
+  "budgetUsd": 1.0
+}

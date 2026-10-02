@@ -1,0 +1,9 @@
+{
+  "id": "parse-duration",
+  "title": "Parse durations like 1h30m",
+  "tags": [
+    "feature",
+    "parsing"
+  ],
+  "budgetUsd": 1.0
+}

@@ -1,0 +1,9 @@
+{
+  "id": "temperature",
+  "title": "Add Fahrenheit conversion",
+  "tags": [
+    "feature",
+    "small"
+  ],
+  "budgetUsd": 1.0
+}

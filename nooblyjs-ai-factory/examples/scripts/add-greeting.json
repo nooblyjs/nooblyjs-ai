@@ -1,0 +1,4 @@
+[
+  { "text": "I'll add a greeting file.", "tools": [{ "name": "Write", "input": { "file_path": "GREETING.md", "content": "# Hello\n\nWelcome, from the factory.\n" } }] },
+  { "text": "Added GREETING.md." }
+]
