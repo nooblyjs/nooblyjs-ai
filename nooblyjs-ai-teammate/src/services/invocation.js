@@ -20,8 +20,9 @@ const clip = (text, max) => { const s = String(text ?? ''); return s.length > ma
 const ZERO_USAGE = () => ({ inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 });
 
 export class InvocationService {
-  constructor(repos, providers, { now = () => isoDate(), log = console, events = null, alerts = null, tools = null, webhooks = null } = {}) {
+  constructor(repos, providers, { now = () => isoDate(), log = console, events = null, alerts = null, tools = null, webhooks = null, metrics = null } = {}) {
     this.repos = repos;
+    this.metrics = metrics;
     this.providers = providers;
     this.today = now;
     this.log = log;
@@ -39,9 +40,12 @@ export class InvocationService {
     return promise;
   }
 
-  /** Resolves once background work (approved tasks, alert checks) has finished. Used by tests and shutdown. */
+  /** Resolves once background work (approved tasks, alert checks, queued webhooks) has finished. Used by tests and shutdown. */
   async idle() {
-    while (this.background.size) await Promise.allSettled([...this.background]);
+    do {
+      while (this.background.size) await Promise.allSettled([...this.background]);
+      await this.webhooks?.idle?.();
+    } while (this.background.size);
   }
 
   /** The teammate's skills joined with their library instructions. */
@@ -238,6 +242,7 @@ export class InvocationService {
       estimate = InvocationService.estimate({ system, context, messages }, settings.billing, teammate.rate);
       if (estimate.amount > threshold) {
         if (caller.type !== 'user') {
+          this.metrics?.record('task.awaiting_approval');
           return this.requestApproval(teammate, { task, costCentre: centre, thread: thread?.id, project, skill: skill || undefined, caller: callerInfo, estimate, threshold });
         }
         if (!confirmCost) {
@@ -281,8 +286,12 @@ export class InvocationService {
           id: workId, teammateId: teammate.id, status: 'failed', model: teammate.model, provider: provider.name, caller: callerInfo, ...used,
           toolCalls, delegations, startedAt, durationMs: Date.now() - started, error: err.message, request: task, response: '',
         });
-        if (err.name === 'AbortError' || signal?.aborted) throw new HttpError(499, 'cancelled', 'Task cancelled');
-        this.log.error?.(`[task] ${teammate.id} failed: ${err.message}`);
+        if (err.name === 'AbortError' || signal?.aborted) {
+          this.metrics?.record('task.cancelled');
+          throw new HttpError(499, 'cancelled', 'Task cancelled');
+        }
+        this.metrics?.record('task.failed');
+        this.log.error?.(`[task] ${teammate.id} failed: ${err.message}`, { teammate: teammate.id, workId, model: teammate.model, provider: provider.name });
         this.emitWebhook('task.failed', { teammate: teammate.id, teammateName: teammate.name, workId, title, error: err.message, caller: callerInfo, delegatedFrom, schedule });
         throw new HttpError(502, 'provider_error', `The model provider returned an error: ${err.message}`);
       }
@@ -323,6 +332,14 @@ export class InvocationService {
         toolCalls, delegations, startedAt, durationMs: Date.now() - started, request: task, response: result.text,
       });
       await this.repos.threads.append(teammate.id, thr, { workId, title, project });
+      const durationMs = Date.now() - started;
+      this.metrics?.record('task.completed');
+      this.metrics?.record('task.duration_ms', durationMs);
+      this.metrics?.record('task.tokens', tokens);
+      this.metrics?.record('task.billed_usd', amount);
+      this.metrics?.record('task.api_cost_usd', apiCost);
+      if (toolCalls.length) this.metrics?.record('task.tool_calls', toolCalls.length);
+      this.log.info?.(`[task] ${teammate.id} finished ${workId}`, { caller: callerInfo.type, model: teammate.model, provider: provider.name, tokens, hours, amount, apiCost, durationMs, stopReason: result.stopReason });
       this.events?.publish('work', { teammateId: teammate.id, workId, status: 'completed', delegatedFrom });
       this.emitWebhook('task.completed', {
         teammate: teammate.id, teammateName: teammate.name, workId, title, status: result.stopReason === 'refusal' ? 'declined' : 'succeeded',

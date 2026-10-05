@@ -424,6 +424,8 @@ textarea.form-input { min-height: 120px; resize: vertical; line-height: 1.5; }
 
 /* ---------- Admin ---------- */
 .admin-stack { display: flex; flex-direction: column; gap: var(--spacing-lg); }
+.system-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--spacing-md); margin-top: var(--spacing-md); }
+.system-grid .stat-value { font-size: 18px; }
 .key-prefix, code { font: 0.9em/1.4 var(--mono); background: var(--chip); padding: 1px 5px; border-radius: 5px; }
 .code-block { font: 13px/1.6 var(--mono); background: var(--ink); color: var(--on-ink); padding: 14px 16px; border-radius: var(--radius-md); overflow-x: auto; margin-top: 12px; white-space: pre; }
 .status-revoked { background: var(--neutral-soft); color: var(--neutral-text); }
@@ -706,4 +708,4 @@ body:not(.can-own) .needs-owner { display: none !important; }
 .owner-account { gap: 8px; padding: 2px; }
 .owner-account .owner-avatar { flex: none; }
 .owner-account .owner-info { flex: 1 1 auto; min-width: 0; }
-.owner-account .owner-name { overflow-wrap: anywhere; line-height: 1.25; }
+.owner-account .owner-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.25; }

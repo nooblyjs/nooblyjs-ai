@@ -117,32 +117,23 @@ export const ctx = {
     return ctx.meta;
   },
   rememberProfile: (id) => store.set(LAST_PROFILE, id),
-  /** Called by the sign-in page with the session's CSRF token. */
-  async signedIn(csrf, next = '/team') {
-    setCsrf(csrf);
-    try {
-      ctx.session = await api.get('/api/session');
-    } catch {
-      ctx.session = { ...ctx.session, authenticated: true, setupRequired: false, csrf };
-    }
-    startSession();
-    navigate(safeNext(next), { replace: true });
-    if (ctx.session.user?.mustChangePassword) setTimeout(() => accountDialog({ first: true }), 300);
-  },
   can,
+  /** Ends the core session (and the token core's login page keeps), then goes back to the sign-in page. */
   async signOut() {
-    try { await api.del('/api/session'); } catch { /* already signed out */ }
+    const saved = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+    try { await api.del('/api/session', { token: saved('authToken') ?? undefined }); } catch { /* already signed out */ }
+    try {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('currentUser');
+    } catch { /* storage unavailable */ }
     endSession();
-    navigate('/login', { replace: true });
-  },
-  /** The server sign-out-everywhere clears our cookie too. */
-  signedOutEverywhere() {
-    endSession();
-    navigate('/login', { replace: true });
+    location.assign('/login');
   },
 };
 
-const safeNext = (next) => (typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/login') ? next : '/team');
+// The nooblyjs-core dashboards are server pages with their own sign-in, not part of this app.
+const isServerPage = (path) => /^\/services(\/|$)/.test(path);
+const safeNext = (next) => (typeof next === 'string' && /^\/(?![/\\])/.test(next) && !next.startsWith('/login') ? next : '/team');
 
 let cleanup = null;
 let renderToken = 0;
@@ -169,7 +160,7 @@ function renderSidebarFoot() {
   document.getElementById('owner').innerHTML = String(html`
     <button type="button" class="owner-account" data-account aria-label="Your account: ${u.name}, ${ROLE_LABEL[u.role]}">
       <span class="owner-avatar" aria-hidden="true">${(u.name ?? '?').slice(0, 1)}</span>
-      <span class="owner-info"><span class="owner-name">${u.name}</span><span class="owner-role">${u.role === 'owner' && m.owner?.title ? m.owner.title : ROLE_LABEL[u.role]}</span></span>
+      <span class="owner-info"><span class="owner-name" title="${u.name}">${u.name}</span><span class="owner-role">${u.role === 'owner' && m.owner?.title ? m.owner.title : ROLE_LABEL[u.role]}</span></span>
     </button>
     <button type="button" class="owner-signout" data-signout aria-label="Sign out" title="Sign out">${icons.signOut}</button>`);
 }
@@ -271,7 +262,7 @@ document.addEventListener('click', (e) => {
   if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
   if (a.target || a.hasAttribute('download') || a.origin !== location.origin) return;
   if (a.getAttribute('href').startsWith('#')) return; // in-page anchors
-  if (a.pathname.startsWith('/api/')) return;
+  if (a.pathname.startsWith('/api/') || isServerPage(a.pathname)) return;
   e.preventDefault();
   if (a.pathname + a.search !== location.pathname + location.search) navigate(a.pathname + a.search);
   else setNavOpen(false);
@@ -294,39 +285,18 @@ whenSignedOut(() => {
   navigate(`/login?next=${encodeURIComponent(next)}`, { replace: true });
 });
 
-/** Your own account: name, role, and changing your password (required after a temporary password). */
-async function accountDialog({ first = false } = {}) {
+/** Your own account: name, role and email. The password is changed on core's profile page. */
+async function accountDialog() {
   const u = ctx.session?.user;
   if (!u) return;
+  const links = ctx.session.links ?? {};
   await openDialog({
-    title: first ? 'Choose your own password' : 'Your account',
-    body: html`
-      <form id="acct-form" class="modal-body" style="padding:0" novalidate>
-        ${first ? html`<p class="notice">You signed in with a temporary password. Choose your own now; it signs out any other browser using the old one.</p>` : html`<p>${u.name} · <strong>${ROLE_LABEL[u.role]}</strong>${u.username ? html` · username <code>${u.username}</code>` : ''}</p>`}
-        <div class="form-group"><label class="form-label" for="acct-current">${first ? 'Temporary password' : 'Current password'}</label><input class="form-input" id="acct-current" name="current" type="password" autocomplete="current-password" aria-describedby="acct-err-current"><span class="field-error" id="acct-err-current"></span></div>
-        <div class="form-group"><label class="form-label" for="acct-next">New password</label><input class="form-input" id="acct-next" name="next" type="password" autocomplete="new-password" aria-describedby="acct-err-next"><span class="field-error" id="acct-err-next"></span></div>
-      </form>`,
-    footer: html`<button type="button" class="btn btn-secondary" data-close>${first ? 'Later' : 'Close'}</button><button type="submit" form="acct-form" class="btn btn-primary">Change password</button>`,
-    setup(dialog) {
-      const form = dialog.querySelector('#acct-form');
-      form.current.focus();
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        for (const el of form.querySelectorAll('.field-error')) el.textContent = '';
-        if (form.next.value.length < 10) return (dialog.querySelector('#acct-err-next').textContent = 'At least 10 characters');
-        try {
-          const { csrf } = await api.post('/api/session/password', { current: form.current.value, next: form.next.value });
-          setCsrf(csrf);
-          ctx.session = { ...ctx.session, csrf, user: { ...u, mustChangePassword: false } };
-          toast('Password changed');
-          dialog.close('done');
-        } catch (err) {
-          if (err.details?.current) dialog.querySelector('#acct-err-current').textContent = err.details.current;
-          else if (err.details?.next) dialog.querySelector('#acct-err-next').textContent = err.details.next;
-          else toast(err.message, { error: true });
-        }
-      });
-    },
+    title: 'Your account',
+    body: html`<div class="modal-body" style="padding:0">
+      <p>${u.name} · <strong>${ROLE_LABEL[u.role]}</strong>${u.username ? html` · <code>${u.username}</code>` : ''}</p>
+      <p class="help">Your sign-in, password and role are managed by nooblyjs-core. Change your password on your profile page; owners give people their role on the Authentication dashboard.</p>
+    </div>`,
+    footer: html`<button type="button" class="btn btn-secondary" data-close>Close</button><a class="btn btn-primary" href="${links.account ?? '/services/authservice/views/profile.html'}">Change password</a>`,
   });
 }
 
@@ -348,7 +318,6 @@ ctx.on('approval', (a) => {
   if (signedIn()) {
     setCsrf(ctx.session.csrf);
     startSession();
-    if (ctx.session.user?.mustChangePassword) setTimeout(() => accountDialog({ first: true }), 600);
   } else {
     document.body.classList.add('signed-out');
   }

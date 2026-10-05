@@ -1,11 +1,16 @@
 // Outgoing webhooks: a list of endpoints in data/config/webhooks.md, each subscribed to some events.
 // Every delivery is a POST of { event, at, data }, signed with HMAC-SHA256 in X-Teammates-Signature.
+// Deliveries go through core's queueing service. One that fails with a network error, a timeout, 429 or a 5xx is
+// retried after 10 s, 1 min and 5 min with the same body and X-Teammates-Delivery id, so receivers can de-duplicate.
 import crypto from 'node:crypto';
 import { HttpError, notFound } from '../util/errors.js';
 import { newId } from '../util/ids.js';
+import { JobQueue } from '../core/job-queue.js';
 
 const FILE = ['config', 'webhooks.md'];
 const TIMEOUT_MS = 5000;
+export const RETRY_DELAYS_MS = [10000, 60000, 300000];
+const retryable = (outcome) => !outcome.ok && (outcome.status === undefined || outcome.status === 429 || outcome.status >= 500);
 
 export const WEBHOOK_EVENTS = {
   'task.completed': 'A teammate finished a task',
@@ -23,11 +28,29 @@ export const ALERT_EVENTS = ['budget.warning', 'budget.reached', 'cap.warning', 
 const visible = ({ secret, ...e }) => ({ ...e, hasSecret: Boolean(secret) });
 
 export class WebhookService {
-  constructor({ store, repos, fetch = globalThis.fetch, log = console }) {
+  constructor({ store, repos, fetch = globalThis.fetch, log = console, queue = null, metrics = null, retryDelaysMs = RETRY_DELAYS_MS }) {
     this.store = store;
     this.repos = repos;
     this.fetch = fetch;
     this.log = log;
+    this.metrics = metrics;
+    this.retryDelaysMs = retryDelaysMs;
+    this.jobs = queue
+      ? new JobQueue({
+        queue, name: 'webhooks', log, retryDelaysMs,
+        handler: (job, { attempt }) => this.deliverJob(job, attempt),
+        shouldRetry: (result) => Boolean(result?.retrying),
+      })
+      : null;
+  }
+
+  /** Resolves once no delivery is queued or in flight (retries waiting on their delay don't count). */
+  idle() {
+    return this.jobs?.idle();
+  }
+
+  close() {
+    this.jobs?.close();
   }
 
   /** Moves the Phase 5 single alert webhook (settings.alerts.webhookUrl) into the endpoint list. */
@@ -121,22 +144,48 @@ export class WebhookService {
     return visible(removed);
   }
 
-  /** Sends `event` to every enabled endpoint subscribed to it. Never throws. */
+  /**
+   * Sends `event` to every enabled endpoint subscribed to it. Resolves with each endpoint's first attempt; failed
+   * deliveries are retried in the background. Never throws.
+   */
   async emit(event, data) {
     const targets = (await this.endpoints()).filter((e) => e.enabled !== false && e.events?.includes(event));
-    return Promise.all(targets.map((e) => this.deliver(e, event, data)));
+    const at = new Date().toISOString();
+    return Promise.all(targets.map((e) => {
+      const job = { endpointId: e.id, event, at, data, deliveryId: newId('dlv') };
+      return this.jobs ? this.jobs.push(job).catch((err) => ({ event, at, ok: false, error: err.message })) : this.deliverJob(job, 1);
+    }));
   }
 
+  /** Sent straight away (not queued, never retried): the Settings page shows the result. */
   async test(id) {
     const e = (await this.endpoints()).find((x) => x.id === id);
     if (!e) throw notFound('Webhook');
-    return this.deliver(e, 'webhook.test', { message: 'Test delivery from Teammates. Webhooks are working.' });
+    const outcome = await this.deliver(e, { event: 'webhook.test', at: new Date().toISOString(), data: { message: 'Test delivery from Teammates. Webhooks are working.' }, deliveryId: newId('dlv') });
+    return this.recordDelivery(e, { event: 'webhook.test', at: new Date().toISOString(), ...outcome });
   }
 
-  async deliver(endpoint, event, data) {
-    const body = JSON.stringify({ event, at: new Date().toISOString(), data });
-    const headers = { 'Content-Type': 'application/json', 'User-Agent': 'Teammates-Webhook/1', 'X-Teammates-Event': event };
+  /** One attempt of a queued delivery. The endpoint is looked up again, as it may have changed before a retry. */
+  async deliverJob(job, attempt) {
+    const endpoint = (await this.endpoints()).find((x) => x.id === job.endpointId);
+    if (!endpoint || endpoint.enabled === false) return { event: job.event, ok: false, skipped: true };
+    const outcome = await this.deliver(endpoint, job, attempt);
+    const delay = retryable(outcome) ? this.retryDelaysMs[attempt - 1] : undefined;
+    const last = { event: job.event, at: new Date().toISOString(), ...outcome, ...(attempt > 1 ? { attempt } : {}) };
+    if (delay !== undefined) {
+      last.nextRetryAt = new Date(Date.now() + delay).toISOString();
+      this.metrics?.record('webhook.retry_scheduled');
+    }
+    await this.recordDelivery(endpoint, last);
+    return { ...last, retrying: delay !== undefined };
+  }
+
+  async deliver(endpoint, { event, at, data, deliveryId }, attempt = 1) {
+    const body = JSON.stringify({ event, at, data });
+    const headers = { 'Content-Type': 'application/json', 'User-Agent': 'Teammates-Webhook/1', 'X-Teammates-Event': event, 'X-Teammates-Delivery': deliveryId };
+    if (attempt > 1) headers['X-Teammates-Attempt'] = String(attempt);
     if (endpoint.secret) headers['X-Teammates-Signature'] = `sha256=${crypto.createHmac('sha256', endpoint.secret).update(body).digest('hex')}`;
+    const started = Date.now();
     let outcome;
     try {
       const res = await this.fetch(endpoint.url, { method: 'POST', headers, body, signal: AbortSignal.timeout(TIMEOUT_MS), redirect: 'manual' });
@@ -144,12 +193,23 @@ export class WebhookService {
     } catch (err) {
       outcome = { ok: false, error: err.name === 'TimeoutError' ? 'Timed out after 5 seconds' : err.message };
     }
-    if (!outcome.ok) this.log.warn?.(`[webhook] ${event} to ${endpoint.name} failed: ${outcome.error ?? `HTTP ${outcome.status}`}`);
-    const lastDelivery = { event, at: new Date().toISOString(), ...outcome };
+    this.metrics?.record(outcome.ok ? 'webhook.delivered' : 'webhook.failed');
+    this.metrics?.record('webhook.duration_ms', Date.now() - started);
+    if (!outcome.ok) this.log.warn?.(`[webhook] ${event} to ${endpoint.name} failed (attempt ${attempt}): ${outcome.error ?? `HTTP ${outcome.status}`}`);
+    return outcome;
+  }
+
+  async recordDelivery(endpoint, lastDelivery) {
     await this.update((list) => {
       const e = list.find((x) => x.id === endpoint.id);
       if (e) e.lastDelivery = lastDelivery;
     }).catch(() => {});
     return lastDelivery;
+  }
+
+  /** Queue figures for the System page. */
+  async queueInfo() {
+    if (!this.jobs) return null;
+    return { queue: this.jobs.name, waiting: await this.jobs.size(), inFlight: this.jobs.running, retrying: this.jobs.retrying };
   }
 }

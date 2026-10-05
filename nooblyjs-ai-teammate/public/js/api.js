@@ -38,7 +38,7 @@ export const api = {
   post: (url, body = {}) => request('POST', url, body),
   patch: (url, body) => request('PATCH', url, body),
   put: (url, body) => request('PUT', url, body),
-  del: (url) => request('DELETE', url),
+  del: (url, body) => request('DELETE', url, body),
 };
 
 /** POST and read an SSE response. `on` maps event names to handlers. Resolves when the stream ends. */

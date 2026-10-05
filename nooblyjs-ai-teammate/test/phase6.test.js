@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import express from 'express';
-import { startApp, OWNER_PASSWORD } from './helpers.js';
+import { startApp, coreSignIn, ensureCoreUser } from './helpers.js';
 import { createApp } from '../src/app.js';
 import { createProviders } from '../src/providers/index.js';
 import { MockProvider } from '../src/providers/mock.js';
@@ -70,13 +70,12 @@ after(() => {
   mcp.close();
 });
 
-const login = async (username, password) => {
-  const res = await fetch(`${app.base}/api/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
-  if (!res.ok) return { status: res.status };
-  const cookie = res.headers.get('set-cookie').split(';')[0];
-  const { csrf } = await res.json();
+/** Signs in on core's login page as `email` and returns a caller that sends that session's cookie and CSRF token. */
+const login = async (email, password) => {
+  const res = await coreSignIn(app.base, email, password);
+  if (!res.cookie) return { status: res.status };
   const call = async (method, url, body) => {
-    const r = await fetch(app.base + url, { method, headers: { 'Content-Type': 'application/json', Cookie: cookie, 'X-CSRF-Token': csrf }, body: body === undefined ? undefined : JSON.stringify(body) });
+    const r = await fetch(app.base + url, { method, headers: { 'Content-Type': 'application/json', Cookie: res.cookie, 'X-CSRF-Token': res.csrf }, body: body === undefined ? undefined : JSON.stringify(body) });
     const text = await r.text();
     return { status: r.status, body: text ? JSON.parse(text) : null };
   };
@@ -111,77 +110,67 @@ test('schedules run at wall-clock times in the workspace time zone', () => {
 
 // ---------- 6.6 People and roles ----------
 
-test('owners add people with roles; viewers read, managers run work, owners administer', async () => {
-  const bad = await app.send('POST', '/api/admin/users', { username: 'No Spaces', name: '', role: 'admin' });
-  assert.deepEqual(Object.keys(bad.body.error.details).sort(), ['name', 'role', 'username']);
-  const viewer = (await app.send('POST', '/api/admin/users', { username: 'vic', name: 'Vic Viewer', role: 'viewer' })).body;
-  const manager = (await app.send('POST', '/api/admin/users', { username: 'mo', name: 'Mo Manager', role: 'manager' })).body;
-  assert.ok(viewer.password.length >= 16, 'a temporary password is shown once');
-  assert.equal(viewer.user.passwordHash, undefined);
-  assert.equal((await app.send('POST', '/api/admin/users', { username: 'vic', name: 'Again', role: 'viewer' })).body.error.details.username, 'Someone already has that username');
+test('roles come from nooblyjs-core: viewers read, managers run work, owners administer', async () => {
+  const core = app.core.auth;
+  await ensureCoreUser(core, { email: 'vic@example.com', fullName: 'Vic Viewer', password: 'Vic-Viewer-123', role: 'viewer' });
+  await ensureCoreUser(core, { email: 'mo@example.com', fullName: 'Mo Manager', password: 'Mo-Manager-123', role: 'manager' });
+  await ensureCoreUser(core, { email: 'una@example.com', fullName: 'Una User', password: 'Una-User-1234', role: 'user' });
 
-  assert.equal((await login('vic', 'wrong password')).status, 401);
-  const v = await login('vic', viewer.password);
+  // Admin → People lists everyone who can sign in, with the role their core roles give them.
+  const people = (await app.get('/api/admin/users')).body.users;
+  const roleOf = (email) => people.find((u) => u.email === email)?.role;
+  assert.deepEqual(['admin@localhost', 'vic@example.com', 'mo@example.com', 'una@example.com'].map(roleOf), ['owner', 'viewer', 'manager', 'viewer']);
+  assert.ok(people.every((u) => u.password === undefined));
+
+  assert.equal((await login('vic@example.com', 'Wrong-Password-1')).status, 401);
+  const v = await login('vic@example.com', 'Vic-Viewer-123');
   assert.equal(v.status, 200);
-  const me = await v.call('GET', '/api/session');
-  assert.deepEqual([me.body.user.role, me.body.user.mustChangePassword], ['viewer', true]);
+  assert.deepEqual((await v.call('GET', '/api/session')).body.user, { id: 'vic@example.com', name: 'Vic Viewer', username: 'vic@example.com', role: 'viewer' });
   assert.equal((await v.call('GET', '/api/teammates')).status, 200);
   assert.equal((await v.call('GET', '/api/billing')).status, 200);
   assert.equal((await v.call('PATCH', '/api/teammates/ada-quill', { rate: 1 })).status, 403);
   assert.equal((await v.call('POST', '/api/teammates/wren-sato/tasks', { task: 'x' })).status, 403);
   assert.equal((await v.call('GET', '/api/settings')).status, 403);
   assert.equal((await v.call('GET', '/api/admin/users')).status, 403);
+  // Anyone with only core's default role is a viewer too.
+  assert.equal((await (await login('una@example.com', 'Una-User-1234')).call('GET', '/api/session')).body.user.role, 'viewer');
 
-  const m = await login('mo', manager.password);
+  const m = await login('mo@example.com', 'Mo-Manager-123');
   assert.equal((await m.call('PATCH', '/api/teammates/pip-okafor', { currentTask: 'Sorting the rota' })).status, 200);
   assert.equal((await m.call('POST', '/api/teammates/pip-okafor/tasks', { task: 'Draft the rota' })).body.entry.caller, 'Mo Manager');
   assert.equal((await m.call('PATCH', '/api/settings', { budgets: { month: 1 } })).status, 403);
   assert.equal((await m.call('POST', '/api/invoices', { month: '2026-09' })).status, 403);
   assert.equal((await m.call('GET', '/api/admin/audit')).status, 403);
 
-  // Changing your own password signs out your other sessions.
-  const changed = await m.call('POST', '/api/session/password', { current: manager.password, next: 'mo has a new password' });
-  assert.equal(changed.status, 200);
-  assert.equal((await m.call('GET', '/api/teammates')).status, 401);
-  const m2 = await login('mo', 'mo has a new password');
-  assert.equal((await m2.call('GET', '/api/session')).body.user.mustChangePassword, false);
+  // A role given on core's Authentication dashboard applies straight away.
+  await core.addUserToRole('vic@example.com', 'manager');
+  assert.equal((await v.call('GET', '/api/session')).body.user.role, 'manager');
+  assert.equal((await v.call('PATCH', '/api/teammates/pip-okafor', { currentTask: 'Checking the rota' })).status, 200);
 
-  // A role change or disabling signs the person out; the last owner is protected.
-  await app.send('PATCH', `/api/admin/users/${viewer.user.id}`, { role: 'manager' });
-  assert.equal((await v.call('GET', '/api/teammates')).status, 401);
-  await app.send('PATCH', `/api/admin/users/${viewer.user.id}`, { disabled: true });
-  assert.equal((await login('vic', viewer.password)).status, 401);
-  const users = (await app.get('/api/admin/users')).body.users;
-  const ownerId = users.find((u) => u.role === 'owner').id;
-  assert.equal((await app.send('PATCH', `/api/admin/users/${ownerId}`, { role: 'viewer' })).body.error.code, 'own_account');
-  const reset = await app.send('POST', `/api/admin/users/${manager.user.id}/reset-password`);
-  assert.equal((await m2.call('GET', '/api/teammates')).status, 401);
-  assert.equal((await login('mo', reset.body.password)).status, 200);
+  // A core admin is an owner here.
+  await ensureCoreUser(core, { email: 'ada.admin@example.com', fullName: 'Ada Admin', password: 'Ada-Admin-1234', role: 'admin' });
+  const admin = await login('ada.admin@example.com', 'Ada-Admin-1234');
+  assert.equal((await admin.call('GET', '/api/session')).body.user.role, 'owner');
+  assert.equal((await admin.call('GET', '/api/admin/keys')).status, 200);
 
-  const audit = (await app.get('/api/admin/audit')).body.entries.map((e) => e.action);
-  for (const a of ['user.create', 'user.update', 'user.password_reset', 'user.password_change']) assert.ok(audit.includes(a), a);
+  const audit = (await app.get('/api/admin/audit')).body.entries;
+  assert.ok(audit.some((e) => e.action === 'session.login' && e.target === 'mo@example.com'));
 });
 
-test('the Phase 3 single owner moves into the users list and keeps their password', async () => {
+test('a Phase 5 alert webhook in settings moves into the webhook list', async () => {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tm-mig-'));
   const options = { dataDir, now: () => '2026-10-01', providers: createProviders({ mode: 'mock', mock: new MockProvider({ delayMs: 0 }) }), log: { info() {}, warn() {}, error() {} }, sessionSecret: 's', scheduleIntervalMs: 0 };
-  const first = await createApp({ ...options, ownerPassword: OWNER_PASSWORD });
-  const [owner] = (await first.store.readDoc(['system', 'users.md'])).data.users;
-  // Rewind to the Phase 3 layout: owner.md only, and an alert webhook in settings.
-  await first.store.writeDoc(['system', 'owner.md'], { passwordHash: owner.passwordHash, sessionVersion: 3 });
-  await first.store.remove(['system', 'users.md']);
+  const first = await createApp(options);
   await first.store.remove(['config', 'webhooks.md']);
   await first.repos.config.updateSettings({ alerts: { warnAtPct: 75, webhookUrl: 'https://old.example.com/hook', webhookSecret: 'x'.repeat(20) } });
+  first.close();
 
-  const second = await createApp({ ...options, ownerPassword: undefined });
-  const [migrated] = (await second.store.readDoc(['system', 'users.md'])).data.users;
-  assert.deepEqual([migrated.id, migrated.username, migrated.role, migrated.sessionVersion], ['stevie', 'stevie', 'owner', 3]);
-  assert.equal(second.auth.setupRequired, false);
-  await second.auth.login(OWNER_PASSWORD); // no username: the owner, as in Phase 3
-  await second.auth.login(OWNER_PASSWORD, 'stevie');
+  const second = await createApp(options);
   const [endpoint] = await second.webhooks.endpoints();
   assert.deepEqual([endpoint.url, endpoint.secret, endpoint.events.length], ['https://old.example.com/hook', 'x'.repeat(20), 4]);
   assert.deepEqual((await second.repos.config.getSettings()).alerts, { warnAtPct: 75 });
+  second.close();
+  await fs.rm(dataDir, { recursive: true, force: true });
 });
 
 // ---------- 6.3 Tools ----------

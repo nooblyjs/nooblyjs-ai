@@ -26,16 +26,24 @@ export function apiRouter({ team, invocation, repos, store, events, auth, audit,
   r.get('/meta', async (req, res) => res.json(await team.meta()));
 
   // Live updates for open browser tabs: teammate status changes and new/approved timesheet entries.
-  r.get('/events', (req, res) => {
+  r.get('/events', async (req, res) => {
+    const onEvent = ({ type, data }) => res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
+    let unsubscribe;
+    try {
+      unsubscribe = await events.subscribe(onEvent);
+    } catch (err) {
+      log.warn?.(`[events] ${err.message}`);
+      throw new HttpError(503, 'too_many_streams', 'Too many open live-update connections. Try again shortly.');
+    }
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
     res.write('retry: 3000\n\n');
-    const onEvent = ({ type, data }) => res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
     const keepAlive = setInterval(() => res.write(': keep-alive\n\n'), 25000);
-    events.on('event', onEvent);
-    res.on('close', () => {
+    const close = () => {
       clearInterval(keepAlive);
-      events.off('event', onEvent);
-    });
+      unsubscribe();
+    };
+    if (res.destroyed || req.socket.destroyed) return close();
+    res.on('close', close);
   });
 
   // Teammates

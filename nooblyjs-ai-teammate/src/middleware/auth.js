@@ -1,31 +1,20 @@
-// Authentication for the JSON API: owner session cookie (with CSRF header) or an API key (teammate calls only).
+// Authentication for the JSON API: the nooblyjs-core sign-in (session cookie, plus a CSRF header on changes) or an
+// API key (teammate calls only). People sign in on core's login page; see src/core.
 import { HttpError } from '../util/errors.js';
-import { atLeast } from '../services/auth.js';
+import { atLeast, roleFromCore } from '../services/auth.js';
 
-export const SESSION_COOKIE = 'tm_session';
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
-export function parseCookies(header = '') {
-  const out = {};
-  for (const part of header.split(';')) {
-    const i = part.indexOf('=');
-    if (i > 0) out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
-  }
-  return out;
-}
+/** The signed-in person as the app sees them, from core's user record. */
+export const actorFromCoreUser = (user) => ({
+  type: 'user', id: user.email, name: user.fullName || user.email, role: roleFromCore(user.roles ?? user.role), username: user.email,
+});
 
-export function sessionCookie(token, { maxAgeMs, secure }) {
-  const attrs = [`${SESSION_COOKIE}=${encodeURIComponent(token)}`, 'Path=/', 'HttpOnly', 'SameSite=Lax', `Max-Age=${Math.floor(maxAgeMs / 1000)}`];
-  if (secure) attrs.push('Secure');
-  return attrs.join('; ');
-}
-
-export const clearSessionCookie = ({ secure }) => `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure ? '; Secure' : ''}`;
-
-export const isSecureRequest = (req, forceSecure) => forceSecure || req.secure;
-
-/** Works out who is calling and sets req.actor. Does not reject anything by itself. */
-export function identify({ auth, repos }) {
+/**
+ * Works out who is calling and sets req.actor. Does not reject anything by itself. Runs after coreSession(), which
+ * puts the person signed in with core on req.user.
+ */
+export function identify({ auth }) {
   return async (req, res, next) => {
     try {
       const header = req.get('authorization') ?? '';
@@ -36,13 +25,9 @@ export function identify({ auth, repos }) {
         req.actor = { type: 'key', id: key.id, name: key.name, key };
         return next();
       }
-      const session = await auth.verifySession(parseCookies(req.headers.cookie)[SESSION_COOKIE]);
-      if (session) {
-        const { owner } = await repos.config.getSettings();
-        const u = session.user;
-        req.session = session;
-        // The owner's display name is the one in Settings, so renaming the owner there renames them everywhere.
-        req.actor = { type: 'user', id: u.id, name: u.id === owner?.id && owner?.name ? owner.name : u.name, role: u.role, username: u.username };
+      if (req.user?.email && req.user.isActive !== false) {
+        req.actor = actorFromCoreUser(req.user);
+        req.csrf = auth.csrfFor(req.sessionID);
       } else {
         req.actor = { type: 'anonymous', ip: req.ip };
       }
@@ -54,12 +39,12 @@ export function identify({ auth, repos }) {
 }
 
 function checkCsrf(req) {
-  if (UNSAFE.has(req.method) && req.get('x-csrf-token') !== req.session?.csrf) {
+  if (UNSAFE.has(req.method) && (!req.csrf || req.get('x-csrf-token') !== req.csrf)) {
     throw new HttpError(403, 'csrf_failed', 'Your session has expired. Refresh the page and try again.');
   }
 }
 
-/** Owner session required (plus CSRF header on changes). */
+/** A signed-in person required (plus the CSRF header on changes). */
 export function requireUser(req, res, next) {
   if (req.actor?.type === 'key') return next(new HttpError(403, 'key_not_allowed', 'API keys can only call teammates (POST /api/teammates/:id/tasks).'));
   if (req.actor?.type !== 'user') return next(new HttpError(401, 'unauthenticated', 'Sign in to continue.'));

@@ -1,9 +1,13 @@
-// Owner-only administration: people and roles, API keys, password, sessions and the audit log.
+// Owner-only administration: API keys, the audit log, system status, and who has which role. People, passwords and
+// roles are managed on nooblyjs-core's Authentication dashboard (/services/authservice/).
 import express from 'express';
-import { sessionCookie, clearSessionCookie, isSecureRequest } from '../middleware/auth.js';
+import { roleFromCore } from '../services/auth.js';
 
-export function adminRouter({ auth, audit, repos, cookieSecure = false }) {
+export function adminRouter({ auth, audit, repos, system, coreAuth }) {
   const r = express.Router();
+
+  // nooblyjs-core services: cache, webhook queue, schedule check and metrics.
+  r.get('/system', async (req, res) => res.json(await system.status()));
 
   r.get('/keys', async (req, res) => res.json({ keys: await auth.listKeys() }));
 
@@ -30,36 +34,12 @@ export function adminRouter({ auth, audit, repos, cookieSecure = false }) {
     res.json({ entries: await audit.list({ limit }) });
   });
 
-  // People and roles
-  r.get('/users', async (req, res) => res.json({ users: await auth.listUsers() }));
-  r.post('/users', async (req, res) => {
-    const { user, password } = await auth.createUser(req.body ?? {});
-    await audit.record(req.actor, 'user.create', user.username, { role: user.role });
-    res.status(201).json({ user, password });
-  });
-  r.patch('/users/:id', async (req, res) => {
-    const user = await auth.updateUser(req.params.id, req.body ?? {}, req.actor);
-    await audit.record(req.actor, 'user.update', user.username, { fields: Object.keys(req.body ?? {}), role: user.role, disabled: Boolean(user.disabledAt) });
-    res.json(user);
-  });
-  r.post('/users/:id/reset-password', async (req, res) => {
-    const { user, password } = await auth.resetPassword(req.params.id);
-    await audit.record(req.actor, 'user.password_reset', user.username);
-    res.json({ user, password });
-  });
-
-  r.post('/password', async (req, res) => {
-    const session = await auth.changePassword(req.actor.id, req.body?.current, req.body?.next);
-    res.set('Set-Cookie', sessionCookie(session.token, { maxAgeMs: session.maxAgeMs, secure: isSecureRequest(req, cookieSecure) }));
-    await audit.record(req.actor, 'owner.password_change');
-    res.json({ csrf: session.csrf });
-  });
-
-  r.post('/sign-out-everywhere', async (req, res) => {
-    await auth.signOutEverywhere();
-    res.set('Set-Cookie', clearSessionCookie({ secure: isSecureRequest(req, cookieSecure) }));
-    await audit.record(req.actor, 'session.sign_out_everywhere');
-    res.status(204).end();
+  // People who can sign in (core's users) and the Teammates role each one gets from their core roles.
+  r.get('/users', async (req, res) => {
+    const users = (await coreAuth.listUsers()).map((u) => ({
+      email: u.email, name: u.fullName || u.email, coreRoles: u.roles ?? [], role: roleFromCore(u.roles), active: u.isActive !== false, lastLogin: u.lastLogin ?? null,
+    }));
+    res.json({ users: users.sort((a, b) => a.name.localeCompare(b.name)) });
   });
 
   return r;

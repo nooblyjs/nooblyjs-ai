@@ -1,12 +1,18 @@
-// Scheduled tasks ("Wren: weekly account briefs every Monday 08:00"). A timer checks every 30 seconds for schedules
+// Scheduled tasks ("Wren: weekly account briefs every Monday 08:00"). Every 30 seconds a check looks for schedules
 // that are due and runs them as ordinary tasks, called by the schedule. Times are in the workspace time zone
 // (Settings, default UTC). A run that was missed while the server was down happens once on the next check; it never
 // catches up run by run.
+//
+// The check is a task on core's scheduling service ("teammates-schedules"), so its beats can be watched, paused,
+// resumed and run on demand from /services/scheduling/. Without core scheduling a plain timer is used.
+import { fileURLToPath } from 'node:url';
 import { HttpError, notFound } from '../util/errors.js';
 import { newId } from '../util/ids.js';
 import { normalizeProject } from './retrieval.js';
 
 const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
+export const CHECK_TASK = 'teammates-schedules';
+const CHECK_ACTIVITY = fileURLToPath(new URL('../core/activities/schedule-tick.cjs', import.meta.url));
 export const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; // ISO order: 1 = Monday … 7 = Sunday
 
 // ---------- Time zone arithmetic (no dependencies: Intl does the work) ----------
@@ -53,8 +59,11 @@ export function describeCadence({ days, time }) {
 }
 
 export class SchedulerService {
-  constructor({ repos, invocation, events = null, webhooks = null, clock = () => Date.now(), log = console, intervalMs = 30000 }) {
+  constructor({ repos, invocation, events = null, webhooks = null, clock = () => Date.now(), log = console, intervalMs = 30000, scheduling = null, metrics = null }) {
     this.repos = repos;
+    this.scheduling = scheduling; // () => core scheduling service
+    this.metrics = metrics;
+    this.ticking = false;
     this.invocation = invocation;
     this.events = events;
     this.webhooks = webhooks;
@@ -65,14 +74,46 @@ export class SchedulerService {
   }
 
   start() {
-    if (this.timer || !this.intervalMs) return;
-    this.timer = setInterval(() => this.tick().catch((err) => this.log.error?.(`[schedule] ${err.message}`)), this.intervalMs);
-    this.timer.unref?.();
+    if (this.timer || this.registered || !this.intervalMs) return;
+    if (!this.scheduling) {
+      this.timer = setInterval(() => this.check(), this.intervalMs);
+      this.timer.unref?.();
+      return;
+    }
+    this.registered = true;
+    const seconds = Math.max(1, Math.round(this.intervalMs / 1000));
+    // The first beat runs straight away, so schedules missed while the server was down run soon after a restart.
+    this.scheduling().start(CHECK_TASK, CHECK_ACTIVITY, { app: 'teammates' }, seconds, (status, data) => {
+      if (!this.registered) return; // a beat that finished after stop()
+      if (status !== 'completed') this.log.warn?.(`[schedule] scheduler beat reported ${status}: ${typeof data === 'string' ? data : JSON.stringify(data)}`);
+      this.check(); // schedules still run if the worker beat itself failed
+    }, { description: 'Starts teammate schedules that are due', group: 'teammates' })
+      .catch((err) => {
+        this.registered = false;
+        this.log.error?.(`[schedule] could not register the schedule check with core scheduling: ${err.message}`);
+      });
   }
 
   stop() {
     clearInterval(this.timer);
     this.timer = null;
+    if (this.registered) {
+      this.registered = false;
+      Promise.resolve(this.scheduling().stop(CHECK_TASK)).catch(() => {});
+    }
+  }
+
+  /** One timed check. Overlapping checks are skipped (each schedule is claimed before it runs, so they would be harmless). */
+  async check() {
+    if (this.ticking) return;
+    this.ticking = true;
+    try {
+      await this.tick();
+    } catch (err) {
+      this.log.error?.(`[schedule] ${err.message}`);
+    } finally {
+      this.ticking = false;
+    }
   }
 
   async timezone() {
@@ -192,7 +233,9 @@ export class SchedulerService {
         caller: { type: 'schedule', id: s.id, name: s.name }, schedule: { id: s.id, name: s.name },
       });
       patch = { lastStatus: result.status === 'awaiting_approval' ? 'awaiting_approval' : 'completed', lastWorkId: result.workId, lastError: undefined };
+      this.metrics?.record('schedule.run');
     } catch (err) {
+      this.metrics?.record('schedule.failed');
       this.log.warn?.(`[schedule] ${s.id} (${s.name}) failed: ${err.message}`);
       patch = { lastStatus: 'failed', lastError: err.message };
       // Failures before the model ran (paused, over the cap…) are only reported here; model failures already were.

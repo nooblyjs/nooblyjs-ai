@@ -47,7 +47,8 @@
 | Sessions | `express-session` with a file-backed store under `data/system/sessions` | No database. |
 | Uploads | `multer` (memory storage, with size limits) | Knowledge uploads. |
 | Provider SDKs | `@anthropic-ai/sdk`, `openai` | Official SDKs. An OpenAI-compatible base URL covers Azure, Ollama and vLLM. |
-| Logging | `pino` | Structured JSON. |
+| Logging | nooblyjs-core `logging` (file provider) | Daily rotating files under `data/logs`, echoed to the console. See §17. |
+| Caching, queueing, events, scheduling, metrics | nooblyjs-core | One service registry shared across the NooblyJS projects, with dashboards under `/services/`. See §17. |
 | Tests | `node:test` and `supertest` | No extra test framework. |
 | Config | `dotenv` | Secrets stay in the environment only. |
 
@@ -466,7 +467,7 @@ All JSON. Errors use `application/problem+json` (`type`, `title`, `status`, `det
 **Example call:**
 
 ```bash
-curl -X POST http://localhost:3000/api/v1/teammates/ada-architect/tasks \
+curl -X POST http://localhost:11202/api/v1/teammates/ada-architect/tasks \
   -H "Authorization: Bearer dtk_…" -H "Content-Type: application/json" \
   -d '{"input":"Propose an integration approach between Orders and Billing.","skill":"adr-authoring","project":"payments-platform"}'
 ```
@@ -492,7 +493,7 @@ Styling uses CSS custom properties in `tokens.css`, light and dark themes via `p
 
 - **Secrets:** provider keys are read only from the environment. `providers.md` stores the *name* of the environment variable.
 - **API keys:** the format is `dtk_<random 32 bytes base62>`, and only a SHA-256 hash is stored in `system/api-keys.md`. Each key is scoped to `teammates: [slugs] | "*"` and `actions: [invoke, read, admin]`.
-- **UI auth:** a session cookie (`httpOnly`, `sameSite=lax`, `secure` behind TLS) and CSRF tokens on state-changing UI calls.
+- **UI auth:** nooblyjs-core's authservice (see §17): a session cookie (`httpOnly`, `sameSite=lax`, `secure` behind TLS) and CSRF tokens on state-changing UI calls; per-IP and per-account sign-in throttling by core.
 - **Path safety:** every path comes from validated slugs and IDs and is resolved, then checked to start with `DATA_DIR`.
 - **Markdown rendering:** sanitized with DOMPurify. Raw HTML in knowledge and memory is never trusted.
 - **Prompt injection:** knowledge and memory are wrapped in clearly delimited sections and labelled as reference data, not instructions. Memory notes written by reflection are size-limited and visible to curators. Because teammates have no tools in v1, the potential damage is limited to what they write in their output.
@@ -503,12 +504,14 @@ Styling uses CSS custom properties in `tokens.css`, light and dark themes via `p
 
 | Env var | Default | Purpose |
 |---------|---------|---------|
-| `PORT` | `3000` | HTTP port. |
+| `PORT` | `11202` | HTTP port. |
 | `DATA_DIR` | `./data` | Root of all state. Seeded from `./seed` on first run. |
-| `SESSION_SECRET` | none (required) | Session signing. |
-| `ADMIN_PASSWORD` | none (required on first run) | Bootstrap admin. |
+| `SESSION_SECRET` | generated | Signs the session cookie and CSRF tokens. |
 | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, … | optional | Provider credentials referenced by `providers.md`. |
-| `LOG_LEVEL` | `info` | pino level. |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`, for the log file and the console. |
+| `LOG_DIR` | `$DATA_DIR/logs` | Log file folder. |
+| `DEFAULT_ADMIN_PASSWORD` | generated | Password of `admin@localhost`, the first account, on first start. |
+| `LOG_CONSOLE` | `all` | Console output: `all` (mirror the log file, core included), `app` or `none`. |
 
 ## 13. Testing strategy
 
@@ -527,6 +530,7 @@ Styling uses CSS custom properties in `tokens.css`, light and dark themes via `p
 | ADR-004 | Reflection runs asynchronously on a configurable, cheaper model. | Synchronous, or the same model. | Keeps response times low and memory upkeep cheap. |
 | ADR-005 | Vanilla JS with Web Components and no build step. | React or Vue. | Matches the requirement and is simple to host and debug. |
 | ADR-006 | One OpenAI-compatible provider covers Azure, Ollama and vLLM. | One adapter per vendor. | Less code. Local models make an economy tier possible. |
+| ADR-007 | Cross-cutting infrastructure (logging, caching, queueing, events, scheduling, metrics) on nooblyjs-core; the Markdown store stays. | Hand-rolled per concern (as before); core `dataservice`/`filing` for storage. | Shared, swappable providers (e.g. Redis) and dashboards across the NooblyJS projects. Files remain the database (ADR-001), so core's storage services are not used. |
 
 ## 15. Risks
 
@@ -553,3 +557,22 @@ The first build follows [`design/teammates-design-brief.md`](design/teammates-de
 | Knowledge retrieval, API keys, retire/archive | Phase 1 | Built in Phases 2–4: retire keeps the folder (no `archive/`); one owner with a session cookie + CSRF; API keys hashed in `system/api-keys.md`, invoke-only; BM25 retrieval over `knowledge/` passages; threads in `threads/`; optional `project` tag filtering knowledge and memory. Work items record `caller`, `thread`, `project`, `skillsUsed`, `knowledgeUsed`, `memoryUsed`. |
 
 Anthropic adapter: `claude-opus-5-5` and `claude-sonnet-5-5` send `output_config.effort` and the server-side refusal fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`). `claude-haiku-4-5` sends neither. The persona and skills form a cached system block. Memory is sent in a second, uncached system block.
+
+## 17. Build notes: nooblyjs-core infrastructure (2026-10-05)
+
+The app runs on the nooblyjs-core service registry (`src/core`). The registry is a process-wide singleton bound to its own Express 4 app (core's routes use patterns Express 5 rejects); `coreRouter()` forwards `/services/*` to it. Each `createApp()` gets its own named service instances (`default` for the first), which keeps the tests, which start several apps per process, isolated. Core's internal logging is pointed at the file logger with `setDefaultProvider('logging', 'file')` before anything is created, so it never writes to stdout.
+
+| Concern | Before | Now |
+|---|---|---|
+| Logging | `console` | `createLogger()` (`src/core/logger.js`): core `logging:file` (`data/logs/app.YYYY-MM-DD.log`, rotated) plus console echo at `LOG_LEVEL`. Credential-like fields are redacted. A caller-supplied `log` (tests) replaces the console echo only. |
+| Document reads | YAML parsed on every `readDoc` | `FsStore` read-through cache on core `caching`, validated by mtime + size (hand edits are seen), invalidated on every write, LRU-bounded to 2,000 documents. Secret-bearing files (`system/*`, `config/webhooks.md`, `config/mcp-servers.md`) are not cached because `/services/caching/` can read cache values. |
+| Webhooks | Delivered inline, no retry | `JobQueue` (`src/core/job-queue.js`) on core `queueing`. `emit()` still resolves with the first attempt. Network errors, timeouts, 429 and 5xx retry after 10 s, 1 min, 5 min with a stable `X-Teammates-Delivery` id. Waiting retries are lost on restart (memory provider). |
+| Live events | `EventEmitter` | `EventBus` on core `notifying`, topic `teammates.events`. |
+| Schedule check | `setInterval` | Core `scheduling` interval task `teammates-schedules` (pause/resume/run-now on its dashboard). Core runs each beat as a worker-thread activity (`src/core/activities/schedule-tick.cjs`); the check itself runs in the main process in the task callback because it needs the repos and providers. Beats are not retried. Falls back to `setInterval` when no core scheduling is passed. |
+| Metrics | none | `Metrics` (`src/core/metrics.js`) on core `measuring`: `task.*`, `webhook.*`, `schedule.*`, `http.request_ms`. The memory provider is trimmed to the newest 1,000 measures per metric; lifetime totals are kept separately. |
+| Ops view | none | `GET /api/admin/system` and **Admin → System**; core dashboards at `/services/`. |
+| Sign-in | Teammates users (`system/users.md`, scrypt), setup code, signed `tm_session` cookie | Core `authservice` (file provider, `data/core/auth/`) for the whole app, as in core's reference `app.js`. Core's `express-session` (`nooblyjs.sid`, path `/`, SameSite=Lax; `FileSessionStore` in `data/core/sessions.json` with hashed session ids so restarts keep people signed in, or core's Redis store when `SESSION_REDIS_URL`/`REDIS_URL` is set) and `passport` run on core's Express app and, via `coreSession()`, on `/api` and `/uploads`; `req.user` (core user) becomes `req.actor` with `roleFromCore()` (`admin`/`owner` → owner, `manager` → manager, else viewer). `/login` redirects to core's login page with `returnUrl`; core calls `GET /api/auth/check`. CSRF token = HMAC(secret, session id). Sign-out: `DELETE /api/session` (Passport logout, session destroy, core token revoked). First start creates `admin@localhost` (`DEFAULT_ADMIN_PASSWORD` or `INITIAL_ADMIN_PASSWORD.txt`, mode 0600, never logged). `prepareAuth()` adds the `owner`/`manager`/`viewer` roles to core. People and roles are managed on core's Authentication dashboard; `/services` itself needs core `admin`. API keys (`dtk_`) for calling teammates are unchanged. `system/users.md` is no longer read. |
+
+Not used: core `dataservice` and `filing` (the Markdown store is the database), `searching` (BM25 retrieval in `retrieval.js` is tuned and tested for passages and skills), `workflow` and `aiservice`.
+
+Known core behaviours worked around here: Express 5's `req.query` getter is lost when core's Express 4 app swaps the request prototype, so `coreRouter()` pins it as an own property; core scheduling does not handle a rejected `working.start()` (e.g. a retry after shutdown), so the check is created with `retryAttempts: 0`.

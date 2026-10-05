@@ -21,6 +21,7 @@
   "dependencies": {
     "express": "^5.2.1",
     "js-yaml": "^4.3.2",
-    "nooblyjs-ai-common": "file:../nooblyjs-ai-common"
+    "nooblyjs-ai-common": "file:../nooblyjs-ai-common",
+    "nooblyjs-core": "file:../../nooblyjs-core"
   }
 }

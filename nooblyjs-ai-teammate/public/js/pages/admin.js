@@ -1,5 +1,5 @@
-// Admin (/admin): API keys for calling teammates, the owner password, sessions and the audit log.
-import { api, ApiError, setCsrf } from '../api.js';
+// Admin (/admin): who can sign in and their roles (managed in nooblyjs-core), API keys for calling teammates, system status and the audit log.
+import { api, ApiError } from '../api.js';
 import { html } from '../html.js';
 import { icons } from '../icons.js';
 import { count } from '../format.js';
@@ -23,87 +23,22 @@ const ACTIONS = {
   'mcp.create': 'Added an MCP server', 'mcp.update': 'Changed an MCP server', 'mcp.delete': 'Deleted an MCP server',
   'schedule.create': 'Added a schedule', 'schedule.update': 'Changed a schedule', 'schedule.delete': 'Deleted a schedule', 'schedule.run': 'Ran a schedule now',
 };
-const ROLE_HELP = { owner: 'Everything, including billing, settings and people', manager: 'Assign and approve work, edit teammates and schedules', viewer: 'Read-only' };
 
+const ROLE_LABEL = { owner: 'Owner', manager: 'Manager', viewer: 'Viewer' };
+
+/** People who can sign in (nooblyjs-core users) and the Teammates role their core roles give them. */
 function usersTable(users, me) {
+  if (!users.length) return html`<p class="help">Nobody can sign in yet.</p>`;
   return html`<div class="table-wrap"><table class="table">
-    <thead><tr><th scope="col">Name</th><th scope="col">Username</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+    <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Teammates role</th><th scope="col">Core roles</th><th scope="col">Last sign-in</th></tr></thead>
     <tbody>${users.map((u) => html`<tr>
-      <td><strong>${u.name}</strong>${u.id === me ? html` <span class="help">(you)</span>` : ''}${u.mustChangePassword ? html`<div class="help">Still on a temporary password</div>` : ''}</td>
-      <td><code>${u.username}</code></td>
-      <td>${u.id === me
-        ? html`${u.role[0].toUpperCase()}${u.role.slice(1)}`
-        : html`<label class="visually-hidden" for="role-${u.id}">Role for ${u.name}</label><select class="form-input form-input-sm" id="role-${u.id}" data-role-for="${u.id}">${['owner', 'manager', 'viewer'].map((r) => html`<option value="${r}" ${r === u.role ? 'selected' : ''}>${r[0].toUpperCase()}${r.slice(1)}</option>`)}</select>`}</td>
-      <td>${u.disabledAt ? html`<span class="status-badge status-revoked">Disabled</span>` : html`<span class="status-badge status-paid">Active</span>`}</td>
-      <td>${u.id === me ? '' : html`<div class="d-flex gap-2">
-        <button type="button" class="btn btn-secondary btn-sm" data-user-action="reset" data-id="${u.id}" data-name="${u.name}">Reset password</button>
-        <button type="button" class="btn btn-secondary btn-sm" data-user-action="${u.disabledAt ? 'enable' : 'disable'}" data-id="${u.id}" data-name="${u.name}">${u.disabledAt ? 'Enable' : 'Disable'}</button>
-      </div>`}</td>
+      <td><strong>${u.name}</strong>${u.email === me ? html` <span class="help">(you)</span>` : ''}${u.active ? '' : html` <span class="status-badge status-revoked">Inactive</span>`}</td>
+      <td><code>${u.email}</code></td>
+      <td>${ROLE_LABEL[u.role]}</td>
+      <td>${u.coreRoles.join(', ') || '—'}</td>
+      <td>${when(u.lastLogin)}</td>
     </tr>`)}</tbody>
   </table></div>`;
-}
-
-/** Shows a temporary password once, with copy. */
-async function showPassword(title, user, password) {
-  await openDialog({
-    title,
-    body: html`<p>Give <strong>${user.name}</strong> their username <code>${user.username}</code> and this temporary password. It is shown once; they choose their own the first time they sign in.</p>
-      <div class="key-reveal"><input class="form-input code-input" id="tmp-pw" readonly value="${password}" aria-label="Temporary password"><button type="button" class="btn btn-secondary" id="tmp-copy">${icons.copy}Copy</button></div>`,
-    footer: html`<button type="button" class="btn btn-primary" data-close>Done</button>`,
-    setup(dialog) {
-      dialog.querySelector('#tmp-pw').select();
-      dialog.querySelector('#tmp-copy').addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(password);
-          toast('Copied');
-        } catch {
-          dialog.querySelector('#tmp-pw').select();
-          toast('Press Ctrl+C (or ⌘C) to copy');
-        }
-      });
-    },
-  });
-}
-
-async function addUser() {
-  let created = null;
-  await openDialog({
-    title: 'Add a person',
-    body: html`
-      <form id="user-form" class="modal-body" style="padding:0" novalidate>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label" for="u-name">Name</label><input class="form-input" id="u-name" name="name" maxlength="60" aria-describedby="err-name"><span class="field-error" id="err-name"></span></div>
-          <div class="form-group"><label class="form-label" for="u-username">Username</label><input class="form-input" id="u-username" name="username" maxlength="40" autocapitalize="none" spellcheck="false" placeholder="e.g. sam" aria-describedby="err-username"><span class="field-error" id="err-username"></span></div>
-        </div>
-        <fieldset><legend class="form-label">Role</legend>
-          ${['viewer', 'manager', 'owner'].map((r) => html`<label class="memory-option"><input class="hidden-radio" type="radio" name="role" value="${r}" ${r === 'viewer' ? 'checked' : ''}><div class="memory-label">${r[0].toUpperCase()}${r.slice(1)}</div><div class="memory-desc">${ROLE_HELP[r]}</div></label>`)}
-        </fieldset>
-      </form>`,
-    footer: html`<button type="button" class="btn btn-secondary" data-close>Cancel</button><button type="submit" form="user-form" class="btn btn-primary">Add person</button>`,
-    setup(dialog) {
-      const form = dialog.querySelector('#user-form');
-      form.elements.name.focus();
-      form.elements.name.addEventListener('input', () => {
-        const u = form.elements.username;
-        if (!u.dataset.touched) u.value = form.elements.name.value.trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9._-]/g, '');
-      });
-      form.elements.username.addEventListener('input', (e) => (e.target.dataset.touched = '1'));
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const f = form.elements;
-        for (const el of form.querySelectorAll('.field-error')) el.textContent = '';
-        try {
-          created = await api.post('/api/admin/users', { name: f.name.value, username: f.username.value, role: f.role.value });
-          dialog.close('created');
-        } catch (err) {
-          if (err instanceof ApiError && err.details) for (const [k, msg] of Object.entries(err.details)) dialog.querySelector(`#err-${k}`)?.replaceChildren(msg);
-          toast(err.message, { error: true });
-        }
-      });
-    },
-  });
-  if (created) await showPassword(`${created.user.name} is added`, created.user, created.password);
-  return Boolean(created);
 }
 
 function keysTable(keys, names) {
@@ -207,22 +142,49 @@ async function createKey(teammates) {
   });
 }
 
+const ms = (v) => (v >= 1000 ? `${(v / 1000).toFixed(1)} s` : `${Math.round(v)} ms`);
+const pct = (part, whole) => (whole ? `${Math.round((part / whole) * 100)}%` : '—');
+const stat = (label, value, note) => html`<div class="stat"><div class="stat-label">${label}</div><div class="stat-value">${value}</div>${note ? html`<div class="help">${note}</div>` : ''}</div>`;
+
+/** nooblyjs-core services: document cache, webhook queue, schedule check and since-start metrics. */
+function systemCard(sys) {
+  if (!sys) return html`<p class="help">System status is not available right now.</p>`;
+  const m = (name) => sys.metrics[name] ?? { count: 0, sum: 0, avg: 0 };
+  const c = sys.cache;
+  const q = sys.webhookQueue;
+  const s = sys.scheduleCheck;
+  const check = s.mode === 'off' ? 'Off' : s.mode === 'timer' ? `Every ${s.intervalSeconds} s` : !s.registered ? 'Not registered' : s.enabled ? `Every ${s.intervalSeconds} s` : 'Paused';
+  const beat = s.lastFinishedAt ? `Last ${when(s.lastFinishedAt)}` : s.mode === 'core' ? 'Waiting for the first check' : '';
+  const delivered = m('webhook.delivered').count;
+  const failed = m('webhook.failed').count;
+  return html`<div class="system-grid">
+    ${stat('Tasks finished', count(m('task.completed').count), `${count(m('task.failed').count)} failed · avg ${ms(m('task.duration_ms').avg)}`)}
+    ${stat('Webhook deliveries', count(delivered + failed), delivered + failed ? `${pct(delivered, delivered + failed)} delivered · ${count(m('webhook.retry_scheduled').count)} retries` : 'None yet')}
+    ${stat('Webhook queue', q ? `${count(q.waiting + q.inFlight)} sending` : '—', q ? `${count(q.retrying)} waiting to retry` : '')}
+    ${stat('Schedule check', check, beat)}
+    ${stat('Document cache', pct(c.hits, c.hits + c.misses), `hit rate · ${count(c.documents)} documents held`)}
+    ${stat('API requests', count(m('http.request_ms').count), `avg ${ms(m('http.request_ms').avg)} · ${count(m('http.server_error').count)} errors`)}
+  </div>`;
+}
+
 export async function render(view, { ctx }) {
   const draw = async () => {
-    const [{ keys }, { entries }, { teammates }, { users }] = await Promise.all([api.get('/api/admin/keys'), api.get('/api/admin/audit?limit=60'), api.get('/api/teammates'), api.get('/api/admin/users')]);
+    const [{ keys }, { entries }, { teammates }, { users }, sys] = await Promise.all([
+      api.get('/api/admin/keys'), api.get('/api/admin/audit?limit=60'), api.get('/api/teammates'), api.get('/api/admin/users'), api.get('/api/admin/system').catch(() => null),
+    ]);
     const names = new Map(teammates.map((t) => [t.id, t.name]));
     const example = teammates[0]?.id ?? 'ada-quill';
     view.innerHTML = String(html`
       <div class="header">
         <div>
           <h1>Admin</h1>
-          <p class="header-subtitle">API keys let other systems call your teammates. Everything you change is recorded in the audit log.</p>
+          <p class="header-subtitle">People and their roles, API keys that let other systems call your teammates, and system status. Everything you change is recorded in the audit log.</p>
         </div>
       </div>
       <div class="admin-stack">
         <section class="card" aria-labelledby="people-h">
-          <div class="card-head"><h2 class="card-title" id="people-h">People</h2><button type="button" class="btn btn-primary" data-action="add-user">${icons.plus}Add person</button></div>
-          <p class="help">Owners can do everything. Managers assign and approve work and edit teammates and schedules. Viewers can only look. Changing someone's role signs them out.</p>
+          <div class="card-head"><h2 class="card-title" id="people-h">People</h2><a class="btn btn-primary" href="${ctx.session?.links?.people ?? '/services/authservice/'}">Manage people</a></div>
+          <p class="help">People sign in with nooblyjs-core. Add them, reset passwords and give roles on its Authentication dashboard (core admins only). A core <code>admin</code> or <code>owner</code> is an owner here (everything, including billing, settings and people); <code>manager</code> assigns and approves work and edits teammates and schedules; anyone else is a viewer (read-only). Role changes apply straight away.</p>
           ${usersTable(users, ctx.session?.user?.id)}
         </section>
 
@@ -239,18 +201,10 @@ export async function render(view, { ctx }) {
   -d '{"task": "Summarise the support themes from this week", "project": "acme"}'</pre>
         </section>
 
-        <section class="card" aria-labelledby="pw-h">
-          <h2 class="card-title" id="pw-h">Password &amp; sessions</h2>
-          <form id="pw-form" class="form-row" novalidate>
-            <div class="form-group"><label class="form-label" for="pw-current">Current password</label><input class="form-input" id="pw-current" name="current" type="password" autocomplete="current-password" aria-describedby="err-current"><span class="field-error" id="err-current"></span></div>
-            <div class="form-group"><label class="form-label" for="pw-next">New password</label><input class="form-input" id="pw-next" name="next" type="password" autocomplete="new-password" aria-describedby="err-next"><span class="field-error" id="err-next"></span></div>
-            <div class="form-group"><label class="form-label" for="pw-confirm">Confirm new password</label><input class="form-input" id="pw-confirm" name="confirm" type="password" autocomplete="new-password" aria-describedby="err-confirm"><span class="field-error" id="err-confirm"></span></div>
-          </form>
-          <div class="button-group admin-actions">
-            <button type="submit" form="pw-form" class="btn btn-primary">Change password</button>
-            <button type="button" class="btn btn-secondary" data-action="sign-out-everywhere">Sign out everywhere</button>
-            <span class="help">Changing the password signs out every other browser.</span>
-          </div>
+        <section class="card" aria-labelledby="system-h">
+          <div class="card-head"><h2 class="card-title" id="system-h">System</h2><a class="btn btn-secondary" href="/services/" target="_blank" rel="noopener">Service dashboards</a></div>
+          <p class="help">Logging, caching, queueing, scheduling and metrics run on nooblyjs-core. Figures are since the server started${sys ? html`; logs are written to <code>${sys.logs.dir}</code>` : ''}. The service dashboards are for core admins.</p>
+          ${systemCard(sys)}
         </section>
 
         <section class="card" aria-labelledby="audit-h">
@@ -258,64 +212,13 @@ export async function render(view, { ctx }) {
           ${auditTable(entries)}
         </section>
       </div>`);
-
-    view.querySelector('#pw-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const f = form.elements;
-      for (const el of form.querySelectorAll('.field-error')) el.textContent = '';
-      const errors = {};
-      if (!f.current.value) errors.current = 'Enter your current password';
-      if (f.next.value.length < 10) errors.next = 'At least 10 characters';
-      if (f.confirm.value !== f.next.value) errors.confirm = 'The passwords do not match';
-      if (Object.keys(errors).length) {
-        for (const [k, msg] of Object.entries(errors)) form.querySelector(`#err-${k}`).textContent = msg;
-        return;
-      }
-      try {
-        const { csrf } = await api.post('/api/admin/password', { current: f.current.value, next: f.next.value });
-        ctx.session.csrf = csrf;
-        setCsrf(csrf);
-        form.reset();
-        toast('Password changed. Other browsers have been signed out.');
-        await draw();
-      } catch (err) {
-        if (err instanceof ApiError && err.details) for (const [k, msg] of Object.entries(err.details)) form.querySelector(`#err-${k}`)?.replaceChildren(msg);
-        toast(err.message, { error: true });
-      }
-    });
-  };
-
-  view.onchange = async (e) => {
-    const select = e.target.closest('[data-role-for]');
-    if (!select) return;
-    try {
-      await api.patch(`/api/admin/users/${select.dataset.roleFor}`, { role: select.value });
-      toast('Role changed. They sign in again to use it.');
-    } catch (err) {
-      toast(err.message, { error: true });
-    }
-    await draw();
   };
 
   view.onclick = async (e) => {
-    const btn = e.target.closest('[data-action], [data-revoke], [data-user-action]');
+    const btn = e.target.closest('[data-action], [data-revoke]');
     if (!btn) return;
     try {
-      const ua = btn.dataset.userAction;
-      if (btn.dataset.action === 'add-user') {
-        if (await addUser()) await draw();
-      } else if (ua === 'reset') {
-        if (!(await confirmDialog({ title: `Reset ${btn.dataset.name}'s password?`, message: 'They are signed out everywhere and get a new temporary password.', confirmLabel: 'Reset password' }))) return;
-        const { user, password } = await api.post(`/api/admin/users/${btn.dataset.id}/reset-password`);
-        await showPassword('New temporary password', user, password);
-        await draw();
-      } else if (ua === 'disable' || ua === 'enable') {
-        if (ua === 'disable' && !(await confirmDialog({ title: `Disable ${btn.dataset.name}?`, message: 'They are signed out and can’t sign in until you enable them again. Their history stays.', confirmLabel: 'Disable' }))) return;
-        await api.patch(`/api/admin/users/${btn.dataset.id}`, { disabled: ua === 'disable' });
-        toast(ua === 'disable' ? 'Disabled' : 'Enabled');
-        await draw();
-      } else if (btn.dataset.action === 'create-key') {
+      if (btn.dataset.action === 'create-key') {
         const { teammates } = await api.get('/api/teammates');
         await createKey(teammates);
         await draw();
@@ -325,11 +228,6 @@ export async function render(view, { ctx }) {
         await api.del(`/api/admin/keys/${btn.dataset.revoke}`);
         toast('Key revoked');
         await draw();
-      } else if (btn.dataset.action === 'sign-out-everywhere') {
-        const ok = await confirmDialog({ title: 'Sign out everywhere?', message: 'Every browser, including this one, will need the password again. API keys keep working.', confirmLabel: 'Sign out everywhere' });
-        if (!ok) return;
-        await api.post('/api/admin/sign-out-everywhere');
-        ctx.signedOutEverywhere();
       }
     } catch (err) {
       toast(err.message, { error: true });
@@ -340,7 +238,6 @@ export async function render(view, { ctx }) {
   return {
     cleanup: () => {
       view.onclick = null;
-      view.onchange = null;
     },
   };
 }

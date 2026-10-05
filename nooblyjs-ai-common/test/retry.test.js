@@ -20,7 +20,7 @@ test('backoffDelay doubles each time and respects the cap and retry-after', () =
   const noJitter = { random: () => 0 };
   assert.deepEqual([1, 2, 3, 4].map((n) => backoffDelay(n, noJitter)), [500, 1000, 2000, 4000]);
   assert.equal(backoffDelay(20, noJitter), 20_000);
-  assert.equal(backoffDelay(1, { retryAfterMs: 3000 }), 3000);
+  assert.equal(backoffDelay(1, { retryAfterMs: 11202 }), 11202);
 });
 
 test('withRetry retries a failure that happens before any event', async () => {

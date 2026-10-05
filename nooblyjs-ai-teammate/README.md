@@ -4,14 +4,16 @@
 
 - Node.js + Express backend, plain HTML/CSS/JavaScript front end (no build step)
 - All data is stored as **Markdown files in folders**. There is no database.
+- Logging, caching, queueing, live events, scheduling and metrics run on [nooblyjs-core](https://github.com/nooblyjs/nooblyjs-core), with its service dashboards at `/services/`
 - Specs: [`.claude/specs`](.claude/specs) (PRD, architecture, roadmap, UI design brief)
 
 ## Run it
 
 ```bash
 git clone https://github.com/nooblyjs/nooblyjs-ai-common.git ../nooblyjs-ai-common   # shared model catalogue and pricing, linked as a file: dependency
+git clone https://github.com/nooblyjs/nooblyjs-core.git ../../nooblyjs-core          # service registry (logging, caching, queueing…), also a file: dependency
 npm install
-npm start            # http://127.0.0.1:3000
+npm start            # http://127.0.0.1:11202
 npm test             # node:test suite (offline, mock provider)
 npm run smoke:live   # one real task each on Haiku, Sonnet and Opus (needs ANTHROPIC_API_KEY; costs a few cents)
 ```
@@ -26,31 +28,45 @@ cp .env.example .env   # then set ANTHROPIC_API_KEY=...
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `PORT` / `HOST` | `3000` / `127.0.0.1` | Where to listen |
+| `PORT` / `HOST` | `11202` / `127.0.0.1` | Where to listen |
 | `DATA_DIR` | `./data` | Root of the Markdown workspace |
 | `ANTHROPIC_API_KEY` | (none) | Enables real Claude calls |
 | `ANTHROPIC_AUTH_TOKEN` | (none) | A bearer token instead of an API key |
 | `ANTHROPIC_BASE_URL` | `https://api.anthropic.com` | Send Claude calls through a gateway |
 | `AI_PROVIDER` | (auto) | `mock` forces offline mode. `anthropic` insists on real calls and stops at startup without a key or token. |
-| `OWNER_PASSWORD` | (none) | Sets the owner password on first start (only if none is set yet). Without it, see "Sign in" below. |
-| `SESSION_SECRET` | (generated) | Signs session cookies. If unset, a secret is generated and kept in `data/system/session-secret.md`. |
+| `DEFAULT_ADMIN_PASSWORD` | (generated) | Password for `admin@localhost` when nooblyjs-core creates it on first start. Otherwise one is generated into `data/core/auth/INITIAL_ADMIN_PASSWORD.txt`. |
+| `SESSION_SECRET` | (generated) | Signs the session cookie and CSRF tokens. If unset, a secret is generated and kept in `data/system/session-secret.md`. |
 | `COOKIE_SECURE` | `false` | `true` adds `Secure` to the session cookie (use behind HTTPS). |
+| `LOGIN_RATE_LIMIT_MAX` | `10` | nooblyjs-core: sign-in attempts per IP per 15 minutes. An account is also locked for 15 minutes after 5 wrong passwords. |
 | `TRUST_PROXY` | (none) | Express `trust proxy` setting when running behind a reverse proxy. |
 | `ALLOW_PRIVATE_FETCH` | `false` | `true` lets the `fetch_url` tool reach private and local addresses (for intranet pages). Off by default. |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`, for the log file and the console. `debug` adds one line per API request. |
+| `LOG_CONSOLE` | `all` | What the console shows: `all` (every log file line, nooblyjs-core's services included), `app` (only the app's own messages) or `none`. |
+| `LOG_DIR` | `$DATA_DIR/logs` | Where the daily log files go (`app.YYYY-MM-DD.log`, rotated at 10 MB, 5 kept). |
 
 ## Sign in and roles
 
-People sign in with a username and password. There are three roles: **Owner** (everything, including billing, settings and people), **Manager** (assign and approve work, edit teammates, their tools and schedules) and **Viewer** (read-only). Owners add people under **Admin → People**; each new person gets a temporary password, shown once, and chooses their own when they first sign in (from their name in the sidebar).
+Signing in is done by [nooblyjs-core](https://github.com/nooblyjs/nooblyjs-core)'s **authservice**. Opening the app signed out takes you to its login page (`/services/authservice/views/login.html`), which brings you back to the page you wanted once you have signed in. One session (the `nooblyjs.sid` cookie) covers the app and the `/services` dashboards.
 
-The first account is the owner. On the first start the server prints a one-time **setup code** in the terminal:
+On the first start, core creates the account **`admin@localhost`** and the server says where its password is:
 
 ```
-[auth] First run: open the app and enter setup code ZEQB-GA28 to choose the owner password.
+Sign in at http://127.0.0.1:11202/login as admin@localhost (password in …/data/core/auth/INITIAL_ADMIN_PASSWORD.txt (generated on first start; …))
 ```
 
-Open the app, enter the code and choose a password (at least 10 characters). After that, sign in with the owner's username (the owner id in `config/settings.md`, `stevie` in the seed) or leave the username empty, and the password. Alternatively set `OWNER_PASSWORD` in `.env` before the first start.
+The password is `DEFAULT_ADMIN_PASSWORD` if you set it before the first start; otherwise a generated one is written to that file (readable only by you, never logged). Sign in, change it on your profile page (your name in the sidebar → **Change password**), then delete the file.
 
-**Admin** (in the sidebar) is where you create and revoke API keys, change the password, sign out every browser, and read the audit log (`data/system/audit/YYYY-MM.md`).
+People, passwords and roles are managed on core's **Authentication** dashboard (`/services/authservice/`, for core admins; **Admin → People → Manage people**). Their core roles decide what they can do here:
+
+| Core role | Teammates role | Can |
+|---|---|---|
+| `admin` or `owner` | **Owner** | Everything, including billing, settings, people and API keys. Only core `admin`s can open the `/services` dashboards. |
+| `manager` | **Manager** | Assign and approve work, edit teammates, their tools and schedules |
+| anything else (`user`, `guest`, `viewer`) | **Viewer** | Read-only |
+
+Role changes apply straight away. **Admin → People** lists everyone who can sign in and their role. Core's users and roles are kept in `data/core/auth/`. Sign-in sessions are kept in `data/core/sessions.json` (session ids hashed, readable only by the server's user), so restarting the server doesn't sign anyone out; with `SESSION_REDIS_URL` or `REDIS_URL` set they go to Redis instead.
+
+**Admin** (in the sidebar) is also where you create and revoke API keys and read the audit log (`data/system/audit/YYYY-MM.md`, which records sign-ins and sign-outs too).
 
 ## Call a teammate
 
@@ -58,17 +74,17 @@ Other systems call teammates with an **API key**. Create one under Admin: it is 
 
 ```bash
 # JSON response
-curl -s localhost:3000/api/teammates/ada-quill/tasks \
+curl -s localhost:11202/api/teammates/ada-quill/tasks \
   -H "Authorization: Bearer dtk_…" -H 'Content-Type: application/json' \
   -d '{"task":"Summarise the three biggest risks in our Q4 competitor scan","costCentre":"Growth","project":"acme"}'
 
 # Streamed (Server-Sent Events: start, delta, memory, done | error)
-curl -N localhost:3000/api/teammates/ada-quill/tasks \
+curl -N localhost:11202/api/teammates/ada-quill/tasks \
   -H "Authorization: Bearer dtk_…" -H 'Content-Type: application/json' -H 'Accept: text/event-stream' \
   -d '{"task":"Draft an opening line for Acme Corp"}'
 
 # Follow up on earlier work: pass the "thread" from the previous response
-curl -s localhost:3000/api/teammates/ada-quill/tasks \
+curl -s localhost:11202/api/teammates/ada-quill/tasks \
   -H "Authorization: Bearer dtk_…" -H 'Content-Type: application/json' \
   -d '{"task":"Now cut it to three bullets","thread":"thr_…"}'
 ```
@@ -100,7 +116,7 @@ Each call goes through these steps:
 
 **Schedules.** On a profile, **Schedules** runs a task on chosen days at a time in the workspace time zone (Settings). Scheduled runs appear in the timeline and timesheets like any task; work over an approval threshold waits for approval.
 
-**Webhooks.** **Settings → Webhooks** sends events (`task.completed`, `task.failed`, `approval.requested`, `action.requested`, `teammate.message`, `budget.*`, `cap.*`) to any number of endpoints, each with its own signing secret. A Phase 5 alert webhook is moved there automatically.
+**Webhooks.** **Settings → Webhooks** sends events (`task.completed`, `task.failed`, `approval.requested`, `action.requested`, `teammate.message`, `budget.*`, `cap.*`) to any number of endpoints, each with its own signing secret. A Phase 5 alert webhook is moved there automatically. Deliveries are queued; one that fails with a network error, a timeout, `429` or a `5xx` is retried after 10 seconds, 1 minute and 5 minutes (a `4xx` is not retried). Retries carry the same body and the same `X-Teammates-Delivery` id, plus `X-Teammates-Attempt`, so receivers can drop duplicates. Retries still waiting when the server stops are not kept.
 
 **Month close.** Billing → Invoices → **Close a month** turns the month's approved time into an invoice (`invoices/INV-nnnn.md`, line items in the body). Pending time blocks the close unless you choose to leave it out. An open invoice can be regenerated under the same number; a paid one is final until marked unpaid. Invoices download as PDF or CSV; the CSV uses the same columns as the billing export, so the two match row for row.
 
@@ -128,25 +144,46 @@ data/
 ├── config/webhooks.md          # webhook endpoints, their events and signing secrets
 ├── config/mcp-servers.md       # MCP servers teammates may be allowed to use (header values are secrets)
 ├── drafts/<draft>.md           # saved hire drafts
-├── system/                     # users.md (people, roles, password hashes), api-keys.md (key hashes), audit/YYYY-MM.md, alerts.md
-└── uploads/                    # uploaded avatar images (PNG/JPEG/WebP)
+├── system/                     # api-keys.md (key hashes), session-secret.md, audit/YYYY-MM.md, alerts.md
+├── uploads/                    # uploaded avatar images (PNG/JPEG/WebP)
+├── core/auth/                  # nooblyjs-core sign-in: users.json (people, password hashes, roles), roles.json, INITIAL_ADMIN_PASSWORD.txt (first run)
+├── core/sessions.json          # sign-in sessions, kept across restarts
+└── logs/                       # app.YYYY-MM-DD.log (unless LOG_DIR is set; not workspace data, leave it out of git)
 ```
 
 Writes are atomic (temp file, fsync, rename) and serialized per file, so the folder is safe to back up or put under git.
 
+## Infrastructure (nooblyjs-core)
+
+The app runs on the [nooblyjs-core](https://github.com/nooblyjs/nooblyjs-core) service registry ([`src/core`](src/core)):
+
+| Service | Used for |
+|---|---|
+| Logging (`file`) | Every log line, including core's own service messages, goes to `data/logs/app.YYYY-MM-DD.log`. The console shows the same lines (`LOG_CONSOLE=app` limits it to the app's own messages). Credentials in logged fields are redacted. |
+| Caching (`memory`) | Parsed Markdown documents. A cached copy is used while the file's modification time and size are unchanged, so files you edit by hand are picked up on the next read. Files holding secrets (`system/`, `config/webhooks.md`, `config/mcp-servers.md`) are never cached. |
+| Queueing (`memory`) | Webhook deliveries and their retries. |
+| Notifying (`memory`) | Live events for open browser tabs (`/api/events`), on the `teammates.events` topic. |
+| Scheduling (`memory`) | The schedule check, every 30 seconds, as the `teammates-schedules` task. It can be paused, resumed or run on demand from its dashboard; while it is paused, schedules don't run. |
+| Measuring (`memory`) | Task counts, durations, tokens and amounts; webhook deliveries and retries; API request times. |
+
+Each service has a dashboard and REST API under **`/services/`** (also linked from **Admin → System → Service dashboards**). They need a signed-in core `admin` (see [Sign in and roles](#sign-in-and-roles)); only `…/status` health checks are public.
+
+**Admin → System** summarises the cache, the webhook queue, the schedule check and the metrics since the server started.
+
+Core's memory providers keep their state in the server process, so the cache, queue, metrics, event history and the Logging dashboard's counts start empty after a restart (the log files keep everything); the workspace itself is always the Markdown files.
+
 ## API
 
-Everything except calling a teammate (and checking on a task you started) needs a signed-in session cookie (viewers can read; changes need a manager; billing administration, settings, webhooks, MCP servers and people need an owner), plus the `X-CSRF-Token` header (from `GET /api/session` or the sign-in response) on changes.
+Everything except calling a teammate (and checking on a task you started) needs a signed-in session cookie (viewers can read; changes need a manager; billing administration, settings, webhooks, MCP servers and people need an owner), plus the `X-CSRF-Token` header (from `GET /api/session`) on changes. Sessions come from signing in on core's login page (or `POST /services/authservice/api/login` with `{ email, password }`).
 
 | Method | Path | |
 |---|---|---|
-| GET / POST / DELETE | `/api/session` | Session state (`authenticated`, `setupRequired`, `csrf`) / sign in `{ password }` / sign out |
-| POST | `/api/session/setup` | First run: `{ code, password }` |
-| GET / POST / PATCH | `/api/admin/users[/:id]` | People: list / add `{ username, name, role }` (returns a temporary password once) / change `{ name, role, disabled }` |
-| POST | `/api/admin/users/:id/reset-password`, `/api/session/password` | New temporary password for someone / change your own `{ current, next }` |
+| GET / DELETE | `/api/session` | Who is signed in (`authenticated`, `user`, `csrf`, `links` to core's sign-in, profile and people pages) / sign out (`{ token? }`: core's bearer token, also revoked) |
+| GET | `/api/auth/check` | `{ authenticated }`, for core's login page |
+| GET | `/api/admin/users` | People who can sign in (core users) with their core roles and Teammates role |
 | GET / POST / DELETE | `/api/admin/keys[/:id]` | List / create `{ name, teammates: "*" \| [ids], rateLimit }` / revoke API keys |
 | GET | `/api/admin/audit` | Audit log (latest first) |
-| POST | `/api/admin/password`, `/api/admin/sign-out-everywhere` | Change the password / end every session |
+| GET | `/api/admin/system` | nooblyjs-core status: document cache, webhook queue, schedule check, metrics |
 | GET | `/api/meta` | Owner, models, cost centres, skill library, projects in use, sidebar budget |
 | GET / POST | `/api/teammates/:id/knowledge` | Knowledge documents / add `{ title, content, project?, filename? }` (.md/.txt text) |
 | GET / PATCH / DELETE | `/api/teammates/:id/knowledge/:docId` | One document with its text / edit / delete |
