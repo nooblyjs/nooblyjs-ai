@@ -5,7 +5,7 @@
 ```bash
 factory dashboard                 # on its own…
 factory serve --dashboard         # …or next to the scheduler, in one process
-# Dashboard: http://127.0.0.1:8788/#token=…     ← open this link
+# Dashboard: http://127.0.0.1:11203/#token=…     ← open this link
 ```
 
 ---

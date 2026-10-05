@@ -30,7 +30,7 @@ Everything you can type, configure or read, in one place. The **why** is in the 
 | `factory run retry <run> [--from <station>]` | run a finished or interrupted run again, from a station | F05, F07 |
 | `factory submit <issue.md>… --repo <path> [--priority high\|low\|n]` | queue items for `serve` (same options as `run`) | F06 |
 | `factory serve [--until-idle]` | the scheduler: runs the queue | F06 |
-| `  --dashboard [--port 8788]` · `--webhooks` · `--workers [--workers-port 8790]` | the dashboard, GitHub webhooks, remote workers, in the same process | F17, F15, F23 |
+| `  --dashboard [--port 11203]` · `--webhooks` · `--workers [--workers-port 8790]` | the dashboard, GitHub webhooks, remote workers, in the same process | F17, F15, F23 |
 | `factory campaign create --spec c.md --repos a,b [--repos-file f]` · `status [id]` · `list` | one change across many repos | F25 |
 | `factory init <repo> [--agent]` | draft steering and repo config, as a PR | F08 |
 | `factory agent "<prompt>" [--repo <path>]` | one agent, optionally in a fresh workspace (for experiments) | F01, F02 |
@@ -41,7 +41,7 @@ Everything you can type, configure or read, in one place. The **why** is in the 
 |---|---|---|
 | `factory status` | what's running, what's waiting and **why**, spend today | F06 |
 | `factory runs` · `logs <run>` · `events [--run <id>]` | runs; one run's story; the raw event log | F05 |
-| `factory dashboard [--port 8788]` | the dashboard (prints a link with its token) | F17 |
+| `factory dashboard [--port 11203]` | the dashboard (prints a link with its token) | F17 |
 | `factory inbox` · `approve <id>` · `reject <id> --feedback "…"` · `answer <id> "…"` (`--now` to continue in this terminal) | what's waiting for a person | F12 |
 | `factory pause <run>` · `resume <run>` · `cancel <run>` | one run | F06, F07 |
 | `factory stop-all` · `resume-all` | the red button | F06 |
@@ -197,7 +197,7 @@ All bind to `127.0.0.1` unless told otherwise.
 
 | Server | Port | Auth | Endpoints |
 |---|---|---|---|
-| dashboard (F17) | 8788 | token (the link's `#token=`) as `Authorization: Bearer` or `X-Factory-Token` (the dashboard's own; survives proxies like Cloud Shell's web preview); POSTs header-only | `GET /api/status` `/api/runs` `/api/runs/:id` `/api/inbox` `/api/metrics` `/api/campaigns` `/api/events` (SSE) · `POST /api/inbox/:id` `/api/runs/:id/{cancel,pause,resume,retry}` `/api/stop-all` `/api/resume-all` |
+| dashboard (F17) | 11203 | token (the link's `#token=`) as `Authorization: Bearer` or `X-Factory-Token` (the dashboard's own; survives proxies like Cloud Shell's web preview); POSTs header-only | `GET /api/status` `/api/runs` `/api/runs/:id` `/api/inbox` `/api/metrics` `/api/campaigns` `/api/events` (SSE) · `POST /api/inbox/:id` `/api/runs/:id/{cancel,pause,resume,retry}` `/api/stop-all` `/api/resume-all` |
 | webhooks (F15, F18) | 8787 | HMAC signature | `POST /webhooks/github` (issues, pull_request, pull_request_review, issue_comment) |
 | workers (F23) | 8790 | enrollment token, then per-worker tokens | `POST /worker/register` `/worker/lease` `/worker/heartbeat` `/worker/events` `/worker/complete` `/worker/fail` |
 

@@ -114,7 +114,7 @@ export async function serveCommand(argv) {
   // Phase F17: the dashboard, in this process.
   let board = null;
   if (values.dashboard) {
-    board = await startDashboard({ store, port: Number(values.port ?? 8788) });
+    board = await startDashboard({ store, port: Number(values.port ?? 11203) });
     say(`dashboard: ${board.url}`);
   }
 

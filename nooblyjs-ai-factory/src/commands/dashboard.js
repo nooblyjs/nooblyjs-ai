@@ -1,5 +1,5 @@
 // @ts-check
-// Phase F17: `factory dashboard [--port 8788]`. The dashboard on its own
+// Phase F17: `factory dashboard [--port 11203]`. The dashboard on its own
 // (`factory serve --dashboard` runs it next to the scheduler instead).
 //
 // It prints a URL with the token in its fragment: open that. Anyone with the token can
@@ -33,7 +33,7 @@ export function dashboardToken(env = process.env) {
  * @param {{ store: import('../store/events.js').Store, port?: number, env?: NodeJS.ProcessEnv, extra?: any[], noAuth?: boolean }} options
  *   noAuth: anyone who can reach 127.0.0.1:port is the operator. For testing only.
  */
-export async function startDashboard({ store, port = 8788, env = process.env, extra = [], noAuth = false }) {
+export async function startDashboard({ store, port = 11203, env = process.env, extra = [], noAuth = false }) {
   const token = noAuth ? '' : dashboardToken(env);
   const routes = apiRoutes({ store, env, extra });
   const server = noAuth
@@ -52,7 +52,7 @@ export async function dashboardCommand(argv) {
   const { values } = parseArgs({ args: argv, options: { port: { type: 'string' }, 'no-auth': { type: 'boolean' } } });
   const store = openStore();
   const noAuth = values['no-auth'] ?? false;
-  const { url } = await startDashboard({ store, port: Number(values.port ?? 8788), noAuth });
+  const { url } = await startDashboard({ store, port: Number(values.port ?? 11203), noAuth });
   if (noAuth) console.log(`Dashboard: ${url}\n(NO TOKEN: anything on this machine can use it, including "Stop all". Testing only. Ctrl+C to stop)`);
   else console.log(`Dashboard: ${url}\n(only on this machine; the token is in the link. Ctrl+C to stop)`);
   await new Promise((resolve) => process.once('SIGINT', resolve));
