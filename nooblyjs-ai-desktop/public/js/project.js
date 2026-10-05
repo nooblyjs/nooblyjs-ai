@@ -2,6 +2,7 @@ import { api, toast, renderRelativeTimes } from './lib/api.js';
 import { renderMarkdown } from './lib/markdown.js';
 import { wireModelPicker } from './lib/modelPicker.js';
 import { createDocTree } from './lib/docTree.js';
+import { mountChat } from './lib/chatPanel.js';
 
 const root = document.querySelector('[data-project-id]');
 const projectId = root.dataset.projectId;
@@ -358,7 +359,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 window.addEventListener('beforeunload', (event) => {
-  if (!dirty) return;
+  if (!dirty && !openChat?.panel.isStreaming()) return;
   event.preventDefault();
   event.returnValue = '';
 });
@@ -378,14 +379,131 @@ document.querySelector('[data-delete-project]')?.addEventListener('click', async
   }
 });
 
-document.querySelector('.chat-list')?.addEventListener('click', async (event) => {
+/* ---- chats: expand in place ----------------------------------------- */
+
+const chatList = document.querySelector('[data-chat-list]');
+const noChats = document.querySelector('[data-no-chats]');
+const chatTemplate = document.querySelector('[data-chat-template]');
+const chatItemTemplate = document.querySelector('[data-chat-item-template]');
+
+/** The one chat currently expanded: { item, panel } */
+let openChat = null;
+
+function chatItem(id) {
+  return chatList.querySelector(`.chat-item[data-chat-id="${CSS.escape(id)}"]`);
+}
+
+function updateChatCount() {
+  const n = chatList.children.length;
+  noChats.hidden = n > 0;
+  document.querySelector('[data-chat-count]').textContent = `${n} ${n === 1 ? 'chat' : 'chats'}`;
+}
+
+function setChatParam(id) {
+  const url = new URL(window.location.href);
+  if (id) url.searchParams.set('chat', id);
+  else url.searchParams.delete('chat');
+  window.history.replaceState(null, '', url);
+}
+
+/** Collapses the open chat. Returns false if the user kept a reply streaming. */
+function closeChat() {
+  if (!openChat) return true;
+  if (openChat.panel?.isStreaming() && !window.confirm('A reply is still coming in. Stop it?')) {
+    return false;
+  }
+  const { item, panel } = openChat;
+  openChat = null;
+  panel?.destroy();
+  item.classList.remove('is-open');
+  item.querySelector('[data-chat-toggle]').setAttribute('aria-expanded', 'false');
+  item.querySelector('[data-chat-panel]').hidden = true;
+  setChatParam(null);
+  return true;
+}
+
+async function openChatItem(item) {
+  if (!closeChat()) return;
+  const id = item.dataset.chatId;
+  const slot = item.querySelector('[data-chat-panel]');
+  const state = { item, panel: null };
+  openChat = state;
+
+  item.classList.add('is-open');
+  item.querySelector('[data-chat-toggle]').setAttribute('aria-expanded', 'true');
+  slot.hidden = false;
+  slot.innerHTML = '<p class="text-muted fst-italic small py-3 mb-0">Loading…</p>';
+  setChatParam(id);
+
+  try {
+    const panel = await mountChat(slot, {
+      projectId,
+      chatId: id,
+      template: chatTemplate,
+      onTitle: (chat) => {
+        item.querySelector('[data-chat-title]').textContent = chat.title;
+        item.querySelector('[data-delete-chat]').dataset.title = chat.title;
+      },
+      onActivity: () => refreshChatSummary(item)
+    });
+    // Closed (or another chat opened) while loading.
+    if (openChat !== state) return panel.destroy();
+    state.panel = panel;
+    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  } catch (err) {
+    toast(err.message);
+    if (openChat === state) closeChat();
+  }
+}
+
+/** Updates a row's preview and meta line after a turn. */
+async function refreshChatSummary(item) {
+  try {
+    const { chats } = await api('GET', `/api/projects/${projectId}/chats`);
+    const c = chats.find((x) => x.id === item.dataset.chatId);
+    if (!c) return;
+    item.querySelector('[data-chat-title]').textContent = c.title;
+    const preview = item.querySelector('[data-chat-preview]');
+    preview.textContent = c.preview || '';
+    preview.hidden = !c.preview;
+
+    const meta = item.querySelector('[data-chat-meta]');
+    const time = document.createElement('span');
+    time.dataset.relativeTime = c.updatedAt;
+    time.textContent = c.updatedAt.slice(0, 10);
+    meta.replaceChildren(
+      `${c.messageCount} ${c.messageCount === 1 ? 'message' : 'messages'}${c.model ? ` · ${c.model}` : ''} · `,
+      time
+    );
+    renderRelativeTimes();
+  } catch {
+    // The row is only a summary; the transcript itself is already current.
+  }
+}
+
+chatList.addEventListener('click', async (event) => {
+  const toggle = event.target.closest('[data-chat-toggle]');
+  if (toggle) {
+    const item = toggle.closest('.chat-item');
+    if (openChat?.item === item) closeChat();
+    else openChatItem(item);
+    return;
+  }
+
   const button = event.target.closest('[data-delete-chat]');
   if (!button) return;
   const { deleteChat: id, title } = button.dataset;
   if (!window.confirm(`Delete chat "${title}"?`)) return;
   try {
+    const item = button.closest('.chat-item');
+    if (openChat?.item === item) {
+      openChat.panel?.destroy();
+      openChat = null;
+      setChatParam(null);
+    }
     await api('DELETE', `/api/projects/${projectId}/chats/${id}`);
-    button.closest('.chat-item').remove();
+    item.remove();
+    updateChatCount();
     toast('Chat deleted');
   } catch (err) {
     toast(err.message);
@@ -393,9 +511,21 @@ document.querySelector('.chat-list')?.addEventListener('click', async (event) =>
 });
 
 document.querySelector('[data-new-chat]')?.addEventListener('click', async () => {
+  if (!closeChat()) return;
   try {
     const { chat } = await api('POST', `/api/projects/${projectId}/chats`, {});
-    window.location.href = `/projects/${projectId}/chats/${chat.id}`;
+    const item = chatItemTemplate.content.firstElementChild.cloneNode(true);
+    item.dataset.chatId = chat.id;
+    item.querySelector('[data-chat-title]').textContent = chat.title;
+    item.querySelector('[data-chat-toggle]').setAttribute('aria-controls', `chat-panel-${chat.id}`);
+    item.querySelector('[data-chat-panel]').id = `chat-panel-${chat.id}`;
+    Object.assign(item.querySelector('[data-delete-chat]').dataset, { deleteChat: chat.id, title: chat.title });
+    item.querySelector('[data-relative-time]').dataset.relativeTime = chat.createdAt;
+
+    chatList.append(item);
+    updateChatCount();
+    renderRelativeTimes();
+    await openChatItem(item);
   } catch (err) {
     toast(err.message);
   }
@@ -406,6 +536,13 @@ document.querySelector('[data-new-chat]')?.addEventListener('click', async () =>
 (async () => {
   await refreshTree();
   // `?doc=` opens straight into a document, so a chat can link to one.
-  const wanted = new URLSearchParams(window.location.search).get('doc');
+  const params = new URLSearchParams(window.location.search);
+  // `?chat=` opens a chat in place; old chat links redirect here with it.
+  const chatId = params.get('chat');
+  const item = chatId && chatItem(chatId);
+  if (item) openChatItem(item);
+  else if (chatId) setChatParam(null);
+
+  const wanted = params.get('doc');
   if (wanted) await openDocument(wanted);
 })();

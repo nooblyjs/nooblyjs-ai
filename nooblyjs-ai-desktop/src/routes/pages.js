@@ -46,39 +46,10 @@ router.get('/projects/:projectId/documents', asyncHandler(async (req, res) => {
   res.render('documents', { title: `${project.name} · Documents`, project });
 }));
 
-router.get('/projects/:projectId/chats/:chatId', asyncHandler(async (req, res) => {
-  const project = await projectService.get(req.params.projectId);
-  const [chat, chats, providers, settings] = await Promise.all([
-    chatService.get(project.id, req.params.chatId),
-    chatService.listSummaries(project.id),
-    registry.listAll(),
-    settingsService.get()
-  ]);
-
-  // With no key configured at all, resolution fails — the page must still render
-  // so the user can read the transcript and find their way to settings.
-  let effective = null;
-  try {
-    effective = registry.resolve({
-      requested: { provider: chat.provider, model: chat.model },
-      projectDefaults: project.defaults,
-      globalSettings: settings
-    });
-  } catch {
-    effective = null;
-  }
-
-  res.render('chat', {
-    title: chat.title,
-    project,
-    chat,
-    chats,
-    providers,
-    settings,
-    anyProviderConfigured: providers.some((p) => p.configured),
-    activeProvider: effective?.adapter.id ?? null,
-    activeModel: effective?.model.id ?? null
-  });
-}));
+// Chats open inline on the project page; keep old links working.
+router.get('/projects/:projectId/chats/:chatId', (req, res) => {
+  const { projectId, chatId } = req.params;
+  res.redirect(`/projects/${encodeURIComponent(projectId)}?chat=${encodeURIComponent(chatId)}`);
+});
 
 module.exports = router;

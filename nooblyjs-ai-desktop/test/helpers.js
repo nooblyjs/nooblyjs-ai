@@ -13,7 +13,6 @@ const BASE_URLS = ['ANTHROPIC_BASE_URL', 'OPENAI_BASE_URL', 'GEMINI_BASE_URL', '
 function useTempDataDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'llmproj-test-'));
   process.env.DATA_DIR = dir;
-  process.env.NOOBLY_DIR = path.join(dir, '.noobly-core');
   // Set to empty rather than delete: dotenv skips keys already present in the
   // environment, so this also stops a real .env from being loaded over the top.
   for (const name of [...PROVIDER_KEYS, ...BASE_URLS]) process.env[name] = '';

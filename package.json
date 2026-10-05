@@ -1,0 +1,28 @@
+{
+  "name": "nooblyjs-ai",
+  "version": "1.0.0",
+  "description": "This is the container for all the ai solutions",
+  "homepage": "https://github.com/nooblyjs/nooblyjs-ai#readme",
+  "bugs": {
+    "url": "https://github.com/nooblyjs/nooblyjs-ai/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nooblyjs/nooblyjs-ai.git"
+  },
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node scripts/each.js start --parallel --only desktop,teammate",
+    "run": "npm start",
+    "test": "node scripts/each.js test",
+    "coverage": "node scripts/each.js coverage",
+    "build": "node scripts/each.js build",
+    "clean": "node scripts/each.js clean",
+    "install": "node scripts/each.js install",
+    "start:desktop": "npm start --prefix nooblyjs-ai-desktop",
+    "start:teammate": "npm start --prefix nooblyjs-ai-teammate",
+    "start:harness": "npm start --prefix nooblyjs-ai-harness",
+    "start:factory": "npm start --prefix nooblyjs-ai-factory"
+  }
+}

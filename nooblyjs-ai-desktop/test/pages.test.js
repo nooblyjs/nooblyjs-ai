@@ -63,3 +63,29 @@ test('a project name containing markup stays escaped in the editable field', asy
   assert.ok(!res.text.includes('<script>alert(1)</script>'), 'script must not be injected');
   assert.ok(res.text.includes('&#34;&gt;&lt;script&gt;'), 'it should appear escaped in the value attribute');
 });
+
+test('chats open inline on the project page rather than on their own screen', async () => {
+  const project = await makeProject();
+  const { body } = await request(app).post(`/api/projects/${project.id}/chats`).send({}).expect(201);
+  const res = await request(app).get(`/projects/${project.id}`).expect(200);
+
+  assert.match(res.text, new RegExp(`data-chat-id="${body.chat.id}"`), 'the chat should be a row on the page');
+  assert.match(res.text, /data-chat-toggle/, 'rows should expand in place');
+  assert.match(res.text, /<template data-chat-template>/, 'the inline chat template should be present');
+  assert.ok(!res.text.includes(`href="/projects/${project.id}/chats/`), 'rows should not link to a chat screen');
+});
+
+test('the old chat URL redirects to the project page with that chat open', async () => {
+  const project = await makeProject();
+  const { body } = await request(app).post(`/api/projects/${project.id}/chats`).send({}).expect(201);
+  const res = await request(app).get(`/projects/${project.id}/chats/${body.chat.id}`).expect(302);
+  assert.equal(res.headers.location, `/projects/${project.id}?chat=${body.chat.id}`);
+});
+
+test('fetching a chat reports the model its next turn would use', async () => {
+  const project = await makeProject();
+  const { body } = await request(app).post(`/api/projects/${project.id}/chats`).send({}).expect(201);
+  const res = await request(app).get(`/api/projects/${project.id}/chats/${body.chat.id}`).expect(200);
+  assert.ok('effective' in res.body, 'the response should carry the effective model, or null');
+  assert.equal(res.body.chat.id, body.chat.id);
+});

@@ -8,4 +8,4 @@ const { makeMockProvider } = require('./mockProvider');
 
 registry.register(makeMockProvider());
 
-require('../server');
+require('../app');

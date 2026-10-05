@@ -4,7 +4,8 @@ const path = require('node:path');
 require('dotenv').config({ quiet: true });
 
 const dataDir = path.resolve(process.cwd(), process.env.DATA_DIR || './data');
-const coreDir = path.resolve(process.cwd(), process.env.NOOBLY_DIR || './.noobly-core');
+// nooblyjs-core keeps its service data and logs inside the same data folder.
+const coreDir = path.join(dataDir, 'noobly-core');
 
 module.exports = {
   port: Number(process.env.PORT) || 11201,

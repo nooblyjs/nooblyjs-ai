@@ -1,0 +1,17 @@
+<li class="list-group-item chat-item" data-chat-id="<%= c.id %>">
+  <div class="chat-row">
+    <button type="button" class="chat-toggle" data-chat-toggle aria-expanded="false" aria-controls="chat-panel-<%= c.id %>">
+      <span class="chat-title"><i class="bi bi-chevron-right chat-chevron text-muted" aria-hidden="true"></i> <span data-chat-title><%= c.title %></span></span>
+      <span class="chat-preview" data-chat-preview <%= c.preview ? '' : 'hidden' %>><%= c.preview %></span>
+      <span class="chat-meta" data-chat-meta>
+        <%= c.messageCount %> <%= c.messageCount === 1 ? 'message' : 'messages' %>
+        <% if (c.model) { %> · <%= c.model %><% } %>
+        · <span data-relative-time="<%= c.updatedAt %>"><%= c.updatedAt.slice(0, 10) %></span>
+      </span>
+    </button>
+    <button class="icon-btn icon-btn-danger" data-delete-chat="<%= c.id %>" data-title="<%= c.title %>" aria-label="Delete chat" title="Delete chat">
+      <i class="bi bi-trash3" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="chat-panel" id="chat-panel-<%= c.id %>" data-chat-panel hidden></div>
+</li>

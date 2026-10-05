@@ -187,12 +187,20 @@ kbd {
 
 /* ---- project page: chat list ----------------------------------------- */
 .chat-list { margin-inline: -8px; }
-.chat-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 0 8px; border-radius: var(--radius-sm);
+/* Bootstrap draws a top rule on a list sitting directly in a card. */
+.card > .chat-list { border-top: 0; }
+/* Two classes deep, to beat Bootstrap's first/last-child radius inheritance,
+   which would square off the top row (and bottom row) on a flush list. */
+.chat-list > .chat-item { padding: 0 8px; border-radius: var(--radius-sm); }
+.chat-item:not(.is-open):hover { background: var(--bg); }
+.chat-row { display: flex; align-items: center; gap: 8px; }
+.chat-toggle {
+  flex: 1; display: block; min-width: 0; padding: 12px 0;
+  background: none; border: 0; text-align: left; color: var(--ink);
 }
-.chat-item:hover { background: var(--bg); }
-.chat-item > a { flex: 1; display: block; min-width: 0; padding: 12px 0; color: var(--ink); }
+.chat-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+.chat-chevron { display: inline-block; font-size: 12px; transition: transform .15s; }
+.chat-item.is-open .chat-chevron { transform: rotate(90deg); color: var(--accent) !important; }
 .chat-title {
   display: block; font-weight: 600; font-size: 15px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -202,6 +210,23 @@ kbd {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .chat-meta { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.chat-item.is-open .chat-preview { display: none; }
+
+/* An open chat expands inside its row: picker, scrolling transcript, composer. */
+.chat-item.is-open {
+  background: var(--surface); border: 1px solid var(--border);
+  margin-block: 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
+}
+.chat-panel { border-top: 1px solid var(--border); margin-inline: -8px; }
+.chat-panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap; padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.chat-panel-head .model-picker { flex: 1 1 300px; justify-content: flex-end; }
+.chat-panel .transcript { max-height: min(60vh, 640px); min-height: 160px; padding: 18px 14px 4px; }
+.chat-panel .message { margin-bottom: 18px; }
+.chat-panel .empty-state { padding: 16px 0; }
+.chat-panel .composer-wrap { padding: 12px 12px 14px; }
 
 /* ---- in-place project editing ---------------------------------------- */
 /* Inline-editable fields read as plain text at rest, show a light outline on
@@ -248,7 +273,7 @@ input.inline-title::placeholder,
 textarea.inline-description::placeholder { color: var(--muted); font-style: italic; font-weight: 400; }
 textarea.inline-description:placeholder-shown:not(:focus) { min-height: 48px; min-height: 2lh; }
 
-/* ---- full-height shells (chat, documents) ---------------------------- */
+/* ---- full-height shells (documents) ---------------------------------- */
 body.layout-shell {
   height: 100vh; height: 100dvh;
   display: flex; flex-direction: column; overflow: hidden;
@@ -447,4 +472,29 @@ body.layout-shell > main { flex: 1; min-height: 0; display: flex; }
 @media (max-width: 520px) {
   .composer-hint { display: none; }
   .model-picker .form-select { min-width: 0; }
+}
+
+/* Phones: header buttons shrink to icons (their text stays as the accessible
+   name, and a tooltip), and the editable title gets a full-width row of its
+   own with the chat count and the icons sharing the row beneath it. */
+@media (max-width: 576px) {
+  .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .page-head-project {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "title title" "sub actions";
+    align-items: center; gap: 6px 12px;
+  }
+  .page-head-project .page-head-main { display: contents; }
+  .page-head-project .editable-title { grid-area: title; min-width: 0; }
+  .page-head-project .page-head-sub { grid-area: sub; }
+  .page-head-project .page-head-actions { grid-area: actions; }
+  .page-head-actions .btn { padding-inline: 10px; }
+  input.inline-title { font-size: 26px; max-width: none; width: calc(100% + 9px); }
+
+  /* Side by side, provider and model names get cut off; stack them. */
+  .model-picker { flex-direction: column; }
+  .model-picker .form-select { flex: none; width: 100%; }
+
+  .chat-panel-head { flex-wrap: nowrap; align-items: flex-start; }
+  .chat-panel-head .model-picker { flex: 1 1 0; min-width: 0; }
 }

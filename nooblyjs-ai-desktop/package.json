@@ -13,16 +13,18 @@
   "type": "commonjs",
   "main": "server.js",
   "scripts": {
-    "clean": "rimraf node_modules dist",
-    "build": "node ./scripts/build.js",
     "start": "node ./app.js",
+    "run": "npm start",
+    "test": "node --test test/*.test.js",
+    "coverage": "node --test --experimental-test-coverage test/*.test.js",
+    "build": "node -e \"console.log('No build step: plain JavaScript')\"",
+    "clean": "node -e \"for (const d of ['node_modules','coverage','dist']) require('fs').rmSync(d, { recursive: true, force: true })\"",
     "dev": "nodemon --watch ./src ./app.js",
     "dev:noauth": "nodemon --watch ./src ./app-noauth.js",
     "kill": "node scripts/kill-port.js",
     "kill-test": "node scripts/kill-test-port.js",
-    "test": "node --test test/*.test.js",
-    "coverage": "node --test --experimental-test-coverage test/*.test.js",
-    "dev:mock": "node --watch scripts/dev-mock.js"
+    "dev:mock": "node --watch scripts/dev-mock.js",
+    "test:ui": "node --test --test-concurrency=1 test/ui/*.test.js"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
@@ -32,10 +34,11 @@
     "ejs": "^6.0.1",
     "express": "^5.2.1",
     "marked": "^18.0.12",
-    "nooblyjs-core": "file:../../nooblyjs-core",
-    "nooblyjs-ai-common": "file:../nooblyjs-ai-common"
+    "nooblyjs-ai-common": "file:../nooblyjs-ai-common",
+    "nooblyjs-core": "file:../../nooblyjs-core"
   },
   "devDependencies": {
+    "playwright": "^1.63.0",
     "supertest": "^7.2.2"
   },
   "engines": {

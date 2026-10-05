@@ -2,6 +2,9 @@
 
 const express = require('express');
 const chatService = require('../services/chatService');
+const projectService = require('../services/projectService');
+const settingsService = require('../services/settingsService');
+const registry = require('../providers/registry');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 const router = express.Router({ mergeParams: true });
@@ -16,7 +19,27 @@ router.post('/', asyncHandler(async (req, res) => {
 }));
 
 router.get('/:chatId', asyncHandler(async (req, res) => {
-  res.json({ chat: await chatService.get(req.params.projectId, req.params.chatId) });
+  const [project, chat, settings] = await Promise.all([
+    projectService.get(req.params.projectId),
+    chatService.get(req.params.projectId, req.params.chatId),
+    settingsService.get()
+  ]);
+
+  // The model the next turn would use, so the picker can show it. With no key
+  // configured resolution fails; the transcript must still load.
+  let effective = null;
+  try {
+    const resolved = registry.resolve({
+      requested: { provider: chat.provider, model: chat.model },
+      projectDefaults: project.defaults,
+      globalSettings: settings
+    });
+    effective = { provider: resolved.adapter.id, model: resolved.model.id };
+  } catch {
+    effective = null;
+  }
+
+  res.json({ chat, effective });
 }));
 
 router.patch('/:chatId', asyncHandler(async (req, res) => {

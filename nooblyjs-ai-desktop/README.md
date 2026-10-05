@@ -39,9 +39,8 @@ All configuration is environment variables, in `.env`:
 | `DEEPSEEK_API_KEY` | Enables DeepSeek |
 | `PORT` | Default `11201`; `.env.example` sets `3000` |
 | `HOST` | Default `127.0.0.1` — the app has no authentication, so keep it on loopback |
-| `DATA_DIR` | Default `./data` |
+| `DATA_DIR` | Default `./data` — projects, chats, settings, and nooblyjs-core service data and logs (in `noobly-core/`) |
 | `LOG_LEVEL` | `debug` \| `info` \| `warn` \| `error` |
-| `NOOBLY_DIR` | Default `./.noobly-core` — nooblyjs-core service data and logs |
 | `DEFAULT_ADMIN_PASSWORD` | Password for the `/services` admin created on first run |
 
 API keys are read from the environment only. They are never written into your data folder
@@ -174,7 +173,7 @@ searching, measuring, notifying, working, workflow and auth. Use them from serve
 
 Each service exposes a REST API and dashboard under **`/services/`**, protected by core's
 auth service. On first start it creates `admin@localhost`, with `DEFAULT_ADMIN_PASSWORD` or a
-generated password written to `.noobly-core/data/INITIAL_ADMIN_PASSWORD.txt` — log in,
+generated password written to `data/noobly-core/data/INITIAL_ADMIN_PASSWORD.txt` — log in,
 then delete that file.
 
 Core is built on Express 4 and this app on Express 5, whose router rejects core's route

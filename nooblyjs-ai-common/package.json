@@ -30,7 +30,12 @@
     "node": ">=22.12"
   },
   "scripts": {
+    "start": "node --input-type=module -e \"const m = await import('./src/index.js'); console.log('nooblyjs-ai-common: ' + Object.keys(m).length + ' exports loaded')\"",
+    "run": "npm start",
     "test": "node --test \"test/**/*.test.js\"",
+    "coverage": "node --test --experimental-test-coverage \"test/**/*.test.js\"",
+    "build": "tsc -p .",
+    "clean": "node -e \"for (const d of ['node_modules','coverage','dist']) require('fs').rmSync(d, { recursive: true, force: true })\"",
     "check": "tsc -p ."
   },
   "license": "MIT",

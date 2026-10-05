@@ -20,7 +20,11 @@
   },
   "scripts": {
     "start": "node bin/noobly.js",
+    "run": "npm start",
     "test": "node --import tsx --import ./test/no-color.js --test \"test/**/*.test.js\" \"test/**/*.test.jsx\"",
+    "coverage": "node --import tsx --import ./test/no-color.js --test --experimental-test-coverage \"test/**/*.test.js\" \"test/**/*.test.jsx\"",
+    "build": "node -e \"console.log('No build step: plain JavaScript')\"",
+    "clean": "node -e \"for (const d of ['node_modules','coverage','dist']) require('fs').rmSync(d, { recursive: true, force: true })\"",
     "eval": "node test/evals/run.js"
   },
   "dependencies": {

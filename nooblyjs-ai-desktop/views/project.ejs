@@ -8,7 +8,7 @@
     </ol>
   </nav>
 
-  <div class="page-head">
+  <div class="page-head page-head-project">
     <div class="page-head-main">
       <label class="visually-hidden" for="project-name">Project name</label>
       <div class="editable editable-title">
@@ -19,17 +19,17 @@
       </div>
       <p class="text-muted page-head-sub mb-0">
         <i class="bi bi-chat-left-text" aria-hidden="true"></i>
-        <%= chats.length %> <%= chats.length === 1 ? 'chat' : 'chats' %>
+        <span data-chat-count><%= chats.length %> <%= chats.length === 1 ? 'chat' : 'chats' %></span>
         <span class="save-status" data-save-status aria-live="polite"></span>
       </p>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a class="btn btn-secondary btn-sm" href="/projects/<%= project.id %>/documents">
-        <i class="bi bi-journal-text" aria-hidden="true"></i> Documents
+    <div class="page-head-actions d-flex gap-2">
+      <a class="btn btn-secondary btn-sm" href="/projects/<%= project.id %>/documents" title="Documents">
+        <i class="bi bi-journal-text" aria-hidden="true"></i><span class="btn-label"> Documents</span>
       </a>
       <button class="btn btn-danger-ghost btn-sm" data-delete-project="<%= project.id %>"
-              data-name="<%= project.name %>">
-        <i class="bi bi-trash3" aria-hidden="true"></i> Delete project
+              data-name="<%= project.name %>" title="Delete project">
+        <i class="bi bi-trash3" aria-hidden="true"></i><span class="btn-label"> Delete project</span>
       </button>
     </div>
   </div>
@@ -106,28 +106,12 @@
           </div>
         <% } %>
 
-        <% if (chats.length === 0) { %>
-          <p class="text-muted fst-italic py-3 mb-0">No chats yet.</p>
-        <% } else { %>
-          <ul class="list-group list-group-flush chat-list">
-            <% chats.forEach((c) => { %>
-              <li class="list-group-item chat-item">
-                <a href="/projects/<%= project.id %>/chats/<%= c.id %>">
-                  <span class="chat-title"><i class="bi bi-chat-left-text text-muted" aria-hidden="true"></i> <%= c.title %></span>
-                  <% if (c.preview) { %><span class="chat-preview"><%= c.preview %></span><% } %>
-                  <span class="chat-meta">
-                    <%= c.messageCount %> <%= c.messageCount === 1 ? 'message' : 'messages' %>
-                    <% if (c.model) { %> · <%= c.model %><% } %>
-                    · <span data-relative-time="<%= c.updatedAt %>"><%= c.updatedAt.slice(0, 10) %></span>
-                  </span>
-                </a>
-                <button class="icon-btn icon-btn-danger" data-delete-chat="<%= c.id %>" data-title="<%= c.title %>" aria-label="Delete chat" title="Delete chat">
-                  <i class="bi bi-trash3" aria-hidden="true"></i>
-                </button>
-              </li>
-            <% }) %>
-          </ul>
-        <% } %>
+        <p class="text-muted fst-italic py-3 mb-0" data-no-chats <%= chats.length ? 'hidden' : '' %>>No chats yet.</p>
+        <ul class="list-group list-group-flush chat-list" data-chat-list>
+          <% chats.forEach((c) => { %>
+            <%- include('partials/chatItem', { project, c }) %>
+          <% }) %>
+        </ul>
       </section>
     </div>
   </div>
@@ -172,6 +156,56 @@
     </div>
   </div>
 </div>
+
+<%# Cloned into a chat row when it is opened. %>
+<template data-chat-template>
+  <div class="chat-panel-head">
+    <button type="button" class="btn btn-secondary btn-sm" data-rename-chat title="Rename chat">
+      <i class="bi bi-pencil" aria-hidden="true"></i><span class="btn-label"> Rename</span>
+    </button>
+    <%- include('partials/modelPicker', {
+      idPrefix: 'chat',
+      providers,
+      selectedProvider: null,
+      selectedModel: null,
+      allowInherit: false,
+      size: 'sm'
+    }) %>
+  </div>
+
+  <div class="transcript" data-transcript role="log" aria-live="polite" aria-label="Conversation">
+    <div class="empty-state" data-empty-state hidden>
+      <i class="bi bi-chat-square-dots empty-icon" aria-hidden="true"></i>
+      <p class="text-muted">
+        This chat already knows about <strong><%= project.name %></strong>.
+        <% if (project.description.trim()) { %>Ask away — no need to repeat the project context.<% } %>
+      </p>
+    </div>
+  </div>
+
+  <div class="composer-wrap">
+    <div class="alert alert-warning small py-2 stream-banner" data-stream-banner role="status" hidden></div>
+    <form class="composer" data-composer>
+      <textarea class="form-control" data-composer-input rows="1" aria-label="Message"
+        placeholder="Ask something about <%= project.name %>…"
+        <%= anyProviderConfigured ? '' : 'disabled' %>></textarea>
+      <div class="composer-actions">
+        <span class="small text-muted me-auto composer-hint">Enter to send · Shift+Enter for a new line · <kbd>@</kbd> to reference a document</span>
+        <button type="button" class="btn btn-danger-ghost btn-sm" data-stop hidden>
+          <i class="bi bi-stop-circle" aria-hidden="true"></i> Stop
+        </button>
+        <button type="submit" class="btn btn-primary btn-sm" data-send <%= anyProviderConfigured ? '' : 'disabled' %>>
+          <i class="bi bi-send" aria-hidden="true"></i> Send
+        </button>
+      </div>
+    </form>
+  </div>
+</template>
+
+<%# An empty row, filled in by script when a new chat is created. %>
+<template data-chat-item-template>
+  <%- include('partials/chatItem', { project, c: { id: '', title: 'New chat', preview: '', messageCount: 0, model: null, updatedAt: new Date().toISOString() } }) %>
+</template>
 
 <script type="module" src="/static/js/project.js"></script>
 <%- include('partials/foot') %>
