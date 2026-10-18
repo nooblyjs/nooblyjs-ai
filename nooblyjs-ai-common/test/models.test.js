@@ -22,7 +22,7 @@ test('getModel finds models by id or alias', () => {
 });
 
 test('modelsFor lists one provider in catalogue order', () => {
-  assert.deepEqual(modelsFor('deepseek').map((m) => m.id), ['deepseek-chat', 'deepseek-reasoner']);
+  assert.deepEqual(modelsFor('deepseek').map((m) => m.id), ['deepseek-chat', 'deepseek-reasoner', 'deepseek-v4-pro', 'deepseek-flash']);
 });
 
 test('providerForModel: catalogue first, then the name prefix', () => {

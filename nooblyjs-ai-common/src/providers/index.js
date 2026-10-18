@@ -17,14 +17,23 @@
 //   ({ name, description, input_schema }), maxTokens, temperature (dropped for models
 //   that reject it), effort, and for Anthropic thinking and fallbacks.
 //
+// Three cloud hosts serve Claude for NooblyJS's governance (createProvider('bedrock' | 'vertex' | 'azure')):
+//   bedrock            AWS Bedrock: SigV4-signed, AWS event-stream reply (bedrock.js)
+//   vertex             Google Vertex AI: streamRawPredict with a Google access token (vertex.js)
+//   azure              Microsoft Foundry's Anthropic-compatible endpoint (azure.js)
+// The direct public APIs are refused when NODE_ENV=production.
+//
 // Three adapters cover the catalogue's providers, chosen by each one's `api`:
 //   anthropic          Claude's Messages API
 //   openai-responses   OpenAI's Responses API (reasoning models with tools)
 //   openai-chat        Chat Completions: Grok, Gemini, DeepSeek, Ollama, and any compatible server
 import { normalizeUsage } from '../cost.js';
-import { PROVIDERS } from '../models.js';
+import { CLOUD_HOSTS, DIRECT_APIS, PROVIDERS } from '../models.js';
 import { withRetry } from '../retry.js';
 import { createAnthropicProvider } from './anthropic.js';
+import { createAzureProvider } from './azure.js';
+import { createBedrockProvider } from './bedrock.js';
+import { createVertexProvider } from './vertex.js';
 import { EVENT } from './events.js';
 import { createOpenAICompatibleProvider } from './openai-compatible.js';
 import { createOpenAIResponsesProvider } from './openai-responses.js';
@@ -34,6 +43,9 @@ export { createAnthropicProvider } from './anthropic.js';
 export { createOpenAICompatibleProvider } from './openai-compatible.js';
 export { createOpenAIResponsesProvider } from './openai-responses.js';
 export { createMockProvider } from './mock.js';
+export { createBedrockProvider } from './bedrock.js';
+export { createVertexProvider } from './vertex.js';
+export { createAzureProvider } from './azure.js';
 export { addCacheBreakpoints } from './cache.js';
 
 /**
@@ -65,8 +77,17 @@ export function findApiKey(id, env = process.env) {
  *           env?: Record<string, string | undefined>, [option: string]: any }} [options]
  */
 export function createProvider(id, { apiKey, authToken, baseUrl, api, env = process.env, ...options } = {}) {
+  // Governance: in production, models are reached only through a cloud host (Bedrock, Vertex AI, Azure).
+  if (env.NODE_ENV === 'production' && DIRECT_APIS.includes(id)) {
+    throw new Error(`The ${PROVIDERS[id]?.label ?? id} API is a direct public API, refused when NODE_ENV=production. Use bedrock, vertex or azure.`);
+  }
+  switch (id) {
+    case 'bedrock': return createBedrockProvider({ ...options, env, ...(baseUrl ? { baseUrl } : {}) });
+    case 'vertex': return createVertexProvider({ ...options, env, ...(baseUrl ? { baseUrl } : {}) });
+    case 'azure': return createAzureProvider({ ...options, env, ...(apiKey ? { apiKey } : {}), ...(baseUrl ? { endpoint: baseUrl } : {}) });
+  }
   const info = PROVIDERS[id];
-  if (!info) throw new Error(`Unknown provider "${id}". Choose one of: ${Object.keys(PROVIDERS).join(', ')}.`);
+  if (!info) throw new Error(`Unknown provider "${id}". Choose one of: ${[...Object.keys(PROVIDERS), ...Object.keys(CLOUD_HOSTS)].join(', ')}.`);
   const style = api ?? (id === 'openai' && baseUrl ? 'openai-chat' : info.api);
   if (!style) throw new Error(`${info.label} has no shared adapter.`);
 

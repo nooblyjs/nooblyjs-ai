@@ -77,8 +77,9 @@ export const PROVIDERS = {
   gemini: {
     label: 'Google Gemini',
     envKeys: ['GEMINI_API_KEY'],
-    defaultModel: 'gemini-2.5-pro',
-    smallModel: 'gemini-2.5-flash',
+    // Checked against Google's own list on 2026-10-10: the 2.5 models are no longer served to new keys.
+    defaultModel: 'gemini-3.8-flash',
+    smallModel: 'gemini-3.5-flash-lite',
     modelPrefixes: ['gemini-'],
     // Gemini's OpenAI-compatible endpoint, so it needs no adapter of its own.
     api: 'openai-chat',
@@ -88,8 +89,9 @@ export const PROVIDERS = {
   deepseek: {
     label: 'DeepSeek',
     envKeys: ['DEEPSEEK_API_KEY'],
-    defaultModel: 'deepseek-chat',
-    smallModel: 'deepseek-chat',
+    // DeepSeek's own list on 2026-10-10: deepseek-v4-pro and deepseek-flash (deepseek-chat and -reasoner are gone).
+    defaultModel: 'deepseek-v4-pro',
+    smallModel: 'deepseek-flash',
     modelPrefixes: ['deepseek-'],
     api: 'openai-chat',
     baseUrl: 'https://api.deepseek.com',
@@ -156,10 +158,15 @@ export const MODELS = [
   // Google
   { id: 'gemini-2.5-pro', provider: 'gemini', label: 'Gemini 2.5 Pro', contextWindow: 1_048_576 },
   { id: 'gemini-2.5-flash', provider: 'gemini', label: 'Gemini 2.5 Flash', contextWindow: 1_048_576 },
+  // From Google's own list (2026-10-10); priced from the provider feeds when offered (discovery.js).
+  { id: 'gemini-3.8-flash', provider: 'gemini', label: 'Gemini 3.8 Flash', contextWindow: 1_048_576 },
+  { id: 'gemini-3.5-flash-lite', provider: 'gemini', label: 'Gemini 3.5 Flash-Lite', contextWindow: 1_048_576 },
 
   // DeepSeek
   { id: 'deepseek-chat', provider: 'deepseek', label: 'DeepSeek Chat', contextWindow: 64_000 },
   { id: 'deepseek-reasoner', provider: 'deepseek', label: 'DeepSeek Reasoner', contextWindow: 64_000 },
+  { id: 'deepseek-v4-pro', provider: 'deepseek', label: 'DeepSeek V4 Pro', contextWindow: 1_048_576 },
+  { id: 'deepseek-flash', provider: 'deepseek', label: 'DeepSeek V4.1 Flash', contextWindow: 1_048_576 },
 
   // The offline echo provider is free. Its window is tiny on purpose, so you can watch
   // the harness compact a conversation without spending anything.
@@ -218,3 +225,43 @@ export const PRICES = Object.fromEntries(MODELS.filter((m) => m.pricing).map((m)
  * @type {Record<string, number>}
  */
 export const CONTEXT_WINDOWS = Object.fromEntries(MODELS.filter((m) => m.contextWindow).map((m) => [m.id, /** @type {number} */ (m.contextWindow)]));
+
+// ── Cloud hosts ─────────────────────────────────────────────────────────
+// Governance (NooblyJS product.md §3): Claude models are served through AWS Bedrock, Google Vertex AI or Azure, never
+// the public API in production. A cloud host serves a catalogue model under its own id. Ids we know are listed
+// here; any other is derived (Bedrock: anthropic.<id>-v1:0; Vertex and Azure: the catalogue id) and can be set per
+// model with <HOST>_MODEL_IDS="claude-sonnet-5-5=anthropic.claude-sonnet-5-5-v1:0,…". Bedrock's cross-region
+// inference profiles take a prefix: BEDROCK_INFERENCE_PREFIX=us. (or eu., apac., global.).
+
+/** @type {Record<string, { label: string, serves: string[], env: string[] }>} */
+export const CLOUD_HOSTS = {
+  bedrock: { label: 'AWS Bedrock', serves: ['anthropic'], env: ['AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'] },
+  vertex: { label: 'Google Vertex AI', serves: ['anthropic'], env: ['VERTEX_PROJECT_ID', 'GOOGLE_APPLICATION_CREDENTIALS'] },
+  azure: { label: 'Azure (Microsoft Foundry)', serves: ['anthropic'], env: ['AZURE_AI_ENDPOINT', 'AZURE_AI_API_KEY'] },
+};
+
+/** Model ids the cloud hosts publish, where we know them. */
+const CLOUD_IDS = {
+  'claude-haiku-4-5': { bedrock: 'anthropic.claude-haiku-4-5-20251001-v1:0', vertex: 'claude-haiku-4-5@20251001' },
+};
+
+/**
+ * The id a cloud host knows a catalogue model by.
+ * @param {string} host  bedrock | vertex | azure
+ * @param {string} model a catalogue id (or alias)
+ * @param {Record<string, string | undefined>} [env]
+ */
+export function cloudModelId(host, model, env = process.env) {
+  const id = getModel(model)?.id ?? model;
+  const overrides = Object.fromEntries(String(env[`${host.toUpperCase()}_MODEL_IDS`] ?? '').split(',').map((pair) => pair.split('=').map((s) => s.trim())).filter(([k, v]) => k && v));
+  const known = overrides[id] ?? overrides[model] ?? /** @type {Record<string, Record<string, string>>} */ (CLOUD_IDS)[id]?.[host];
+  if (host === 'bedrock') {
+    const base = known ?? `anthropic.${id}-v1:0`;
+    const prefix = env.BEDROCK_INFERENCE_PREFIX ?? '';
+    return prefix && !base.startsWith(prefix) && !/^arn:/.test(base) ? `${prefix}${base}` : base;
+  }
+  return known ?? id;
+}
+
+/** Providers that are a public API (a consumer endpoint), refused when NODE_ENV=production. */
+export const DIRECT_APIS = ['anthropic', 'openai', 'grok', 'gemini', 'deepseek'];

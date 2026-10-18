@@ -195,9 +195,11 @@ function parseArguments(json) {
  * @returns {[type: string, message: string]}
  */
 export function describeError(json, response) {
+  // Gemini's OpenAI-compatible endpoint wraps its error in an array: [{ error: { code, message, status } }].
+  if (Array.isArray(json)) json = json[0] ?? {};
   if (typeof json.error === 'string') return [json.code ?? 'api_error', json.error];
   const error = json.error ?? {};
-  return [error.type ?? error.code ?? json.code ?? 'unknown_error', error.message ?? json.message ?? response.statusText];
+  return [error.type ?? error.status ?? error.code ?? json.code ?? 'unknown_error', error.message ?? json.message ?? response.statusText];
 }
 
 // ── The provider ────────────────────────────────────────────────────────

@@ -29,6 +29,10 @@ const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
  *
  * `context` is volatile system text (e.g. memory) that goes after the cached
  * system prompt. `temperature` is only sent to models that accept one.
+ *
+ * @param {{ apiKey?: string, authToken?: string, baseUrl?: string, model: string, system?: any, context?: any, messages: any[],
+ *           tools?: any[], maxTokens?: number, temperature?: number, fallbacks?: boolean, caching?: boolean | 'system',
+ *           stream?: boolean, thinking?: string, effort?: string }} options
  */
 export function buildRequest({ apiKey, authToken, baseUrl = BASE_URL, model, system, context, messages, tools, maxTokens, temperature, fallbacks, caching = false, stream = true, thinking, effort }) {
   const headers = {
@@ -139,6 +143,7 @@ export function createAnthropicProvider({ apiKey, authToken, baseUrl = BASE_URL,
  * plus `ping` keep-alives, and `error` if something breaks mid-stream.
  */
 export async function* assembleMessage(sseEvents) {
+  /** @type {any} */
   let message = { content: [], usage: {}, stop_reason: null };
   const partialJson = new Map(); // block index → tool input JSON text received so far (used from Phase 04)
 
