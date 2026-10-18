@@ -14,7 +14,7 @@ import { readReply } from '../services/chat-reply.js';
 import { botMessage, typing } from './activities.js';
 
 const ANSWER_RULES = [
-  'You are in a Microsoft Teams meeting chat as an NooblyJS teammate. Answer the person who mentioned you.',
+  'You are in a Microsoft Teams meeting chat as a NooblyJS teammate. Answer the person who mentioned you.',
   'Keep it to two or three sentences. Say what you know from the context given, and say so when you do not know.',
   'Never invent numbers, dates, people or sources. Use "[PLACEHOLDER: what is missing]" for a fact you do not have.',
   'You cannot approve, change a status, merge or grant access, and you must not say that you did. A decision is made by a person, in NooblyJS.',
@@ -31,7 +31,7 @@ const ANSWER_RULES = [
 // "post meeting notes to PRD-031", "post the meeting notes to IDEA-020" (Phase 12).
 const NOTES = /\bpost\s+(?:the\s+)?(?:meeting\s+)?notes\s+(?:to|on)\s+([A-Za-z][A-Za-z0-9._-]{1,40})\b/i;
 const NOTES_RULES = [
-  'You are an NooblyJS teammate in a Microsoft Teams meeting. Write the meeting notes from what was said, below.',
+  'You are a NooblyJS teammate in a Microsoft Teams meeting. Write the meeting notes from what was said, below.',
   'Use short lines: what was decided (by whom), what is still open, and who does what next. No more than ten lines.',
   'Write only what was said. Never invent a decision, a date or a name. A decision is a person\'s, never yours.',
 ].join('\n');
@@ -119,7 +119,7 @@ export function createBot({ agents, teams, people, roles, sessions, cards, conne
     const can = await agents.availability(teammate.id);
     if (!can.ok) throw new HttpError(409, can.code, `${teammate.name} can't join: ${can.message}`);
     const team = await billedTeam(a, person);
-    if (!team) throw new HttpError(422, 'no_team', "This chat isn't linked to an NooblyJS team and you are on none, so there is no team to bill. Ask an Owner to add you to a team first.");
+    if (!team) throw new HttpError(422, 'no_team', "This chat isn't linked to a NooblyJS team and you are on none, so there is no team to bill. Ask an Owner to add you to a team first.");
     const current = await sessions.get(a.conversationKey);
     if (current?.teammate) await leave(a, person, { quiet: true });
 

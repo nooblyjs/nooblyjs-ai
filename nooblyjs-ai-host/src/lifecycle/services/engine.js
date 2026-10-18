@@ -68,7 +68,7 @@ export function createEngine({ repos, host, log, clock }) {
       throw forbidden('people_only', `Agents propose and people decide: ${actor.name ?? actor.id} can't ${doing.what}.`);
     }
     const person = await host.people.get(actor.id);
-    if (!person?.active) throw forbidden('unknown_person', 'Only people with an NooblyJS record can take decisions.');
+    if (!person?.active) throw forbidden('unknown_person', 'Only people with a NooblyJS record can take decisions.');
     return { id: person.id, name: person.name, accessRole: person.accessRole, kind: 'person' };
   }
 

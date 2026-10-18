@@ -12,7 +12,7 @@ key, they answer with a model.
 
 | Area | What |
 | --- | --- |
-| The teammate service | `nooblyjs-ai-teammate` returns `services` from `register()`: `roster`, `get`, `availability`, `provider`, `runTask`. Every agent action in NooblyJS is a `runTask`: it is refused for a teammate who is retired, paused, off shift or at their cap; it runs without tools; it writes a timesheet entry billed to an NooblyJS team; and it reaches the event and audit logs with actor, item, system, model route and cost |
+| The teammate service | `nooblyjs-ai-teammate` returns `services` from `register()`: `roster`, `get`, `availability`, `provider`, `runTask`. Every agent action in NooblyJS is a `runTask`: it is refused for a teammate who is retired, paused, off shift or at their cap; it runs without tools; it writes a timesheet entry billed to a NooblyJS team; and it reaches the event and audit logs with actor, item, system, model route and cost |
 | Scripted and real, one path | With no model configured, the task plays the caller's scripted answer. With one, the model answers. The direct Anthropic API is refused when `NODE_ENV=production` |
 | Team chat | A mention of an agent is a `chat.reply` task, with the last 20 messages and the item's facts as context. A model's reply may carry one facts, plan or comparison card, rebuilt field by field; anything else is dropped. A paused teammate gets a line from NooblyJS saying why, and nothing is billed |
 | Product Factory | Drafts run through the same service. With a model, the draft is read as one JSON object with only that stage's keys |

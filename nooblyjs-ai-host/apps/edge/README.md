@@ -1,7 +1,7 @@
 # NooblyJS for Microsoft Edge
 
 A browser extension that puts NooblyJS beside the page you're on. The plan (`product.md` §5.11, `roadmap.md` Phase 14):
-open a Jira issue, ask an NooblyJS teammate about it in the side panel, and have it draft the description, acceptance
+open a Jira issue, ask a NooblyJS teammate about it in the side panel, and have it draft the description, acceptance
 criteria, sub-tasks or a comment. You review the draft, put it into Jira's own field yourself, and press Jira's Save.
 
 **This is the skeleton.** It has:

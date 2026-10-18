@@ -79,7 +79,7 @@ export function createTeams({ store, people }) {
     if (team && !teams.some((t) => t.id === team)) details.team = 'A team from the list';
     const title = String(jobTitle ?? '').trim().slice(0, 80) || null;
     if (Object.keys(details).length) throw new HttpError(422, 'invalid', 'Check the highlighted fields.', details);
-    if (await people.getByEmail(mail)) throw new HttpError(409, 'exists', `${mail} already has an NooblyJS record.`);
+    if (await people.getByEmail(mail)) throw new HttpError(409, 'exists', `${mail} already has a NooblyJS record.`);
 
     const { person } = await people.provision({ email: mail, fullName }, { accessRole, source: 'invite', now });
     if (title) await store.updateDoc(['people', person.id, 'PERSON.md'], (doc) => (doc ? { ...doc, data: { ...doc.data, jobTitle: title } } : null));

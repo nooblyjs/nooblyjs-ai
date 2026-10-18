@@ -5,8 +5,7 @@ inclusion: always
 # NooblyJS — Technology and architecture
 
 > How NooblyJS is built. `product.md` says **what** to build; this says **how**. The rules
-> here apply to `nooblyjs-ai-host` and to every child project (`nooblyjs-core`, including its AI module in
-> `src/aiservice/common`, `nooblyjs-ai-harness`, `nooblyjs-ai-product`, `nooblyjs-ai-factory`, `nooblyjs-ai-teammate`,
+> here apply to `nooblyjs-ai-host` and to every child project (`nooblyjs-core`, `nooblyjs-ai-common`, `nooblyjs-ai-harness`, `nooblyjs-ai-product`, `nooblyjs-ai-factory`, `nooblyjs-ai-teammate`,
 > `nooblyjs-ai-knowledge`, `nooblyjs-ai-infrastructure`). The lifecycle engine is part of `nooblyjs-ai-host` (`src/lifecycle/`). Each hosted child restates the rules it must follow
 > in its own `.claude/steering/tech.md`; this document wins if they disagree. Where the build brief (`brief/noobly-build-brief.md` §4) suggests
 > TypeScript, React, Postgres or pgvector, **this document overrides it**.
@@ -22,14 +21,14 @@ inclusion: always
 | Front end | **Plain HTML, CSS and JavaScript** (native ES modules in the browser) | React, JSX, Vue, Svelte, Angular, TypeScript, Tailwind, bundlers, transpilers |
 | Storage | **Markdown files with YAML front matter**, and **YAML files** for config and logs, in a `data/` folder | SQLite, MongoDB, Postgres, Redis as a store of record, JSON databases |
 | Shared services | `nooblyjs-core` (logging, caching, queueing, scheduling, notifying, measuring, searching, auth) | Re-implementing these per project |
-| AI | nooblyjs-core's AI module (`nooblyjs-core/src/aiservice/common`: providers, model catalogue, tokens, cost) and `nooblyjs-ai-harness` (agent runtime) | Calling a model provider SDK directly from a feature |
+| AI | `nooblyjs-ai-common` (providers, model catalogue, tokens, cost) and `nooblyjs-ai-harness` (agent runtime) | Calling a model provider SDK directly from a feature |
 | Tests | `node:test` and `node:assert`, offline by default (mock provider) | Jest, Mocha, Vitest |
 
 **No build step.** `npm start` runs the source as written. Use JSDoc comments where types help.
 
 **Dependencies stay minimal.** The baseline is `express`, `js-yaml` and `nooblyjs-core`
-(an app that calls models also links nooblyjs-core's AI module, `file:../nooblyjs-core/src/aiservice/common`);
-the NooblyJS packages are linked as `file:../<repo>` dependencies, the way `nooblyjs-ai-teammate` does it. The host (`noobly/app.js`) also uses `helmet` (security headers),
+(an app that calls models also links the AI module, `file:../nooblyjs-ai-common`);
+the NooblyJS packages are linked as `file:../<project>` dependencies, the way `nooblyjs-ai-teammate` does it. The host (`noobly/app.js`) also uses `helmet` (security headers),
 `compression`, `express-rate-limit` (API and sign-in limits), and `express-session` + `passport`
 (sessions and sign-in through nooblyjs-core's authservice, including Microsoft Entra ID). Adding any
 other runtime dependency needs a reason in the PR.
@@ -37,7 +36,7 @@ other runtime dependency needs a reason in the PR.
 **Desktop window (optional).** `npm run electron` opens NooblyJS in an Electron window (`apps/electron/main.js`, CommonJS
 because Electron loads it before an ESM loader exists). It is a window, not a second build: it starts `app.js` as a
 child process under the installed Node with the same `.env`, on the same address (`PORT`, `HTTPS_ENABLED`), or opens
-the NooblyJS already running there; `NOOBLY_URL` points it at an NooblyJS elsewhere. Pages get no Node access, links that leave
+the NooblyJS already running there; `NOOBLY_URL` points it at a NooblyJS elsewhere. Pages get no Node access, links that leave
 NooblyJS open in the browser, sign-in redirects stay in the window, and only the local development certificate is
 accepted unsigned. `electron` is a devDependency and nothing in `src/` or `public/` may depend on it.
 
@@ -98,7 +97,7 @@ accepted unsigned. `electron` is a devDependency and nothing in `src/` or `publi
    (pause on limit), agent access to repos, and "agents never merge" are checked in
    services before any write or agent dispatch. A hidden button is not a control.
 5. **Every agent action carries its context:** `{ actor, teammateId, itemId, system,
-   modelRoute, costUsd, at }`. Cost comes from nooblyjs-core's AI module (`src/aiservice/common/cost.js`) and is written to
+   modelRoute, costUsd, at }`. Cost comes from the AI module (`nooblyjs-ai-common/cost`) and is written to
    the event, the audit log and the teammate's timesheet.
 6. **The host owns the frame.** The browser loads one page: the NooblyJS frame (rail, sidebar,
    content area, chat dock). Apps, both built-in and hosted, provide UI modules that the frame
@@ -221,7 +220,7 @@ listens and handles shutdown. Folder layout: `structure.md` §2.
   with the right status (400 validation, 401, 403 role/guardrail, 404, 409 conflict, 422 rule refused).
 - Writes accept an `If-Match` version (front-matter `version` or `updatedAt`) and return 409 on conflict.
 - **Live updates** go over `GET /api/v1/events/stream`, a Server-Sent Events stream
-  (nooblyjs-core's AI module, `src/aiservice/common/sse.js`) filtered to what the user may see. The UI uses it for "Live now",
+  (the AI module, `nooblyjs-ai-common/sse`) filtered to what the user may see. The UI uses it for "Live now",
   badges, status cards and **chat**. One stream per tab carries every topic; the client
   subscribes to topics (`?topics=thread:PRD-031,approvals`). Clients send with plain
   `POST`. **There is no WebSocket server.** The brief's Phase 2 says "WebSockets", but SSE + POST
@@ -316,7 +315,7 @@ that clock (`host.clock`), never `Date.now()`, for business time. Its offset is 
   keeps only what a person decided (agreed prices, request quirks, defaults). In production the public APIs are not
   listed. Teammates offers any listed model under a tier (Light, Balanced, Premium): it bills at that tier's rate, and
   its list price records API cost (Settings · Models & pricing).
-- Model calls go **only** through nooblyjs-core's AI module (`nooblyjs-core/src/aiservice/common`, imported as
+- Model calls go **only** through the AI module (`nooblyjs-ai-common`, imported as
   `nooblyjs-ai-common/providers`). It has the **AWS Bedrock** (SigV4-signed, AWS event-stream reply), **Google
   Vertex AI** (`streamRawPredict`, a service-account token) and **Azure** (Microsoft Foundry's Anthropic-compatible
   endpoint) adapters, built in Phase 9 with `node:crypto` only: `createProvider('bedrock' | 'vertex' | 'azure')`.
@@ -496,7 +495,7 @@ address. Permissions are only `sidePanel` and `storage`, localhost, and any othe
 | --- | --- | --- |
 | `nooblyjs-ai-host` | The host (`server.js`), loads hosted apps | The suite's app list and `/api/v1/shell`, built-in app modules, onboarding + profiles, Home (incl. For you) + Product Factory + Platform pages, team chat, Teams bot endpoint + simulator, mounting child modules, SSO, roles, audit middleware, SSE |
 | `nooblyjs-core` | Library | Shared UI kit (`public/ui/`: frame, shell, router, components), `createShell()`, service registry (the `serverManager`), logging, caching, queueing, scheduling, notifying (Teams/Outlook), measuring, searching, auth, **FsStore**, event bus |
-| `nooblyjs-ai-common` | Library, inside nooblyjs-core (`src/aiservice/common`) | Provider adapters (Anthropic, OpenAI-compatible and mock today; Bedrock/Vertex/Azure to come), model catalogue, tokens, cost, retry, SSE, front matter |
+| `nooblyjs-ai-common` | Library, its own project in the monorepo | Provider adapters (Anthropic, OpenAI-compatible, mock, Bedrock, Vertex AI, Azure), model discovery, model catalogue, tokens, cost, retry, SSE, front matter |
 | `nooblyjs-ai-harness` | Library + CLI | Agent loop, tools, permissions, sandboxing, hooks, MCP, skills, memory |
 | `nooblyjs-ai-infrastructure` | Hosted app at `/infrastructure` (Phase 9a); its provisioning runs work one at a time in the NooblyJS process | Designs and their versions, apply rules by environment kind, policy checks, the provisioner interface (only `mock` today), runs with a log, drift and its sweep, the cloud cost ledger. Opens `infra-design` approvals in the lifecycle engine and carries their decisions out; asks Platform's cloud budget before a run |
 | `nooblyjs-ai-factory` | Hosted app at `/factory`; its scheduler runs in the NooblyJS process (separate workers later) | Line, stations, scheduler, gates (the repository's, matched to quality attributes by name), PR delivery, handoff intake, factory events |

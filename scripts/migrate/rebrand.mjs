@@ -16,7 +16,10 @@ const APPS = 'common|harness|factory|product|infrastructure|knowledge|desktop';
 
 /** Ordered: the specific names first, the bare word last. */
 export const RULES = [
-  // Packages and repositories.
+  // Packages and repositories. The AI module left core for its own project; core sits outside the monorepo.
+  [/file:\.\.\/(?:engx|EngX)-core\/src\/aiservice\/common\b/g, 'file:../nooblyjs-ai-common'],
+  [/(?:engx|EngX)-core\/src\/aiservice\/common(?:\/([\w-]+)\.js)?/g, (m, mod) => (mod ? `nooblyjs-ai-common/${mod === 'index' ? '' : mod}`.replace(/\/$/, '') : 'nooblyjs-ai-common')],
+  [/file:\.\.\/(?:engx|EngX)-core\b/g, 'file:../../nooblyjs-core'],
   [/(?<![A-Za-z0-9])(?:engx|EngX)-ai-teammates?\b/g, 'nooblyjs-ai-teammate'],
   [new RegExp(`(?<![A-Za-z0-9])(?:engx|EngX)-ai-(${APPS})\\b`, 'g'), 'nooblyjs-ai-$1'],
   [/(?<![A-Za-z0-9])(?:engx|EngX)-learn-(harness|factory)\b/g, 'nooblyjs-learn-$1'],
@@ -44,7 +47,8 @@ export const RULES = [
   [/\bEngXNavigation\b/g, 'NooblyJSNavigation'],
   [/\bEngX-(?=[a-z])/g, 'nooblyjs-'],
   [/\bEngX(?=[A-Za-z])/g, 'nooblyjs'],
-  // The words.
+  // The words ("an EngX app" needs its article changed too).
+  [/\b([Aa])n EngX\b/g, '$1 NooblyJS'],
   [/\bEngX AI projects\b/g, 'nooblyjs AI projects'],
   [/\bengx(?=: '1')/g, 'NOOBLY'],
   [/EngX/g, 'NooblyJS'],

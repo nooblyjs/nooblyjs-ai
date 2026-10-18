@@ -370,7 +370,7 @@ export function createChat({ store, events, auditLog, people, agents, roles, ser
       throw forbidden('people_only', `Agents propose and people decide: ${actor.name ?? actor.id} can't ${doing}.`);
     }
     const person = actor?.id ? await people.get(actor.id) : null;
-    if (!person?.active) throw forbidden('unknown_person', 'Only people with an NooblyJS record can take decisions.');
+    if (!person?.active) throw forbidden('unknown_person', 'Only people with a NooblyJS record can take decisions.');
     return person;
   }
 

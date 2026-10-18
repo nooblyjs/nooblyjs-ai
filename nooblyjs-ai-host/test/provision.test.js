@@ -1,4 +1,4 @@
-// Someone who signs in (an nooblyjs-core account, e.g. from Microsoft Entra ID) without an NooblyJS record gets one.
+// Someone who signs in (an nooblyjs-core account, e.g. from Microsoft Entra ID) without a NooblyJS record gets one.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';

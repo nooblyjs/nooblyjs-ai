@@ -9,21 +9,23 @@ inclusion: always
 
 ---
 
-## 1. Workspace: sibling repositories
+## 1. Workspace: the monorepo and nooblyjs-core
 
-The repos are cloned side by side, so `file:../<repo>` dependencies resolve:
+The projects live side by side in the `nooblyjs-ai` monorepo, so `file:../<project>` dependencies resolve;
+`nooblyjs-core` is its own repo next to the monorepo (`file:../../nooblyjs-core`):
 
 ```
-<workspace>/
-  nooblyjs-ai-host\                 the NooblyJS app: shell, Home, Product Factory screens, Platform, chat, Teams bot
-  nooblyjs-core\            shared services + FsStore + event bus + UI kit  (library)
-  nooblyjs-core\src\aiservice\common   the AI module (imported as nooblyjs-ai-common): providers, model catalogue, tokens, cost, SSE
-  nooblyjs-ai-harness\      agent runtime                                   (library + CLI)
-  nooblyjs-ai-product\      Product Factory: screens, artefacts + drafting  (module, UI + API + workers)
-  nooblyjs-ai-factory\      Software Factory                                (module + workers)
-  nooblyjs-ai-infrastructure\  Infrastructure: designs, environments, runs, drift, cost   (module, UI + API)
-  nooblyjs-ai-teammate\    Digital Teammates                               (module + dev server)
-  nooblyjs-ai-knowledge\    Knowledge Repository                            (module + workers)
+nooblyjs-core/                 shared services + FsStore + event bus + UI kit and shell     (library, its own repo)
+nooblyjs-ai/                   the monorepo
+  nooblyjs-ai-host/            the NooblyJS app: shell, Home, Product Factory screens, Platform, chat, Teams bot
+  nooblyjs-ai-common/          the AI module: providers (incl. Bedrock, Vertex, Azure), model catalogue, tokens, cost, SSE
+  nooblyjs-ai-harness/         agent runtime                                   (library + CLI)
+  nooblyjs-ai-product/         Product Factory: screens, artefacts + drafting  (module, UI + API + workers)
+  nooblyjs-ai-factory/         Software Factory                                (module + workers + CLI)
+  nooblyjs-ai-infrastructure/  Infrastructure: designs, environments, runs, drift, cost   (module, UI + API)
+  nooblyjs-ai-teammate/        Digital Teammates                               (module + standalone server)
+  nooblyjs-ai-knowledge/       Knowledge Repository                            (module + workers)
+  nooblyjs-ai-desktop/         projects, documents and chat for any LLM        (standalone app, not hosted)
 ```
 
 Dependency direction (an arrow means "may import"). Nothing imports upwards, and child

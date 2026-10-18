@@ -3,7 +3,7 @@
   "name": "NooblyJS",
   "short_name": "NooblyJS",
   "version": "0.1.0",
-  "description": "NooblyJS beside the page you're on: ask an NooblyJS teammate about the Jira issue in front of you. You review everything before it goes anywhere.",
+  "description": "NooblyJS beside the page you're on: ask a NooblyJS teammate about the Jira issue in front of you. You review everything before it goes anywhere.",
   "author": "Acme Retail",
   "minimum_chrome_version": "116",
   "icons": {

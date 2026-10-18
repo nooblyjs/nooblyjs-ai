@@ -33,7 +33,7 @@ const BUILD = {
 
 /** How a teammate is told to answer in a thread. It goes into the task's context. */
 export const REPLY_RULES = [
-  'You are answering in an NooblyJS team chat thread, next to the work. Answer the person who mentioned you.',
+  'You are answering in a NooblyJS team chat thread, next to the work. Answer the person who mentioned you.',
   'Keep it short: a few sentences, plain text. Say what you know from the context given, and say so when you do not know.',
   'Never invent numbers, dates, people or sources. Use "[PLACEHOLDER: what is missing]" for a fact you do not have.',
   'You draft and advise. You cannot approve, change a status, merge or grant access, and you must not say that you did.',

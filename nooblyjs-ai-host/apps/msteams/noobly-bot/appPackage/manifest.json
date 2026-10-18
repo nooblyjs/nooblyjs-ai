@@ -41,7 +41,7 @@
                     "commands": [
                         {
                             "title": "Add a teammate",
-                            "description": "Choose an NooblyJS agent teammate to add to this chat or meeting."
+                            "description": "Choose a NooblyJS agent teammate to add to this chat or meeting."
                         },
                         {
                             "title": "Ask a teammate",

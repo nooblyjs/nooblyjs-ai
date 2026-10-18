@@ -508,7 +508,7 @@ How it sits in NooblyJS:
 
 ### 5.11 NooblyJS in the browser (the Edge extension)
 
-23. **An NooblyJS side panel in Microsoft Edge** (`apps/edge`, no mockup yet). It brings team chat and the
+23. **A NooblyJS side panel in Microsoft Edge** (`apps/edge`, no mockup yet). It brings team chat and the
     agent teammates to the page a person is working on, starting with **Jira Cloud**, so NooblyJS meets people in the
     tools they already use instead of asking them to copy things across.
     1. **Signed in already.** The panel uses the person's NooblyJS session (nooblyjs-core's authservice: Entra SSO in
@@ -530,7 +530,7 @@ How it sits in NooblyJS:
        own editor on the page. **The person presses Jira's Save.** The issue is changed in their name, in Jira's own
        history, under their own Jira permissions. NooblyJS never saves, creates or transitions anything in Jira from the
        extension.
-    5. **Back into NooblyJS.** **Link to item** links the issue to an NooblyJS item (an NooblyJS write, audited). **Save to
+    5. **Back into NooblyJS.** **Link to item** links the issue to a NooblyJS item (a NooblyJS write, audited). **Save to
        Knowledge** sends a selected passage to Knowledge as a source to review (redacted on the way in).
     6. **Later pages** `[CONFIRM]`: a Bitbucket pull request (explain the change against the item's architecture
        and gates; draft a review comment for the person to post), a Confluence or SharePoint page (Ask Knowledge

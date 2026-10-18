@@ -712,7 +712,7 @@ who may add teammates to meetings (`product.md` §12 Q10).
 
 ## Phase 14 — NooblyJS in the browser: the Edge extension
 
-**Goal:** a person on a Jira issue asks an NooblyJS teammate about it in Edge's side panel, and gets drafts (description,
+**Goal:** a person on a Jira issue asks a NooblyJS teammate about it in Edge's side panel, and gets drafts (description,
 acceptance criteria, sub-tasks, comments) that they put into Jira themselves and save. `product.md` §5.11, `tech.md` §7.4.
 **Repos:** `nooblyjs-ai-host` (`apps/edge` and the extension's API). **Depends on:** Phase 4 (team chat), 6
 (teammates), 11 (reading Jira, issue links) and 12 (Entra sign-in). It does not need Phase 13: the extension never

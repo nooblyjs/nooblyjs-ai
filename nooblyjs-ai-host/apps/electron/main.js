@@ -7,7 +7,7 @@
 // HTTPS_ENABLED), with the same data folder and the same sign-in, so an Entra redirect URI registered for
 // https://localhost:11001 works here too. It runs under the Node on your PATH, not Electron's.
 //
-//   NOOBLY_URL=https://noobly.example     open an NooblyJS that runs somewhere else instead of starting one
+//   NOOBLY_URL=https://noobly.example     open a NooblyJS that runs somewhere else instead of starting one
 //   NOOBLY_NODE=C:\path\to\node.exe     the Node to run NooblyJS with (default: `node` on the PATH)
 //   --smoke                           start, load the first page, print its title and quit (npm run test:electron)
 //
@@ -44,7 +44,7 @@ function localAddress() {
   return `${protocol}://localhost:${setting('PORT') || 11001}`;
 }
 
-/** True when an NooblyJS answers /healthz at this address. */
+/** True when a NooblyJS answers /healthz at this address. */
 function isUp(base) {
   return new Promise((resolve) => {
     const url = new URL('/healthz', base);

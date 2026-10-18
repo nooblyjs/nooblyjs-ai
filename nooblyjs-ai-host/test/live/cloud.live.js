@@ -3,8 +3,8 @@
 // without its variables (CLOUD_HOSTS[host].env in nooblyjs-ai-common) is skipped, so with none set nothing runs.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CLOUD_HOSTS } from 'nooblyjs-core/src/aiservice/common/models.js';
-import { complete, createProvider } from 'nooblyjs-core/src/aiservice/common/providers/index.js';
+import { CLOUD_HOSTS } from 'nooblyjs-ai-common/models';
+import { complete, createProvider } from 'nooblyjs-ai-common/providers';
 
 // The cheapest Claude model by default; LIVE_CLOUD_MODEL picks another.
 const model = process.env.LIVE_CLOUD_MODEL || 'claude-haiku-4-5';

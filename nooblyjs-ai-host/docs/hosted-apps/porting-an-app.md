@@ -83,7 +83,7 @@ route })` and `destroy()` itself, and the bridge is deleted. What the pages shar
 
 - `api` is the kit's `createApi` bound to the mount path, and `appUrl('/team/ada')` adds the mount path.
 - `enter(view, ctx, key)` gives the page its element inside the frame's view and the app's ctx: `meta` and
-  `session` (fetched once per tab), `can(role)` mapped to an NooblyJS permission, and `on(kind, fn)` for live updates.
+  `session` (fetched once per tab), `can(role)` mapped to a NooblyJS permission, and `on(kind, fn)` for live updates.
 - **Live updates use the host's stream.** The app emits its changes with `host.events.emit()`, carrying the
   page's data as `live`, and `on()` is `ctx.sse.on()`. The app's own `EventSource` and `/api/v1/events` are gone.
 - `html` and `icon` are imported from the kit. The app's copies of `html.js`, `icons.js`, `api.js` and
