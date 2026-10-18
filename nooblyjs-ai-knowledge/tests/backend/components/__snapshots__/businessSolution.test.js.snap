@@ -1,0 +1,297 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`businessSolutionClass - content builders (snapshots) createBusinessSolutionContent 1`] = `
+"# PaymentHub — Business Solution Details
+
+## Attributes
+
+| Field | Value |
+| --- | --- |
+| **Name** | PaymentHub - Business Solution |
+| **Description/Definition** | Handles all payment processing. |
+| **Short Description** | Payments |
+| **Current Status** | Active |
+| **Future Strategy** | Invest |
+| **Pace Layer** | Systems of Differentiation |
+| **Business Owner** | Jane Doe |
+| **Responsible Technology Executive** | Debbie Cunningham |
+| **Technology HOD** | John Smith |
+| **Solution Architect** | Alex Roe |
+| **Application Type** | Web |
+| **Hosting Type** | Cloud |
+| **Manufacturer** | In-House |
+| **Abbreviation** | PH |
+| **Business Critical** | Yes |
+| **Solution Continuity Tier** | Tier 1 |
+| **Solution Criticality Tier** | Tier 1 |
+| **MTTR** | 4h |
+| **DR Plan Available** | Yes |
+| **DR-Available** | Yes |
+| **DR Level** | Hot |
+| **Co-Existence** | Required |
+| **Interoperability** | High |
+| **Extensibility** | Medium |
+| **Monitoring and Support** | 24/7 |
+| **Re-usability** | High |
+| **Minimum network bandwidth required** | 10Mbps |
+| **Network Quality of Service** | Gold |
+| **Network Quality of Service Internal WAN** | Gold |
+| **Peak messaging** | 1000/s |
+| **Peak time simultaneous users/ connections** | 5000 |
+| **Projected solution usage growth** | 20% |
+| **Solution scalability required** | Horizontal |
+| **Storage space required** | 500GB |
+| **Adaptability** | High |
+| **Installability** | Easy |
+| **Archiving** | Yearly |
+| **Backup Config** | Daily |
+| **Business Owner RPO/RTO** | 1h/4h |
+| **Data retention period** | 7 years |
+| **Down-time for servicing** | Monthly |
+| **Hours of operation** | 24/7 |
+| **Accountability** | Audited |
+| **Authenticity** | MFA |
+| **Confidentiality** | High |
+| **Integrity** | Checksums |
+| **Legislation and Gov** | POPIA |
+| **Non-repudiation** | Signed |
+| **Policies** | Standard |
+| **Accessibility** | WCAG AA |
+| **Localization** | EN |
+| **Usability constraints** | None |
+"
+`;
+
+exports[`businessSolutionClass - content builders (snapshots) createCRUDContent 1`] = `
+"# PaymentHub — CRUD
+
+| Information Classification | CRUD | Security Classification | Description |
+| --- | --- | --- | --- |
+| **Target One** | [badge:secondary realizes] | [badge:danger Confidential] | First object description. |
+"
+`;
+
+exports[`businessSolutionClass - content builders (snapshots) createCapabilityContent 1`] = `
+"# PaymentHub — Capabilities
+
+| Capability | Description | Purpose |
+| --- | --- | --- |
+| **Target One** | First object description. | [badge:warning realizes] |
+"
+`;
+
+exports[`businessSolutionClass - content builders (snapshots) createComplianceContent 1`] = `
+"# PaymentHub — Solution Compliance
+
+| Name | Description | Adheres |
+| --- | --- | --- |
+| **Source One** | First object description. | [badge:warning Full] |
+"
+`;
+
+exports[`businessSolutionClass - content builders (snapshots) createContextContent 1`] = `
+"# PaymentHub — Integrations
+
+| Source | Destination | Information |
+| --- | --- | --- |
+| **Source One** | Target One | Connection one description. |
+"
+`;
+
+exports[`businessSolutionClass - content builders (snapshots) createEngineeringContent 1`] = `""`;
+
+exports[`businessSolutionClass - content builders (snapshots) createHomeContent 1`] = `
+"hero-banner
+
+  title: PaymentHub
+  subtitle: Handles all payment processing.
+
+> **Abbreviation** \`PH\` · **Manufacturer** In-House · **Solution Architect** Alex Roe
+
+---
+
+## Overview
+
+Handles all payment processing.
+
+container
+
+  left
+  ### Status
+  | Field | Value |
+  | --- | --- |
+  | ****Current**** | Active |
+  | ****Future**** | Invest |
+  | ****Pace Layer**** | Systems of Differentiation |
+
+  right
+  ### Responsible parties
+  | Role | Person |
+  | --- | --- |
+  | ****Business Owner**** | Jane Doe |
+  | ****Responsible Technology Executive**** | Debbie Cunningham |
+  | ****Technology HOD**** | John Smith |
+  | ****Solution Architect**** | Alex Roe |
+
+\`\`\`document
+
+owner: system
+Roadmap: roadmap-1
+Business solution: PaymentHub
+Solutions Architect: Alex Roe
+HOD: John Smith
+Responsible Executive: Debbie Cunningham
+Business Owner: Jane Doe
+workflow: Design Solution: Retrieve and Build Roadmap content ignoring Cache
+workflow-filter: {"filter":[{"roadmap":"roadmap-1"}],"contentfolder":"CONTENT","useCache":false}
+
+\`\`\`
+"
+`;
+
+exports[`businessSolutionClass - content builders (snapshots) createIntegrationContent 1`] = `
+"# PaymentHub - Known Integration
+
+![PaymentHub - Known Integration](data:image/png;base64,BASE64PNG)
+
+## Integration Details
+
+accordion
+
+  expanded: 0
+
+  ## Fetch Data (ARIS00001)
+  **Overview**
+
+  | Field | Value |
+  | --- | --- |
+  | **Reference** | ARIS00001 |
+  | **Description** | Fetch Data |
+  | **Purpose** | Provide data to consumer |
+  | **Technical Operation** | /fetch |
+  | **Project Cross-Reference** | ARIS00001 |
+
+  **Technical**
+
+  | Field | Value |
+  | --- | --- |
+  | **Integration Type** | REST Webservice |
+  | **Communication Protocol** | REST over HTTP |
+  | **Data Format** | JSON |
+  | **Flow Direction** | Inbound |
+  | **Synchronicity** | Synchronous |
+  | **Batch or Real Time** | Real Time |
+  | **Frequency** | Ad Hoc |
+  | **Estimated Message Size** | 1KB - 2MB |
+
+  **Security & Compliance**
+
+  | Field | Value |
+  | --- | --- |
+  | **Security Classification** | Confidential |
+  | **Required Security Mechanism** | HTTPS |
+  | **Actual Security Mechanism** | HTTPS |
+  | **Data Privacy** | No |
+  | **PCI Related** | No |
+  | **Finance or Pricing Related** | Yes |
+  | **Monetised** | false |
+
+  **Delivery & Design**
+
+  | Field | Value |
+  | --- | --- |
+  | **Requires Guaranteed Delivery** | No |
+  | **Transformation Required** | No |
+  | **Transformation Reason** | N/A |
+  | **Re-usable Interface** | Re-usable data between multiple systems |
+  | **Requires Complex Routing** | No |
+  | **Requires Complex Transaction Management** | No |
+  | **Requires Complex Error Management** | No |
+"
+`;
+
+exports[`businessSolutionClass - content builders (snapshots) createNFRContent 1`] = `
+"# PaymentHub — Non-Functional Requirements
+
+accordion
+
+  expanded: 0
+
+  ## Compatibility requirements
+  | Requirement | Value |
+  | --- | --- |
+  | **Co-Existence** | Required |
+  | **Interoperability** | High |
+
+  ## Maintainability requirements
+  | Requirement | Value |
+  | --- | --- |
+  | **Extensibility** | Medium |
+  | **Monitoring and Support** | 24/7 |
+  | **Re-usability** | High |
+
+  ## Performance requirements
+  | Requirement | Value |
+  | --- | --- |
+  | **Minimum network bandwidth required** | 10Mbps |
+  | **Network Quality of Service** | Gold |
+  | **Network Quality of Service Internal WAN** | Gold |
+  | **Peak messaging** | 1000/s |
+  | **Peak time simultaneous users/ connections** | 5000 |
+  | **Projected solution usage growth** | 20% |
+  | **Solution scalability required** | Horizontal |
+  | **Storage space required** | 500GB |
+
+  ## Portability requirements
+  | Requirement | Value |
+  | --- | --- |
+  | **Adaptability** | High |
+  | **Installability** | Easy |
+
+  ## Reliability requirements
+  | Requirement | Value |
+  | --- | --- |
+  | **Archiving** | Yearly |
+  | **Backup Config** | Daily |
+  | **Business Owner RPO/RTO** | 1h/4h |
+  | **Data retention period** | 7 years |
+  | **Down-time for servicing** | Monthly |
+  | **Hours of operation** | 24/7 |
+
+  ## Security requirements
+  | Requirement | Value |
+  | --- | --- |
+  | **Accountability** | Audited |
+  | **Authenticity** | MFA |
+  | **Confidentiality** | High |
+  | **Integrity** | Checksums |
+  | **Legislation and Gov** | POPIA |
+  | **Non-repudiation** | Signed |
+  | **Policies** | Standard |
+
+  ## Usability and Channel requirements
+  | Requirement | Value |
+  | --- | --- |
+  | **Accessibility** | WCAG AA |
+  | **Localization** | EN |
+  | **Usability constraints** | None |
+"
+`;
+
+exports[`businessSolutionClass - content builders (snapshots) createPlaceHolderContent 1`] = `
+"# PaymentHub - Technology Stack
+
+![PaymentHub - Technology Stack](data:image/png;base64,BASE64PNG)
+"
+`;
+
+exports[`businessSolutionClass - content builders (snapshots) createPrinciplesContent 1`] = `
+"# PaymentHub — Solution Principles
+
+All listed principles are adhered to.
+
+| Name | Description | Adheres |
+| --- | --- | --- |
+| **Source One** | First object description. | [badge:warning Full] |
+"
+`;

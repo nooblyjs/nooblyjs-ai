@@ -1,0 +1,48 @@
+[
+  {
+    "name": "Build: Code Processor (Bitbucket)",
+    "description": "Clone or fetch a git repository, then document only the directories that changed since the last successful run, so AI tokens are spent only on changes. Each code-bearing directory gets a .home.md written from an application-architect and functional-designer perspective in a four-section format (Key Concepts, Detailed Design per file, Application Flow as a Mermaid diagram, and APIs as a Swagger/OpenAPI block where endpoints exist), generated bottom-up so parents build on their children. Authentication: repoUrl embeds ${BITBUCKET_USERNAME} and ${BITBUCKET_API_TOKEN} placeholders (Bitbucket API tokens authenticate as username:token) that the fetch-code step expands from the backend .env at run time, so no credential is committed to the workflow or written to disk — set both in .env and point repoUrl at your bitbucket.org repo. Steps: fetch-code (git clone/fetch + diff), process (changed dirs only), record-state (advance the processed-commit marker). The process step's per-directory AI call is wrapped in a bounded timeout+retry (CodeProcessorClass, shared system-context/utilities/retry.js): default aiTimeoutMs 120000 (2 min) x aiRetries 3 attempts, so one stalled/slow provider call fails just that directory (logged, left undocumented) instead of hanging the whole bottom-up sweep. Override either via workflow input for a larger repo or a known-slow provider.",
+    "steps": [
+      "steps/fetch-code.js",
+      "steps/process.js",
+      "steps/record-state.js"
+    ],
+    "tags": [
+      "Technology",
+      "Infrastructure"
+    ],
+    "defaultInput": {
+      "repoUrl": "https://${BITBUCKET_USERNAME}:${BITBUCKET_API_TOKEN}@bitbucket.org/your-org/your-repo.git",
+      "branch": "main",
+      "targetFolder": "input",
+      "markdownFolder": "output",
+      "aiTimeoutMs": 120000,
+      "aiRetries": 3
+    },
+    "createdAt": "2026-05-17T00:00:00.000Z",
+    "updatedAt": "2026-05-17T00:00:00.000Z",
+    "starred": false
+  },
+    {
+    "name": "Source Repository Discovery",
+    "description": "Reconcile the source-repository configuration documents with the platform's build schedules. Scans the configurationlocation folder (set in this workflow's input, so different runs can point at different spaces; the .application working folder still comes from the backend .env) for markdown files, reads each repository table (Name | Source | Repository | Folder | Branch | Status), and for each repo creates the Folder directory structure (resolved against folderBase) then either records the outcome of its last build into the Status cell, or — when Status is empty and no schedule exists — creates a daily schedule that runs 'Build: Code Processor (Bitbucket)' for that repo. Branch is optional per row and for the table as a whole: an empty cell (or a table with no Branch column) falls back to this workflow's branch input, default 'main'. Set it for any repository whose default branch differs — a repo on 'master' cloned with '--branch main' fails outright with 'Remote branch main not found in upstream origin'. The Status cell reports the real outcome read from the platform's execution history, so a failed build shows when it failed and the actual git/AI error rather than only a last-run timestamp. Schedules are created on the live WorkflowBridge in the backend's main process (it owns the live schedule list) through the file-based workflow bridge under APP_BASE_DIR/workflow/.bridge - no HTTP call and no service account. Repository URLs are stored with ${BITBUCKET_USERNAME}/${BITBUCKET_API_TOKEN} placeholders that the build workflow expands at run time, so no secret is written to disk. Finally, once every document has been read, it sweeps the working folder (application_design_datafolder) for clones no document claims any more and reports them with the disk they are holding — a clone is a directory PLUS a sibling .state.json marker, and both are reported (and removed) together, because a surviving marker would make a re-listed repo resume from a stale commit and document nothing. orphanCleanup controls this: 'report' (the default) lists what it would remove without touching anything, 'remove' deletes, 'off' skips the sweep. The default is report-only because deleting a clone also deletes its processed-commit marker, so the next build re-documents every directory from scratch and pays for it in AI calls. The sweep REFUSES to act whenever no repository rows were read at all — a mistyped configurationlocation makes every working folder look orphaned — and says so loudly rather than reporting a clean folder. Run this workflow on its own daily schedule to keep builds in sync as repos are added to the documents.",
+    "steps": [
+      "steps/discover-repos.js"
+    ],
+    "tags": [
+      "Technology",
+      "Infrastructure",
+      "Engineering"
+    ],
+    "defaultInput": {
+      "configurationlocation": "C:/work-content/knowledge-repository-enterprise-application",
+      "buildWorkflowName": "Build: Code Processor (Bitbucket)",
+      "cron": "0 2 * * *",
+      "branch": "main",
+      "orphanCleanup": "report"
+    },
+    "createdAt": "2026-06-08T00:00:00.000Z",
+    "updatedAt": "2026-06-08T00:00:00.000Z",
+    "starred": true
+  }
+]

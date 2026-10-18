@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">noobly Wiki</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist/swagger-ui.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/jpeg" href="favicon.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="stylesheet" href="./css/kr-base.css">
+    <style>
+        /* KR Modern theme tokens (mirrored from wiki.css for inline blocks) */
+        :root {
+            --custom-primary: #12284b;        /* kr-teal-700 */
+            --custom-primary-dark: #0c1c36;   /* kr-teal-800 */
+            --custom-primary-soft: #f1f2f2;   /* kr-teal-50 */
+            --custom-primary-100: #d7d7dd;    /* kr-teal-100 */
+            --custom-secondary: #60627a;      /* kr-ink-500 */
+            --custom-warning: #c98019;        /* kr-warning */
+            --custom-bg: #f1f2f2;             /* kr-bg */
+            --custom-surface: #ffffff;
+            --custom-border: #e6e7e8;
+            --custom-ink: #12284b;
+        }
+
+        html {
+            font-size: 12px;
+        }
+
+        body.loading {
+            overflow: hidden;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--custom-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            margin-bottom: 1.5rem;
+        }
+
+        .loading-text {
+            color: var(--custom-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* Hide content until loaded */
+        body:not(.loaded) nav,
+        body:not(.loaded) footer {
+            visibility: hidden;
+        }
+        .document-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(18, 40, 75, 0.55);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeIn 0.25s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .document-modal-content {
+            background-color: var(--custom-surface);
+            border: 1px solid var(--custom-border);
+            border-radius: 14px;
+            width: 80%;
+            margin: 0 10%;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(18, 40, 75, 0.35);
+            animation: slideUp 0.25s ease;
+            overflow: hidden;
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .document-modal-close {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.9);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            transition: background 0.15s ease, color 0.15s ease;
+            z-index: 10000;
+        }
+        .document-modal-close:hover {
+            background: rgba(255, 255, 255, 0.22);
+            color: #fff;
+        }
+        .document-modal-header {
+            padding: 22px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            background: linear-gradient(135deg, var(--custom-primary) 0%, var(--custom-primary-dark) 100%);
+            color: #fff;
+            position: relative;
+        }
+        .document-modal-header h2 {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+        .document-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 36px;
+            color: var(--custom-ink);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+        .document-modal-body h1,
+        .document-modal-body h2,
+        .document-modal-body h3,
+        .document-modal-body h4 {
+            margin-top: 1.75rem;
+            margin-bottom: 0.75rem;
+            color: var(--custom-ink);
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .document-modal-body h1 { font-size: 24px; font-weight: 800; }
+        .document-modal-body h2 {
+            font-size: 18px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e6e7e8;
+        }
+        .document-modal-body h3 { font-size: 14px; }
+        .document-modal-body h4 { font-size: 13px; color: var(--custom-primary); }
+        .document-modal-body h1:first-child { margin-top: 0; }
+        .document-modal-body code {
+            background: var(--custom-primary-soft);
+            color: var(--custom-primary-dark);
+            padding: 1px 6px;
+            border-radius: 5px;
+            border: 1px solid var(--custom-primary-100);
+            font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+            font-size: 11px;
+        }
+        .document-modal-body pre {
+            background: #12284b;
+            color: #e6e7e8;
+            padding: 16px 18px;
+            border-radius: 10px;
+            overflow-x: auto;
+            border: 0;
+            font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+            font-size: 11px;
+            line-height: 1.6;
+            box-shadow: 0 1px 3px rgba(10,40,40,.06), 0 4px 12px rgba(10,40,40,.04);
+        }
+        .document-modal-body pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+            border: 0;
+        }
+        .document-modal-body blockquote {
+            margin: 14px 0;
+            padding: 12px 18px;
+            border-left: 4px solid var(--custom-primary);
+            background: var(--custom-primary-soft);
+            border-radius: 0 10px 10px 0;
+            color: #3b435f;
+            font-style: italic;
+        }
+        .document-modal-body a {
+            color: var(--custom-primary);
+            text-decoration: none;
+            border-bottom: 1px solid var(--custom-primary-100);
+            transition: border-color 0.15s ease;
+        }
+        .document-modal-body a:hover {
+            border-bottom-color: var(--custom-primary);
+        }
+        .document-modal-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0 18px;
+            border: 1px solid var(--custom-border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .document-modal-body table th,
+        .document-modal-body table td {
+            padding: 12px 14px;
+            text-align: left;
+            border: 0;
+            border-bottom: 1px solid #e6e7e8;
+        }
+        .document-modal-body table th {
+            background: var(--custom-primary-soft);
+            color: var(--custom-primary-dark);
+            font-weight: 700;
+            font-size: 10px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .document-modal-body table tr:last-child td { border-bottom: 0; }
+        .document-modal-body table tr:hover td { background: var(--custom-primary-soft); }
+        .document-modal-body ul,
+        .document-modal-body ol {
+            margin: 14px 0;
+            padding-left: 22px;
+        }
+        .document-modal-body ul li::marker { color: #3b435f; }
+        .document-modal-body ol li::marker { color: var(--custom-primary); font-weight: 700; }
+        .document-modal-body li {
+            margin: 6px 0;
+            color: #3b435f;
+        }
+        /* Mermaid diagram styling */
+        .mermaid-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            background: linear-gradient(135deg, #f7f7f8, #f1f2f2);
+            border: 1px solid var(--custom-border);
+            border-radius: 10px;
+            padding: 2rem;
+            overflow-x: auto;
+            overflow-y: auto;
+            min-height: 500px;
+            max-width: 100%;
+            box-shadow: 0 1px 2px rgba(10,40,40,.04);
+        }
+        .mermaid-diagram .mermaid {
+            background-color: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: center;
+            min-width: 100%;
+        }
+        .mermaid-diagram svg {
+            max-width: 100%;
+            height: auto;
+        }
+        /* Swagger UI documentation styling */
+        .swagger-documentation {
+            border: 1px solid var(--custom-border);
+            border-radius: 14px;
+            background: var(--custom-surface);
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 1px 2px rgba(10,40,40,.04);
+        }
+        .swagger-documentation .swagger-ui {
+            padding: 0;
+            max-width: 100%;
+        }
+        .swagger-documentation .topbar {
+            display: none !important;
+        }
+        .swagger-documentation .information-container {
+            margin: 0;
+        }
+
+        /* Isolate Swagger UI from Bootstrap styles */
+        .swagger-ui * {
+            box-sizing: border-box;
+        }
+
+        /* Swagger UI general fixes */
+        .swagger-ui {
+            font-family: sans-serif;
+        }
+        .swagger-ui .topbar {
+            display: none !important;
+        }
+
+        /* Fix input/select/textarea styling */
+        .swagger-ui input,
+        .swagger-ui select,
+        .swagger-ui textarea {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px !important;
+            border: 1px solid var(--custom-border) !important;
+            border-radius: 6px !important;
+            padding: 8px 10px !important;
+            background-color: white !important;
+            color: var(--custom-ink) !important;
+        }
+
+        .swagger-ui input[type="text"]:focus,
+        .swagger-ui input[type="email"]:focus,
+        .swagger-ui textarea:focus {
+            border-color: var(--custom-primary) !important;
+            box-shadow: 0 0 0 3px var(--custom-primary-soft) !important;
+            outline: none !important;
+        }
+
+        /* Fix tabs styling */
+        .swagger-ui .tab li {
+            list-style: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .swagger-ui .tab li button {
+            border: 1px solid #e0e0e0 !important;
+            background-color: #fafafa !important;
+            color: #3b4151 !important;
+            padding: 8px 16px !important;
+            font-size: 13px !important;
+        }
+
+        .swagger-ui .tab li.active button {
+            background-color: white !important;
+            border-bottom-color: white !important;
+        }
+
+        /* Fix scheme container */
+        .swagger-ui .scheme-container {
+            background: var(--custom-bg);
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 10px;
+            border: 1px solid var(--custom-border) !important;
+        }
+
+        /* Fix button styles */
+        .swagger-ui .btn {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            background: var(--custom-primary) !important;
+            border-color: var(--custom-primary) !important;
+            color: white !important;
+            border-radius: 8px !important;
+        }
+
+        .swagger-ui .btn:hover {
+            background: var(--custom-primary-dark) !important;
+            border-color: var(--custom-primary-dark) !important;
+        }
+
+        /* Fix table styling */
+        .swagger-ui table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+
+        .swagger-ui td, .swagger-ui th {
+            border: 1px solid var(--custom-border) !important;
+            padding: 10px !important;
+            text-align: left !important;
+        }
+
+        .swagger-ui th {
+            background: var(--custom-primary-soft) !important;
+            color: var(--custom-primary-dark) !important;
+            font-weight: 700 !important;
+        }
+
+        @media (max-width: 768px) {
+            .swagger-documentation {
+                padding: 1rem;
+            }
+        }
+
+        /* Plain text columns - remove box styling */
+        .plain-text-columns {
+            margin: 1rem 0;
+        }
+
+        .plain-text-columns > div {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .plain-text-columns p,
+        .plain-text-columns h1,
+        .plain-text-columns h2,
+        .plain-text-columns h3,
+        .plain-text-columns h4,
+        .plain-text-columns h5,
+        .plain-text-columns h6 {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .plain-text-columns ul,
+        .plain-text-columns ol {
+            margin: 0.5rem 0;
+            padding-left: 2rem;
+        }
+
+        .plain-text-columns li {
+            margin: 0.25rem 0;
+        }
+
+        /* Wiki-link card styling */
+        .wiki-links-section {
+            margin: 2rem 0;
+        }
+
+        .wiki-link-card {
+            background: var(--custom-surface);
+            border: 1px solid var(--custom-border);
+            border-radius: 14px;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(10,40,40,.04);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wiki-link-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--custom-primary), var(--custom-primary-dark));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.25s ease;
+        }
+
+        .wiki-link-card:hover {
+            border-color: var(--custom-primary-100);
+            box-shadow: 0 12px 32px -8px rgba(10,40,40,.12), 0 4px 8px rgba(10,40,40,.04);
+            transform: translateY(-2px);
+        }
+
+        .wiki-link-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .wiki-link-card-header {
+            margin-bottom: 0.75rem;
+            flex-grow: 0;
+        }
+
+        .wiki-link-card-title {
+            color: var(--custom-ink);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            font-size: 14px;
+            letter-spacing: -0.005em;
+        }
+
+        .wiki-link-card-subtitle {
+            color: var(--custom-secondary);
+            font-size: 11px;
+            margin-bottom: 0;
+            font-weight: 500;
+        }
+
+        .wiki-link-card-body {
+            flex: 1;
+            margin-bottom: 0.75rem;
+        }
+
+        .wiki-link-card-content {
+            color: #3b435f;
+            font-size: 12px;
+            line-height: 1.65;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .wiki-link-card-footer {
+            padding-top: 0.75rem;
+            border-top: 1px solid #e6e7e8;
+            flex-grow: 0;
+        }
+
+        .wiki-link-read-more {
+            color: var(--custom-primary);
+            font-weight: 600;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: gap 0.25s ease;
+        }
+
+        .wiki-link-card:hover .wiki-link-read-more {
+            gap: 0.75rem;
+        }
+
+        .wiki-link-read-more i {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .wiki-link-card:hover .wiki-link-read-more i {
+            transform: translateX(3px);
+        }
+
+        /* Page wrapper — sticky header + flexible content + footer.
+           Visual styling for the content surface lives in wiki.css (#dynamic-sections). */
+        .content-frame {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-frame #header-container,
+        .content-frame #footer-container {
+            flex-shrink: 0;
+        }
+
+        .content-frame #dynamic-sections {
+            flex: 1;
+        }
+
+        /* Responsive media queries */
+        @media (max-width: 768px) {
+            .document-modal-content {
+                width: 90%;
+                margin: 0 5%;
+                height: 90vh;
+            }
+            .document-modal-header {
+                padding: 20px;
+            }
+            .document-modal-body {
+                padding: 20px;
+            }
+            .document-modal-close {
+                top: 15px;
+                right: 15px;
+            }
+        }
+
+        /* Header nav hover fix.
+           The shared stylesheet carries generic `.nav-item:hover` rules (from
+           the app UI) that paint the Bootstrap navbar's <li> near-white, while
+           the link text stays white — giving white-on-white on hover. Scope the
+           landing header so the <li> stays transparent and links get a readable
+           translucent highlight with white text. The #header-container id beats
+           the bleeding single-class rules. */
+        .content-frame #header-container .nav-item,
+        .content-frame #header-container .nav-item:hover,
+        .content-frame #header-container .nav-item:focus-within {
+            background-color: transparent !important;
+        }
+        /* The generic `.nav-item` rule also paints a 1px bottom border and a
+           left border (a stray line under the header links) and `.nav-link:focus`
+           draws a coloured outline box (the odd green block on the active link).
+           Strip both off the landing header and keep every link a clean, uniform
+           white with an accessible keyboard-only focus ring. */
+        .content-frame #header-container .nav-item {
+            border: 0 !important;
+        }
+        .content-frame #header-container .nav-link {
+            border-radius: 6px;
+            border-bottom: 0 !important;
+            text-decoration: none !important;
+            outline: none !important;
+            color: rgba(255, 255, 255, 0.92) !important;
+            transition: background-color .15s ease, color .15s ease;
+            font-size: 12px;
+        }
+        .content-frame #header-container .nav-link::before,
+        .content-frame #header-container .nav-link::after {
+            display: none !important;
+        }
+        .content-frame #header-container .nav-link:hover,
+        .content-frame #header-container .nav-link:focus {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            color: #fff !important;
+        }
+        .content-frame #header-container .nav-link:focus-visible {
+            outline: 2px solid rgba(255, 255, 255, 0.6) !important;
+            outline-offset: 2px;
+        }
+        
+        #header-container .navbar-brand .fw-semibold {
+            font-size: 16px        
+        }    
+
+        #footer-container .fw-semibold, #footer-container .text-dark {
+            font-weight: 700 !important;
+            font-size: 15px;
+            letter-spacing: -0.005em;
+        }
+
+        #footer-container .text-muted {
+            font-size: 12px !important;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body class="loading">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner-border" role="status" style="color: var(--custom-primary); width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <p class="loading-text">Loading page content...</p>
+        </div>
+    </div>
+
+    <!-- Content Frame Wrapper -->
+    <div class="content-frame">
+        <!-- Header (dynamically generated from markdown) -->
+        <div id="header-container"></div>
+
+        <!-- Dynamic Content Sections -->
+        <div id="dynamic-sections">
+            <!-- All content sections will be rendered here dynamically from content.json -->
+        </div>
+
+        <!-- Footer (dynamically generated from markdown) -->
+        <div id="footer-container"></div>
+    </div>
+
+    <!-- Document Viewer Modal -->
+    <div id="document-modal" class="document-modal" style="display: none;">
+        <div class="document-modal-content">
+            <button class="document-modal-close" id="doc-close-btn">&times;</button>
+            <div class="document-modal-header">
+                <h2 id="doc-viewer-title" class="mb-0">Loading...</h2>
+            </div>
+            <div class="document-modal-body" id="doc-viewer-content">
+                <!-- Markdown content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load content from Markdown file
+        async function loadContent() {
+            try {
+                const response = await fetch('./index.md');
+                if (!response.ok) {
+                    throw new Error(`Failed to load index.md: ${response.status} ${response.statusText}`);
+                }
+                const markdown = await response.text();
+
+                // Parse markdown and render it
+                const html = parseMarkdown(markdown);
+
+                // Extract header navbar if present
+                const headerMatch = html.match(/<nav class="navbar[^>]*>[\s\S]*?<\/nav>/);
+                let contentHtml = html;
+
+                if (headerMatch) {
+                  // Extract and inject header
+                  const headerHtml = headerMatch[0];
+                  document.getElementById('header-container').innerHTML = headerHtml;
+
+                  // Remove header from content
+                  contentHtml = html.replace(headerHtml, '');
+                }
+
+                // Extract footer if present
+                const footerMatch = contentHtml.match(/<footer class="footer[^>]*>[\s\S]*?<\/footer>/);
+
+                if (footerMatch) {
+                  // Extract and inject footer
+                  const footerHtml = footerMatch[0];
+                  document.getElementById('footer-container').innerHTML = footerHtml;
+
+                  // Remove footer from content
+                  contentHtml = contentHtml.replace(footerHtml, '');
+                }
+
+                const dynamicSections = document.getElementById('dynamic-sections');
+                dynamicSections.innerHTML = contentHtml;
+
+                // Execute any inline scripts (for swagger blocks, etc.)
+                const scripts = dynamicSections.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = oldScript.textContent;
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+
+                // Set page title from first H1 heading (skip code blocks)
+                const markdownWithoutCodeBlocks = markdown.replace(/```[\s\S]*?```/g, '');
+                const firstH1 = markdownWithoutCodeBlocks.match(/^# (.+)$/m);
+                if (firstH1) {
+                    document.getElementById('page-title').textContent = firstH1[1];
+                }
+
+                // Render mermaid diagrams if present
+                if (window.mermaid) {
+                    mermaid.run().catch(error => {
+                        console.error('Mermaid rendering error:', error);
+                    });
+                }
+
+                hideLoadingOverlay();
+            } catch (error) {
+                console.error('Error loading content:', error);
+                hideLoadingOverlay();
+                document.body.innerHTML += `<div style="padding: 20px; color: red; font-family: monospace;">Error loading page content: ${error.message}</div>`;
+            }
+        }
+
+        // Hide loading overlay and show content
+        function hideLoadingOverlay() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('hidden');
+            }
+            document.body.classList.remove('loading');
+            document.body.classList.add('loaded');
+        }
+
+        // Close document modal
+        function closeDocumentModal() {
+            document.getElementById('document-modal').style.display = 'none';
+            document.body.style.overflow = 'auto'; // Re-enable scrolling
+        }
+
+        // Load and display document content in modal
+        async function loadDocumentContent(docPath) {
+            try {
+                const response = await fetch('/docs' + docPath);
+                const markdown = await response.text();
+
+                // Render markdown to HTML using custom parser with support for container and hero-banner blocks
+                const html = parseMarkdown(markdown);
+
+                const fileName = docPath.split('/').pop().replace('.md', '');
+                const displayName = fileName.charAt(0).toUpperCase() + fileName.slice(1).replace(/-/g, ' ');
+
+                document.getElementById('doc-viewer-title').textContent = displayName;
+                document.getElementById('doc-viewer-content').innerHTML = html;
+
+                // Show the modal
+                document.getElementById('document-modal').style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            } catch (error) {
+                console.error('Error loading document content:', error);
+                alert('Error loading document. Please try again.');
+            }
+        }
+
+        // Load wiki-link document (supports both /path and docs/path formats)
+        async function loadWikiLinkDocument(docPath, title) {
+            try {
+                // Decode the path if it was encoded
+                const decodedPath = decodeURIComponent(docPath);
+
+                // Determine the actual path to fetch from
+                let fetchPath = decodedPath;
+                if (!decodedPath.startsWith('/')) {
+                    fetchPath = '/' + decodedPath;
+                }
+                if (!decodedPath.startsWith('/docs') && !decodedPath.startsWith('/documents')) {
+                    fetchPath = '/docs' + fetchPath;
+                }
+
+                const response = await fetch(fetchPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to load: ${response.status} ${response.statusText}`);
+                }
+                const markdown = await response.text();
+
+                // Render markdown to HTML using custom parser
+                const html = parseMarkdown(markdown);
+
+                document.getElementById('doc-viewer-title').textContent = title || 'Document';
+                document.getElementById('doc-viewer-content').innerHTML = html;
+
+                // Show the modal
+                document.getElementById('document-modal').style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+
+                // Re-render any mermaid diagrams in the modal
+                if (window.mermaid) {
+                    mermaid.run().catch(error => {
+                        console.error('Mermaid rendering error in modal:', error);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading wiki-link document:', error);
+                alert('Error loading document: ' + error.message);
+            }
+        }
+
+
+        // Load content when page loads
+        document.addEventListener('DOMContentLoaded', loadContent);
+
+        // Set up document modal close button
+        document.addEventListener('DOMContentLoaded', () => {
+            const closeBtn = document.getElementById('doc-close-btn');
+            const modal = document.getElementById('document-modal');
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeDocumentModal);
+            }
+
+            // Close modal when clicking outside the content
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeDocumentModal();
+                    }
+                });
+            }
+
+            // Close modal with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.style.display !== 'none') {
+                    closeDocumentModal();
+                }
+            });
+        });
+
+    </script>
+
+    <!-- Bootstrap 5 JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Marked.js for Markdown rendering — pinned to 4.3.0 to match the wiki app
+         and the custom parser's positional renderer.link signature. Newer marked
+         (v5+) passes a token object and breaks links inside custom blocks. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+
+    <!-- Mermaid.js for diagram rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        // Initialize mermaid with better rendering options
+        if (window.mermaid) {
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: 'default',
+                securityLevel: 'loose',
+                classMaxWidth: 200,
+                flowchart: {
+                    useMaxWidth: true,
+                    padding: 20
+                },
+                classDiagram: {
+                    useMaxWidth: true,
+                    padding: 20
+                }
+            });
+        }
+    </script>
+
+    <!-- Swagger UI for API documentation -->
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist/swagger-ui-bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist/swagger-ui-standalone-preset.js"></script>
+    <!-- JS-YAML for parsing YAML in swagger blocks -->
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml/dist/js-yaml.min.js"></script>
+
+    <!-- Custom Markdown Parser with support for custom blocks (container, hero-banner, etc.) -->
+    <script src="/js/markdown/markdown-parser.js"></script>
+
+    <!-- Click any rendered image to open it full-size in a lightbox (mirrors the wiki). -->
+    <script src="/js/image-lightbox.js"></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4QK5BHJYZM"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-4QK5BHJYZM');
+    </script>
+</body>
+</html>

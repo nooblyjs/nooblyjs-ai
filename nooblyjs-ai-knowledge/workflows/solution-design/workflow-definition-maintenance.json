@@ -1,0 +1,153 @@
+[ 
+  {
+    "name": "Rebuild Solution: Retrieve and Build Roadmap content ignoring Cache",
+    "description": "Build all the content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessSolutionContent.js"
+    ],
+    "tags": [
+      "Content All"
+    ],
+    "defaultInput": {"filter": [{"roadmap": ""}], "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache": false},
+    "createdAt": "2026-06-01T00:00:00.000Z",
+    "updatedAt": "2026-06-01T00:00:00.000Z",
+    "starred": true
+  },
+   {
+    "name": "Rebuild Solution: Digital Technologies",
+    "description": "Refresh the Digital Technologies and create content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessSolutionData.js",
+      "steps/businessSolutionContent.js"
+    ],
+    "tags": [
+      "Digital Technologies"
+    ],
+    "defaultInput": {"filter": [{"Responsible Technology Executive": "Debbie Cunningham"}, {"Value Stream": "Move"}, {"Value Stream": "Data and Analytics"}, {"Value Stream": "Sell"}, {"Value Stream": "Finance"}, {"Value Stream": "Technology"}, {"Value Stream": "Plan"}, {"Value Stream": "Service"}, {"Value Stream": "Buy"}, {"Value Stream": "Artificial Intelligence"}], 
+    "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache":false},
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "updatedAt": "2026-03-06T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Rebuild Solution: Enterprise Technologies",
+    "description": "Rebuild the Enterprise Technologies and create content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessSolutionData.js",
+      "steps/businessSolutionContent.js"
+    ],
+    "tags": [
+      "Enterprise Technologies"
+    ],
+    "defaultInput": {"filter": [{"Responsible Technology Executive": "Sandra Moumtzis"}, {"Value Stream": "Move"}, {"Value Stream": "Data and Analytics"}, {"Value Stream": "Sell"}, {"Value Stream": "Finance"}, {"Value Stream": "Technology"}, {"Value Stream": "Plan"}, {"Value Stream": "Service"}, {"Value Stream": "Buy"}, {"Value Stream": "Artificial Intelligence"}], 
+    "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache":false},
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "updatedAt": "2026-03-06T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Rebuild Solution: Digital Infrastructure Technologies",
+    "description": "Rebuild the Digital Infrastructure Technologies and create content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessSolutionData.js",
+      "steps/businessSolutionContent.js"
+    ],
+    "tags": [
+      "Digital Infrastructure Technologies"
+    ],
+    "defaultInput": {"filter": [{"Responsible Technology Executive": "Jacques De Waal"}, {"Value Stream": "Move"}, {"Value Stream": "Data and Analytics"}, {"Value Stream": "Sell"}, {"Value Stream": "Finance"}, {"Value Stream": "Technology"}, {"Value Stream": "Plan"}, {"Value Stream": "Service"}, {"Value Stream": "Buy"}, {"Value Stream": "Artificial Intelligence"}], 
+    "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache":false},
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "updatedAt": "2026-03-06T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Rebuild Solution: Retrieve Shared Services",
+    "description": "Rebuild the Shared Services and create content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessSolutionData.js",
+      "steps/businessSolutionContent.js"
+    ],
+    "tags": [
+      "Shared Services"
+    ],
+    "defaultInput": {"filter": [{"Responsible Technology Executive": "Ferdie Voges"}, {"Value Stream": "Move"}, {"Value Stream": "Data and Analytics"}, {"Value Stream": "Sell"}, {"Value Stream": "Finance"}, {"Value Stream": "Technology"}, {"Value Stream": "Plan"}, {"Value Stream": "Service"}, {"Value Stream": "Buy"}, {"Value Stream": "Artificial Intelligence"}], 
+    "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache":false},
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "updatedAt": "2026-03-06T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Rebuild Solution: Retrieve Analytics Technologies",
+    "description": "Rebuild the Data for the Data and Analytics Technologies and create content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessSolutionData.js",
+      "steps/businessSolutionContent.js"
+    ],
+    "tags": [
+      "Analytics Technologies"
+    ],
+    "defaultInput": {"filter": [{"Responsible Technology Executive": "Maciej Kaliszka"}, {"Value Stream": "Move"}, {"Value Stream": "Data and Analytics"}, {"Value Stream": "Sell"}, {"Value Stream": "Finance"}, {"Value Stream": "Technology"}, {"Value Stream": "Plan"}, {"Value Stream": "Service"}, {"Value Stream": "Buy"}, {"Value Stream": "Artificial Intelligence"}], 
+    "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache":false},
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "updatedAt": "2026-03-06T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Rebuild Solution: Retrieve Commercial Services",
+    "description": "Rebuild the Data for the Commercial Services and create content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessSolutionData.js",
+      "steps/businessSolutionContent.js"
+    ],
+    "tags": [
+      "Commercial Technologies"
+    ],
+    "defaultInput": {"filter": [{"Responsible Technology Executive": "Richard Page"}, {"Value Stream": "Move"}, {"Value Stream": "Data and Analytics"}, {"Value Stream": "Sell"}, {"Value Stream": "Finance"}, {"Value Stream": "Technology"}, {"Value Stream": "Plan"}, {"Value Stream": "Service"}, {"Value Stream": "Buy"}, {"Value Stream": "Artificial Intelligence"}], 
+    "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache":false},
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "updatedAt": "2026-03-06T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Rebuild Solution: Retrieve People Technologies",
+    "description": "Rebuild the Data for all People value stream solutions and create content in the People space",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessSolutionData.js",
+      "steps/businessSolutionContent.js"
+    ],
+    "tags": [
+      "People Technologies"
+    ],
+    "defaultInput": {"filter": [{"Value Stream": "People"}], 
+    "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache": false},
+    "createdAt": "2026-06-01T00:00:00.000Z",
+    "updatedAt": "2026-06-01T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Rebuild Solution: Retrieve Fintech Technologies",
+    "description": "Rebuild the Data for the Fintech Technologies and create content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessSolutionData.js",
+      "steps/businessSolutionContent.js"
+    ],
+    "tags": [
+      "Fintech Technologies"
+    ],
+    "defaultInput": {"filter": [{"Responsible Technology Executive": "Adrian Linde"}, {"Value Stream": "Move"}, {"Value Stream": "Data and Analytics"}, {"Value Stream": "Sell"}, {"Value Stream": "Finance"}, {"Value Stream": "Technology"}, {"Value Stream": "Plan"}, {"Value Stream": "Service"}, {"Value Stream": "Buy"}, {"Value Stream": "Artificial Intelligence"}], 
+    "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache":false},
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "updatedAt": "2026-03-06T00:00:00.000Z",
+    "starred": true
+  }
+]

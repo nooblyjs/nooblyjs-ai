@@ -1,0 +1,121 @@
+/* ============================================================================
+   teams-theme.css — Teams skin for the EMBEDDED web datasources app.
+
+   Loaded at runtime by embed-bootstrap.js ONLY when the page is opened as
+   `/applications/datasources/?embed=1&theme=teams` (i.e. inside the Teams tab).
+   A normal web visit never loads this file, so the web datasources app keeps its
+   default teal-blue accent.
+
+   The datasources design system (css/datasources.css) drives its primary accent
+   from the `--gold-*` ramp (a deep teal-blue, kept under the historical "gold"
+   slot names). Re-pointing that ramp at the Microsoft Teams brand purple
+   reskins the whole app from one place. A handful of hardcoded `#02797d` greens
+   that the token swap can't reach are overridden below.
+
+   Scoped to `:root.kr-embed` (the <html> element carries .kr-embed, set by the
+   bootstrap) so it outranks datasources.css's own `:root` ramp regardless of
+   stylesheet load order. Sibling of src/web/wiki/public/css/teams-theme.css
+   — keep the two palettes in sync (see applications/teams/wiki/PARITY.md).
+   ============================================================================ */
+
+:root.kr-embed {
+  /* --- Primary accent ramp → Microsoft Teams brand purple (#5b5fc7).
+         500 = PRIMARY, 600 = strong (hover/active), lighter steps for tints. --- */
+  --gold-50:  #ececf8;
+  --gold-100: #ddddf4;
+  --gold-200: #c5c6ec;
+  --gold-300: #a6a8e0;
+  --gold-400: #7e81d2;
+  --gold-500: #5b5fc7;   /* PRIMARY */
+  --gold-600: #4f52b5;
+  --gold-700: #4447a0;
+  --gold-800: #393b86;
+  --gold-900: #2e2f6b;
+
+  /* --- Surfaces nudged to Teams neutrals (datasources is already near-neutral). --- */
+  --bg:     #f5f5f5;
+  --card:   #ffffff;
+  --line:   #e1e1e1;
+  --line-2: #ededed;
+
+  /* --- Teams brand aliases, for any kr-base-driven chrome (header / login shell)
+         that reads these rather than the datasources --gold-* / --ink-* tokens. --- */
+  --kr-brand:        #5b5fc7;
+  --kr-brand-strong: #4f52b5;
+  --kr-teal-700:     #4d4d4d;
+  --kr-teal-800:     #3d3d3d;
+}
+
+/* Teams-native font (Segoe), falling back to the app's Inter/Manrope. */
+:root.kr-embed body,
+:root.kr-embed .kr-ds {
+  font-family: 'Segoe UI', 'Inter', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ----------------------------------------------------------------------------
+   Header → light Teams header (#EBEBEB). The datasources shell renders the
+   UIService navbar; flip it to the neutral light Teams bar. In Teams the host
+   already provides the app identity + a global sign-out, so hide the in-app
+   logout control.
+   ---------------------------------------------------------------------------- */
+.kr-embed #header-container .navbar,
+.kr-embed #header-container .navbar.bg-light,
+.kr-embed header.kr-topbar {
+  background: #ebebeb !important;
+  color: var(--ink-900) !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+.kr-embed #logoutBtn,
+.kr-embed [data-action="logout"],
+.kr-embed a[href*="authservice/logout"] { display: none !important; }
+
+/* ----------------------------------------------------------------------------
+   Hardcoded #02797d / #01566a teal-greens in datasources.css that the token
+   swap can't reach (Markdown Sources / Prompt Library buttons, filing browser
+   hover + icons + badges). Re-point them at the Teams brand purple.
+   ---------------------------------------------------------------------------- */
+.kr-embed .sources-dashboard .btn-warning,
+.kr-embed .sources-container .btn-warning,
+.kr-embed .prompt-library-dashboard .btn-warning,
+.kr-embed .prompt-library-container .btn-warning {
+  background-color: var(--gold-500) !important;
+  border-color: var(--gold-500) !important;
+  color: #fff !important;
+}
+.kr-embed .sources-dashboard .btn-warning:hover,
+.kr-embed .sources-container .btn-warning:hover,
+.kr-embed .prompt-library-dashboard .btn-warning:hover,
+.kr-embed .prompt-library-container .btn-warning:hover {
+  background-color: var(--gold-600) !important;
+  border-color: var(--gold-600) !important;
+}
+.kr-embed .file-item:hover {
+  border-color: var(--gold-500);
+  background-color: var(--gold-50);
+  box-shadow: 0 2px 8px rgba(91, 95, 199, 0.12);
+}
+.kr-embed .file-icon { color: var(--gold-500); }
+.kr-embed .file-badge {
+  background-color: var(--gold-50);
+  color: var(--gold-600);
+}
+
+/* Bootstrap primary buttons (the shell still loads Bootstrap) → Teams purple. */
+.kr-embed .btn-primary {
+  background-color: var(--gold-500);
+  border-color: var(--gold-500);
+}
+.kr-embed .btn-primary:hover:not(:disabled),
+.kr-embed .btn-primary:active:not(:disabled) {
+  background-color: var(--gold-600) !important;
+  border-color: var(--gold-600) !important;
+}
+.kr-embed .btn-outline-primary {
+  color: var(--gold-600);
+  border-color: var(--gold-500);
+}
+.kr-embed .btn-outline-primary:hover:not(:disabled) {
+  background-color: var(--gold-500);
+  border-color: var(--gold-500);
+  color: #fff;
+}

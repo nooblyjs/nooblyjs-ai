@@ -1,0 +1,1173 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "noobly Wiki — Document API",
+    "description": "Read-oriented document API for the noobly Wiki Platform (port 9101).\n\nThis spec is intentionally scoped to the **document operations** an external consumer (e.g. an MCP server) needs to read knowledge out of the wiki:\n\n- **Spaces** — list the available knowledge spaces and read a single space.\n- **Browse** — walk a space's folder/document tree, or list a single directory.\n- **Documents** — fetch a document's content (text as JSON, binary as raw bytes) or download the raw file.\n- **Search** — full-text search to discover documents to read.\n\nThe tool-management surface (workflows, executions, schedules, connections, agents, settings, RBAC, social/notifications, onboarding, blueprint, datasources content, etc.) is intentionally **excluded**. The complete platform API is preserved alongside this file as `openapi.full.json`.\n\n**Identity model:** documents are addressed by `spaceId` (integer) + `path` (relative to the space root, using `/` separators). Call `GET /applications/wiki/api/spaces` first to map a space name to its `spaceId`, then browse the tree to discover paths, then read content by path.",
+    "version": "2.0.0",
+    "contact": {
+      "name": "noobly Team"
+    },
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Unified backend (port 9101)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "token",
+        "description": "Bearer token (e.g. a personal `dtk_` API token). Sent as `Authorization: Bearer <token>`. This is the recommended scheme for programmatic / MCP access. Public spaces are readable without any credential; team and private spaces require a token whose user has access."
+      },
+      "SessionAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "connect.sid",
+        "description": "Session cookie issued after an interactive login. Mainly used by the browser UI; programmatic consumers should prefer BearerAuth."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "Underlying error code where available, e.g. ENOENT, EACCES"
+          }
+        }
+      },
+      "Space": {
+        "type": "object",
+        "description": "A knowledge space (a top-level container of folders and documents).",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Numeric space identifier — use this as `spaceId` in the browse and document endpoints"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable space name (also returned as `spaceName` on document nodes and search results)"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "project",
+              "team",
+              "workflow",
+              "archive",
+              "documentation",
+              "temporary"
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "team",
+              "private"
+            ],
+            "description": "public = readable by anyone; team = readable by authenticated users; private = readable only by users in allowedUsers"
+          },
+          "permissions": {
+            "type": "string",
+            "description": "e.g. 'read-only' or 'read-write'"
+          },
+          "allowedUsers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TreeNode": {
+        "type": "object",
+        "description": "A node in a space's folder tree. Folders carry `children`; documents are leaves addressed by `path`.\n\nThe wire format is LEAN: `path`, `title`, `fileName` and `spaceName` are omitted because a client can derive them (`path` = parent path + '/' + `name`; the rest are copies of `name` or constant for the response). `status` is omitted when unset rather than sent as null.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "folder",
+              "document"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path relative to the space root (use this as `documentPath` when reading content). OMITTED on the wire — rebuild it from the nesting."
+          },
+          "title": {
+            "type": "string",
+            "description": "Present on document nodes. OMITTED on the wire — equals `name` (or the space being requested)."
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Present on document nodes. OMITTED on the wire — equals `name` (or the space being requested)."
+          },
+          "spaceName": {
+            "type": "string",
+            "description": "Present on document nodes. OMITTED on the wire — equals `name` (or the space being requested)."
+          },
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional navigation accent / status colour; omitted when unset"
+          },
+          "children": {
+            "type": "array",
+            "description": "Present on folder nodes",
+            "items": {
+              "$ref": "#/components/schemas/TreeNode"
+            }
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Folder nodes only. `true` means the walk stopped here and this folder has NOT been listed — `children` is empty because nothing was read, not because the folder is empty. Re-request with `path` set to this folder to list it."
+          }
+        }
+      },
+      "FolderTree": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "spaceId": {
+            "type": "integer"
+          },
+          "tree": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TreeNode"
+            }
+          },
+          "path": {
+            "type": "string",
+            "description": "The folder this tree is rooted at ('' = space root); echoes the `path` query parameter."
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Levels actually walked below `path`."
+          }
+        }
+      },
+      "DirectoryListing": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "directory": {
+            "type": "string"
+          },
+          "files": {
+            "type": "array",
+            "description": "Entries in the directory. Depending on the space's filing provider, each entry is either a bare file/folder name or an object with name + type metadata.",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "file",
+                        "folder"
+                      ]
+                    },
+                    "isDirectory": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "FileContent": {
+        "type": "object",
+        "description": "Text/markdown document content. Returned for textual viewer types (markdown, code, text, web, data). Office documents (docx/xlsx/pptx) are returned as their derived markdown sidecar with `metadata.derivedFrom` set. Binary files are NOT returned via this schema — they are streamed as raw bytes (see the binary response content types).",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "content": {
+            "type": "string",
+            "description": "The document text. Empty string for download-only file types."
+          },
+          "path": {
+            "type": "string"
+          },
+          "spaceId": {
+            "type": "integer"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "size": {
+                "type": "integer"
+              },
+              "provider": {
+                "type": "string",
+                "description": "Filing provider backing the space (e.g. local, ftp, s3)"
+              },
+              "encoding": {
+                "type": "string",
+                "enum": [
+                  "utf8",
+                  "base64",
+                  "binary",
+                  "none"
+                ]
+              },
+              "viewer": {
+                "type": "string",
+                "enum": [
+                  "markdown",
+                  "code",
+                  "text",
+                  "web",
+                  "image",
+                  "pdf",
+                  "video",
+                  "audio",
+                  "download"
+                ],
+                "description": "How the platform renders this file. 'download' means a binary/unsupported file with no inline text."
+              },
+              "derivedFrom": {
+                "type": "string",
+                "description": "Set when content is the markdown sidecar derived from an office original at this path"
+              }
+            }
+          }
+        }
+      },
+      "ChangeEvent": {
+        "type": "object",
+        "description": "A single file or folder change recorded by the platform's file watcher / API. Emitted in chronological order (oldest first). Consumers persist the feed's `cursor` and pass it back as `since` to receive only newer events.",
+        "properties": {
+          "event": {
+            "type": "object",
+            "description": "Event metadata",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique event id"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When the change was recorded (ISO 8601). The most recent event's timestamp is echoed as the feed `cursor`."
+              },
+              "type": {
+                "type": "string",
+                "description": "Combined `<itemType>:<operation>`, e.g. `file:create`, `folder:delete`",
+                "example": "file:update"
+              },
+              "operation": {
+                "type": "string",
+                "enum": [
+                  "create",
+                  "update",
+                  "delete",
+                  "rename",
+                  "move"
+                ]
+              },
+              "itemType": {
+                "type": "string",
+                "enum": [
+                  "file",
+                  "folder"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "description": "Origin of the change",
+                "enum": [
+                  "file-watcher",
+                  "api",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "space": {
+            "type": "object",
+            "description": "The space the changed item belongs to",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "Space id — matches the `since`/`spaceId` filter and the id used elsewhere in this API"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "item": {
+            "type": "object",
+            "description": "The changed file or folder. `path` is relative to the space root using `/` separators, so it can be fed directly to the document/browse endpoints.",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string",
+                "description": "Path relative to the space root"
+              },
+              "parentPath": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "file",
+                  "folder"
+                ]
+              },
+              "size": {
+                "type": "integer",
+                "description": "Present when known"
+              },
+              "created": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Present when known"
+              },
+              "modified": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Present when known"
+              },
+              "oldPath": {
+                "type": "string",
+                "description": "Present on rename/move — the previous path"
+              },
+              "newPath": {
+                "type": "string",
+                "description": "Present on rename/move — the new path"
+              },
+              "oldParentPath": {
+                "type": "string",
+                "description": "Present on move — the previous parent path"
+              }
+            }
+          },
+          "context": {
+            "type": "object",
+            "description": "Additional context",
+            "properties": {
+              "fullPath": {
+                "type": "string",
+                "description": "`<spaceName>/<path>` convenience string"
+              },
+              "changed": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "userId": {
+                "type": "string",
+                "description": "Present when the change came from an authenticated API action"
+              },
+              "userName": {
+                "type": "string",
+                "description": "Present when the change came from an authenticated API action"
+              }
+            }
+          }
+        }
+      },
+      "ChangesFeed": {
+        "type": "object",
+        "description": "A page of change events plus the cursor to continue from.",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "events": {
+            "type": "array",
+            "description": "Matching events in chronological order (oldest first).",
+            "items": {
+              "$ref": "#/components/schemas/ChangeEvent"
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Timestamp of the newest event returned (or of the newest event on record when this page is empty). Persist it and send it as `since` on the next poll. Null when the feed is empty."
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "True when your `since` cursor is older than the oldest event still retained in memory — some changes were missed, so perform a full sync (browse + folder-tree) and reset your cursor from `serverTime`."
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Server clock at response time. Use as the initial cursor for a first-time / post-truncation full sync."
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    },
+    {
+      "SessionAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Spaces",
+      "description": "List and read knowledge spaces"
+    },
+    {
+      "name": "Browse",
+      "description": "Walk a space's folder/document tree or list a single directory"
+    },
+    {
+      "name": "Documents",
+      "description": "Read document content (text or binary) and download raw files"
+    },
+    {
+      "name": "Search",
+      "description": "Full-text search to discover documents"
+    },
+    {
+      "name": "Changes",
+      "description": "Poll a cursor-based feed of file/folder changes to consume only what changed since your last sync"
+    }
+  ],
+  "paths": {
+    "/applications/wiki/api/spaces": {
+      "get": {
+        "tags": [
+          "Spaces"
+        ],
+        "summary": "List knowledge spaces",
+        "description": "Returns the spaces the caller can see. Use the returned `id` as `spaceId` in the browse and document endpoints, and `name` to correlate with `spaceName` on tree nodes and search results.",
+        "responses": {
+          "200": {
+            "description": "List of spaces",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Space"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/spaces/{id}": {
+      "get": {
+        "tags": [
+          "Spaces"
+        ],
+        "summary": "Get a single space",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Space id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Space",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Space"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/spaces/{spaceId}/folder-tree": {
+      "get": {
+        "tags": [
+          "Browse"
+        ],
+        "summary": "Get a space's folder/document tree (lazy, depth-limited)",
+        "description": "Returns a nested tree of folders and documents in a space. Hidden files (those beginning with `.`) are omitted. Supports ETag / `If-None-Match` for cheap revalidation (304 when unchanged).\n\n**The walk is depth-limited.** By default only 2 levels are listed; a folder below the cut is returned with `children: []` and `truncated: true`, which means **not listed yet** — not empty. Fetch it by repeating the request with `path` set to that folder. Pass `depth=all` for the full recursive tree; on a large content root that request can take minutes, which is why it is opt-in.",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Previously returned ETag; yields 304 when the tree is unchanged"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Space-relative folder to return the subtree of. Omit (or '' / '/') for the space root. Returns 404 if the space's allowedPaths/excludedPaths hide it, 400 on a traversal attempt."
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "2"
+            },
+            "description": "Levels to list below `path`. `all` (or `0`) walks everything, still capped by WIKI_TREE_MAX_DEPTH. Defaults to WIKI_TREE_DEPTH (2)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Folder tree",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Opaque tree version for revalidation"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderTree"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified (matched If-None-Match)"
+          },
+          "401": {
+            "description": "Authentication required (non-public space)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space not found, or `path` is hidden by the space's path filter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid path (traversal)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/spaces/{spaceId}/file-list/{directoryPath}": {
+      "get": {
+        "tags": [
+          "Browse"
+        ],
+        "summary": "List the contents of a single directory",
+        "description": "Lists the immediate entries of one directory within a space (non-recursive). Pass an empty `directoryPath` (or `.`) for the space root. For a full recursive view use the folder-tree endpoint instead.",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "directoryPath",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Directory path relative to the space root (may contain `/`). Use `.` for the root.",
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Directory listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryListing"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/spaces/{spaceId}/file-content/{documentPath}": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Get document content (text as JSON, binary as raw bytes)",
+        "description": "Reads a document by path within a space.\n\n- **Text documents** (markdown, code, plain text, web, data) return `application/json` matching the `FileContent` schema, with the text in `content`.\n- **Office documents** (docx/xlsx/pptx) return their derived markdown sidecar as `FileContent` (with `metadata.derivedFrom`). When no sidecar exists yet, an empty `content` with `metadata.viewer = 'download'` is returned — fetch the original via the download endpoint.\n- **Binary documents** (image, pdf, video, audio) are streamed as raw bytes with the appropriate `Content-Type` (not JSON-wrapped).",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "documentPath",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Document path relative to the space root (may contain `/`).",
+            "allowReserved": true
+          },
+          {
+            "name": "encoding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "utf8",
+                "base64",
+                "binary"
+              ],
+              "default": "utf8"
+            },
+            "description": "Read encoding for text responses. Ignored for binary viewer types (always raw bytes)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document content. Media type depends on the file: JSON for text/markdown, raw bytes for binary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileContent"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/svg+xml": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing space id or path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required (non-public space)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space or document not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/spaces/{spaceId}/download/{documentPath}": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Download the raw file (binary or text)",
+        "description": "Streams the unmodified file content as raw bytes with the MIME type derived from its extension. Unlike the file-content endpoint, this always returns the original bytes (never a derived markdown sidecar), making it the correct choice for downloading office documents, images, PDFs and any binary asset. Set `?download=true` to receive a `Content-Disposition: attachment` header.",
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "documentPath",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Document path relative to the space root (may contain `/`).",
+            "allowReserved": true
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "When true, sets Content-Disposition: attachment"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Raw file content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing space id or path",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required (non-public space)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Space or document not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/search": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Full-text search across documents",
+        "description": "Searches indexed document content and titles. Spaces are filtered by id (consistent with the rest of this API) — pass `spaceId` for a single space or `spaceIds` for several. Each result carries both `spaceId` and `spaceName` plus the document `path`, so a result can be read directly via the document endpoints.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query"
+          },
+          {
+            "name": "spaceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Restrict to a single space (by id)"
+          },
+          {
+            "name": "spaceIds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of space ids to restrict to"
+          },
+          {
+            "name": "fileTypes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of file types/extensions to restrict to"
+          },
+          {
+            "name": "includeContent",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include a content excerpt/body with each result"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string"
+                      },
+                      "excerpt": {
+                        "type": "string"
+                      },
+                      "path": {
+                        "type": "string",
+                        "description": "Document path relative to its space root"
+                      },
+                      "spaceName": {
+                        "type": "string"
+                      },
+                      "spaceId": {
+                        "type": "integer"
+                      },
+                      "type": {
+                        "type": "string"
+                      },
+                      "relevance": {
+                        "type": "number"
+                      },
+                      "modifiedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/changes": {
+      "get": {
+        "tags": [
+          "Changes"
+        ],
+        "summary": "Poll the change feed for incremental sync",
+        "description": "Returns file/folder change events so a client can consume **only what changed** since its last poll instead of re-crawling every document. This is the endpoint the wiki sync daemon uses.\n\n**How to use it:**\n1. First call **without** `since` — you get the full retained event ring plus a `cursor` (and `serverTime`). For a fresh client, discard the events and seed your cursor from `serverTime`, then do a one-time full crawl (folder-tree + file-content).\n2. On each subsequent poll, pass the previously returned `cursor` as `since`. You receive only events strictly newer than that timestamp, and a fresh `cursor` to store.\n3. If the response has `truncated: true`, your cursor fell off the back of the in-memory ring (you polled too infrequently) — discard the partial events, run a full sync, and reset your cursor from `serverTime`.\n\nEvents are returned oldest-first. `cursor` is the timestamp of the newest event (so it is safe to reuse even when `events` is empty).\n\n**Auth:** unlike the public read endpoints, this feed always requires an authenticated caller (bearer token or session) — it spans all spaces the caller can see unless narrowed with `spaceId`.",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "ISO 8601 timestamp (normally the `cursor` from your previous call). Only events strictly after this time are returned. Omit for the first call to receive the full retained ring."
+          },
+          {
+            "name": "spaceId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Restrict the feed to a single space id."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 500,
+              "minimum": 1,
+              "maximum": 1000
+            },
+            "description": "Maximum number of events to return (default 500, capped at 1000). When more than `limit` events match, the newest `limit` are returned."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of change events with a continuation cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangesFeed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Change feed unavailable (event bus not initialized)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

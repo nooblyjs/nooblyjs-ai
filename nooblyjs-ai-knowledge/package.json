@@ -1,0 +1,120 @@
+{
+  "name": "nooblyjs-ai-knowledge",
+  "version": "1.0.0",
+  "description": "NooblyJS AI Wiki Platform: workflow automation (datasources) and knowledge management (wiki), server and web frontends in one package under src/",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --max-old-space-size=8192 app.js",
+    "dev:web": "nodemon app.js",
+    "dev:web-datasources": "http-server src/web/datasources/public -p 3001 -c-1 --cors",
+    "dev:web-wiki": "http-server src/web/wiki/public -p 3002 -c-1 --cors",
+    "prod": "pm2 start app.js",
+    "port:ui": "node scripts/port-wiki-ui.mjs",
+    "certs": "node scripts/generate-certs.js",
+    "certs:force": "node scripts/generate-certs.js --force",
+    "tests": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "kill": "node scripts/kill-port.js",
+    "clean": "rimraf node_modules coverage",
+    "test": "node --test --test-force-exit \"test/**/*.test.mjs\""
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.76",
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.2",
+    "chokidar": "^4.0.3",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "ejs": "^3.1.9",
+    "nooblyjs-core": "file:../../nooblyjs-core",
+    "express": "^4.22.3",
+    "express-rate-limit": "^7.1.5",
+    "express-session": "^1.17.3",
+    "express-validator": "^7.3.1",
+    "helmet": "^8.1.0",
+    "http-proxy-middleware": "^3.0.5",
+    "joi": "^17.11.0",
+    "mammoth": "^1.11.0",
+    "mime-types": "^3.0.1",
+    "multer": "^2.0.0-rc.4",
+    "openai": "^6.16.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0",
+    "pdf-parse": "^2.4.5",
+    "pdf-to-img": "^5.0.0",
+    "pptx-parser": "^1.1.7-beta.9",
+    "pptx2json": "^0.0.10",
+    "rimraf": "^6.1.3",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0",
+    "validator": "^13.11.0",
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/tests/backend"
+    ],
+    "modulePaths": [
+      "<rootDir>/node_modules"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/"
+    ],
+    "testMatch": [
+      "<rootDir>/tests/backend/**/*.test.js"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/backend/setup.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/web/**",
+      "!src/wiki/views/**",
+      "!src/configuration/**"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "testTimeout": 10000
+  },
+  "devDependencies": {
+    "@highlightjs/cdn-assets": "^11.9.0",
+    "archiver": "^7.0.1",
+    "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.13.1",
+    "codemirror": "^5.65.2",
+    "concurrently": "^9.2.5",
+    "express5": "npm:express@^5.2.1",
+    "http-server": "^14.1.1",
+    "jest": "^30.2.0",
+    "marked": "^4.3.0",
+    "mermaid": "^10.9.8",
+    "nodemon": "^3.1.11",
+    "prismjs": "^1.29.0",
+    "selfsigned": "^5.5.0",
+    "supertest": "^7.2.2"
+  },
+  "allowScripts": {
+    "unrs-resolver@1.11.1": true
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

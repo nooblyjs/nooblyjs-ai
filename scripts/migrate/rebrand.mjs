@@ -62,6 +62,8 @@ export const RULES = [
   [/\bshoprite(?:x)?\.(atlassian\.net|tpondemand\.com)/g, 'acme.$1'],
   [/\bshopritex\.example\b/g, 'acme.example'],
   [/\b(?:shopritex|shopritelabs|shoprite-x)(?=[\\/_.:;'"`\s$-]|$)/gm, 'acme'],
+  // The sample wiki's space keeps one word, so its name, its id (acme-space) and its URL agree.
+  [/\bShopriteX(?=( |%20)Space\b)/g, 'Acme'],
   [/\bShopriteX\b/g, 'Acme Retail'],
   [/\bShoprite Checkers\b/g, 'Acme Retail'],
   [/\bShoprite Group\b/g, 'Acme Retail Group'],

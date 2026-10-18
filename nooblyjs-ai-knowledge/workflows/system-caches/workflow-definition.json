@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Maintenance: Rebuild Caches & Search Index",
+    "description": "Server-side maintenance workflow. Step 1 (clear-caches) flushes the in-memory cache service used by the wiki API responses (search, suggestions, navigation, spaces) and invalidates the per-space folder tree cache, forcing clients to refetch on their next request. Step 2 (rebuild-search) force-rebuilds the full-text search index from disk (skipping the on-disk index cache) and reports the resulting index statistics. Runs in-process against the live backend via the shared service registry and globals, so no auth token or base URL is required. Safe to run any time; the search rebuild runs to completion before the step reports success.",
+    "steps": [
+      "steps/clear-caches.js",
+      "steps/rebuild-search.js"
+    ],
+    "tags": [
+      "Maintenance",
+      "Infrastructure"
+    ],
+    "defaultInput": {
+      "cacheKeyPrefixes": ["wiki:"],
+      "clearAllCacheKeys": false
+    },
+    "createdAt": "2026-06-02T00:00:00.000Z",
+    "updatedAt": "2026-06-02T00:00:00.000Z",
+    "starred": false
+  }
+]

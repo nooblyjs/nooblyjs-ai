@@ -1,0 +1,368 @@
+/* ============================================================================
+   teams-theme.css — Teams skin for the EMBEDDED web wiki.
+
+   Loaded at runtime by embed-bootstrap.js ONLY when the page is opened as
+   `/applications/wiki/?embed=1&theme=teams` (i.e. inside the Teams tab). A
+   normal web visit never loads this file, so the web wiki stays green.
+
+   It is the Teams `:root` token block lifted from
+   applications/teams/wiki/src/Tab/teams.css — SAME design system, SAME DOM,
+   different skin. "Green vs Teams" is purely these custom-property values.
+   Keep in sync if the Teams palette changes (see PARITY.md).
+
+   Scoped to `:root.kr-embed` (the <html> element carries .kr-embed, set by the
+   bootstrap) so it outranks the web wiki's own green accent (`wiki.css` :root)
+   regardless of stylesheet load order.
+   ============================================================================ */
+
+:root.kr-embed {
+  /* --- Accent ramp: neutral Teams grey (historical --kr-teal-* slots) --- */
+  --kr-teal-50:  #f3f3f3;
+  --kr-teal-100: #e6e6e6;
+  --kr-teal-200: #d6d6d6;
+  --kr-teal-300: #bdbdbd;
+  --kr-teal-400: #9e9e9e;
+  --kr-teal-500: #828282;
+  --kr-teal-600: #5d5d5d;
+  --kr-teal-700: #4d4d4d;
+  --kr-teal-800: #3d3d3d;
+  --kr-teal-900: #2e2e2e;
+
+  /* --- Teams brand purple: primary buttons, selected row, current crumb --- */
+  --kr-brand:        #5b5fc7;
+  --kr-brand-strong: #4f52b5;
+
+  /* --- Ink (text): neutral Teams greys --- */
+  --kr-ink-900: #242424;
+  --kr-ink-800: #383838;
+  --kr-ink-700: #4d4d4d;
+  --kr-ink-600: #616161;
+  --kr-ink-500: #757575;
+  --kr-ink-400: #8a8a8a;
+  --kr-ink-300: #c7c7c7;
+
+  /* --- Surfaces --- */
+  --kr-bg:        #f5f5f5;
+  --kr-surface:   #ffffff;
+  --kr-surface-2: #fafafa;
+  --kr-surface-3: #f0f0f0;
+
+  /* --- Borders --- */
+  --kr-border:   #e1e1e1;
+  --kr-border-2: #ededed;
+
+  /* --- Status --- */
+  --kr-success: #0e7a3b;
+  --kr-warning: #b86d00;
+  --kr-danger:  #b10e1c;
+  --kr-info:    #2f6fd0;
+
+  /* --- Shape --- */
+  --kr-radius:    10px;
+  --kr-radius-sm: 7px;
+  --kr-radius-lg: 14px;
+
+  /* --- Shadows (neutral) --- */
+  --kr-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --kr-shadow:    0 2px 8px rgba(0, 0, 0, 0.07);
+  --kr-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.10);
+
+  /* --- Bootstrap aliases (a few buttons/utilities still reference these) --- */
+  --bs-primary: var(--kr-teal-700);
+  --bs-primary-rgb: 77, 77, 77;
+  --bs-light: var(--kr-bg);
+  --bs-border-color: var(--kr-border);
+  --bs-body-bg: var(--kr-surface);
+  --bs-dark: var(--kr-ink-900);
+  --text-primary: var(--kr-ink-900);
+  --text-secondary: var(--kr-ink-500);
+  --bs-text-muted: var(--kr-ink-500);
+  --error-bg: #fdebec;
+  --error-text: var(--kr-danger);
+  --error-border: #f5cfd1;
+  --app-border-radius: var(--kr-radius-sm);
+  --app-shadow-sm: var(--kr-shadow-sm);
+  --app-shadow: var(--kr-shadow);
+  --app-shadow-md: var(--kr-shadow-md);
+}
+
+/* Teams-native font (Segoe), falling back to the wiki's Manrope. */
+:root.kr-embed body {
+  font-family: 'Segoe UI', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ----------------------------------------------------------------------------
+   Brand-element overrides.
+   The web wiki paints its hero / selected nav / primary buttons / breadcrumb
+   from its single TEAL ramp (remapped to neutral GREY by the tokens above), so
+   without these they'd read grey. Teams separates a grey ramp from a PURPLE
+   brand, so re-point exactly those elements at --kr-brand to match the Teams
+   look (image-parity with the native React app / teams.css). Scoped to
+   .kr-embed → higher specificity than the kr-base rules they override.
+   ---------------------------------------------------------------------------- */
+
+/* Page hero — purple gradient (was teal + a hardcoded #114a55 in kr-base). */
+.kr-embed .kr-page-hero,
+.kr-embed .hero-banner-section {
+  background: linear-gradient(135deg, var(--kr-brand) 0%, var(--kr-brand-strong) 100%) !important;
+}
+
+/* Selected space / nav row — solid purple (web uses .active; cover .is-active). */
+.kr-embed .kr-nav-item.active,
+.kr-embed .kr-nav-item.is-active {
+  background: var(--kr-brand);
+  color: #fff;
+  font-weight: 700;
+}
+.kr-embed .kr-nav-item.active:hover,
+.kr-embed .kr-nav-item.is-active:hover {
+  background: var(--kr-brand-strong);
+  color: #fff;
+}
+.kr-embed .kr-nav-item.active .count,
+.kr-embed .kr-nav-item.is-active .count {
+  background: rgba(255, 255, 255, .22);
+  color: #fff;
+}
+
+/* Primary buttons — purple. */
+.kr-embed .kr-btn-create,
+.kr-embed .btn-primary,
+.kr-embed .kr-btn.solid {
+  background: var(--kr-brand) !important;
+  border-color: var(--kr-brand) !important;
+  color: #fff !important;
+}
+.kr-embed .kr-btn-create:hover:not(:disabled),
+.kr-embed .btn-primary:hover:not(:disabled),
+.kr-embed .kr-btn.solid:hover:not(:disabled) {
+  background: var(--kr-brand-strong) !important;
+  border-color: var(--kr-brand-strong) !important;
+}
+
+/* Breadcrumbs. The folder breadcrumb links carry a HARDCODED inline
+   `color:#02797d` (navigationcontroller.renderFolderBreadcrumbSegments), so only
+   !important beats them. Cover the home breadcrumb + the kr-breadcrumb current
+   segment too. */
+.kr-embed .breadcrumb-folder-link,
+.kr-embed nav.breadcrumb a,
+.kr-embed .breadcrumb a,
+.kr-embed .breadcrumb .last,
+.kr-embed #homeBreadcrumbLink,
+.kr-embed #homeBreadcrumbLast { color: var(--kr-brand) !important; }
+.kr-embed .kr-breadcrumb a:hover { color: var(--kr-brand); }
+.kr-embed .kr-breadcrumb .last { color: var(--kr-brand); }
+
+/* Selected space in the sidebar. The web renders the active space as Bootstrap
+   `nav-link active bg-secondary text-white` (spacescontroller.js), so the green
+   comes from `.bg-secondary` (a !important utility) — override it to purple. */
+.kr-embed #spacesList .nav-link.active,
+.kr-embed #spacesList .nav-link.active.bg-secondary {
+  background-color: var(--kr-brand) !important;
+  color: #fff !important;
+}
+
+/* ----------------------------------------------------------------------------
+   Topbar → light Teams header (#EBEBEB). The web wiki's topbar is a dark teal
+   gradient with white-on-dark children, so flipping the background also means
+   recoloring the brand text / search / icon buttons / avatar for a light bg.
+   ---------------------------------------------------------------------------- */
+.kr-embed .kr-topbar {
+  background: #EBEBEB !important;
+  color: var(--kr-ink-900);
+  border-bottom: 1px solid var(--kr-border);
+}
+.kr-embed .kr-brand { border-right-color: var(--kr-border); }
+/* In Teams the host already provides the app's identity, so hide the wiki's own
+   noobly logo + "noobly / WIKI" wordmark. Keep the sidebar toggle. */
+.kr-embed .kr-brand img,
+.kr-embed .kr-brand .logo,
+.kr-embed .kr-brand .name { display: none !important; }
+.kr-embed .kr-search input {
+  background: #fff;
+  border: 1px solid var(--kr-border);
+  color: var(--kr-ink-900);
+}
+.kr-embed .kr-search input::placeholder { color: var(--kr-ink-500); }
+.kr-embed .kr-search input:focus {
+  background: #fff;
+  border-color: var(--kr-brand);
+  box-shadow: 0 0 0 3px rgba(91, 95, 199, .15);
+}
+.kr-embed .kr-search .kbd { color: var(--kr-ink-500); border-color: var(--kr-border); }
+.kr-embed .kr-icon-btn { color: var(--kr-ink-600); }
+.kr-embed .kr-icon-btn:hover { background: rgba(0, 0, 0, .06); color: var(--kr-ink-900); }
+.kr-embed .kr-icon-btn .dot { border-color: #EBEBEB; }
+.kr-embed .kr-avatar-pill {
+  background: #fff;
+  border: 1px solid var(--kr-border);
+  color: var(--kr-ink-900);
+}
+
+/* ----------------------------------------------------------------------------
+   Profile screen (.pf-*). The header banner + avatar are teal gradients (the
+   banner even hardcodes a #114a55 corner) and the primary button is
+   --kr-teal-600 (→ grey). Re-point them at the Teams brand, matching the page
+   hero / primary buttons elsewhere.
+   ---------------------------------------------------------------------------- */
+.kr-embed .pf-header {
+  background: linear-gradient(135deg, var(--kr-brand) 0%, var(--kr-brand-strong) 100%) !important;
+}
+.kr-embed .pf-header .avatar-xl {
+  background: linear-gradient(135deg, var(--kr-brand) 0%, var(--kr-brand-strong) 100%) !important;
+}
+.kr-embed .pf-btn.solid {
+  background: var(--kr-brand);
+  border-color: var(--kr-brand);
+  color: #fff;
+}
+.kr-embed .pf-btn.solid:hover { background: var(--kr-brand-strong); color: #fff; }
+.kr-embed .pf-btn:hover { background: var(--kr-teal-50); border-color: var(--kr-teal-100); color: var(--kr-ink-900); }
+/* Selected rail item + checked checkboxes use the brand accent. */
+.kr-embed .pf-rail a.active .num { background: var(--kr-brand); color: #fff; }
+.kr-embed .pf-row .cb.on { background: var(--kr-brand); border-color: var(--kr-brand-strong); }
+.kr-embed .pf-field input:focus { border-color: var(--kr-brand); box-shadow: 0 0 0 3px rgba(91, 95, 199, .15); }
+
+/* ----------------------------------------------------------------------------
+   Rendered markdown accent. The .markdown-content rules HARDCODE teal (#02797d)
+   for the H1 underline, H2 text, blockquote bar and links, plus a teal-tinted
+   table header — none of which the token swap can touch. Re-skin to neutral
+   grey so the document accent matches the rest of the embed.
+   ---------------------------------------------------------------------------- */
+.kr-embed .markdown-content h1,
+.kr-embed .md-doc h1 {
+  color: var(--kr-ink-900);
+  border-bottom-color: var(--kr-teal-300);
+}
+.kr-embed .markdown-content h2,
+.kr-embed .md-doc h2 { color: var(--kr-ink-900); }
+.kr-embed .markdown-content h4,
+.kr-embed .md-doc h4 { color: var(--kr-ink-700); }
+.kr-embed .markdown-content blockquote,
+.kr-embed .md-doc blockquote { border-left-color: var(--kr-teal-400); }
+.kr-embed .markdown-content a { color: var(--kr-teal-700); }
+.kr-embed .markdown-content a:hover { color: var(--kr-ink-900); border-bottom-color: var(--kr-teal-400); }
+/* Table header — neutral grey panel (matches the selected-item grey) + grey labels. */
+.kr-embed .markdown-content th,
+.kr-embed .md-doc th {
+  background: var(--kr-surface-3);
+  color: var(--kr-ink-700);
+  border-bottom-color: var(--kr-border);
+}
+
+/* ----------------------------------------------------------------------------
+   Notifications / subscriptions popout. The item hovers/active states mix
+   Bootstrap-ish vars with a HARDCODED #02797d teal left-border (kr-base
+   .notification-list-item.active / .notification-item-in-topic.active) that the
+   token swap can't reach. Force neutral grey hover + brand active accent.
+   ---------------------------------------------------------------------------- */
+.kr-embed .notification-item:hover,
+.kr-embed .notification-list-item:hover,
+.kr-embed .notification-item-in-topic:hover,
+.kr-embed .subscription-topic:hover { background: var(--kr-surface-3) !important; }
+.kr-embed .notification-item.unread,
+.kr-embed .notification-list-item.unread { background: var(--kr-surface-2); }
+.kr-embed .notification-list-item.active,
+.kr-embed .notification-item-in-topic.active {
+  background: var(--kr-surface-3);
+  border-left-color: var(--kr-brand) !important;
+}
+.kr-embed .notification-tabs .btn:hover,
+.kr-embed #notificationsTab:hover,
+.kr-embed #subscriptionsTab:hover { color: var(--kr-ink-900) !important; background: var(--kr-surface-3); }
+
+/* ----------------------------------------------------------------------------
+   Hardcoded #02797d teal in kr-base.css that the token swap can't reach. The
+   big one is a GLOBAL `.btn:hover { background:#02797d !important }` — it turns
+   EVERY button (incl. card drill-down buttons) teal on hover. Plus the view-mode
+   toggle, checked switches, .bg-secondary and outline buttons. Neutralise to
+   grey, brand the "selected/active" ones.
+   ---------------------------------------------------------------------------- */
+.kr-embed .btn:hover {
+  background-color: var(--kr-surface-3) !important;
+  border-color: var(--kr-border) !important;
+  color: var(--kr-ink-900) !important;
+}
+/* Re-assert brand hover for primary buttons (higher specificity than .btn:hover). */
+.kr-embed .btn.btn-primary:hover,
+.kr-embed button.btn-primary:hover,
+.kr-embed a.btn-primary:hover {
+  background-color: var(--kr-brand-strong) !important;
+  border-color: var(--kr-brand-strong) !important;
+  color: #fff !important;
+}
+.kr-embed .bg-secondary { background-color: var(--kr-brand) !important; }
+.kr-embed .view-mode-btn.active {
+  background-color: var(--kr-brand) !important;
+  border-color: var(--kr-brand) !important;
+  color: #fff !important;
+}
+.kr-embed .form-check-input:checked {
+  background-color: var(--kr-brand) !important;
+  border-color: var(--kr-brand) !important;
+}
+.kr-embed .btn-outline-primary {
+  color: var(--kr-brand) !important;
+  border-color: var(--kr-brand) !important;
+}
+.kr-embed .folder-item.drag-over .folder-item-text,
+.kr-embed .drop-zone-overlay-content p { color: var(--kr-brand) !important; }
+
+/* ----------------------------------------------------------------------------
+   Layout switcher (.kr-layout-switch / .kr-layout-btn). The base styles use
+   white/transparent values designed for the web wiki's dark teal topbar — on
+   the light Teams topbar (#EBEBEB) those wash out to near-invisible. Re-skin
+   to a visible grey-border pill with dark ink text.
+   ---------------------------------------------------------------------------- */
+.kr-embed .kr-layout-switch {
+  background: rgba(0, 0, 0, .05) !important;
+  border: 1px solid var(--kr-border) !important;
+}
+.kr-embed .kr-layout-btn {
+  color: var(--kr-ink-600) !important;
+}
+.kr-embed .kr-layout-btn:hover {
+  background: rgba(0, 0, 0, .08) !important;
+  color: var(--kr-ink-900) !important;
+}
+.kr-embed .kr-layout-btn.active {
+  background: var(--kr-brand) !important;
+  color: #fff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+}
+
+/* ----------------------------------------------------------------------------
+   Landing-page bands (home.md: landing-hero / news / tiles / stories / cta).
+   These are self-contained CONTENT sections carrying their own `--krl-*` palette
+   — the dark teal hero and CTA bands are meant to look IDENTICAL in the web wiki
+   and the Teams embed (page content, not app chrome). But they render inside
+   `.md-doc` / `.markdown-content`, so the markdown-accent overrides above
+   (`.kr-embed .md-doc h1/h2`, `:root.kr-embed a`, `.kr-embed .markdown-content a`
+   — all 0,2,1) outrank the landing rules' 0,2,0 selectors and repaint the WHITE
+   hero title / "Get started" CTA heading as dark ink and the CTA buttons / news
+   links as neutral grey. Re-assert the landing colours at 0,3,x — container-
+   agnostic (keyed off the `.kr-landing` marker class, not `.md-doc`). */
+
+/* White headings on the dark teal hero + CTA bands. */
+.kr-embed .kr-landing .kr-landing-hero-title,
+.kr-embed .kr-landing .kr-cta-title,
+.kr-embed .kr-landing .kr-cta-card-title { color: #fff; }
+
+/* Dark headings on the light (cream) bands — keep the landing ink. */
+.kr-embed .kr-landing .kr-section-title,
+.kr-embed .kr-landing .kr-news-title,
+.kr-embed .kr-landing .kr-tile-title { color: var(--krl-ink); }
+
+/* Landing links/buttons are <a> tags — exempt from the neutral grey link ramp. */
+.kr-embed .kr-landing a.kr-cta-btn-primary,
+.kr-embed .kr-landing a.kr-cta-btn-ghost { color: #fff; }
+.kr-embed .kr-landing a.kr-cta-btn-ghost:hover { color: var(--krl-teal); }
+.kr-embed .kr-landing a.kr-news-more { color: var(--krl-teal-2); }
+.kr-embed .kr-landing a.kr-news-more:hover { color: var(--krl-orange); }
+
+/* General links pick up the neutral grey ramp. */
+:root.kr-embed a { color: var(--kr-teal-700); }
+:root.kr-embed a:hover { color: var(--kr-teal-800); }
+
+/* Chrome the Teams host owns: logout is global / host-managed. */
+.kr-embed #logoutBtn { display: none !important; }

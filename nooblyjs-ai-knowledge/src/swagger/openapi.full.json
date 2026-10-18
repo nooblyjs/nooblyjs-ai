@@ -1,0 +1,2322 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "noobly Wiki Platform API",
+    "description": "Unified REST API for the noobly Wiki Platform (port 9101). Covers the Datasources module (`/api/*`), Wiki module (`/applications/wiki/api/*`) and Blueprint module (`/applications/blueprint/api/*`).",
+    "version": "2.0.0",
+    "contact": { "name": "noobly Team" },
+    "license": { "name": "ISC" }
+  },
+  "servers": [
+    { "url": "/", "description": "Unified backend (port 9101)" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "SessionAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "connect.sid",
+        "description": "Session cookie issued after login"
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "token",
+        "description": "Bearer token (24 hr). Obtain from POST /api/auth/token or the API tokens section of your profile."
+      }
+    },
+    "schemas": {
+      "Success": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "role": { "type": "string" },
+          "authenticated": { "type": "boolean" }
+        }
+      },
+      "Space": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "type": { "type": "string", "enum": ["project","team","workflow","archive","documentation","temporary"] },
+          "visibility": { "type": "string", "enum": ["public","private","team"] },
+          "permissions": { "type": "string" },
+          "allowedUsers": { "type": "array", "items": { "type": "string" } },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Workflow": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "steps": { "type": "array", "items": { "type": "object" } },
+          "enabled": { "type": "boolean" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Execution": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "workflowId": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending","running","completed","failed","cancelled"] },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "completedAt": { "type": "string", "format": "date-time" },
+          "result": { "type": "object" },
+          "error": { "type": "string" }
+        }
+      },
+      "Schedule": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "workflowId": { "type": "string" },
+          "name": { "type": "string" },
+          "cron": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "lastRun": { "type": "string", "format": "date-time" },
+          "nextRun": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Document": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "path": { "type": "string" },
+          "spaceName": { "type": "string" },
+          "content": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "modifiedAt": { "type": "string", "format": "date-time" },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "SearchResult": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "excerpt": { "type": "string" },
+          "path": { "type": "string" },
+          "spaceName": { "type": "string" },
+          "spaceId": { "type": "string" },
+          "type": { "type": "string" },
+          "relevance": { "type": "number" },
+          "modifiedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Pin": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "path": { "type": "string" },
+          "title": { "type": "string" },
+          "spaceName": { "type": "string" },
+          "pinnedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Connection": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "config": { "type": "object" },
+          "status": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "type": { "type": "string" },
+          "config": { "type": "object" }
+        }
+      },
+      "ApiToken": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "tokenPrefix": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "expiresAt": { "type": "string", "format": "date-time" },
+          "lastUsed": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  },
+  "security": [
+    { "SessionAuth": [] },
+    { "BearerAuth": [] }
+  ],
+  "tags": [
+    { "name": "Authentication", "description": "Login, logout, session, and token management" },
+    { "name": "Datasources - Spaces", "description": "Workspace spaces with RBAC" },
+    { "name": "Datasources - Space Filing", "description": "File management within datasource spaces" },
+    { "name": "Datasources - Workflows", "description": "Workflow CRUD, execution, import/export" },
+    { "name": "Datasources - Executions", "description": "Workflow execution tracking" },
+    { "name": "Datasources - Schedules", "description": "Cron-based workflow scheduling" },
+    { "name": "Datasources - Security", "description": "Admin-only RBAC management" },
+    { "name": "Datasources - Settings", "description": "Global application settings" },
+    { "name": "Datasources - Connections", "description": "Data source connections" },
+    { "name": "Datasources - Agents", "description": "AI agent configurations" },
+    { "name": "Datasources - Sources & Prompts", "description": "Data source browsing and AI prompts" },
+    { "name": "Datasources - Content", "description": "JSON and Markdown content browsing" },
+    { "name": "Datasources - Metrics & AI", "description": "Dashboard metrics and AI testing" },
+    { "name": "Wiki - General", "description": "Wiki status and configuration" },
+    { "name": "Wiki - Documents", "description": "Document CRUD and content management" },
+    { "name": "Wiki - Search", "description": "Full-text search and indexing" },
+    { "name": "Wiki - Spaces", "description": "Wiki spaces management" },
+    { "name": "Wiki - Navigation", "description": "Folder and document tree navigation" },
+    { "name": "Wiki - AI Chat", "description": "AI assistant chat integration" },
+    { "name": "Wiki - Pins", "description": "User pinned items" },
+    { "name": "Wiki - Notifications", "description": "Subscriptions and in-app notifications" },
+    { "name": "Wiki - Social", "description": "Comments, annotations, reviews, and likes" },
+    { "name": "Wiki - User Profile", "description": "User profile, activity, and preferences" },
+    { "name": "Wiki - Wizard", "description": "First-run onboarding wizard" },
+    { "name": "Wiki - Documentation", "description": "Built-in documentation pages" },
+    { "name": "Blueprint - Projects", "description": "Blueprint project management and AI generation" },
+    { "name": "Blueprint - Templates", "description": "Blueprint template library" }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register a new user",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string" },
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "User registered", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Success" } } } },
+          "400": { "description": "Validation error" },
+          "409": { "description": "Username taken" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login with username and password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login successful", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout current session",
+        "responses": {
+          "200": { "description": "Logged out" }
+        }
+      }
+    },
+    "/api/auth/check": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Check current session status",
+        "responses": {
+          "200": {
+            "description": "Session info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "authenticated": { "type": "boolean" },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/identity": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Resolve identity for extension / Teams tab",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "email": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Identity resolved" } }
+      }
+    },
+    "/api/auth/extension-token": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Generate a short-lived extension token",
+        "responses": {
+          "200": {
+            "description": "Token issued",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "token": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Change the current user's password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["currentPassword", "newPassword"],
+                "properties": {
+                  "currentPassword": { "type": "string" },
+                  "newPassword": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Password changed" },
+          "400": { "description": "Validation error" },
+          "401": { "description": "Wrong current password" }
+        }
+      }
+    },
+    "/api/spaces": {
+      "get": {
+        "tags": ["Datasources - Spaces"],
+        "summary": "List all spaces",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string" } },
+          { "name": "visibility", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "List of spaces", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Space" } } } } }
+        }
+      },
+      "post": {
+        "tags": ["Datasources - Spaces"],
+        "summary": "Create a new space",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Space" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Space created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } }
+        }
+      }
+    },
+    "/api/spaces/{id}": {
+      "get": {
+        "tags": ["Datasources - Spaces"],
+        "summary": "Get a space by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Space", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } },
+          "404": { "description": "Not found" }
+        }
+      },
+      "put": {
+        "tags": ["Datasources - Spaces"],
+        "summary": "Update a space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } },
+        "responses": { "200": { "description": "Updated space", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } } }
+      },
+      "delete": {
+        "tags": ["Datasources - Spaces"],
+        "summary": "Delete a space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/spaces/{id}/archive": {
+      "post": {
+        "tags": ["Datasources - Spaces"],
+        "summary": "Archive a space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Archived" } }
+      }
+    },
+    "/api/spaces/{id}/restore": {
+      "post": {
+        "tags": ["Datasources - Spaces"],
+        "summary": "Restore an archived space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Restored" } }
+      }
+    },
+    "/api/spaces/{id}/users/{userId}": {
+      "post": {
+        "tags": ["Datasources - Spaces"],
+        "summary": "Add a user to a space",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "User added" } }
+      },
+      "delete": {
+        "tags": ["Datasources - Spaces"],
+        "summary": "Remove a user from a space",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "userId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "User removed" } }
+      }
+    },
+    "/api/spaces/{id}/files/browse/{path}": {
+      "get": {
+        "tags": ["Datasources - Space Filing"],
+        "summary": "Browse files in a space at a given path",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Directory listing" } }
+      }
+    },
+    "/api/spaces/{id}/files/tree": {
+      "get": {
+        "tags": ["Datasources - Space Filing"],
+        "summary": "Get the full folder tree for a space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Folder tree" } }
+      }
+    },
+    "/api/spaces/{id}/files/upload/{key}": {
+      "post": {
+        "tags": ["Datasources - Space Filing"],
+        "summary": "Upload a file into a space (multipart/form-data, max 50 MB)",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "key", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Destination path within the space" }
+        ],
+        "requestBody": {
+          "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" } } } } }
+        },
+        "responses": { "200": { "description": "Upload successful" } }
+      }
+    },
+    "/api/spaces/{id}/files/download/{key}": {
+      "get": {
+        "tags": ["Datasources - Space Filing"],
+        "summary": "Download a file from a space",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "key", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "File content" } }
+      }
+    },
+    "/api/spaces/{id}/files/remove/{key}": {
+      "delete": {
+        "tags": ["Datasources - Space Filing"],
+        "summary": "Delete a file from a space",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "key", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "File deleted" } }
+      }
+    },
+    "/api/spaces/{id}/files/config": {
+      "get": {
+        "tags": ["Datasources - Space Filing"],
+        "summary": "Get file storage config for a space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Config" } }
+      }
+    },
+    "/api/workflows/dashboard": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Get workflow dashboard summary",
+        "responses": { "200": { "description": "Dashboard data" } }
+      }
+    },
+    "/api/workflows/list": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "List all workflows",
+        "parameters": [
+          { "name": "spaceId", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Workflow list", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Workflow" } } } } } }
+      }
+    },
+    "/api/workflows/groups": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "List workflows grouped by space / tag",
+        "responses": { "200": { "description": "Grouped workflows" } }
+      }
+    },
+    "/api/workflows": {
+      "post": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Create a workflow",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workflow" } } } },
+        "responses": { "201": { "description": "Created workflow", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workflow" } } } } }
+      }
+    },
+    "/api/workflows/search": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Search workflows by name or tag",
+        "parameters": [{ "name": "q", "in": "query", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Matching workflows" } }
+      }
+    },
+    "/api/workflows/starred": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "List starred workflows",
+        "responses": { "200": { "description": "Starred workflows" } }
+      }
+    },
+    "/api/workflows/recent": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "List recently viewed workflows",
+        "responses": { "200": { "description": "Recent workflows" } }
+      }
+    },
+    "/api/workflows/recent-activity": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Recent execution activity across all workflows",
+        "responses": { "200": { "description": "Recent activity" } }
+      }
+    },
+    "/api/workflows/templates": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "List workflow templates",
+        "responses": { "200": { "description": "Templates" } }
+      }
+    },
+    "/api/workflows/from-template": {
+      "post": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Create workflow from template",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "templateId": { "type": "string" }, "name": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created workflow" } }
+      }
+    },
+    "/api/workflows/import": {
+      "post": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Import a workflow from JSON export",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Imported workflow" } }
+      }
+    },
+    "/api/workflows/{id}": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Get a workflow by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Workflow", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workflow" } } } } }
+      },
+      "put": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Update a workflow",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Workflow" } } } },
+        "responses": { "200": { "description": "Updated workflow" } }
+      },
+      "delete": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Delete a workflow",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/workflows/{id}/star": {
+      "post": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Toggle star on a workflow",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Star toggled" } }
+      }
+    },
+    "/api/workflows/{id}/view": {
+      "post": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Record a view event for a workflow",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "View recorded" } }
+      }
+    },
+    "/api/workflows/{id}/recent": {
+      "delete": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Remove a workflow from recent history",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Removed" } }
+      }
+    },
+    "/api/workflows/{id}/export": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Export a workflow as JSON",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Workflow JSON export" } }
+      }
+    },
+    "/api/workflows/{id}/steps": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Get the steps of a workflow",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Steps" } }
+      }
+    },
+    "/api/workflows/{id}/details": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Get enriched workflow details (steps + recent executions)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Details" } }
+      }
+    },
+    "/api/workflows/{workflowId}/step-file-content": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Get file content referenced by a workflow step",
+        "parameters": [{ "name": "workflowId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "File content" } }
+      },
+      "put": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Update file content referenced by a workflow step",
+        "parameters": [{ "name": "workflowId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/api/workflows/{workflowId}/execute": {
+      "post": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Execute a workflow immediately",
+        "parameters": [{ "name": "workflowId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "input": { "type": "object" } } } } } },
+        "responses": {
+          "200": { "description": "Execution started", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Execution" } } } }
+        }
+      }
+    },
+    "/api/workflows/{id}/schedules": {
+      "get": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "List schedules for a workflow",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Schedules" } }
+      },
+      "post": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Add a schedule to a workflow",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Schedule" } } } },
+        "responses": { "201": { "description": "Schedule created" } }
+      }
+    },
+    "/api/workflows/start": {
+      "post": {
+        "tags": ["Datasources - Workflows"],
+        "summary": "Start a workflow asynchronously (returns 202 + executionId)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["workflowId"],
+                "properties": {
+                  "workflowId": { "type": "string" },
+                  "input": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "executionId": { "type": "string" }, "status": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workflows/executions/{executionId}/status": {
+      "get": {
+        "tags": ["Datasources - Executions"],
+        "summary": "Poll async execution status",
+        "parameters": [{ "name": "executionId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Status", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Execution" } } } } }
+      }
+    },
+    "/api/workflows/schedule": {
+      "post": {
+        "tags": ["Datasources - Schedules"],
+        "summary": "Schedule a workflow via the programmatic API",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "workflowId": { "type": "string" },
+                  "cron": { "type": "string" },
+                  "name": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Schedule created" } }
+      }
+    },
+    "/api/executions": {
+      "get": {
+        "tags": ["Datasources - Executions"],
+        "summary": "List all executions",
+        "parameters": [
+          { "name": "workflowId", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "Executions", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Execution" } } } } } }
+      }
+    },
+    "/api/executions/stats": {
+      "get": {
+        "tags": ["Datasources - Executions"],
+        "summary": "Execution statistics (counts by status)",
+        "responses": { "200": { "description": "Stats" } }
+      }
+    },
+    "/api/executions/recent": {
+      "get": {
+        "tags": ["Datasources - Executions"],
+        "summary": "Recent executions (last N)",
+        "parameters": [{ "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }],
+        "responses": { "200": { "description": "Recent executions" } }
+      }
+    },
+    "/api/executions/running": {
+      "get": {
+        "tags": ["Datasources - Executions"],
+        "summary": "Currently running executions",
+        "responses": { "200": { "description": "Running executions" } }
+      }
+    },
+    "/api/executions/dates": {
+      "get": {
+        "tags": ["Datasources - Executions"],
+        "summary": "Execution count grouped by date",
+        "responses": { "200": { "description": "Date histogram" } }
+      }
+    },
+    "/api/executions/clear": {
+      "post": {
+        "tags": ["Datasources - Executions"],
+        "summary": "Clear completed / failed executions",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "olderThanDays": { "type": "integer" } } } } } },
+        "responses": { "200": { "description": "Cleared" } }
+      }
+    },
+    "/api/executions/{id}": {
+      "get": {
+        "tags": ["Datasources - Executions"],
+        "summary": "Get an execution by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Execution", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Execution" } } } } }
+      },
+      "delete": {
+        "tags": ["Datasources - Executions"],
+        "summary": "Delete an execution record",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/executions/{id}/cancel": {
+      "post": {
+        "tags": ["Datasources - Executions"],
+        "summary": "Cancel a running execution",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Cancelled" } }
+      }
+    },
+    "/api/schedules": {
+      "get": {
+        "tags": ["Datasources - Schedules"],
+        "summary": "List all schedules",
+        "responses": { "200": { "description": "Schedules", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Schedule" } } } } } }
+      },
+      "post": {
+        "tags": ["Datasources - Schedules"],
+        "summary": "Create a standalone schedule",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Schedule" } } } },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/api/schedules/{id}": {
+      "get": {
+        "tags": ["Datasources - Schedules"],
+        "summary": "Get a schedule",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Schedule", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Schedule" } } } } }
+      },
+      "put": {
+        "tags": ["Datasources - Schedules"],
+        "summary": "Update a schedule",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Schedule" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Datasources - Schedules"],
+        "summary": "Delete a schedule",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/schedules/{id}/toggle": {
+      "post": {
+        "tags": ["Datasources - Schedules"],
+        "summary": "Enable / disable a schedule",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Toggled" } }
+      }
+    },
+    "/api/schedules/{id}/run-now": {
+      "post": {
+        "tags": ["Datasources - Schedules"],
+        "summary": "Trigger a scheduled workflow immediately",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Triggered" } }
+      }
+    },
+    "/api/security": {
+      "get": {
+        "tags": ["Datasources - Security"],
+        "summary": "Get full security/RBAC configuration (admin only)",
+        "responses": { "200": { "description": "Security config" } }
+      }
+    },
+    "/api/security/summary": {
+      "get": {
+        "tags": ["Datasources - Security"],
+        "summary": "Security summary (admin only)",
+        "responses": { "200": { "description": "Summary" } }
+      }
+    },
+    "/api/security/user": {
+      "post": {
+        "tags": ["Datasources - Security"],
+        "summary": "Add a user to a role (admin only)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "userId": { "type": "string" }, "role": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Added" } }
+      },
+      "delete": {
+        "tags": ["Datasources - Security"],
+        "summary": "Remove a user from a role (admin only)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "userId": { "type": "string" }, "role": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Removed" } }
+      }
+    },
+    "/api/security/admin": {
+      "post": {
+        "tags": ["Datasources - Security"],
+        "summary": "Promote a user to admin (admin only)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "userId": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Promoted" } }
+      },
+      "delete": {
+        "tags": ["Datasources - Security"],
+        "summary": "Revoke admin from a user (admin only)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "userId": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Revoked" } }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "tags": ["Datasources - Settings"],
+        "summary": "Get all application settings",
+        "responses": { "200": { "description": "Settings object" } }
+      },
+      "put": {
+        "tags": ["Datasources - Settings"],
+        "summary": "Update application settings",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated settings" } }
+      }
+    },
+    "/api/connections": {
+      "get": {
+        "tags": ["Datasources - Connections"],
+        "summary": "List all data source connections",
+        "responses": { "200": { "description": "Connections", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Connection" } } } } } }
+      },
+      "post": {
+        "tags": ["Datasources - Connections"],
+        "summary": "Create a connection",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Connection" } } } },
+        "responses": { "201": { "description": "Created connection" } }
+      }
+    },
+    "/api/connections/{id}": {
+      "get": {
+        "tags": ["Datasources - Connections"],
+        "summary": "Get a connection",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Connection" } }
+      },
+      "put": {
+        "tags": ["Datasources - Connections"],
+        "summary": "Update a connection",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Connection" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Datasources - Connections"],
+        "summary": "Delete a connection",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/connections/{id}/initialize": {
+      "post": {
+        "tags": ["Datasources - Connections"],
+        "summary": "Initialize filing for a connection",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Initialized" } }
+      }
+    },
+    "/api/connections/{id}/status": {
+      "get": {
+        "tags": ["Datasources - Connections"],
+        "summary": "Get connection status / health",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Status" } }
+      }
+    },
+    "/api/agents": {
+      "get": {
+        "tags": ["Datasources - Agents"],
+        "summary": "List all AI agents",
+        "responses": { "200": { "description": "Agents", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Agent" } } } } } }
+      },
+      "post": {
+        "tags": ["Datasources - Agents"],
+        "summary": "Create an agent",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Agent" } } } },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/api/agents/{id}": {
+      "get": {
+        "tags": ["Datasources - Agents"],
+        "summary": "Get an agent",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Agent" } }
+      },
+      "put": {
+        "tags": ["Datasources - Agents"],
+        "summary": "Update an agent",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Agent" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Datasources - Agents"],
+        "summary": "Delete an agent",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/api/sources": {
+      "get": {
+        "tags": ["Datasources - Sources & Prompts"],
+        "summary": "List all configured data sources",
+        "responses": { "200": { "description": "Sources" } }
+      }
+    },
+    "/api/sources/{id}": {
+      "get": {
+        "tags": ["Datasources - Sources & Prompts"],
+        "summary": "Get a source",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Source" } }
+      }
+    },
+    "/api/sources/{id}/browse": {
+      "get": {
+        "tags": ["Datasources - Sources & Prompts"],
+        "summary": "Browse content from a data source",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Browse result" } }
+      }
+    },
+    "/api/prompts": {
+      "get": {
+        "tags": ["Datasources - Sources & Prompts"],
+        "summary": "List all prompts",
+        "parameters": [
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "q", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Prompts" } }
+      }
+    },
+    "/api/prompts/{id}": {
+      "get": {
+        "tags": ["Datasources - Sources & Prompts"],
+        "summary": "Get a prompt by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Prompt" } }
+      }
+    },
+    "/api/prompts/categories": {
+      "get": {
+        "tags": ["Datasources - Sources & Prompts"],
+        "summary": "List prompt categories",
+        "responses": { "200": { "description": "Categories" } }
+      }
+    },
+    "/api/content/json": {
+      "get": {
+        "tags": ["Datasources - Content"],
+        "summary": "Browse root JSON content",
+        "responses": { "200": { "description": "JSON content listing" } }
+      },
+      "post": {
+        "tags": ["Datasources - Content"],
+        "summary": "Search JSON content",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Search results" } }
+      }
+    },
+    "/api/content/json/{path}": {
+      "get": {
+        "tags": ["Datasources - Content"],
+        "summary": "Get JSON content at path",
+        "parameters": [{ "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "JSON content" } }
+      },
+      "post": {
+        "tags": ["Datasources - Content"],
+        "summary": "Create / update JSON at path",
+        "parameters": [{ "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Saved" } }
+      }
+    },
+    "/api/content/json/{path}/download": {
+      "get": {
+        "tags": ["Datasources - Content"],
+        "summary": "Download JSON file at path",
+        "parameters": [{ "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "File download" } }
+      }
+    },
+    "/api/content/markdown": {
+      "get": {
+        "tags": ["Datasources - Content"],
+        "summary": "Browse root Markdown content",
+        "responses": { "200": { "description": "Markdown listing" } }
+      },
+      "post": {
+        "tags": ["Datasources - Content"],
+        "summary": "Search Markdown content",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Results" } }
+      }
+    },
+    "/api/content/markdown/{path}": {
+      "get": {
+        "tags": ["Datasources - Content"],
+        "summary": "Get Markdown file at path",
+        "parameters": [{ "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Markdown content" } }
+      },
+      "put": {
+        "tags": ["Datasources - Content"],
+        "summary": "Update Markdown file at path",
+        "parameters": [{ "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "content": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/api/diff/{path}": {
+      "get": {
+        "tags": ["Datasources - Content"],
+        "summary": "Get diff for a file",
+        "parameters": [{ "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Diff" } }
+      }
+    },
+    "/api/ai/test": {
+      "post": {
+        "tags": ["Datasources - Metrics & AI"],
+        "summary": "Test the AI service with a prompt",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "prompt": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "AI response" } }
+      }
+    },
+    "/api/metrics/dashboard": {
+      "get": {
+        "tags": ["Datasources - Metrics & AI"],
+        "summary": "Get dashboard metrics",
+        "responses": { "200": { "description": "Metrics" } }
+      }
+    },
+    "/api/metrics/analytics": {
+      "get": {
+        "tags": ["Datasources - Metrics & AI"],
+        "summary": "Get analytics data",
+        "responses": { "200": { "description": "Analytics" } }
+      }
+    },
+    "/api/debug/measuring": {
+      "get": {
+        "tags": ["Datasources - Metrics & AI"],
+        "summary": "Get measuring service debug info",
+        "responses": { "200": { "description": "Debug info" } }
+      }
+    },
+    "/applications/wiki/api/status": {
+      "get": {
+        "tags": ["Wiki - General"],
+        "summary": "Wiki module health / status",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "application": { "type": "string" },
+                    "version": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/config": {
+      "get": {
+        "tags": ["Wiki - General"],
+        "summary": "Public feature flags for the wiki frontend",
+        "description": "Answered with Cache-Control: no-store — clientCacheVersion is the stamp each browser compares against its own to decide whether to drop its cached navigation trees, so a cached response would suppress the purge.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Config flags",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "aiChatEnabled": { "type": "boolean" },
+                    "editingEnabled": { "type": "boolean" },
+                    "clientCacheVersion": {
+                      "type": "string",
+                      "description": "Client cache epoch. When it differs from the value a browser recorded, that browser drops its cached navigation trees on load."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/admin/client-cache-version": {
+      "get": {
+        "tags": ["Wiki - General"],
+        "summary": "Read the client cache epoch (admin screen)",
+        "responses": {
+          "200": {
+            "description": "Current epoch and whether the caller may bump it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "clientCacheVersion": { "type": "string" },
+                    "canEdit": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Wiki - General"],
+        "summary": "Bump the client cache epoch (admin only)",
+        "description": "Makes every browser drop its cached navigation trees on its next page load. Sign-ins, layouts, view preferences, chat history and dismissed announcements are untouched.",
+        "responses": {
+          "200": {
+            "description": "The new epoch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "clientCacheVersion": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Admin role required" }
+        }
+      }
+    },
+    "/applications/wiki/api/documents": {
+      "get": {
+        "tags": ["Wiki - Documents"],
+        "summary": "List all documents",
+        "parameters": [
+          { "name": "spaceName", "in": "query", "schema": { "type": "string" } },
+          { "name": "spaceId", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Documents", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Document" } } } } } }
+      },
+      "post": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Create a new document",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "spaceName"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "spaceName": { "type": "string" },
+                  "path": { "type": "string" },
+                  "content": { "type": "string" },
+                  "tags": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created document", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Document" } } } } }
+      }
+    },
+    "/applications/wiki/api/documents/content": {
+      "get": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Get document content",
+        "parameters": [
+          { "name": "path", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "spaceName", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "enhanced", "in": "query", "schema": { "type": "boolean" }, "description": "Include metadata" }
+        ],
+        "responses": { "200": { "description": "Document content", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Document" } } } } }
+      },
+      "put": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Update document content",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["path", "spaceName", "content"], "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" }, "content": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "post": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Get document content (POST variant, for paths with special chars)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Document content" } }
+      }
+    },
+    "/applications/wiki/api/documents/exists": {
+      "post": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Check if a document exists",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Existence check", "content": { "application/json": { "schema": { "type": "object", "properties": { "exists": { "type": "boolean" } } } } } } }
+      }
+    },
+    "/applications/wiki/api/documents/recent": {
+      "get": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Get recently modified documents",
+        "parameters": [
+          { "name": "spaceName", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": { "200": { "description": "Recent documents" } }
+      }
+    },
+    "/applications/wiki/api/documents/popular": {
+      "get": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Get most viewed documents",
+        "parameters": [
+          { "name": "spaceName", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": { "200": { "description": "Popular documents" } }
+      }
+    },
+    "/applications/wiki/api/documents/pdf-preview": {
+      "get": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Get PDF preview for a document",
+        "parameters": [
+          { "name": "path", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "spaceName", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "PDF binary", "content": { "application/pdf": {} } } }
+      }
+    },
+    "/applications/wiki/api/documents/upload": {
+      "post": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Upload a document file (DOCX, PDF, XLSX, PPTX — converted to Markdown)",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "spaceName": { "type": "string" },
+                  "path": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Uploaded and converted" } }
+      }
+    },
+    "/applications/wiki/api/documents/convert": {
+      "post": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Convert a document to Markdown",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Conversion result" } }
+      }
+    },
+    "/applications/wiki/api/documents/toggle-todo": {
+      "post": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Toggle a todo checkbox in a document",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" }, "lineIndex": { "type": "integer" } } } } } },
+        "responses": { "200": { "description": "Toggled" } }
+      }
+    },
+    "/applications/wiki/api/documents/convert-to-markdown": {
+      "post": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Convert rich content to Markdown",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Markdown" } }
+      }
+    },
+    "/applications/wiki/api/documents/share-visit": {
+      "post": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Record a share / external visit for a document",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Recorded" } }
+      }
+    },
+    "/applications/wiki/api/documents/{path}": {
+      "delete": {
+        "tags": ["Wiki - Documents"],
+        "summary": "Delete a document",
+        "parameters": [{ "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "spaceName": { "type": "string" }, "spaceId": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/applications/wiki/api/search": {
+      "get": {
+        "tags": ["Wiki - Search"],
+        "summary": "Full-text search across all indexed content",
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Search query" },
+          { "name": "spaceName", "in": "query", "schema": { "type": "string" } },
+          { "name": "spaceNames", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated space names" },
+          { "name": "fileTypes", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated file types" },
+          { "name": "includeContent", "in": "query", "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SearchResult" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/search/suggestions": {
+      "get": {
+        "tags": ["Wiki - Search"],
+        "summary": "Autocomplete suggestions",
+        "description": "Returns a mix of document suggestions ({title, path, spaceName, type}, where path is space-relative) and bare index terms. Pass documents=true for document suggestions only — every item then carries a resolvable path, and the folder path is matched as well as the file name.",
+        "parameters": [
+          { "name": "q", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "spaceId", "in": "query", "schema": { "type": "string" } },
+          { "name": "spaceName", "in": "query", "schema": { "type": "string" } },
+          { "name": "folderPath", "in": "query", "schema": { "type": "string" }, "description": "Restrict to a folder subtree (space-relative)." },
+          { "name": "documents", "in": "query", "schema": { "type": "boolean", "default": false }, "description": "Path-bearing document suggestions only — no bare index terms." },
+          { "name": "fileTypes", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated indexer types to keep, e.g. 'markdown'." }
+        ],
+        "responses": { "200": { "description": "Suggestions", "content": { "application/json": { "schema": { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "type": "object", "properties": { "title": { "type": "string" }, "path": { "type": "string" }, "spaceName": { "type": "string" }, "type": { "type": "string" } } }] } } } } } }
+      }
+    },
+    "/applications/wiki/api/search/stats": {
+      "get": {
+        "tags": ["Wiki - Search"],
+        "summary": "Search index statistics",
+        "responses": { "200": { "description": "Stats" } }
+      }
+    },
+    "/applications/wiki/api/search/rebuild": {
+      "post": {
+        "tags": ["Wiki - Search"],
+        "summary": "Rebuild the search index",
+        "responses": { "200": { "description": "Rebuild started" } }
+      }
+    },
+    "/applications/wiki/api/spaces": {
+      "get": {
+        "tags": ["Wiki - Spaces"],
+        "summary": "List wiki spaces",
+        "responses": { "200": { "description": "Spaces", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Space" } } } } } }
+      },
+      "post": {
+        "tags": ["Wiki - Spaces"],
+        "summary": "Create a wiki space",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/applications/wiki/api/spaces/{id}": {
+      "get": {
+        "tags": ["Wiki - Spaces"],
+        "summary": "Get a wiki space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Space" } }
+      },
+      "put": {
+        "tags": ["Wiki - Spaces"],
+        "summary": "Update a wiki space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Space" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Wiki - Spaces"],
+        "summary": "Delete a wiki space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/applications/wiki/api/spaces/{id}/documents": {
+      "get": {
+        "tags": ["Wiki - Spaces"],
+        "summary": "List documents in a wiki space",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Documents" } }
+      }
+    },
+    "/applications/wiki/api/spaces/{spaceId}/folders": {
+      "get": {
+        "tags": ["Wiki - Spaces"],
+        "summary": "List folders in a wiki space",
+        "parameters": [{ "name": "spaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Folders" } }
+      }
+    },
+    "/applications/wiki/api/spaces/{spaceId}/templates": {
+      "get": {
+        "tags": ["Wiki - Spaces"],
+        "summary": "List templates in a wiki space",
+        "parameters": [{ "name": "spaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Templates" } }
+      }
+    },
+    "/applications/wiki/api/templates": {
+      "get": {
+        "tags": ["Wiki - Spaces"],
+        "summary": "List all templates across all spaces",
+        "responses": { "200": { "description": "Templates" } }
+      }
+    },
+    "/applications/wiki/api/spaces/{spaceId}/folder-order": {
+      "put": {
+        "tags": ["Wiki - Navigation"],
+        "summary": "Update folder order in a space",
+        "parameters": [{ "name": "spaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/applications/wiki/api/spaces/{spaceId}/folder-type": {
+      "put": {
+        "tags": ["Wiki - Navigation"],
+        "summary": "Update folder type in a space",
+        "parameters": [{ "name": "spaceId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/applications/wiki/api/folders": {
+      "post": {
+        "tags": ["Wiki - Navigation"],
+        "summary": "Create a folder",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["name", "spaceName"], "properties": { "name": { "type": "string" }, "spaceName": { "type": "string" }, "path": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/applications/wiki/api/folders/rename": {
+      "put": {
+        "tags": ["Wiki - Navigation"],
+        "summary": "Rename a folder",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "oldPath": { "type": "string" }, "newName": { "type": "string" }, "spaceName": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Renamed" } }
+      }
+    },
+    "/applications/wiki/api/folders/{path}": {
+      "delete": {
+        "tags": ["Wiki - Navigation"],
+        "summary": "Delete a folder (recursive)",
+        "parameters": [{ "name": "path", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "spaceName": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/applications/wiki/api/documents/rename": {
+      "put": {
+        "tags": ["Wiki - Navigation"],
+        "summary": "Rename a document",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "oldPath": { "type": "string" }, "newName": { "type": "string" }, "spaceName": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Renamed" } }
+      }
+    },
+    "/applications/wiki/api/move": {
+      "post": {
+        "tags": ["Wiki - Navigation"],
+        "summary": "Move a document or folder to a new location",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "sourcePath": { "type": "string" }, "destinationPath": { "type": "string" }, "spaceName": { "type": "string" }, "type": { "type": "string", "enum": ["document","folder"] } } }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Moved" } }
+      }
+    },
+    "/applications/wiki/api/settings/ai": {
+      "get": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "Get AI settings",
+        "responses": { "200": { "description": "AI settings" } }
+      },
+      "post": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "Update AI settings",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/applications/wiki/api/settings/ai/test": {
+      "post": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "Test AI connectivity",
+        "responses": { "200": { "description": "Test result" } }
+      }
+    },
+    "/applications/wiki/api/ai/status": {
+      "get": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "Get AI chat readiness status",
+        "responses": { "200": { "description": "Status" } }
+      }
+    },
+    "/applications/wiki/api/ai/chat": {
+      "post": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "Send a message to the AI assistant",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["message"], "properties": { "message": { "type": "string" }, "conversationId": { "type": "string" }, "context": { "type": "object" } } }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI response",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "response": { "type": "string" }, "conversationId": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/ai/search": {
+      "post": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "AI-powered semantic search",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "query": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "AI search results" } }
+      }
+    },
+    "/applications/wiki/api/ai/document": {
+      "post": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "Ask AI about a specific document",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string" }, "path": { "type": "string" }, "spaceName": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "AI response" } }
+      }
+    },
+    "/applications/wiki/api/ai/history": {
+      "get": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "Get AI conversation history",
+        "parameters": [{ "name": "conversationId", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "History" } }
+      }
+    },
+    "/applications/wiki/api/ai/clear": {
+      "post": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "Clear AI conversation history",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "conversationId": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Cleared" } }
+      }
+    },
+    "/applications/wiki/api/ai/message/{id}": {
+      "delete": {
+        "tags": ["Wiki - AI Chat"],
+        "summary": "Delete a single AI message",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/applications/wiki/api/pins": {
+      "get": {
+        "tags": ["Wiki - Pins"],
+        "summary": "Get all pinned items for the current user",
+        "responses": {
+          "200": {
+            "description": "Pins",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "pins": { "type": "array", "items": { "$ref": "#/components/schemas/Pin" } } } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Wiki - Pins"],
+        "summary": "Pin an item",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Pin" } } } },
+        "responses": { "200": { "description": "Pinned" } }
+      },
+      "delete": {
+        "tags": ["Wiki - Pins"],
+        "summary": "Unpin an item",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Unpinned" } }
+      }
+    },
+    "/applications/wiki/api/notifications/subscriptions": {
+      "get": {
+        "tags": ["Wiki - Notifications"],
+        "summary": "List subscriptions for the current user",
+        "responses": { "200": { "description": "Subscriptions" } }
+      },
+      "post": {
+        "tags": ["Wiki - Notifications"],
+        "summary": "Subscribe to a document or folder",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" }, "type": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Subscribed" } }
+      },
+      "delete": {
+        "tags": ["Wiki - Notifications"],
+        "summary": "Unsubscribe",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Unsubscribed" } }
+      }
+    },
+    "/applications/wiki/api/notifications": {
+      "get": {
+        "tags": ["Wiki - Notifications"],
+        "summary": "List notifications for the current user",
+        "parameters": [{ "name": "unread", "in": "query", "schema": { "type": "boolean" } }],
+        "responses": { "200": { "description": "Notifications" } }
+      }
+    },
+    "/applications/wiki/api/notifications/{id}/read": {
+      "post": {
+        "tags": ["Wiki - Notifications"],
+        "summary": "Mark a notification as read",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Marked read" } }
+      }
+    },
+    "/applications/wiki/api/notifications/read-all": {
+      "post": {
+        "tags": ["Wiki - Notifications"],
+        "summary": "Mark all notifications as read",
+        "responses": { "200": { "description": "All read" } }
+      }
+    },
+    "/applications/wiki/api/notifications/preferences": {
+      "get": {
+        "tags": ["Wiki - Notifications"],
+        "summary": "Get notification preferences",
+        "responses": { "200": { "description": "Preferences" } }
+      },
+      "put": {
+        "tags": ["Wiki - Notifications"],
+        "summary": "Update notification preferences",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/applications/wiki/api/comments": {
+      "post": {
+        "tags": ["Wiki - Social"],
+        "summary": "Add a comment to a document",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["path", "spaceName", "text"], "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" }, "text": { "type": "string" } } } } } },
+        "responses": { "201": { "description": "Comment added" } }
+      },
+      "delete": {
+        "tags": ["Wiki - Social"],
+        "summary": "Delete a comment",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/applications/wiki/api/user/comments": {
+      "get": {
+        "tags": ["Wiki - Social"],
+        "summary": "Get current user's comments across all documents",
+        "responses": { "200": { "description": "Comments" } }
+      }
+    },
+    "/applications/wiki/api/annotations": {
+      "post": {
+        "tags": ["Wiki - Social"],
+        "summary": "Add an annotation",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "Added" } }
+      },
+      "delete": {
+        "tags": ["Wiki - Social"],
+        "summary": "Delete an annotation",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/applications/wiki/api/annotations/{id}": {
+      "patch": {
+        "tags": ["Wiki - Social"],
+        "summary": "Update an annotation",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/applications/wiki/api/user/annotations": {
+      "get": {
+        "tags": ["Wiki - Social"],
+        "summary": "Get current user's annotations",
+        "responses": { "200": { "description": "Annotations" } }
+      }
+    },
+    "/applications/wiki/api/reviews": {
+      "post": {
+        "tags": ["Wiki - Social"],
+        "summary": "Request a review",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "Review requested" } }
+      },
+      "delete": {
+        "tags": ["Wiki - Social"],
+        "summary": "Cancel / delete a review",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/applications/wiki/api/reviews/{id}": {
+      "patch": {
+        "tags": ["Wiki - Social"],
+        "summary": "Update review status",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/applications/wiki/api/user/reviews": {
+      "get": {
+        "tags": ["Wiki - Social"],
+        "summary": "Get reviews assigned to / requested by the current user",
+        "responses": {
+          "200": {
+            "description": "Reviews",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "assignedToMe": { "type": "array" }, "requestedByMe": { "type": "array" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/likes": {
+      "post": {
+        "tags": ["Wiki - Social"],
+        "summary": "Like a document",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Liked" } }
+      },
+      "delete": {
+        "tags": ["Wiki - Social"],
+        "summary": "Unlike a document",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Unliked" } }
+      }
+    },
+    "/applications/wiki/api/user/likes": {
+      "get": {
+        "tags": ["Wiki - Social"],
+        "summary": "Get documents liked by the current user",
+        "responses": { "200": { "description": "Likes" } }
+      }
+    },
+    "/applications/wiki/api/changes": {
+      "get": {
+        "tags": ["Wiki - General"],
+        "summary": "Get recent change events (consumed by wiki daemon)",
+        "parameters": [
+          { "name": "since", "in": "query", "schema": { "type": "string", "format": "date-time" }, "description": "Only return events after this timestamp" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 100 } }
+        ],
+        "responses": { "200": { "description": "Change events" } }
+      }
+    },
+    "/applications/wiki/api/profile": {
+      "get": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Get current user's wiki profile",
+        "responses": {
+          "200": {
+            "description": "Profile",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Update wiki profile",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated profile" } }
+      }
+    },
+    "/applications/wiki/api/profile/change-password": {
+      "post": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Change password via profile",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "currentPassword": { "type": "string" }, "newPassword": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Changed" } }
+      }
+    },
+    "/applications/wiki/api/profile/avatar": {
+      "post": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Upload a profile avatar (max 5 MB)",
+        "requestBody": { "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "avatar": { "type": "string", "format": "binary" } } } } } },
+        "responses": { "200": { "description": "Avatar uploaded" } }
+      }
+    },
+    "/applications/wiki/media/{filename}": {
+      "get": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Serve a user media file (avatar etc.)",
+        "parameters": [{ "name": "filename", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Media file" } }
+      }
+    },
+    "/applications/wiki/api/user/dashboard": {
+      "get": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Get the current user's personal dashboard Markdown",
+        "parameters": [{ "name": "space", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Dashboard" } }
+      }
+    },
+    "/applications/wiki/api/user/activity": {
+      "get": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Get user activity (viewed + starred documents)",
+        "parameters": [{ "name": "space", "in": "query", "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Activity",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "recent": { "type": "array" }, "starred": { "type": "array" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/applications/wiki/api/user/star": {
+      "post": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Star / unstar a document",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" }, "title": { "type": "string" }, "action": { "type": "string", "enum": ["star","unstar"] } } }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Toggled" } }
+      }
+    },
+    "/applications/wiki/api/user/visit": {
+      "post": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Record a document visit",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "path": { "type": "string" }, "spaceName": { "type": "string" }, "title": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Recorded" } }
+      },
+      "delete": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Remove a document visit from history",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Removed" } }
+      }
+    },
+    "/applications/wiki/api/user/folder-view-preferences": {
+      "get": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Get folder view preferences",
+        "responses": { "200": { "description": "Preferences" } }
+      }
+    },
+    "/applications/wiki/api/user/folder-view-preference": {
+      "post": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Set a folder view preference",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Saved" } }
+      }
+    },
+    "/applications/wiki/api/user/selected-spaces": {
+      "get": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Get user's selected (visible) spaces",
+        "responses": { "200": { "description": "Selected spaces" } }
+      },
+      "put": {
+        "tags": ["Wiki - User Profile"],
+        "summary": "Update user's selected spaces",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "spaceIds": { "type": "array", "items": { "type": "string" } } } } } } },
+        "responses": { "200": { "description": "Updated" } }
+      }
+    },
+    "/applications/wiki/api/wizard/check": {
+      "get": {
+        "tags": ["Wiki - Wizard"],
+        "summary": "Check if onboarding wizard is needed",
+        "security": [],
+        "responses": { "200": { "description": "Wizard state" } }
+      }
+    },
+    "/applications/wiki/api/wizard/config": {
+      "get": {
+        "tags": ["Wiki - Wizard"],
+        "summary": "Get wizard configuration",
+        "security": [],
+        "responses": { "200": { "description": "Config" } }
+      }
+    },
+    "/applications/wiki/api/wizard/available-spaces": {
+      "get": {
+        "tags": ["Wiki - Wizard"],
+        "summary": "List spaces available to join during setup",
+        "responses": { "200": { "description": "Spaces" } }
+      }
+    },
+    "/applications/wiki/api/wizard/select-spaces": {
+      "post": {
+        "tags": ["Wiki - Wizard"],
+        "summary": "Select spaces to join during setup",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "spaceIds": { "type": "array", "items": { "type": "string" } } } } } } },
+        "responses": { "200": { "description": "Joined" } }
+      }
+    },
+    "/applications/wiki/api/wizard/create-private": {
+      "post": {
+        "tags": ["Wiki - Wizard"],
+        "summary": "Create a personal private space",
+        "responses": { "200": { "description": "Space created" } }
+      }
+    },
+    "/applications/wiki/api/wizard/initialize": {
+      "post": {
+        "tags": ["Wiki - Wizard"],
+        "summary": "Complete wizard and initialize wiki",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Initialized" } }
+      }
+    },
+    "/applications/wiki/api/wizard/skip": {
+      "post": {
+        "tags": ["Wiki - Wizard"],
+        "summary": "Skip the wizard",
+        "responses": { "200": { "description": "Skipped" } }
+      }
+    },
+    "/applications/wiki/api/documentation": {
+      "get": {
+        "tags": ["Wiki - Documentation"],
+        "summary": "List built-in documentation pages",
+        "responses": { "200": { "description": "Doc list" } }
+      }
+    },
+    "/applications/wiki/api/documentation/{id}": {
+      "get": {
+        "tags": ["Wiki - Documentation"],
+        "summary": "Get a documentation page by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Page" } }
+      }
+    },
+    "/applications/wiki/api/documentation/{id}/preview": {
+      "get": {
+        "tags": ["Wiki - Documentation"],
+        "summary": "Preview a documentation page",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Preview HTML" } }
+      }
+    },
+    "/applications/blueprint/api/health": {
+      "get": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Blueprint module health check",
+        "security": [],
+        "responses": { "200": { "description": "Health" } }
+      }
+    },
+    "/applications/blueprint/api/projects": {
+      "get": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "List blueprint projects",
+        "responses": { "200": { "description": "Projects" } }
+      },
+      "post": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Create a blueprint project",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/applications/blueprint/api/projects/{id}": {
+      "get": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Get a blueprint project",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Project" } }
+      },
+      "put": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Update a blueprint project",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Delete a blueprint project",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/applications/blueprint/api/projects/{id}/documents": {
+      "get": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "List documents in a blueprint project",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Documents" } }
+      }
+    },
+    "/applications/blueprint/api/projects/{id}/documents/{docId}": {
+      "delete": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Delete a document from a blueprint project",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "docId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/applications/blueprint/api/projects/{id}/generate": {
+      "post": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Generate blueprint documents with AI",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Generation started" } }
+      }
+    },
+    "/applications/blueprint/api/projects/{id}/chat": {
+      "get": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Get blueprint project chat history",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Chat history" } }
+      },
+      "post": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Send a message to the blueprint AI",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Response" } }
+      }
+    },
+    "/applications/blueprint/api/projects/{id}/export-to-wiki": {
+      "post": {
+        "tags": ["Blueprint - Projects"],
+        "summary": "Export a blueprint project to the wiki",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "spaceId": { "type": "string" }, "spaceName": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Exported" } }
+      }
+    },
+    "/applications/blueprint/api/templates": {
+      "get": {
+        "tags": ["Blueprint - Templates"],
+        "summary": "List blueprint templates",
+        "responses": { "200": { "description": "Templates" } }
+      },
+      "post": {
+        "tags": ["Blueprint - Templates"],
+        "summary": "Create a blueprint template",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/applications/blueprint/api/templates/{id}": {
+      "get": {
+        "tags": ["Blueprint - Templates"],
+        "summary": "Get a blueprint template",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Template" } }
+      },
+      "put": {
+        "tags": ["Blueprint - Templates"],
+        "summary": "Update a blueprint template",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Blueprint - Templates"],
+        "summary": "Delete a blueprint template",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Deleted" } }
+      }
+    },
+    "/services/authservice/api/profile/tokens": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "List personal API tokens for the current user",
+        "responses": {
+          "200": {
+            "description": "Tokens",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/ApiToken" } } } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Generate a new personal API token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "description": "Human-readable label" },
+                  "expiresInDays": { "type": "integer", "description": "Omit for never-expiring" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Token created (the raw token value is only returned once)",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "data": { "type": "object", "properties": { "token": { "type": "string" }, "id": { "type": "string" }, "expiresAt": { "type": "string" } } } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/authservice/api/profile/tokens/{tokenId}": {
+      "delete": {
+        "tags": ["Authentication"],
+        "summary": "Revoke a personal API token",
+        "parameters": [{ "name": "tokenId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Revoked" } }
+      }
+    }
+  }
+}

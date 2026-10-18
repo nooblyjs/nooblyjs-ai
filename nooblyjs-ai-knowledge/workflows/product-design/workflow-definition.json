@@ -1,0 +1,83 @@
+[
+  {
+    "name": "Product Design: Get Data",
+    "description": "Retrieve all Target Process data (projects, portfolio epics, epics, features, release trains, value streams, requirements and every mapping) and cache it for the content builds",
+    "steps": [
+      "steps/portfoliosData.js",
+      "steps/portfolioEpicsData.js",
+      "steps/epicsData.js",
+      "steps/featuresData.js",
+      "steps/enablerFeaturesData.js",
+      "steps/releaseTrainsData.js",
+      "steps/portfolioEpicReleaseTrainsData.js",
+      "steps/epicReleaseTrainsData.js",
+      "steps/valueStreamsData.js",
+      "steps/agileReleaseTrainValueStreamsData.js",
+      "steps/valueStreamEpicsData.js",
+      "steps/valueStreamPortfolioEpicsData.js",
+      "steps/requestsData.js",
+      "steps/requestEpicsData.js",
+      "steps/requestPortfolioEpicsData.js",
+      "steps/requestFeaturesData.js",
+      "steps/requirementsData.js",
+      "steps/requirementEpicsData.js",
+      "steps/requirementPortfolioEpicsData.js",
+      "steps/requirementFeaturesData.js"
+    ],
+    "tags": [
+      "Data"
+    ],
+    "defaultInput": {},
+    "createdAt": "2026-05-30T00:00:00.000Z",
+    "updatedAt": "2026-06-03T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Product Design: Build Enterprise",
+    "description": "Build the Enterprise Product tree into the default Enterprise content space. Inclusive filter: every Agile Release Train EXCEPT the FinTech and People carve-outs (which have their own spaces). Add new trains here to include them in Enterprise.",
+    "steps": [
+      "steps/releaseTrainsContent.js"
+    ],
+    "tags": [
+      "Content"
+    ],
+    "defaultInput": {"filter": [{"Release Train": "Computicket"}, {"Release Train": "Digital Commerce"}, 
+    {"Release Train": "Digital Infrastructure"}, {"Release Train": "Enterprise eCommerce"}, {"Release Train": "Enterprise Technologies"}, 
+    {"Release Train": "GK Software"}, {"Release Train": "IT Governance & Compliance"}, {"Release Train": "IT Support"},
+    {"Release Train": "Media/Rewards/Insights"}, {"Release Train": "OK Franchise Division"}, {"Release Train": "OK Furniture"},
+    {"Release Train": "S4 HANA"}, {"Release Train": "Acme Analytics"}, {"Release Train": "Technology Shared Services"}],
+    "contentfolder": "../knowledge-content/enterprise/Product Management"},
+    "createdAt": "2026-06-03T00:00:00.000Z",
+    "updatedAt": "2026-06-03T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Product Design: Build Fintech",
+    "description": "Build only the FinTech Agile Release Train into the Fintech content space (data is shared; only the content build is filtered)",
+    "steps": [
+      "steps/releaseTrainsContent.js"
+    ],
+    "tags": [
+      "Content"
+    ],
+    "defaultInput": {"filter": [{"Release Train": "FinTech"}], "contentfolder": "../knowledge-content/enterprise/Product Management"},
+    "createdAt": "2026-06-03T00:00:00.000Z",
+    "updatedAt": "2026-06-03T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Product Design: Build People",
+    "description": "Build only the People Enablement and People Technologies Agile Release Trains into the People content space (data is shared; only the content build is filtered)",
+    "steps": [
+      "steps/releaseTrainsContent.js"
+    ],
+    "tags": [
+      "Content"
+    ],
+    "defaultInput": {"filter": [{"Release Train": "People Enablement"}, {"Release Train": "People Technologies"}], 
+    "contentfolder": "../knowledge-content/enterprise/Product Management"},
+    "createdAt": "2026-06-03T00:00:00.000Z",
+    "updatedAt": "2026-06-03T00:00:00.000Z",
+    "starred": true
+  }
+]

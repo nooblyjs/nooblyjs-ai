@@ -1,0 +1,3367 @@
+/**
+ * MarkdownEditor — Built-in block definitions
+ *
+ * Each block exposes:
+ *   - type             unique string id
+ *   - editable         (optional) true if the block shows a pencil "edit" button
+ *   - defaultData()    factory for a fresh data object
+ *   - render(d, ctx)   inner HTML for the editor view (controls wrapper added by orchestrator)
+ *   - renderPreview    inner HTML for the read-only preview
+ *   - handlers         { 'role-name'(e, ctx) {...} }       click roles owned by this block
+ *   - onInput          (e, blockEl, block, ctx) — input events on this block's inputs
+ *   - onChange         (e, blockEl, block, ctx) — change events on this block's inputs
+ *   - toMarkdown       (data, ctx) → markdown string
+ *   - fromMarkdown     (line, lines, i, ctx) → { data, consumed:N } | null
+ *
+ * Load this file AFTER markdown-editor.js. It registers all built-in blocks via
+ * MarkdownEditor.registerBlock(). Custom block types can be added the same way.
+ */
+(function () {
+  'use strict';
+
+  if (typeof window === 'undefined' || !window.MarkdownEditor || typeof window.MarkdownEditor.registerBlock !== 'function') {
+    console.error('[markdown-editor-blocks] MarkdownEditor not loaded. Load markdown-editor.js before this script.');
+    return;
+  }
+
+  const MarkdownEditor = window.MarkdownEditor;
+
+  // -------------------------------------------------------------------------
+  // Helpers shared across handler bodies
+  // -------------------------------------------------------------------------
+
+  function getBlock(e, ctx) {
+    const blockEl = e.target.closest('.editor-block');
+    if (!blockEl) return null;
+    const blockIndex = parseInt(blockEl.dataset.index);
+    const block = ctx._blocks[blockIndex];
+    if (!block) return null;
+    return { blockEl, block, blockIndex };
+  }
+
+  // Parse a fenced code block starting at `lines[i]` whose language matches `expected`
+  // (string or array). Returns { fenceLines, consumed } or null.
+  function consumeFence(line, lines, i, expectedLanguages) {
+    if (!line.trim().startsWith('```')) return null;
+    const m = line.trim().match(/^```([\w-]*)$/);
+    if (!m) return null;
+    const lang = m[1] || '';
+    const matches = Array.isArray(expectedLanguages)
+      ? expectedLanguages.includes(lang)
+      : lang === expectedLanguages;
+    if (!matches) return null;
+    const fenceLines = [];
+    let j = i + 1;
+    while (j < lines.length && !lines[j].trim().startsWith('```')) {
+      fenceLines.push(lines[j]);
+      j++;
+    }
+    return { lang, fenceLines, consumed: (j - i) + 1 }; // +1 for closing fence
+  }
+
+  function parseProps(fenceLines) {
+    const props = {};
+    fenceLines.forEach(l => {
+      const m = l.match(/^([\w-]+):\s*(.+)$/);
+      if (m) props[m[1].toLowerCase()] = m[2].trim();
+    });
+    return props;
+  }
+
+  // Short {fmt, size} summary for a base64 image data URI (for the embedded
+  // image chip). E.g. data:image/png;base64,AAAA -> { fmt:'PNG', size:'2 KB' }.
+  function describeImageDataUri(uri) {
+    const m = /^data:(image\/[a-z0-9.+-]+)?;base64,([a-z0-9+/=]*)$/i.exec(uri || '') || [];
+    const fmtRaw = (m[1] || 'image/img').split('/')[1] || 'img';
+    const fmt = fmtRaw.toUpperCase().replace('SVG+XML', 'SVG').replace('JPEG', 'JPG');
+    const b64 = m[2] || '';
+    let bytes = Math.floor(b64.length * 3 / 4);
+    if (b64.endsWith('==')) bytes -= 2;
+    else if (b64.endsWith('=')) bytes -= 1;
+    const size = bytes >= 1024 * 1024
+      ? (bytes / 1048576).toFixed(1) + ' MB'
+      : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    return { fmt, size };
+  }
+
+  // -------------------------------------------------------------------------
+  // paragraph
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'paragraph',
+    defaultData: () => ({ text: '' }),
+    render(data, ctx) {
+      return `<p class="editor-paragraph" contenteditable="true" data-placeholder="Type text...">${data?.text || ''}</p>`;
+    },
+    renderPreview(data, ctx) {
+      return `<p class="preview-paragraph">${data.text || ''}</p>`;
+    },
+    onInput(e, blockEl, block, ctx) {
+      const target = e.target;
+      block.data.text = target.innerHTML;
+      const imgMatch = target.textContent.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+      if (imgMatch) {
+        block.type = 'image';
+        block.data = { alt: imgMatch[1], src: imgMatch[2] };
+        blockEl.dataset.type = 'image';
+        ctx._renderBlockContent(blockEl, 'image', block.data);
+        block.contentElement = blockEl.querySelector('input, [contenteditable]');
+      }
+      const linkMatch = target.textContent.trim().match(/^\[([^\]]*)\]\(([^)]+)\)$/);
+      if (linkMatch) {
+        block.type = 'link';
+        block.data = { text: linkMatch[1], url: linkMatch[2] };
+        blockEl.dataset.type = 'link';
+        ctx._renderBlockContent(blockEl, 'link', block.data);
+        block.contentElement = blockEl.querySelector('input, [contenteditable]');
+      }
+    },
+    toMarkdown(data, ctx) {
+      return ctx._htmlToMarkdown(data.text || '');
+    }
+    // fromMarkdown intentionally omitted — paragraph is the orchestrator's fallback
+  });
+
+  // -------------------------------------------------------------------------
+  // header
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'header',
+    defaultData: () => ({ text: '', level: 2 }),
+    render(data, ctx) {
+      const level = data?.level || 2;
+      return `<h${level} class="editor-header" contenteditable="true" data-placeholder="Heading...">${data?.text || ''}</h${level}>`;
+    },
+    renderPreview(data, ctx) {
+      const level = data.level || 2;
+      return `<h${level} class="preview-header">${data.text || ''}</h${level}>`;
+    },
+    onInput(e, blockEl, block, ctx) {
+      block.data.text = e.target.innerHTML;
+    },
+    toMarkdown(data, ctx) {
+      const level = data.level || 2;
+      return '#'.repeat(level) + ' ' + ctx._htmlToMarkdown(data.text || '');
+    },
+    fromMarkdown(line, lines, i, ctx) {
+      const m = line.match(/^(#{1,6})\s+(.*)$/);
+      if (!m) return null;
+      return {
+        data: { text: ctx._markdownToInlineHtml(m[2]), level: m[1].length },
+        consumed: 1
+      };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // delimiter
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'delimiter',
+    defaultData: () => ({}),
+    render() { return '<div class="editor-delimiter"></div>'; },
+    renderPreview() { return '<hr class="preview-delimiter">'; },
+    toMarkdown() { return '---'; },
+    fromMarkdown(line) {
+      if (!/^---+$/.test(line.trim())) return null;
+      return { data: {}, consumed: 1 };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // quote
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'quote',
+    defaultData: () => ({ text: '' }),
+    render(data) {
+      return `<blockquote class="editor-quote" contenteditable="true" data-placeholder="Quote...">${data?.text || ''}</blockquote>`;
+    },
+    renderPreview(data) {
+      return `<blockquote class="preview-quote">${data.text || ''}</blockquote>`;
+    },
+    onInput(e, blockEl, block) { block.data.text = e.target.innerHTML; },
+    toMarkdown(data, ctx) {
+      return ctx._htmlToMarkdown(data.text || '').split('\n').map(line => `> ${line}`).join('\n');
+    },
+    fromMarkdown(line, lines, i, ctx) {
+      if (!line.startsWith('> ')) return null;
+      const quoteLines = [];
+      let j = i;
+      while (j < lines.length && lines[j].startsWith('> ')) {
+        quoteLines.push(lines[j].slice(2));
+        j++;
+      }
+      return {
+        data: { text: ctx._markdownToInlineHtml(quoteLines.join('\n')) },
+        consumed: j - i
+      };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // list (unordered + ordered)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'list',
+    defaultData: () => ({ items: [''], style: 'unordered' }),
+    render(data) {
+      const items = data?.items || [];
+      const listType = data?.style === 'ordered' ? 'ol' : 'ul';
+      let html = `<${listType} class="editor-list">`;
+      items.forEach((item, i) => {
+        html += `<li class="editor-list-item" contenteditable="true" data-index="${i}">${item}</li>`;
+      });
+      html += `</${listType}>`;
+      return html;
+    },
+    renderPreview(data) {
+      const listTag = data.style === 'ordered' ? 'ol' : 'ul';
+      const items = (data.items || []).map(item => `<li>${item || ''}</li>`).join('');
+      return `<${listTag} class="preview-list">${items}</${listTag}>`;
+    },
+    onInput(e, blockEl, block) {
+      const items = Array.from(blockEl.querySelectorAll('.editor-list-item')).map(li => li.textContent);
+      block.data.items = items;
+    },
+    toMarkdown(data, ctx) {
+      const items = data.items || [];
+      if (data.style === 'ordered') return items.map((item, i) => `${i + 1}. ${ctx._htmlToMarkdown(item)}`).join('\n');
+      return items.map(item => `- ${ctx._htmlToMarkdown(item)}`).join('\n');
+    },
+    fromMarkdown(line, lines, i, ctx) {
+      // Try unordered first
+      if (/^[-*]\s+/.test(line)) {
+        // But not a checklist (those start with - [ ] or - [x])
+        if (/^- \[([ xX])\] /.test(line)) return null;
+        const items = [];
+        let j = i;
+        while (j < lines.length) {
+          const m = lines[j].match(/^[-*]\s+(.*)$/);
+          if (!m) break;
+          if (/^- \[([ xX])\] /.test(lines[j])) break; // checklist takes over
+          items.push(ctx._markdownToInlineHtml(m[1]));
+          j++;
+        }
+        return { data: { items, style: 'unordered' }, consumed: j - i };
+      }
+      const olMatch = line.match(/^\d+\.\s+(.*)$/);
+      if (olMatch) {
+        const items = [];
+        let j = i;
+        while (j < lines.length) {
+          const m = lines[j].match(/^\d+\.\s+(.*)$/);
+          if (!m) break;
+          items.push(ctx._markdownToInlineHtml(m[1]));
+          j++;
+        }
+        return { data: { items, style: 'ordered' }, consumed: j - i };
+      }
+      return null;
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // checklist
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'checklist',
+    defaultData: () => ({ items: [{ text: '', checked: false }] }),
+    render(data) {
+      const checkItems = data?.items || [];
+      let html = '<div class="editor-checklist">';
+      checkItems.forEach((item, i) => {
+        const checked = item.checked ? 'checked' : '';
+        const text = typeof item === 'string' ? item : item.text;
+        html += `<div class="editor-checklist-item">
+          <input type="checkbox" class="editor-checkbox" data-index="${i}" ${checked}>
+          <span class="editor-checklist-text" contenteditable="true" data-index="${i}">${text}</span>
+        </div>`;
+      });
+      html += '</div>';
+      return html;
+    },
+    renderPreview(data) {
+      const items = (data.items || []).map(item => {
+        const checked = item.checked ? 'checked disabled' : 'disabled';
+        const text = typeof item === 'string' ? item : item.text;
+        return `<div class="preview-checklist-item"><input type="checkbox" ${checked}><span>${text || ''}</span></div>`;
+      }).join('');
+      return `<div class="preview-checklist">${items}</div>`;
+    },
+    onInput(e, blockEl, block) {
+      if (!e.target.classList.contains('editor-checklist-text')) return;
+      const items = Array.from(blockEl.querySelectorAll('.editor-checklist-item')).map(item => {
+        const checkbox = item.querySelector('input');
+        const text = item.querySelector('.editor-checklist-text').textContent;
+        return { text, checked: checkbox.checked };
+      });
+      block.data.items = items;
+    },
+    onChange(e, blockEl, block) {
+      if (!e.target.classList.contains('editor-checkbox')) return;
+      const items = Array.from(blockEl.querySelectorAll('.editor-checklist-item')).map(item => {
+        const checkbox = item.querySelector('input');
+        const text = item.querySelector('.editor-checklist-text').textContent;
+        return { text, checked: checkbox.checked };
+      });
+      block.data.items = items;
+    },
+    toMarkdown(data, ctx) {
+      const items = data.items || [];
+      return items.map(item => {
+        const text = typeof item === 'string' ? item : item.text;
+        const checked = item.checked ? 'x' : ' ';
+        return `- [${checked}] ${ctx._htmlToMarkdown(text)}`;
+      }).join('\n');
+    },
+    fromMarkdown(line, lines, i, ctx) {
+      if (!/^- \[([ xX])\] /.test(line)) return null;
+      const items = [];
+      let j = i;
+      while (j < lines.length) {
+        const m = lines[j].match(/^- \[([ xX])\] (.*)$/);
+        if (!m) break;
+        items.push({ text: ctx._markdownToInlineHtml(m[2]), checked: m[1] !== ' ' });
+        j++;
+      }
+      return { data: { items }, consumed: j - i };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // code (catch-all fence)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'code',
+    editable: true,
+    defaultData: () => ({ code: '', language: 'plain' }),
+    render(data, ctx) {
+      const code = data?.code || '';
+      const lang = data?.language || 'plain';
+      const codeLines = code ? code.split('\n') : [''];
+      const lineNums = codeLines.map((_, i) => `<span class="editor-code-line-num">${i + 1}</span>`).join('');
+      const hasCode = code.trim().length > 0;
+      const state = hasCode ? 'collapsed' : 'editing';
+      const langOptions = ctx._getLanguageOptions(lang);
+      return `
+        <div class="editor-code-container ${state}">
+          <div class="editor-code-header">
+            <span class="editor-code-lang-badge">${ctx._escapeHtml(lang)}</span>
+            <select class="editor-code-lang-select" data-role="code-lang">${langOptions}</select>
+            <button type="button" class="editor-code-save-btn" data-role="code-save">Save</button>
+          </div>
+          <div class="editor-code-display">
+            <div class="editor-code-lines">${lineNums}</div>
+            <pre class="editor-code-body"><code class="language-${ctx._escapeHtml(lang)}">${ctx._escapeHtml(code) || '\n'}</code></pre>
+          </div>
+          <textarea class="editor-code-textarea" data-role="code-textarea" placeholder="Paste or type your code here..." spellcheck="false">${ctx._escapeHtml(code)}</textarea>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const lang = data.language || 'plain';
+      const langBadge = lang !== 'plain' ? `<span style="display:inline-block;padding:2px 8px;background:#313244;color:#cdd6f4;border-radius:4px;font-size:0.75em;font-weight:600;text-transform:uppercase;margin-bottom:8px;">${ctx._escapeHtml(lang)}</span>` : '';
+      return `<div>${langBadge}<pre class="preview-code"><code class="language-${ctx._escapeHtml(lang)}">${ctx._escapeHtml(data.code || '')}</code></pre></div>`;
+    },
+    handlers: {
+      'code-edit'(e, ctx) {
+        e.preventDefault();
+        e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-code-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          const textarea = container.querySelector('.editor-code-textarea');
+          if (textarea) textarea.focus();
+        }
+      },
+      'code-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const textarea = blockEl.querySelector('.editor-code-textarea');
+        const langSelect = blockEl.querySelector('.editor-code-lang-select');
+        block.data.code = textarea.value;
+        block.data.language = langSelect.value;
+
+        const codeEl = blockEl.querySelector('.editor-code-body code');
+        const linesEl = blockEl.querySelector('.editor-code-lines');
+        const badge = blockEl.querySelector('.editor-code-lang-badge');
+        const codeLines = textarea.value ? textarea.value.split('\n') : [''];
+        if (codeEl) {
+          codeEl.textContent = textarea.value || '\n';
+          codeEl.className = 'language-' + langSelect.value;
+        }
+        if (linesEl) linesEl.innerHTML = codeLines.map((_, i) => `<span class="editor-code-line-num">${i + 1}</span>`).join('');
+        if (badge) badge.textContent = langSelect.value;
+
+        const container = blockEl.querySelector('.editor-code-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._highlightCode(blockEl);
+        ctx._onChange();
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'code-textarea') block.data.code = e.target.value;
+      else if (e.target.dataset.role === 'code-lang') block.data.language = e.target.value;
+    },
+    onChange(e, blockEl, block) {
+      if (e.target.dataset.role === 'code-lang') block.data.language = e.target.value;
+    },
+    toMarkdown(data) {
+      const lang = data.language && data.language !== 'plain' ? data.language : '';
+      return '```' + lang + '\n' + (data.code || '') + '\n```';
+    },
+    fromMarkdown(line, lines, i, ctx) {
+      // Catch-all fence parser. Other fence-language blocks are tried first by the
+      // orchestrator, so reaching here means none of them claimed this language.
+      const fence = consumeFence(line, lines, i, () => true);
+      if (!fence) return null;
+      return {
+        data: { code: fence.fenceLines.join('\n'), language: fence.lang || 'plain' },
+        consumed: fence.consumed
+      };
+    }
+  });
+
+  // The catch-all fence parser above uses a sentinel callback for its language check.
+  // Replace with an unconditional parser to keep behaviour predictable.
+  // (consumeFence's expectedLanguages signature only supports string|array, so we
+  // simply re-do the parse inline for the catch-all case.)
+
+  // -------------------------------------------------------------------------
+  // image
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'image',
+    editable: true,
+    defaultData: () => ({ src: '', alt: '' }),
+    render(data, ctx) {
+      const src = data?.src || '';
+      const alt = data?.alt || '';
+      const resolvedSrc = ctx._resolveImageSrc(src);
+      const isCollapsed = src ? 'collapsed' : 'editing';
+      const isDataUri = /^data:image\//i.test(src);
+
+      const previewInner = src
+        ? `<img src="${ctx._escapeHtml(resolvedSrc)}" alt="${ctx._escapeHtml(alt)}" class="editor-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                      <div class="editor-image-error" style="display: none;">Image failed to load: ${ctx._escapeHtml(isDataUri ? 'embedded image' : src)}</div>`
+        : `<div class="editor-image-placeholder"><span class="ei-ph-title">Drop or paste an image to embed it</span><span class="ei-ph-sub">Stored inline as base64 &middot; or type a path below</span></div>`;
+
+      let controls;
+      if (isDataUri) {
+        // An embedded base64 image: never show the huge data string in a text
+        // field — show a compact chip with Replace / Clear instead. Alt text
+        // stays editable.
+        const meta = describeImageDataUri(src);
+        controls = `
+          <div class="editor-image-controls">
+            <div class="editor-image-embedded-chip">
+              <span class="ei-chip-icon" aria-hidden="true">&#128247;</span>
+              <span class="ei-chip-text">Embedded image <span class="ei-chip-meta">${ctx._escapeHtml(meta.fmt)} &middot; ${ctx._escapeHtml(meta.size)}</span></span>
+              <button type="button" class="editor-image-replace-btn" data-role="image-replace">Replace</button>
+              <button type="button" class="editor-image-clear-btn" data-role="image-clear">Clear</button>
+            </div>
+            <input type="text" class="editor-image-alt" placeholder="Alt text (for accessibility)" value="${ctx._escapeHtml(alt)}" data-role="image-alt">
+          </div>`;
+      } else {
+        controls = `
+          <div class="editor-image-controls">
+            <input type="text" class="editor-image-src" placeholder="Image path (e.g., images/photo.png)" value="${ctx._escapeHtml(src)}" data-role="image-src">
+            <input type="text" class="editor-image-alt" placeholder="Alt text (for accessibility)" value="${ctx._escapeHtml(alt)}" data-role="image-alt">
+            <button type="button" class="editor-image-apply-btn" data-role="image-apply">Apply</button>
+          </div>`;
+      }
+
+      return `
+        <div class="editor-image-container ${isCollapsed}">
+          <div class="editor-image-preview editor-image-dropzone" tabindex="0" title="Click then paste, or drag &amp; drop an image — embeds it inline">
+            ${previewInner}
+          </div>
+          ${controls}
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const imgSrc = ctx._resolveImageSrc(data.src || '');
+      const imgAlt = data.alt || '';
+      return `<figure class="preview-image-figure"><img src="${ctx._escapeHtml(imgSrc)}" alt="${ctx._escapeHtml(imgAlt)}" class="preview-image"><figcaption>${ctx._escapeHtml(imgAlt)}</figcaption></figure>`;
+    },
+    handlers: {
+      'image-edit'(e, ctx) {
+        e.preventDefault();
+        e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-image-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          const srcInput = container.querySelector('.editor-image-src');
+          if (srcInput) srcInput.focus();
+        }
+      },
+      'image-apply'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const srcInput = blockEl.querySelector('.editor-image-src');
+        const altInput = blockEl.querySelector('.editor-image-alt');
+        block.data.src = srcInput.value;
+        block.data.alt = altInput.value;
+        // A pasted/typed data URI must re-render to swap the text field for the
+        // embedded-image chip; a plain path can just collapse in place.
+        if (/^data:image\//i.test(srcInput.value)) {
+          ctx._renderBlockContent(blockEl, 'image', block.data);
+        } else {
+          ctx._updateImagePreview(blockEl, srcInput.value, altInput.value);
+          const container = blockEl.querySelector('.editor-image-container');
+          if (srcInput.value && container) {
+            container.classList.remove('editing');
+            container.classList.add('collapsed');
+          }
+        }
+        ctx._onChange();
+      },
+      // Remove an embedded (or any) image, returning the block to its empty
+      // drop-zone state so a new image can be pasted/dropped/typed.
+      'image-clear'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        block.data.src = '';
+        ctx._renderBlockContent(blockEl, 'image', block.data);
+        ctx._onChange();
+      },
+      // Like clear, but immediately focus the drop zone so the next paste/drop
+      // replaces the image.
+      'image-replace'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        block.data.src = '';
+        ctx._renderBlockContent(blockEl, 'image', block.data);
+        ctx._onChange();
+        const zone = blockEl.querySelector('.editor-image-dropzone');
+        if (zone) zone.focus();
+      }
+    },
+    onInput(e, blockEl, block, ctx) {
+      const target = e.target;
+      if (target.dataset.role !== 'image-src' && target.dataset.role !== 'image-alt') return;
+      const srcInput = blockEl.querySelector('.editor-image-src');
+      const altInput = blockEl.querySelector('.editor-image-alt');
+      // For an embedded (data-URI) image there is no src field — only alt is
+      // editable; the data URI stays put in block.data.src.
+      if (altInput) block.data.alt = altInput.value;
+      if (!srcInput) return;
+      block.data.src = srcInput.value;
+      const img = blockEl.querySelector('.editor-image');
+      const placeholder = blockEl.querySelector('.editor-image-placeholder');
+      const error = blockEl.querySelector('.editor-image-error');
+      if (srcInput.value) {
+        if (img) { img.style.display = 'block'; img.src = ctx._resolveImageSrc(srcInput.value); img.alt = block.data.alt || ''; }
+        if (placeholder) placeholder.style.display = 'none';
+        if (error) error.style.display = 'none';
+      } else {
+        if (img) img.style.display = 'none';
+        if (error) error.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'flex';
+      }
+    },
+    toMarkdown(data) {
+      return `![${data.alt || ''}](${data.src || ''})`;
+    },
+    fromMarkdown(line) {
+      const m = line.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+      if (!m) return null;
+      return { data: { alt: m[1], src: m[2] }, consumed: 1 };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // link
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'link',
+    editable: true,
+    defaultData: () => ({ url: '', text: '' }),
+    render(data, ctx) {
+      const url = data?.url || '';
+      const text = data?.text || '';
+      const isCollapsed = url ? 'collapsed' : 'editing';
+      const displayText = text || url || 'Untitled link';
+      return `
+        <div class="editor-link-container ${isCollapsed}">
+          <div class="editor-link-preview">
+            <div class="editor-link-icon">🔗</div>
+            <div class="editor-link-info">
+              <div class="editor-link-title">${ctx._escapeHtml(displayText)}</div>
+              ${url ? `<div class="editor-link-url">${ctx._escapeHtml(url)}</div>` : ''}
+            </div>
+          </div>
+          <div class="editor-link-controls">
+            <input type="text" class="editor-link-url-input" placeholder="URL (e.g., https://example.com)" value="${ctx._escapeHtml(url)}" data-role="link-url">
+            <input type="text" class="editor-link-text-input" placeholder="Display text (optional)" value="${ctx._escapeHtml(text)}" data-role="link-text">
+            <button type="button" class="editor-link-apply-btn" data-role="link-apply">Apply</button>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const linkUrl = data.url || '#';
+      const linkText = data.text || data.url || 'Untitled link';
+      return `<div style="margin:8px 0"><a href="${ctx._escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" style="color:#12284b;font-weight:500;text-decoration:underline;">${ctx._escapeHtml(linkText)}</a></div>`;
+    },
+    handlers: {
+      'link-edit'(e, ctx) {
+        e.preventDefault();
+        e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-link-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          const urlInput = container.querySelector('.editor-link-url-input');
+          if (urlInput) urlInput.focus();
+        }
+      },
+      'link-apply'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const urlInput = blockEl.querySelector('.editor-link-url-input');
+        const textInput = blockEl.querySelector('.editor-link-text-input');
+        block.data.url = urlInput.value;
+        block.data.text = textInput.value;
+        const titleEl = blockEl.querySelector('.editor-link-title');
+        const urlEl = blockEl.querySelector('.editor-link-url');
+        if (titleEl) titleEl.textContent = textInput.value || urlInput.value || 'Untitled link';
+        if (urlEl) urlEl.textContent = urlInput.value;
+        else if (urlInput.value) {
+          const infoEl = blockEl.querySelector('.editor-link-info');
+          if (infoEl) infoEl.insertAdjacentHTML('beforeend', `<div class="editor-link-url">${ctx._escapeHtml(urlInput.value)}</div>`);
+        }
+        const container = blockEl.querySelector('.editor-link-container');
+        if (urlInput.value && container) {
+          container.classList.remove('editing');
+          container.classList.add('collapsed');
+        }
+        ctx._onChange();
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role !== 'link-url' && e.target.dataset.role !== 'link-text') return;
+      const urlInput = blockEl.querySelector('.editor-link-url-input');
+      const textInput = blockEl.querySelector('.editor-link-text-input');
+      block.data.url = urlInput.value;
+      block.data.text = textInput.value;
+    },
+    toMarkdown(data) {
+      return `[${data.text || data.url || ''}](${data.url || ''})`;
+    },
+    fromMarkdown(line) {
+      const m = line.trim().match(/^\[([^\]]*)\]\(([^)]+)\)$/);
+      if (!m) return null;
+      return { data: { text: m[1], url: m[2] }, consumed: 1 };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // table
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'table',
+    editable: true,
+    defaultData: () => ({ headers: ['Column 1', 'Column 2'], rows: [['', '']] }),
+    render(data, ctx) {
+      const headers = data?.headers || ['Column 1', 'Column 2'];
+      const rows = data?.rows || [['', '']];
+      const hasData = headers.some(h => h && h !== 'Column 1' && h !== 'Column 2') || rows.some(r => r.some(c => c));
+      const state = hasData ? 'collapsed' : 'editing';
+
+      const thHtml = headers.map(h => `<th>${ctx._escapeHtml(h)}</th>`).join('');
+      const trHtml = rows.map(row => {
+        const tds = headers.map((_, ci) => `<td>${ctx._escapeHtml(row[ci] || '')}</td>`).join('');
+        return `<tr>${tds}</tr>`;
+      }).join('');
+      const displayTable = `<div class="editor-table-display"><table><thead><tr>${thHtml}</tr></thead><tbody>${trHtml}</tbody></table></div>`;
+
+      const headerInputs = headers.map((h, ci) =>
+        `<input type="text" class="editor-table-cell-input" value="${ctx._escapeHtml(h)}" data-role="table-header-input" data-col="${ci}" placeholder="Header">`
+      ).join('');
+      const rowInputs = rows.map((row, ri) => {
+        const cells = headers.map((_, ci) =>
+          `<input type="text" class="editor-table-cell-input" value="${ctx._escapeHtml(row[ci] || '')}" data-role="table-cell-input" data-row="${ri}" data-col="${ci}" placeholder="Cell">`
+        ).join('');
+        return `<div class="editor-table-row" data-row="${ri}">${cells}</div>`;
+      }).join('');
+
+      return `
+        <div class="editor-table-container ${state}">
+          ${displayTable}
+          <div class="editor-table-controls">
+            <div class="editor-table-grid">
+              <div class="editor-table-row header-row">${headerInputs}</div>
+              ${rowInputs}
+            </div>
+            <div class="editor-table-actions">
+              <button type="button" class="editor-table-action-btn" data-role="table-add-row">+ Row</button>
+              <button type="button" class="editor-table-action-btn" data-role="table-remove-row">- Row</button>
+              <button type="button" class="editor-table-action-btn" data-role="table-add-col">+ Column</button>
+              <button type="button" class="editor-table-action-btn" data-role="table-remove-col">- Column</button>
+              <button type="button" class="editor-table-save-btn" data-role="table-save">Save</button>
+            </div>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const headers = data.headers || [];
+      const rows = data.rows || [];
+      const thHtml = headers.map(h => `<th>${ctx._escapeHtml(h)}</th>`).join('');
+      const trHtml = rows.map(row => {
+        const tds = headers.map((_, ci) => `<td>${ctx._escapeHtml(row[ci] || '')}</td>`).join('');
+        return `<tr>${tds}</tr>`;
+      }).join('');
+      return `<div class="preview-table"><table><thead><tr>${thHtml}</tr></thead><tbody>${trHtml}</tbody></table></div>`;
+    },
+    handlers: {
+      'table-edit'(e, ctx) {
+        e.preventDefault();
+        e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-table-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          const firstInput = container.querySelector('.editor-table-cell-input');
+          if (firstInput) firstInput.focus();
+        }
+      },
+      'table-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        ctx._saveTableFromGrid(found.blockEl, found.block);
+      },
+      'table-add-row'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const grid = found.blockEl.querySelector('.editor-table-grid');
+        const colCount = grid.querySelector('.header-row').querySelectorAll('input').length;
+        const rowCount = grid.querySelectorAll('.editor-table-row:not(.header-row)').length;
+        const row = document.createElement('div');
+        row.className = 'editor-table-row';
+        row.dataset.row = rowCount;
+        for (let ci = 0; ci < colCount; ci++) {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'editor-table-cell-input';
+          input.dataset.role = 'table-cell-input';
+          input.dataset.row = rowCount;
+          input.dataset.col = ci;
+          input.placeholder = 'Cell';
+          row.appendChild(input);
+        }
+        grid.appendChild(row);
+      },
+      'table-remove-row'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const grid = found.blockEl.querySelector('.editor-table-grid');
+        const dataRows = grid.querySelectorAll('.editor-table-row:not(.header-row)');
+        if (dataRows.length > 1) dataRows[dataRows.length - 1].remove();
+      },
+      'table-add-col'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const grid = found.blockEl.querySelector('.editor-table-grid');
+        const allRows = grid.querySelectorAll('.editor-table-row');
+        allRows.forEach((row, ri) => {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'editor-table-cell-input';
+          input.placeholder = ri === 0 ? 'Header' : 'Cell';
+          input.dataset.role = ri === 0 ? 'table-header-input' : 'table-cell-input';
+          input.dataset.col = row.querySelectorAll('input').length;
+          if (ri > 0) input.dataset.row = ri - 1;
+          row.appendChild(input);
+        });
+      },
+      'table-remove-col'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const grid = found.blockEl.querySelector('.editor-table-grid');
+        const allRows = grid.querySelectorAll('.editor-table-row');
+        const colCount = allRows[0].querySelectorAll('input').length;
+        if (colCount > 1) {
+          allRows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            inputs[inputs.length - 1].remove();
+          });
+        }
+      }
+    },
+    toMarkdown(data) {
+      const headers = data.headers || [];
+      const rows = data.rows || [];
+      const headerLine = '| ' + headers.join(' | ') + ' |';
+      const separatorLine = '| ' + headers.map(() => '---').join(' | ') + ' |';
+      const bodyLines = rows.map(row =>
+        '| ' + headers.map((_, ci) => row[ci] || '').join(' | ') + ' |'
+      );
+      return [headerLine, separatorLine, ...bodyLines].join('\n');
+    },
+    fromMarkdown(line, lines, i) {
+      if (!line.trim().startsWith('|')) return null;
+      // Look ahead for separator row, skipping blank lines
+      let sepIdx = i + 1;
+      while (sepIdx < lines.length && lines[sepIdx].trim() === '') sepIdx++;
+      if (sepIdx >= lines.length || !/^\|[\s\-:|]+\|$/.test(lines[sepIdx].trim())) return null;
+
+      const headerCells = line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      const colCount = headerCells.length;
+      let j = sepIdx + 1;
+      const tRows = [];
+      while (j < lines.length && lines[j].trim() === '') j++;
+
+      while (j < lines.length) {
+        const rowLine = lines[j].trim();
+        if (rowLine === '') { j++; continue; }
+        if (!rowLine.startsWith('|')) break;
+
+        let accumulated = lines[j];
+        j++;
+        while (j < lines.length) {
+          const accTrimmed = accumulated.trim();
+          const pipeCount = (accTrimmed.match(/\|/g) || []).length;
+          if (accTrimmed.endsWith('|') && pipeCount >= colCount + 1) break;
+          accumulated += '\n' + lines[j];
+          j++;
+        }
+        const cells = accumulated.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        tRows.push(cells);
+      }
+
+      return {
+        data: { headers: headerCells, rows: tRows },
+        consumed: j - i
+      };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // summary (fence: ```summary)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'summary',
+    editable: true,
+    defaultData: () => ({ text: '' }),
+    render(data, ctx) {
+      const summaryText = data?.text || '';
+      const summaryState = summaryText ? 'collapsed' : 'editing';
+      const summaryHtml = summaryText ? ctx._markdownToHtml(summaryText) : '<p style="color:#999;">Empty summary</p>';
+      return `
+        <div class="editor-summary-container ${summaryState}">
+          <div class="editor-summary-display">
+            <div class="editor-summary-label">Summary</div>
+            <div class="editor-summary-content">${summaryHtml}</div>
+          </div>
+          <div class="editor-summary-controls">
+            <div class="editor-summary-label" style="margin-bottom:8px;">Summary</div>
+            <textarea class="editor-summary-textarea" data-role="summary-textarea" placeholder="Write summary content (markdown supported)...">${ctx._escapeHtml(summaryText)}</textarea>
+            <button type="button" class="editor-summary-save-btn" data-role="summary-save">Save</button>
+            <div style="clear:both;"></div>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const summaryHtml = data.text ? ctx._markdownToHtml(data.text) : '';
+      return `<div style="border-left:4px solid #12284b;background:#f1f2f2;border-radius:0 6px 6px 0;padding:14px 18px;margin:12px 0;"><strong style="color:#12284b;text-transform:uppercase;font-size:0.8em;letter-spacing:0.05em;">Summary</strong>${summaryHtml}</div>`;
+    },
+    handlers: {
+      'summary-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-summary-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          const ta = container.querySelector('.editor-summary-textarea');
+          if (ta) ta.focus();
+        }
+      },
+      'summary-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const textarea = blockEl.querySelector('.editor-summary-textarea');
+        block.data.text = textarea.value;
+        const displayEl = blockEl.querySelector('.editor-summary-content');
+        if (displayEl) displayEl.innerHTML = textarea.value ? ctx._markdownToHtml(textarea.value) : '<p style="color:#999;">Empty summary</p>';
+        const container = blockEl.querySelector('.editor-summary-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._onChange();
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'summary-textarea') block.data.text = e.target.value;
+    },
+    toMarkdown(data) {
+      return '```summary\n' + (data.text || '') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'summary');
+      if (!fence) return null;
+      return { data: { text: fence.fenceLines.join('\n') }, consumed: fence.consumed };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // comments (fence: ```comments) — append-only comment thread on a doc.
+  // Authors don't usually edit the body directly; readers add comments via
+  // the form rendered in preview, which the wiki host POSTs to its API.
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'comments',
+    editable: true,
+    defaultData: () => ({ text: '' }),
+    render(data, ctx) {
+      const text = data?.text || '';
+      const lines = text ? text.split('\n').filter(l => /^---+$/.test(l.trim())) : [];
+      const count = text ? lines.length : 0;
+      return `
+        <div class="editor-comments-container" style="border:1px dashed #c7d2fe;background:#eef2ff;border-radius:6px;padding:12px 14px;color:#4338ca;">
+          <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Comments thread</strong>
+          <div style="font-size:0.85em;margin-top:4px;color:#6366f1;">${count} comment${count === 1 ? '' : 's'} stored. Readers add new ones from preview.</div>
+          <textarea class="editor-comments-textarea" data-role="comments-textarea" rows="4"
+                    style="display:block;width:100%;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:11px;"
+                    placeholder="Comment: ...&#10;Commentor: someone@example.com&#10;Date: 2026-05-14 09:00&#10;---">${ctx._escapeHtml(text)}</textarea>
+        </div>`;
+    },
+    renderPreview(data) {
+      const text = data?.text || '';
+      const lines = text ? text.split('\n').filter(l => /^---+$/.test(l.trim())) : [];
+      const count = text ? lines.length : 0;
+      return `<div style="border:1px dashed #c7d2fe;background:#eef2ff;border-radius:6px;padding:12px 14px;color:#4338ca;">
+        <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Comments</strong>
+        <div style="font-size:0.85em;margin-top:4px;color:#6366f1;">${count} comment${count === 1 ? '' : 's'} (rendered in preview).</div>
+      </div>`;
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'comments-textarea') block.data.text = e.target.value;
+    },
+    toMarkdown(data) {
+      const text = (data?.text || '').replace(/\s+$/, '');
+      return '```comments\n' + text + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'comments');
+      if (!fence) return null;
+      return { data: { text: fence.fenceLines.join('\n') }, consumed: fence.consumed };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // menu (fence: ```menu) — auto-generated table of contents.
+  // The block has no editable content; the parser collects every heading
+  // in the document at render time and replaces the placeholder.
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'menu',
+    defaultData: () => ({}),
+    render() {
+      return `
+        <div class="editor-menu-block" style="border:1px dashed #c7d2fe;background:#eef2ff;border-radius:6px;padding:12px 14px;color:#4338ca;">
+          <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">On this page</strong>
+          <div style="font-size:0.85em;margin-top:4px;color:#6366f1;">Auto-generated from headings on render.</div>
+        </div>`;
+    },
+    renderPreview() {
+      return `
+        <aside class="menu-toc menu-toc-preview" style="border:1px dashed #c7d2fe;background:#eef2ff;border-radius:6px;padding:12px 14px;color:#4338ca;">
+          <div class="menu-toc-title" style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">On this page</div>
+          <div style="font-size:0.85em;margin-top:4px;color:#6366f1;">Auto-generated from headings on render.</div>
+        </aside>`;
+    },
+    toMarkdown() {
+      return '```menu\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'menu');
+      if (!fence) return null;
+      return { data: {}, consumed: fence.consumed };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // document (fence: ```document) — metadata describing the document object
+  // itself (name, space, path, owner, …) as editable key/value pairs. It is
+  // intentionally NOT rendered into the published reading view (the parser's
+  // renderDocument returns ''); here in the editor it is shown as a small
+  // key/value form so authors can capture and edit the values.
+  // -------------------------------------------------------------------------
+
+  // Read every key/value row out of the DOM back into the block's data model.
+  // Always leaves at least one (possibly blank) pair so the form never empties.
+  function syncDocumentPairs(blockEl, block) {
+    const rows = Array.from(blockEl.querySelectorAll('.editor-document-row'));
+    const pairs = rows.map(r => ({
+      key: (r.querySelector('.editor-document-key') || {}).value || '',
+      value: (r.querySelector('.editor-document-value') || {}).value || ''
+    }));
+    block.data.pairs = pairs.length ? pairs : [{ key: '', value: '' }];
+  }
+
+  // Case-insensitively find a key's row index in a document block's pairs.
+  function findDocumentPairIndex(pairs, key) {
+    const want = String(key).toLowerCase();
+    return (pairs || []).findIndex(p => String(p.key || '').trim().toLowerCase() === want);
+  }
+
+  // Read a document block pair's value by key (case-insensitive), '' if absent.
+  function getDocumentPairValue(pairs, key) {
+    const i = findDocumentPairIndex(pairs, key);
+    return i === -1 ? '' : String(pairs[i].value || '').trim();
+  }
+
+  // Set (or create) a document block pair. Reuses a blank row before appending
+  // so picking a cover on a fresh block doesn't leave an empty field behind.
+  function setDocumentPair(block, key, value) {
+    const pairs = block.data.pairs = Array.isArray(block.data.pairs) ? block.data.pairs : [];
+    const existing = findDocumentPairIndex(pairs, key);
+    if (existing !== -1) { pairs[existing].value = value; return; }
+    const blank = pairs.findIndex(p => !String(p.key || '').trim() && !String(p.value || '').trim());
+    if (blank !== -1) { pairs[blank] = { key, value }; return; }
+    pairs.push({ key, value });
+  }
+
+  MarkdownEditor.registerBlock({
+    type: 'document',
+    defaultData: () => ({ pairs: [{ key: '', value: '' }] }),
+    render(data, ctx) {
+      const pairs = (data && Array.isArray(data.pairs) && data.pairs.length)
+        ? data.pairs : [{ key: '', value: '' }];
+      const rows = pairs.map((p, i) => `
+        <div class="editor-document-row" data-row="${i}" style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+          <input type="text" class="editor-document-key" data-role="document-key" data-row="${i}"
+                 value="${ctx._escapeHtml(p.key || '')}" placeholder="key (e.g. owner)"
+                 style="flex:0 0 34%;font-family:'JetBrains Mono',monospace;font-size:12px;padding:4px 6px;border:1px solid #c7d2fe;border-radius:4px;">
+          <span style="color:#6366f1;font-weight:700;">:</span>
+          <input type="text" class="editor-document-value" data-role="document-value" data-row="${i}"
+                 value="${ctx._escapeHtml(p.value || '')}" placeholder="value"
+                 style="flex:1 1 auto;font-family:'JetBrains Mono',monospace;font-size:12px;padding:4px 6px;border:1px solid #c7d2fe;border-radius:4px;">
+          <button type="button" class="editor-document-remove" data-role="document-remove" data-row="${i}" title="Remove field"
+                  style="flex:0 0 auto;border:none;background:transparent;color:#6366f1;cursor:pointer;font-size:16px;line-height:1;">×</button>
+        </div>`).join('');
+      // Cover strip: only offered when the host supplied an upload provider
+      // (the editor alone cannot store a file — see options.uploadImage).
+      const iconValue = getDocumentPairValue(pairs, 'icon');
+      const canUpload = !!(ctx && ctx._uploadImageFn);
+      const thumb = iconValue
+        ? `<img class="editor-document-cover-img" src="${ctx._escapeHtml(ctx._resolveImageSrcFn ? ctx._resolveImageSrcFn(iconValue) : iconValue)}" alt=""
+                style="width:100%;height:100%;object-fit:cover;display:block;">`
+        : `<span style="font-size:10px;color:#6366f1;text-align:center;padding:0 4px;">no cover</span>`;
+      const coverStrip = canUpload ? `
+          <div class="editor-document-cover" style="display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px dashed #c7d2fe;">
+            <div class="editor-document-cover-thumb"
+                 style="flex:0 0 auto;width:76px;height:48px;border:1px solid #c7d2fe;border-radius:4px;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;">${thumb}</div>
+            <div style="flex:1 1 auto;min-width:0;">
+              <div style="font-size:0.78em;font-weight:600;">Cover image <span style="font-weight:400;color:#6366f1;">(the <code>icon</code> field)</span></div>
+              <div style="font-size:0.72em;color:#6366f1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${iconValue ? ctx._escapeHtml(iconValue) : 'Shown on the Feature view and Card tab.'}</div>
+            </div>
+            <button type="button" data-role="document-upload-cover"
+                    style="flex:0 0 auto;border:1px solid #c7d2fe;background:#fff;color:#4338ca;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;">
+              ${iconValue ? 'Replace' : 'Upload'}…</button>
+            ${iconValue ? `<button type="button" data-role="document-remove-cover" title="Remove cover"
+                    style="flex:0 0 auto;border:1px solid #c7d2fe;background:#fff;color:#4338ca;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:12px;">×</button>` : ''}
+          </div>` : '';
+
+      return `
+        <div class="editor-document-container" style="border:1px dashed #c7d2fe;background:#eef2ff;border-radius:6px;padding:12px 14px;color:#4338ca;">
+          <div class="editor-document-header" style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+            <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Document</strong>
+            <span style="font-size:0.8em;color:#6366f1;">Metadata for this document — not shown in the published view.</span>
+          </div>
+          <div class="editor-document-rows">${rows}</div>
+          <button type="button" class="editor-document-add" data-role="document-add"
+                  style="margin-top:10px;border:1px solid #c7d2fe;background:#fff;color:#4338ca;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;">+ Add field</button>
+          ${coverStrip}
+        </div>`;
+    },
+    renderPreview(data, ctx) {
+      const pairs = (data && Array.isArray(data.pairs) ? data.pairs : [])
+        .filter(p => (p.key || '').trim() || (p.value || '').trim());
+      const rows = pairs.map(p =>
+        `<tr><td style="padding:2px 10px 2px 0;font-weight:600;vertical-align:top;">${ctx._escapeHtml(p.key || '')}</td>` +
+        `<td style="padding:2px 0;">${ctx._escapeHtml(p.value || '')}</td></tr>`
+      ).join('');
+      return `<div style="border:1px dashed #c7d2fe;background:#eef2ff;border-radius:6px;padding:12px 14px;color:#4338ca;">
+        <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Document metadata</strong>
+        <div style="font-size:0.8em;margin:4px 0 8px;color:#6366f1;">Hidden from the published view.</div>
+        ${rows ? `<table style="font-size:0.85em;border-collapse:collapse;">${rows}</table>` : '<div style="font-size:0.85em;color:#6366f1;">No fields defined.</div>'}
+      </div>`;
+    },
+    handlers: {
+      'document-add'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        syncDocumentPairs(found.blockEl, found.block);
+        found.block.data.pairs.push({ key: '', value: '' });
+        ctx._renderBlockContent(found.blockEl, 'document', found.block.data);
+        const keys = found.blockEl.querySelectorAll('.editor-document-key');
+        if (keys.length) keys[keys.length - 1].focus();
+        ctx._onChange();
+      },
+      'document-remove'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        syncDocumentPairs(found.blockEl, found.block);
+        const row = parseInt(e.target.dataset.row, 10);
+        if (!Number.isNaN(row)) found.block.data.pairs.splice(row, 1);
+        if (!found.block.data.pairs.length) found.block.data.pairs = [{ key: '', value: '' }];
+        ctx._renderBlockContent(found.blockEl, 'document', found.block.data);
+        ctx._onChange();
+      },
+      // Pick an image and store it via the host, then point `icon:` at it.
+      'document-upload-cover'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found || !ctx._uploadImageFn) return;
+        const btn = e.target.closest('[data-role="document-upload-cover"]') || e.target;
+
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+
+        // Nothing picked — the input would otherwise linger in the DOM.
+        input.addEventListener('cancel', () => input.remove(), { once: true });
+
+        input.addEventListener('change', async () => {
+          const file = input.files && input.files[0];
+          input.remove();
+          if (!file) return;
+
+          const label = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Uploading…';
+          try {
+            const ref = await ctx._uploadImageFn(file);
+            if (!ref) throw new Error('No image reference returned');
+            // The block may have been re-rendered or removed while the upload
+            // was in flight — writing into a detached node would be lost.
+            if (!found.blockEl.isConnected) return;
+            // Re-read the rows first: the user may have edited other fields
+            // while the upload was in flight.
+            syncDocumentPairs(found.blockEl, found.block);
+            setDocumentPair(found.block, 'icon', String(ref));
+            ctx._renderBlockContent(found.blockEl, 'document', found.block.data);
+            ctx._onChange();
+          } catch (err) {
+            console.warn('[MarkdownEditor] Cover upload failed:', err);
+            btn.disabled = false;
+            btn.textContent = label;
+          }
+        }, { once: true });
+
+        input.click();
+      },
+      'document-remove-cover'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        syncDocumentPairs(found.blockEl, found.block);
+        const i = findDocumentPairIndex(found.block.data.pairs, 'icon');
+        if (i !== -1) found.block.data.pairs.splice(i, 1);
+        if (!found.block.data.pairs.length) found.block.data.pairs = [{ key: '', value: '' }];
+        ctx._renderBlockContent(found.blockEl, 'document', found.block.data);
+        ctx._onChange();
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'document-key' || e.target.dataset.role === 'document-value') {
+        syncDocumentPairs(blockEl, block);
+      }
+    },
+    toMarkdown(data) {
+      const pairs = (data && Array.isArray(data.pairs) ? data.pairs : [])
+        .filter(p => (p.key || '').trim() || (p.value || '').trim());
+      const body = pairs.map(p => `${(p.key || '').trim()}: ${(p.value || '').trim()}`).join('\n');
+      return '```document\n' + body + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'document');
+      if (!fence) return null;
+      const pairs = [];
+      fence.fenceLines.forEach(l => {
+        const t = l.trim();
+        if (!t) return;
+        const idx = t.indexOf(':');
+        if (idx === -1) return;
+        const key = t.slice(0, idx).trim();
+        const value = t.slice(idx + 1).trim();
+        if (key) pairs.push({ key, value });
+      });
+      return { data: { pairs: pairs.length ? pairs : [{ key: '', value: '' }] }, consumed: fence.consumed };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // pane (fence: ```pane) — embeds another wiki document at view time
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'pane',
+    defaultData: () => ({ source: '', clickout: false, extras: [] }),
+    render(data, ctx) {
+      const source = (data && data.source) || '';
+      const clickout = !!(data && data.clickout);
+      return `
+        <div class="editor-pane-container" style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+            <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Pane</strong>
+            <span style="font-size:0.8em;color:#14b8a6;">Embeds another document in the published view.</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+            <input type="text" class="editor-pane-source" data-role="pane-source"
+                   value="${ctx._escapeHtml(source)}" placeholder="Type to search documents… (or [Space]/path/to/file.md)"
+                   autocomplete="off"
+                   style="flex:1 1 auto;font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 8px;border:1px solid #99f6e4;border-radius:4px;">
+            <button type="button" data-role="pane-goto" title="Open the source document"
+                    style="flex:0 0 auto;border:1px solid #99f6e4;background:#fff;color:#0f766e;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;${source ? '' : 'display:none;'}">Open ↗</button>
+          </div>
+          <label style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" data-role="pane-clickout" ${clickout ? 'checked' : ''}>
+            Clickout — show an open button on the rendered pane
+          </label>
+        </div>`;
+    },
+    renderPreview(data, ctx) {
+      const source = (data && data.source) || '';
+      return `<div style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+        <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Pane</strong>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.85em;margin-left:8px;">${ctx._escapeHtml(source || 'no source set')}</span>
+        <div style="font-size:0.8em;margin-top:4px;color:#14b8a6;">Rendered from the source document in the published view.</div>
+      </div>`;
+    },
+    handlers: {
+      'pane-goto'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const source = (found.block.data.source || '').trim();
+        if (!source) return;
+        // The editor is host-agnostic — the wiki's paneController owns
+        // resolution and navigation.
+        window.dispatchEvent(new CustomEvent('wiki:pane-open', { detail: { source } }));
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'pane-source') {
+        block.data.source = e.target.value;
+        const goto = blockEl.querySelector('[data-role="pane-goto"]');
+        if (goto) goto.style.display = e.target.value.trim() ? '' : 'none';
+      }
+    },
+    onChange(e, blockEl, block) {
+      if (e.target.dataset.role === 'pane-clickout') {
+        block.data.clickout = e.target.checked;
+      }
+    },
+    toMarkdown(data) {
+      const lines = ['source: ' + ((data && data.source) || '').trim()];
+      if (data && data.clickout) lines.push('clickout: true');
+      // Lines we didn't understand on read are written back verbatim.
+      (data && data.extras || []).forEach(l => lines.push(l));
+      return '```pane\n' + lines.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'pane');
+      if (!fence) return null;
+      const data = { source: '', clickout: false, extras: [] };
+      fence.fenceLines.forEach(l => {
+        const m = l.trim().match(/^([\w-]+)\s*:\s*(.*)$/);
+        if (m && m[1].toLowerCase() === 'source') { data.source = m[2].trim(); return; }
+        if (m && m[1].toLowerCase() === 'clickout') { data.clickout = /^true$/i.test(m[2].trim()); return; }
+        if (l.trim()) data.extras.push(l);
+      });
+      return { data, consumed: fence.consumed };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // linked-documents (fence: ```linked-documents) — the relationship band
+  //
+  // The published view renders one card per reference (the wiki's
+  // linkedDocumentsController resolves them). Here it is an ordered, editable
+  // list: each row is a reference with an optional display label, reorderable
+  // and removable, so a Blocks-mode edit round-trips a block the "Link
+  // documents" dialog wrote — and vice versa.
+  //
+  // Click roles are namespaced (`linked-docs-add`, not `add`) because
+  // _handleBlockClick resolves a role by EXACT key against every registered
+  // block and takes the first match.
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'linked-documents',
+    defaultData: () => ({ title: '', across: 0, items: [{ ref: '', label: '' }], extras: [] }),
+    render(data, ctx) {
+      const items = (data && data.items && data.items.length) ? data.items : [{ ref: '', label: '' }];
+      const rows = items.map((item, index) => `
+        <div class="editor-linked-row" data-linked-index="${index}"
+             style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+          <i class="bi bi-link-45deg" style="flex:0 0 auto;color:#0f766e;"></i>
+          <input type="text" data-role="linked-docs-source" data-linked-index="${index}"
+                 value="${ctx._escapeHtml(item.ref || '')}"
+                 placeholder="Type to search documents and folders… (or [Space]/path)"
+                 autocomplete="off"
+                 style="flex:2 1 0;min-width:0;font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 8px;border:1px solid #99f6e4;border-radius:4px;">
+          <input type="text" data-role="linked-docs-label" data-linked-index="${index}"
+                 value="${ctx._escapeHtml(item.label || '')}"
+                 placeholder="Label (optional)"
+                 style="flex:1 1 0;min-width:0;font-size:12px;padding:5px 8px;border:1px solid #99f6e4;border-radius:4px;">
+          <button type="button" data-role="linked-docs-up" data-linked-index="${index}" title="Move up"
+                  style="flex:0 0 auto;border:1px solid #99f6e4;background:#fff;color:#0f766e;border-radius:4px;padding:4px 7px;cursor:pointer;font-size:11px;">&#8593;</button>
+          <button type="button" data-role="linked-docs-down" data-linked-index="${index}" title="Move down"
+                  style="flex:0 0 auto;border:1px solid #99f6e4;background:#fff;color:#0f766e;border-radius:4px;padding:4px 7px;cursor:pointer;font-size:11px;">&#8595;</button>
+          <button type="button" data-role="linked-docs-remove" data-linked-index="${index}" title="Remove"
+                  style="flex:0 0 auto;border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:4px;padding:4px 7px;cursor:pointer;font-size:11px;">&#215;</button>
+        </div>`).join('');
+
+      return `
+        <div class="editor-linked-container" style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+            <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Linked documents</strong>
+            <span style="font-size:0.8em;color:#14b8a6;">Shows related documents and folders as cards.</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <input type="text" data-role="linked-docs-title" value="${ctx._escapeHtml((data && data.title) || '')}"
+                   placeholder="Section heading (default: Linked documents)"
+                   style="flex:1 1 auto;font-size:12px;padding:5px 8px;border:1px solid #99f6e4;border-radius:4px;">
+            <input type="number" min="0" max="6" data-role="linked-docs-across"
+                   value="${(data && data.across) || ''}" placeholder="Cols"
+                   title="Cards per row — leave blank to fit automatically"
+                   style="flex:0 0 72px;font-size:12px;padding:5px 8px;border:1px solid #99f6e4;border-radius:4px;">
+          </div>
+          ${rows}
+          <button type="button" data-role="linked-docs-add"
+                  style="margin-top:8px;border:1px solid #99f6e4;background:#fff;color:#0f766e;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;">+ Add link</button>
+        </div>`;
+    },
+    renderPreview(data, ctx) {
+      const items = (data && data.items) || [];
+      const list = items.filter(i => i && i.ref).map(i =>
+        `<li style="font-family:'JetBrains Mono',monospace;font-size:0.85em;">${ctx._escapeHtml(i.label || i.ref)}</li>`
+      ).join('');
+      return `<div style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+        <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">${ctx._escapeHtml((data && data.title) || 'Linked documents')}</strong>
+        ${list ? `<ul style="margin:6px 0 0 18px;">${list}</ul>` : '<div style="font-size:0.8em;margin-top:4px;color:#14b8a6;">No links yet.</div>'}
+      </div>`;
+    },
+    handlers: {
+      'linked-docs-add'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        if (!Array.isArray(found.block.data.items)) found.block.data.items = [];
+        found.block.data.items.push({ ref: '', label: '' });
+        rerenderLinked(found, ctx);
+      },
+      'linked-docs-remove'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const row = e.target.closest('[data-linked-index]');
+        const index = row ? parseInt(row.dataset.linkedIndex, 10) : NaN;
+        if (Number.isNaN(index)) return;
+        found.block.data.items.splice(index, 1);
+        if (!found.block.data.items.length) found.block.data.items.push({ ref: '', label: '' });
+        rerenderLinked(found, ctx);
+      },
+      'linked-docs-up'(e, ctx) { moveLinkedItem(e, ctx, -1); },
+      'linked-docs-down'(e, ctx) { moveLinkedItem(e, ctx, 1); }
+    },
+    onInput(e, blockEl, block) {
+      const role = e.target.dataset.role;
+      if (role === 'linked-docs-title') { block.data.title = e.target.value; return; }
+      if (role === 'linked-docs-across') { block.data.across = parseInt(e.target.value, 10) || 0; return; }
+      if (role !== 'linked-docs-source' && role !== 'linked-docs-label') return;
+      const index = parseInt(e.target.dataset.linkedIndex, 10);
+      if (Number.isNaN(index) || !block.data.items || !block.data.items[index]) return;
+      if (role === 'linked-docs-source') block.data.items[index].ref = e.target.value;
+      else block.data.items[index].label = e.target.value;
+    },
+    toMarkdown(data) {
+      const lines = [];
+      const title = ((data && data.title) || '').trim();
+      if (title) lines.push('title: ' + title);
+      if (data && data.across > 0) lines.push('across: ' + data.across);
+      ((data && data.items) || []).forEach(item => {
+        const ref = String((item && item.ref) || '').trim();
+        if (!ref) return;
+        const label = String((item && item.label) || '').trim();
+        lines.push(label ? `- ${ref} | ${label}` : `- ${ref}`);
+      });
+      // Lines we didn't understand on read are written back verbatim.
+      ((data && data.extras) || []).forEach(l => lines.push(l));
+      return '```linked-documents\n' + lines.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'linked-documents');
+      if (!fence) return null;
+      const data = { title: '', across: 0, items: [], extras: [] };
+      fence.fenceLines.forEach(l => {
+        const trimmed = l.trim();
+        if (!trimmed) return;
+        if (trimmed.startsWith('-')) {
+          const body = trimmed.replace(/^-\s*/, '').trim();
+          if (!body) return;
+          const bar = body.indexOf('|');
+          const ref = (bar === -1 ? body : body.slice(0, bar)).trim();
+          const label = bar === -1 ? '' : body.slice(bar + 1).trim();
+          if (ref) data.items.push({ ref, label });
+          return;
+        }
+        const kv = trimmed.match(/^([\w-]+)\s*:\s*(.*)$/);
+        if (kv && kv[1].toLowerCase() === 'title') { data.title = kv[2].trim(); return; }
+        if (kv && kv[1].toLowerCase() === 'across') { data.across = parseInt(kv[2], 10) || 0; return; }
+        data.extras.push(l);
+      });
+      if (!data.items.length) data.items.push({ ref: '', label: '' });
+      return { data, consumed: fence.consumed };
+    }
+  });
+
+  /**
+   * Repaint one linked-documents block from its data. Re-render rather than
+   * patch: every row carries its index in `data-linked-index`, so adding,
+   * removing or moving one shifts every row after it. Re-point
+   * `contentElement` afterwards — the old node is gone (same contract the
+   * landing blocks' `-save` handler follows).
+   */
+  function rerenderLinked(found, ctx) {
+    const { blockEl, block } = found;
+    ctx._renderBlockContent(blockEl, block.type, block.data);
+    block.contentElement = blockEl.querySelector('[contenteditable], textarea, code, input, span');
+    ctx._onChange();
+  }
+
+  /** Shared body of the linked-documents up/down handlers. */
+  function moveLinkedItem(e, ctx, delta) {
+    e.preventDefault();
+    const found = getBlock(e, ctx);
+    if (!found) return;
+    const row = e.target.closest('[data-linked-index]');
+    const index = row ? parseInt(row.dataset.linkedIndex, 10) : NaN;
+    const items = found.block.data.items;
+    if (Number.isNaN(index) || !Array.isArray(items)) return;
+    const to = index + delta;
+    if (to < 0 || to >= items.length) return;
+    const [moved] = items.splice(index, 1);
+    items.splice(to, 0, moved);
+    rerenderLinked(found, ctx);
+  }
+
+  // -------------------------------------------------------------------------
+  // recent-changes / pinned-recent-changes — a grid of what changed lately
+  //
+  // Two blocks, one form. `recent-changes` scans the folder it names;
+  // `pinned-recent-changes` scans whatever the reader has pinned, so it has no
+  // folder field at all — the difference is one flag on the spec, not a second
+  // copy of the same editor.
+  //
+  // Settings only; there are no authored items, because the items ARE the
+  // answer the server gives at view time (the wiki's recentChangesController
+  // fetches them). The grammar these round-trip is
+  // MarkdownParser.parseRecentChanges — keep the two in step, or a block will
+  // render one way and edit another.
+  //
+  // Input roles are namespaced (`recent-folder`, not `folder`) because the
+  // suggestion plumbing in markdown-editor.js matches a role by EXACT key. They
+  // are SHARED between the two blocks on purpose: _handleInput dispatches to the
+  // block definition for the element's own block TYPE, so there is nothing to
+  // collide with, and the folder picker's `recent-folder` hook stays one name.
+  // -------------------------------------------------------------------------
+
+  /** Mirrors MarkdownParser.RECENT_DEFAULTS — the editor must not invent its own. */
+  const RECENT_DEFAULTS = { days: 30, limit: 8, maxLimit: 60 };
+
+  /**
+   * Turn a `days:` / `period:` value into whole days. A verbatim copy of
+   * MarkdownParser.periodToDays: the editor is a plain <script> with no access
+   * to the parser, and a block whose period parsed differently on the two sides
+   * would silently rewrite the author's own number on save.
+   */
+  function recentPeriodToDays(raw, fallback = RECENT_DEFAULTS.days) {
+    const s = String(raw === undefined || raw === null ? '' : raw).trim().toLowerCase();
+    if (!s) return fallback;
+    if (s === 'all' || s === 'any' || s === 'ever') return 0;
+    const m = s.match(/^(\d+(?:\.\d+)?)\s*(d|w|m|y)?(?:ay|eek|onth|ear)?s?$/);
+    if (!m) return fallback;
+    const n = parseFloat(m[1]);
+    if (!Number.isFinite(n) || n < 0) return fallback;
+    if (n === 0) return 0;
+    const unit = m[2] || 'd';
+    const multiplier = unit === 'w' ? 7 : unit === 'm' ? 30 : unit === 'y' ? 365 : 1;
+    return Math.max(1, Math.round(n * multiplier));
+  }
+
+  /** Split a `[Space]/path` reference — the shape the folder picker writes. */
+  function splitRecentRef(value) {
+    const ref = String(value || '').replace(/\\/g, '/');
+    const spaced = ref.match(/^\[([^\]]*)\]\s*\/?\s*(.*)$/);
+    if (!spaced) return { space: null, folder: ref.replace(/^\/+|\/+$/g, '').trim() };
+    return {
+      space: spaced[1].trim(),
+      folder: spaced[2].replace(/^\/+|\/+$/g, '').trim()
+    };
+  }
+
+  /**
+   * Register one of the two recent-changes blocks from its spec.
+   * @param {Object} spec
+   * @param {string} spec.type          fence id / block type
+   * @param {string} spec.label         name on the block chrome
+   * @param {string} spec.blurb         one line explaining what it shows
+   * @param {string} spec.defaultTitle  heading used when the author sets none
+   * @param {boolean} spec.hasFolder    whether the block scans a named folder
+   */
+  function registerRecentBlock(spec) {
+    MarkdownEditor.registerBlock({
+      type: spec.type,
+      defaultData: () => ({
+        title: '', folder: '', space: '',
+        days: RECENT_DEFAULTS.days, limit: RECENT_DEFAULTS.limit, across: 0, extras: []
+      }),
+      render(data, ctx) {
+        const d = data || {};
+        const box = 'min-width:0;font-size:12px;padding:5px 8px;border:1px solid #99f6e4;border-radius:4px;';
+        const field = (role, value, placeholder, extra) =>
+          `<input type="text" data-role="${role}" value="${ctx._escapeHtml(value == null ? '' : value)}"
+                  placeholder="${ctx._escapeHtml(placeholder)}" autocomplete="off"
+                  style="${extra || 'flex:1 1 auto;'}${box}">`;
+
+        // The pinned block has no folder to name — its scope is the reader's
+        // own pins — so that row collapses to the space field alone.
+        const scopeRow = spec.hasFolder
+          ? `${field('recent-folder', d.folder, 'Type to search folders… (required)',
+              "flex:2 1 0;font-family:'JetBrains Mono',monospace;")}
+             ${field('recent-space', d.space, 'Space (optional)', 'flex:1 1 0;')}`
+          : field('recent-space', d.space, 'Space (optional — defaults to this one)');
+
+        return `
+          <div class="editor-recent-container" style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+            <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+              <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">${ctx._escapeHtml(spec.label)}</strong>
+              <span style="font-size:0.8em;color:#14b8a6;">${ctx._escapeHtml(spec.blurb)}</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              ${field('recent-title', d.title, `Section heading (default: ${spec.defaultTitle})`)}
+            </div>
+            <div style="display:flex;gap:6px;margin-top:6px;">${scopeRow}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;">
+              <input type="number" min="1" data-role="recent-days" value="${d.days === 0 ? '' : ctx._escapeHtml(d.days)}"
+                     placeholder="Days" title="Look-back period in days — blank means all time"
+                     style="flex:1 1 0;${box}">
+              <input type="number" min="1" max="${RECENT_DEFAULTS.maxLimit}" data-role="recent-limit"
+                     value="${ctx._escapeHtml(d.limit)}" placeholder="Results" title="How many items to show"
+                     style="flex:1 1 0;${box}">
+              <input type="number" min="0" max="6" data-role="recent-across" value="${d.across ? ctx._escapeHtml(d.across) : ''}"
+                     placeholder="Cols" title="Cards per row — leave blank to fit automatically"
+                     style="flex:1 1 0;${box}">
+            </div>
+          </div>`;
+      },
+      renderPreview(data, ctx) {
+        const d = data || {};
+        const where = spec.hasFolder
+          ? (d.folder ? (d.space ? `[${d.space}]/${d.folder}` : d.folder) : 'no folder set')
+          : 'your pinned folders';
+        const period = d.days > 0 ? `last ${d.days} days` : 'all time';
+        return `<div style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+          <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">${ctx._escapeHtml(d.title || spec.defaultTitle)}</strong>
+          <div style="font-size:0.8em;margin-top:4px;color:#14b8a6;">
+            ${ctx._escapeHtml(`${d.limit || RECENT_DEFAULTS.limit} most recent in ${where} · ${period}`)}
+          </div>
+        </div>`;
+      },
+      onInput(e, blockEl, block) {
+        const role = e.target.dataset.role;
+        const value = e.target.value;
+        if (role === 'recent-title') { block.data.title = value; return; }
+        if (role === 'recent-space') { block.data.space = value.trim(); return; }
+        if (role === 'recent-folder') {
+          // The folder picker writes `[Space]/path`, which is also legal in the
+          // markdown — split it so the two fields stay in agreement.
+          const parts = splitRecentRef(value);
+          block.data.folder = parts.folder;
+          if (parts.space !== null) {
+            block.data.space = parts.space;
+            const spaceEl = blockEl.querySelector('[data-role="recent-space"]');
+            if (spaceEl) spaceEl.value = parts.space;
+          }
+          return;
+        }
+        if (role === 'recent-days') {
+          // Blank is a real choice — "all time" — not a fallback to the default.
+          block.data.days = value.trim() === '' ? 0 : recentPeriodToDays(value);
+          return;
+        }
+        if (role === 'recent-limit') {
+          const n = parseInt(value, 10);
+          block.data.limit = Number.isFinite(n) && n > 0
+            ? Math.min(n, RECENT_DEFAULTS.maxLimit)
+            : RECENT_DEFAULTS.limit;
+          return;
+        }
+        if (role === 'recent-across') { block.data.across = parseInt(value, 10) || 0; }
+      },
+      toMarkdown(data) {
+        const d = data || {};
+        const lines = [];
+        const title = String(d.title || '').trim();
+        if (title) lines.push('title: ' + title);
+        if (spec.hasFolder) lines.push('folder: ' + String(d.folder || '').trim());
+        if (String(d.space || '').trim()) lines.push('space: ' + String(d.space).trim());
+        // 0 means "all time", which has to be written or a reader would fall back
+        // to the 30-day default and silently narrow the block.
+        lines.push('days: ' + (d.days > 0 ? d.days : 'all'));
+        lines.push('limit: ' + (d.limit || RECENT_DEFAULTS.limit));
+        if (d.across > 0) lines.push('across: ' + d.across);
+        // Lines we didn't understand on read are written back verbatim.
+        (d.extras || []).forEach(l => lines.push(l));
+        return '```' + spec.type + '\n' + lines.join('\n') + '\n```';
+      },
+      fromMarkdown(line, lines, i) {
+        const fence = consumeFence(line, lines, i, spec.type);
+        if (!fence) return null;
+        const data = {
+          title: '', folder: '', space: '',
+          days: RECENT_DEFAULTS.days, limit: RECENT_DEFAULTS.limit, across: 0, extras: []
+        };
+        fence.fenceLines.forEach(l => {
+          const trimmed = l.trim();
+          if (!trimmed || trimmed.toLowerCase() === spec.type) return;
+          const kv = trimmed.match(/^([\w-]+)\s*:\s*(.*)$/);
+          if (!kv) { data.extras.push(l); return; }
+          const key = kv[1].toLowerCase();
+          const value = kv[2].trim();
+          if (key === 'title') { data.title = value; return; }
+          if (key === 'folder') {
+            // Read even on the pinned block, where it has no effect: an author
+            // who pastes one in should see it survive a save rather than have
+            // it silently deleted.
+            const parts = splitRecentRef(value);
+            data.folder = parts.folder;
+            if (parts.space !== null) data.space = parts.space;
+            return;
+          }
+          if (key === 'space') { data.space = value.replace(/^\[|\]$/g, '').trim(); return; }
+          if (key === 'days' || key === 'period') {
+            data.days = recentPeriodToDays(value, RECENT_DEFAULTS.days);
+            return;
+          }
+          if (key === 'limit') {
+            const n = parseInt(value, 10);
+            data.limit = Number.isFinite(n) && n > 0
+              ? Math.min(n, RECENT_DEFAULTS.maxLimit)
+              : RECENT_DEFAULTS.limit;
+            return;
+          }
+          if (key === 'across') { data.across = parseInt(value, 10) || 0; return; }
+          data.extras.push(l);
+        });
+        return { data, consumed: fence.consumed };
+      }
+    });
+  }
+
+  registerRecentBlock({
+    type: 'recent-changes',
+    label: 'Recent changes',
+    blurb: 'A grid of what changed lately in a folder and everything under it.',
+    defaultTitle: 'Recent changes',
+    hasFolder: true
+  });
+
+  registerRecentBlock({
+    type: 'pinned-recent-changes',
+    label: 'Changes in your interests',
+    blurb: 'The same grid, scanning whatever each reader has pinned.',
+    defaultTitle: 'Changes in your interests',
+    hasFolder: false
+  });
+
+  // -------------------------------------------------------------------------
+  // mermaid (fence: ```mermaid)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'mermaid',
+    editable: true,
+    defaultData: () => ({ code: '' }),
+    render(data, ctx) {
+      const mermaidCode = data?.code || '';
+      const mermaidState = mermaidCode ? 'collapsed' : 'editing';
+      return `
+        <div class="editor-mermaid-container ${mermaidState}">
+          <div class="editor-mermaid-display">
+            <div class="editor-mermaid-badge">Mermaid</div>
+            <div class="editor-mermaid-preview" ${mermaidCode ? '' : 'style="display:none;"'}></div>
+            <div class="editor-mermaid-placeholder" ${mermaidCode ? 'style="display:none;"' : ''}>No diagram defined</div>
+          </div>
+          <div class="editor-mermaid-controls">
+            <div class="editor-mermaid-badge" style="margin-bottom:8px;">Mermaid</div>
+            <textarea class="editor-mermaid-textarea" data-role="mermaid-textarea" placeholder="graph TD\n  A[Start] --> B[End]">${ctx._escapeHtml(mermaidCode)}</textarea>
+            <button type="button" class="editor-mermaid-save-btn" data-role="mermaid-save">Save</button>
+            <div style="clear:both;"></div>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const mermaidId = 'preview-mermaid-' + Math.random().toString(36).substr(2, 9);
+      return `<div class="editor-mermaid-display" style="border:1px solid #e0e0e0;border-radius:6px;padding:20px;margin:10px 0;"><div class="editor-mermaid-badge" style="display:inline-block;padding:3px 10px;background:#ff6d00;color:white;font-size:0.75em;font-weight:700;text-transform:uppercase;border-radius:0 0 4px 0;margin-bottom:10px;">Mermaid</div><div class="mermaid" id="${mermaidId}">${ctx._escapeHtml(data.code || '')}</div></div>`;
+    },
+    handlers: {
+      'mermaid-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-mermaid-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          const ta = container.querySelector('.editor-mermaid-textarea');
+          if (ta) ta.focus();
+        }
+      },
+      'mermaid-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const textarea = blockEl.querySelector('.editor-mermaid-textarea');
+        block.data.code = textarea.value;
+        const container = blockEl.querySelector('.editor-mermaid-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._renderMermaidPreview(blockEl, textarea.value);
+        ctx._onChange();
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'mermaid-textarea') block.data.code = e.target.value;
+    },
+    toMarkdown(data) {
+      return '```mermaid\n' + (data.code || '') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'mermaid');
+      if (!fence) return null;
+      return { data: { code: fence.fenceLines.join('\n') }, consumed: fence.consumed };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // swagger (fence: ```swagger)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'swagger',
+    editable: true,
+    defaultData: () => ({ url: '', title: '' }),
+    render(data, ctx) {
+      const swaggerUrl = data?.url || '';
+      const swaggerTitle = data?.title || '';
+      const swaggerState = swaggerUrl ? 'collapsed' : 'editing';
+      const displayTitle = swaggerTitle || 'API Documentation';
+      const swaggerId = 'swagger-ui-' + Math.random().toString(36).substr(2, 9);
+      return `
+        <div class="editor-swagger-container ${swaggerState}">
+          <div class="editor-swagger-display">
+            <div class="editor-swagger-badge">Swagger / OpenAPI</div>
+            <div style="padding: 14px 18px;">
+              <div class="editor-swagger-title">${ctx._escapeHtml(displayTitle)}</div>
+              ${swaggerUrl ? `<div class="editor-swagger-url">${ctx._escapeHtml(swaggerUrl)}</div>` : ''}
+            </div>
+            <div class="editor-swagger-ui-wrapper" id="${swaggerId}"></div>
+            <div class="editor-swagger-placeholder" ${swaggerUrl ? 'style="display:none;"' : ''}>No API URL configured</div>
+          </div>
+          <div class="editor-swagger-controls">
+            <input type="text" class="editor-swagger-input" placeholder="Swagger/OpenAPI URL (e.g., https://petstore.swagger.io/v2/swagger.json)" value="${ctx._escapeHtml(swaggerUrl)}" data-role="swagger-url">
+            <input type="text" class="editor-swagger-input" placeholder="Title (optional)" value="${ctx._escapeHtml(swaggerTitle)}" data-role="swagger-title">
+            <button type="button" class="editor-swagger-apply-btn" data-role="swagger-apply">Apply</button>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const sUrl = data.url || '';
+      const sTitle = data.title || 'API Documentation';
+      return `<div style="border:1px solid #e0e0e0;border-radius:6px;padding:16px 18px;margin:10px 0;background:#f8fdf9;"><span style="display:inline-block;padding:3px 10px;background:#49cc90;color:white;font-size:0.75em;font-weight:700;text-transform:uppercase;border-radius:4px;margin-bottom:8px;">Swagger</span><div style="font-weight:600;">${ctx._escapeHtml(sTitle)}</div>${sUrl ? `<div style="font-size:0.82em;color:#49cc90;margin-top:4px;">${ctx._escapeHtml(sUrl)}</div>` : ''}</div>`;
+    },
+    handlers: {
+      'swagger-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-swagger-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          const inp = container.querySelector('[data-role="swagger-url"]');
+          if (inp) inp.focus();
+        }
+      },
+      'swagger-apply'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const urlInput = blockEl.querySelector('[data-role="swagger-url"]');
+        const titleInput = blockEl.querySelector('[data-role="swagger-title"]');
+        block.data.url = urlInput.value;
+        block.data.title = titleInput.value;
+        const titleEl = blockEl.querySelector('.editor-swagger-title');
+        const urlEl = blockEl.querySelector('.editor-swagger-url');
+        if (titleEl) titleEl.textContent = titleInput.value || 'API Documentation';
+        if (urlEl) urlEl.textContent = urlInput.value;
+        else if (urlInput.value) {
+          const infoDiv = blockEl.querySelector('.editor-swagger-display > div:nth-child(2)');
+          if (infoDiv) infoDiv.insertAdjacentHTML('beforeend', `<div class="editor-swagger-url">${ctx._escapeHtml(urlInput.value)}</div>`);
+        }
+        const container = blockEl.querySelector('.editor-swagger-container');
+        if (urlInput.value && container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._renderSwaggerPreview(blockEl, urlInput.value);
+        ctx._onChange();
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'swagger-url') block.data.url = e.target.value;
+      if (e.target.dataset.role === 'swagger-title') block.data.title = e.target.value;
+    },
+    toMarkdown(data) {
+      const parts = [];
+      if (data.url) parts.push('url: ' + data.url);
+      if (data.title) parts.push('title: ' + data.title);
+      return '```swagger\n' + parts.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'swagger');
+      if (!fence) return null;
+      const props = parseProps(fence.fenceLines);
+      return {
+        data: { url: props.url || '', title: props.title || '' },
+        consumed: fence.consumed
+      };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // hero-banner (fence: ```hero-banner)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'hero-banner',
+    editable: true,
+    defaultData: () => ({ title: '', subtitle: '', image: '', imageAlign: 'right' }),
+    render(data, ctx) {
+      const hbTitle = data?.title || '';
+      const hbSubtitle = data?.subtitle || '';
+      const hbImage = data?.image || '';
+      const hbAlign = data?.imageAlign || 'right';
+      const hbState = hbTitle ? 'collapsed' : 'editing';
+      const hbImgHtml = hbImage ? `<img class="editor-hero-banner-image" src="${ctx._escapeHtml(ctx._resolveImageSrc(hbImage))}" alt="Hero image">` : '';
+      return `
+        <div class="editor-hero-banner-container ${hbState}">
+          <div class="editor-hero-banner-display align-${hbAlign}">
+            <div class="editor-hero-banner-text">
+              <div class="editor-hero-banner-title">${ctx._escapeHtml(hbTitle) || '<span class="editor-hero-banner-placeholder">Hero Title</span>'}</div>
+              <div class="editor-hero-banner-subtitle">${ctx._escapeHtml(hbSubtitle)}</div>
+            </div>
+            ${hbImgHtml}
+          </div>
+          <div class="editor-hero-banner-controls">
+            <label>Title</label>
+            <input type="text" class="editor-hero-banner-input" data-role="hero-banner-title" value="${ctx._escapeHtml(hbTitle)}" placeholder="Hero title">
+            <label>Subtitle</label>
+            <input type="text" class="editor-hero-banner-input" data-role="hero-banner-subtitle" value="${ctx._escapeHtml(hbSubtitle)}" placeholder="Subtitle text">
+            <label>Image</label>
+            <input type="text" class="editor-hero-banner-input" data-role="hero-banner-image" value="${ctx._escapeHtml(hbImage)}" placeholder="images/hero.png">
+            <label>Image Align</label>
+            <select class="editor-hero-banner-select" data-role="hero-banner-align">
+              <option value="right" ${hbAlign === 'right' ? 'selected' : ''}>Right</option>
+              <option value="left" ${hbAlign === 'left' ? 'selected' : ''}>Left</option>
+            </select>
+            <br>
+            <button type="button" class="editor-hero-banner-save-btn" data-role="hero-banner-save">Save</button>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const phbTitle = data.title || '';
+      const phbSubtitle = data.subtitle || '';
+      const phbImage = data.image || '';
+      const phbAlign = data.imageAlign || 'right';
+      const phbImgHtml = phbImage ? `<img src="${ctx._escapeHtml(ctx._resolveImageSrc(phbImage))}" alt="Hero" style="max-width:180px;max-height:120px;border-radius:6px;object-fit:cover;">` : '';
+      return `<div style="background:linear-gradient(135deg,#12284b 0%,#3b435f 100%);color:white;padding:32px 28px;border-radius:6px;margin:10px 0;display:flex;align-items:center;gap:24px;${phbAlign === 'left' ? 'flex-direction:row-reverse;' : ''}"><div style="flex:1;"><div style="font-size:1.8em;font-weight:700;">${ctx._escapeHtml(phbTitle)}</div><div style="font-size:1.1em;opacity:0.9;">${ctx._escapeHtml(phbSubtitle)}</div></div>${phbImgHtml}</div>`;
+    },
+    handlers: {
+      'hero-banner-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-hero-banner-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          const inp = container.querySelector('[data-role="hero-banner-title"]');
+          if (inp) inp.focus();
+        }
+      },
+      'hero-banner-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const titleInput = blockEl.querySelector('[data-role="hero-banner-title"]');
+        const subtitleInput = blockEl.querySelector('[data-role="hero-banner-subtitle"]');
+        const imageInput = blockEl.querySelector('[data-role="hero-banner-image"]');
+        const alignSelect = blockEl.querySelector('[data-role="hero-banner-align"]');
+        block.data.title = titleInput.value;
+        block.data.subtitle = subtitleInput.value;
+        block.data.image = imageInput.value;
+        block.data.imageAlign = alignSelect.value;
+        const display = blockEl.querySelector('.editor-hero-banner-display');
+        if (display) {
+          display.className = 'editor-hero-banner-display align-' + alignSelect.value;
+          const titleEl = display.querySelector('.editor-hero-banner-title');
+          const subtitleEl = display.querySelector('.editor-hero-banner-subtitle');
+          if (titleEl) titleEl.textContent = titleInput.value || 'Hero Title';
+          if (subtitleEl) subtitleEl.textContent = subtitleInput.value;
+          const existingImg = display.querySelector('.editor-hero-banner-image');
+          if (imageInput.value) {
+            if (existingImg) { existingImg.src = ctx._resolveImageSrc(imageInput.value); }
+            else { display.insertAdjacentHTML('beforeend', `<img class="editor-hero-banner-image" src="${ctx._escapeHtml(ctx._resolveImageSrc(imageInput.value))}" alt="Hero image">`); }
+          } else if (existingImg) { existingImg.remove(); }
+        }
+        const container = blockEl.querySelector('.editor-hero-banner-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._onChange();
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'hero-banner-title') block.data.title = e.target.value;
+      if (e.target.dataset.role === 'hero-banner-subtitle') block.data.subtitle = e.target.value;
+      if (e.target.dataset.role === 'hero-banner-image') block.data.image = e.target.value;
+      if (e.target.dataset.role === 'hero-banner-align') block.data.imageAlign = e.target.value;
+    },
+    toMarkdown(data) {
+      const hbParts = [];
+      if (data.title) hbParts.push('title: ' + data.title);
+      if (data.subtitle) hbParts.push('subtitle: ' + data.subtitle);
+      if (data.image) hbParts.push('hero-image: ' + data.image);
+      if (data.imageAlign && data.imageAlign !== 'right') hbParts.push('hero-image-align: ' + data.imageAlign);
+      return '```hero-banner\n' + hbParts.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'hero-banner');
+      if (!fence) return null;
+      const p = parseProps(fence.fenceLines);
+      return {
+        data: {
+          title: p['title'] || '',
+          subtitle: p['subtitle'] || '',
+          image: p['hero-image'] || '',
+          imageAlign: p['hero-image-align'] || 'right'
+        },
+        consumed: fence.consumed
+      };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // cards (fence: ```cards)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'cards',
+    editable: true,
+    defaultData: () => ({ across: 3, cards: [{ heading: '', description: '' }] }),
+    render(data, ctx) {
+      const cardsAcross = data?.across || 3;
+      const cardsItems = data?.cards || [{ heading: '', description: '' }];
+      const hasCards = cardsItems.some(c => c.heading || c.description);
+      const cardsState = hasCards ? 'collapsed' : 'editing';
+      const cardsGridHtml = cardsItems.map(c => `
+        <div class="editor-cards-card">
+          <div class="editor-cards-card-heading">${ctx._escapeHtml(c.heading) || 'Untitled'}</div>
+          <div class="editor-cards-card-desc">${ctx._escapeHtml(c.description)}</div>
+        </div>
+      `).join('');
+      const cardsEditHtml = cardsItems.map((c, ci) => `
+        <div class="editor-cards-card-edit" data-card-index="${ci}">
+          <input type="text" data-role="cards-heading" data-card="${ci}" value="${ctx._escapeHtml(c.heading)}" placeholder="Card heading">
+          <textarea data-role="cards-desc" data-card="${ci}" placeholder="Card description">${ctx._escapeHtml(c.description)}</textarea>
+        </div>
+      `).join('');
+      return `
+        <div class="editor-cards-container ${cardsState}">
+          <div class="editor-cards-display">
+            <div class="editor-cards-badge">Cards</div>
+            <div class="editor-cards-grid" style="grid-template-columns: repeat(${cardsAcross}, 1fr);">
+              ${cardsGridHtml}
+            </div>
+          </div>
+          <div class="editor-cards-controls">
+            <div class="editor-cards-badge">Cards</div>
+            <label>Cards per row</label>
+            <input type="number" class="editor-cards-input" data-role="cards-across" value="${cardsAcross}" min="1" max="6">
+            <div class="editor-cards-edit-list">
+              ${cardsEditHtml}
+            </div>
+            <div class="editor-cards-actions">
+              <button type="button" class="editor-cards-action-btn" data-role="cards-add-card">+ Card</button>
+              <button type="button" class="editor-cards-action-btn" data-role="cards-remove-card">- Card</button>
+              <button type="button" class="editor-cards-save-btn" data-role="cards-save">Save</button>
+            </div>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const pcAcross = data.across || 3;
+      const pcCards = data.cards || [];
+      const pcHtml = pcCards.map(c => `<div style="background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:16px;"><div style="font-weight:600;margin-bottom:6px;">${ctx._escapeHtml(c.heading || '')}</div><div style="font-size:0.9em;color:#666;">${ctx._escapeHtml(c.description || '')}</div></div>`).join('');
+      return `<div style="display:grid;grid-template-columns:repeat(${pcAcross},1fr);gap:14px;margin:10px 0;">${pcHtml}</div>`;
+    },
+    handlers: {
+      'cards-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-cards-container');
+        if (container) { container.classList.remove('collapsed'); container.classList.add('editing'); }
+      },
+      'cards-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const acrossInput = blockEl.querySelector('[data-role="cards-across"]');
+        block.data.across = parseInt(acrossInput.value) || 3;
+        const cardEdits = blockEl.querySelectorAll('.editor-cards-card-edit');
+        block.data.cards = Array.from(cardEdits).map(ce => ({
+          heading: ce.querySelector('[data-role="cards-heading"]').value,
+          description: ce.querySelector('[data-role="cards-desc"]').value
+        }));
+        const grid = blockEl.querySelector('.editor-cards-grid');
+        if (grid) {
+          grid.style.gridTemplateColumns = `repeat(${block.data.across}, 1fr)`;
+          grid.innerHTML = block.data.cards.map(c => `
+            <div class="editor-cards-card">
+              <div class="editor-cards-card-heading">${ctx._escapeHtml(c.heading) || 'Untitled'}</div>
+              <div class="editor-cards-card-desc">${ctx._escapeHtml(c.description)}</div>
+            </div>
+          `).join('');
+        }
+        const container = blockEl.querySelector('.editor-cards-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._onChange();
+      },
+      'cards-add-card'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const editList = found.blockEl.querySelector('.editor-cards-edit-list');
+        const cardCount = editList.querySelectorAll('.editor-cards-card-edit').length;
+        const cardEl = document.createElement('div');
+        cardEl.className = 'editor-cards-card-edit';
+        cardEl.dataset.cardIndex = cardCount;
+        cardEl.innerHTML = `<input type="text" data-role="cards-heading" data-card="${cardCount}" value="" placeholder="Card heading"><textarea data-role="cards-desc" data-card="${cardCount}" placeholder="Card description"></textarea>`;
+        editList.appendChild(cardEl);
+      },
+      'cards-remove-card'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const editList = found.blockEl.querySelector('.editor-cards-edit-list');
+        const cards = editList.querySelectorAll('.editor-cards-card-edit');
+        if (cards.length > 1) cards[cards.length - 1].remove();
+      }
+    },
+    onInput(e, blockEl, block) {
+      const role = e.target.dataset.role;
+      if (role === 'cards-across') block.data.across = parseInt(e.target.value) || 3;
+      else if (role === 'cards-heading') {
+        const ci = parseInt(e.target.dataset.card);
+        if (block.data.cards[ci]) block.data.cards[ci].heading = e.target.value;
+      }
+      else if (role === 'cards-desc') {
+        const ci = parseInt(e.target.dataset.card);
+        if (block.data.cards[ci]) block.data.cards[ci].description = e.target.value;
+      }
+    },
+    toMarkdown(data) {
+      const cParts = [];
+      cParts.push('across: ' + (data.across || 3));
+      (data.cards || []).forEach(c => {
+        cParts.push('- ### ' + (c.heading || ''));
+        cParts.push('  ' + (c.description || ''));
+      });
+      return '```cards\n' + cParts.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'cards');
+      if (!fence) return null;
+      let across = 3;
+      const cards = [];
+      let currentCard = null;
+      fence.fenceLines.forEach(l => {
+        const acrossMatch = l.match(/^across:\s*(\d+)/);
+        if (acrossMatch) { across = parseInt(acrossMatch[1]); return; }
+        const cardMatch = l.match(/^-\s*###\s*(.*)$/);
+        if (cardMatch) {
+          if (currentCard) cards.push(currentCard);
+          currentCard = { heading: cardMatch[1].trim(), description: '' };
+          return;
+        }
+        if (currentCard && l.trim()) {
+          currentCard.description = (currentCard.description ? currentCard.description + '\n' : '') + l.trim();
+        }
+      });
+      if (currentCard) cards.push(currentCard);
+      if (cards.length === 0) cards.push({ heading: '', description: '' });
+      return { data: { across, cards }, consumed: fence.consumed };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // Landing blocks — landing-hero / news / tiles / stories / cta
+  //
+  // These five share one source grammar (block-level `key: value` lines, then
+  // repeated `- key: value` items — see MarkdownParser.parseBlockItems), so
+  // they share one editor too. registerLandingBlock() takes the field schema
+  // and derives render/save/toMarkdown/fromMarkdown from it; adding a field to
+  // a landing block means adding one line to its schema, not editing five
+  // parallel copies of the same handler.
+  // -------------------------------------------------------------------------
+
+  // Parse a landing block's fence body back into { props, items }. Mirrors
+  // MarkdownParser.parseBlockItems — keep the two in step or a block will
+  // render one way and edit another.
+  function parseLandingFence(fenceLines, defaultKey) {
+    const props = {};
+    const items = [];
+    let current = null;
+    let lastKey = null;
+
+    fenceLines.forEach((raw) => {
+      const line = raw.trim();
+      if (!line) { lastKey = null; return; }
+
+      const itemStart = line.match(/^-\s+(.*)$/);
+      if (itemStart) {
+        current = {};
+        items.push(current);
+        const rest = itemStart[1].trim();
+        const kv = rest.match(/^([A-Za-z][\w-]*)\s*:\s*(.*)$/);
+        if (kv) { lastKey = kv[1].toLowerCase(); current[lastKey] = kv[2].trim(); }
+        else { lastKey = defaultKey; current[defaultKey] = rest; }
+        return;
+      }
+
+      const kv = line.match(/^([A-Za-z][\w-]*)\s*:\s*(.*)$/);
+      if (kv) {
+        lastKey = kv[1].toLowerCase();
+        (current || props)[lastKey] = kv[2].trim();
+        return;
+      }
+
+      if (lastKey) {
+        const bag = current || props;
+        bag[lastKey] = (bag[lastKey] ? bag[lastKey] + ' ' : '') + line;
+      }
+    });
+
+    return { props, items };
+  }
+
+  // One field control (block-level or per-item). `scope` namespaces the
+  // data-role so a block field and an item field of the same name don't
+  // collide in the querySelectorAll below.
+  function landingFieldHtml(field, value, ctx, scope, itemIndex) {
+    const idx = itemIndex == null ? '' : ` data-item="${itemIndex}"`;
+    const role = `data-role="landing-${scope}" data-field="${field.key}"${idx}`;
+    const v = ctx._escapeHtml(value || '');
+    const ph = ctx._escapeHtml(field.placeholder || '');
+
+    if (field.type === 'textarea') {
+      return `<label>${ctx._escapeHtml(field.label)}</label>
+              <textarea ${role} placeholder="${ph}">${v}</textarea>`;
+    }
+    if (field.type === 'select') {
+      const opts = field.options.map(o =>
+        `<option value="${ctx._escapeHtml(o.value)}"${(value || '') === o.value ? ' selected' : ''}>${ctx._escapeHtml(o.label)}</option>`
+      ).join('');
+      return `<label>${ctx._escapeHtml(field.label)}</label>
+              <select ${role}>${opts}</select>`;
+    }
+    const numAttrs = field.type === 'number' ? ' min="1" max="6"' : '';
+    const inputType = field.type === 'number' ? 'number' : 'text';
+    return `<label>${ctx._escapeHtml(field.label)}</label>
+            <input type="${inputType}"${numAttrs} ${role} value="${v}" placeholder="${ph}">`;
+  }
+
+  // Read every control back out of the DOM into a fresh { props, items }.
+  // Reading the DOM (rather than trusting the incremental onInput writes) means
+  // a Save always captures exactly what the author sees, including rows added
+  // since the last render.
+  function readLandingBlock(blockEl, spec) {
+    const props = {};
+    blockEl.querySelectorAll('[data-role="landing-prop"]').forEach((el) => {
+      const val = el.value.trim();
+      if (val) props[el.dataset.field] = val;
+    });
+
+    const items = Array.from(blockEl.querySelectorAll('.editor-landing-item')).map((row) => {
+      const item = {};
+      row.querySelectorAll('[data-role="landing-item"]').forEach((el) => {
+        const val = el.value.trim();
+        if (val) item[el.dataset.field] = val;
+      });
+      return item;
+    });
+
+    return { props, items: items.length ? items : [Object.assign({}, spec.defaultItem)] };
+  }
+
+  /**
+   * Register one landing block from its field schema.
+   * @param {Object} spec
+   * @param {string} spec.type        block/fence id (also the markdown fence language)
+   * @param {string} spec.label       human name shown on the collapsed chip
+   * @param {string} spec.itemLabel   singular noun for the +/- buttons ("Stat", "Card", …)
+   * @param {string} spec.defaultKey  key a bare `- text` item falls back to
+   * @param {Object[]} spec.blockFields  block-level field descriptors
+   * @param {Object[]} spec.itemFields   per-item field descriptors
+   * @param {Function} spec.summarise    (item) => short text for the collapsed row
+   */
+  function registerLandingBlock(spec) {
+    const defaultItem = {};
+    spec.itemFields.forEach(f => { defaultItem[f.key] = ''; });
+    spec.defaultItem = defaultItem;
+
+    const itemRowHtml = (item, i, ctx) => `
+      <div class="editor-landing-item" data-item-index="${i}">
+        <div class="editor-landing-item-num">${spec.itemLabel} ${i + 1}</div>
+        ${spec.itemFields.map(f => landingFieldHtml(f, item[f.key], ctx, 'item', i)).join('')}
+      </div>`;
+
+    MarkdownEditor.registerBlock({
+      type: spec.type,
+      editable: true,
+      defaultData: () => ({ props: {}, items: [Object.assign({}, defaultItem)] }),
+
+      render(data, ctx) {
+        const props = data?.props || {};
+        const items = data?.items || [Object.assign({}, defaultItem)];
+        const filled = props.title || items.some(it => spec.summarise(it));
+        const state = filled ? 'collapsed' : 'editing';
+        const rows = items.map(it => `<li>${ctx._escapeHtml(spec.summarise(it)) || '<em>Empty</em>'}</li>`).join('');
+
+        return `
+          <div class="editor-landing-container ${state}" data-landing-type="${spec.type}">
+            <div class="editor-landing-display">
+              <div class="editor-landing-badge">${ctx._escapeHtml(spec.label)}</div>
+              <div class="editor-landing-heading">${ctx._escapeHtml(props.title || props.eyebrow || spec.label)}</div>
+              <ul class="editor-landing-list">${rows}</ul>
+            </div>
+            <div class="editor-landing-controls">
+              <div class="editor-landing-badge">${ctx._escapeHtml(spec.label)}</div>
+              <div class="editor-landing-props">
+                ${spec.blockFields.map(f => landingFieldHtml(f, props[f.key], ctx, 'prop')).join('')}
+              </div>
+              <div class="editor-landing-items">
+                ${items.map((it, i) => itemRowHtml(it, i, ctx)).join('')}
+              </div>
+              <div class="editor-landing-actions">
+                <button type="button" class="editor-landing-action-btn" data-role="${spec.type}-add">+ ${ctx._escapeHtml(spec.itemLabel)}</button>
+                <button type="button" class="editor-landing-action-btn" data-role="${spec.type}-remove">- ${ctx._escapeHtml(spec.itemLabel)}</button>
+                <button type="button" class="editor-landing-save-btn" data-role="${spec.type}-save">Save</button>
+              </div>
+            </div>
+          </div>`;
+      },
+
+      renderPreview(data, ctx) {
+        const props = data?.props || {};
+        const items = data?.items || [];
+        const cards = items.map(it =>
+          `<div style="background:#fff;border:1px solid #e1d9c9;border-radius:8px;padding:12px;font-size:0.9em;">${ctx._escapeHtml(spec.summarise(it)) || '&nbsp;'}</div>`
+        ).join('');
+        const heading = props.title
+          ? `<div style="font-weight:700;margin-bottom:10px;">${ctx._escapeHtml(props.title)}</div>`
+          : '';
+        const cols = Math.min(Math.max(parseInt(props.across, 10) || 3, 1), 6);
+        return `<div style="margin:10px 0;">${heading}<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px;">${cards}</div></div>`;
+      },
+
+      // Roles are namespaced per block type, not shared across the five.
+      // _handleBlockClick resolves a role against EVERY registered block and
+      // takes the first match, so a shared "landing-save" would hand a `news`
+      // block to whichever landing spec happened to register first — and its
+      // "+ item" button would then add the wrong fields. The `-edit` role must
+      // also be `<type>-edit`, since that is what the orchestrator's pencil
+      // button emits for an `editable` block.
+      handlers: {
+        [`${spec.type}-edit`](e, ctx) {
+          e.preventDefault(); e.stopPropagation();
+          const found = getBlock(e, ctx);
+          if (!found) return;
+          const container = found.blockEl.querySelector('.editor-landing-container');
+          if (container) { container.classList.remove('collapsed'); container.classList.add('editing'); }
+        },
+        [`${spec.type}-save`](e, ctx) {
+          e.preventDefault();
+          const found = getBlock(e, ctx);
+          if (!found) return;
+          const { blockEl, block } = found;
+          block.data = readLandingBlock(blockEl, spec);
+          // Re-render rather than patch: the collapsed summary is derived from
+          // the whole data object, and rows added since the last render have no
+          // display counterpart to patch. Re-point contentElement afterwards —
+          // the old node is gone.
+          ctx._renderBlockContent(blockEl, block.type, block.data);
+          block.contentElement = blockEl.querySelector('[contenteditable], textarea, code, input, span');
+          ctx._onChange();
+        },
+        [`${spec.type}-add`](e, ctx) {
+          e.preventDefault();
+          const found = getBlock(e, ctx);
+          if (!found) return;
+          const list = found.blockEl.querySelector('.editor-landing-items');
+          const i = list.querySelectorAll('.editor-landing-item').length;
+          list.insertAdjacentHTML('beforeend', itemRowHtml(Object.assign({}, defaultItem), i, ctx));
+        },
+        [`${spec.type}-remove`](e, ctx) {
+          e.preventDefault();
+          const found = getBlock(e, ctx);
+          if (!found) return;
+          const rows = found.blockEl.querySelectorAll('.editor-landing-item');
+          if (rows.length > 1) rows[rows.length - 1].remove();
+        }
+      },
+
+      onInput(e, blockEl, block) {
+        const role = e.target.dataset.role;
+        if (role !== 'landing-prop' && role !== 'landing-item') return;
+        if (!block.data.props) block.data.props = {};
+        if (!block.data.items) block.data.items = [];
+        if (role === 'landing-prop') {
+          block.data.props[e.target.dataset.field] = e.target.value;
+          return;
+        }
+        const i = parseInt(e.target.dataset.item, 10);
+        if (!block.data.items[i]) block.data.items[i] = Object.assign({}, defaultItem);
+        block.data.items[i][e.target.dataset.field] = e.target.value;
+      },
+
+      onChange(e, blockEl, block, ctx) {
+        // Selects fire `change`, not `input`; route them through the same path.
+        this.onInput(e, blockEl, block, ctx);
+      },
+
+      toMarkdown(data) {
+        const props = data?.props || {};
+        const items = data?.items || [];
+        const lines = [];
+
+        spec.blockFields.forEach((f) => {
+          const v = (props[f.key] || '').toString().trim();
+          if (v) lines.push(`${f.key}: ${v}`);
+        });
+
+        items.forEach((item) => {
+          const present = spec.itemFields.filter(f => (item[f.key] || '').toString().trim());
+          if (!present.length) return;
+          present.forEach((f, n) => {
+            const v = item[f.key].toString().trim();
+            lines.push(n === 0 ? `- ${f.key}: ${v}` : `  ${f.key}: ${v}`);
+          });
+        });
+
+        return '```' + spec.type + '\n' + lines.join('\n') + '\n```';
+      },
+
+      fromMarkdown(line, lines, i) {
+        const fence = consumeFence(line, lines, i, spec.type);
+        if (!fence) return null;
+        const parsed = parseLandingFence(fence.fenceLines, spec.defaultKey);
+        return {
+          data: {
+            props: parsed.props,
+            items: parsed.items.length ? parsed.items : [Object.assign({}, defaultItem)]
+          },
+          consumed: fence.consumed
+        };
+      }
+    });
+  }
+
+  const LINK_FIELDS = [
+    { key: 'folder', label: 'Folder (in-app)', placeholder: 'Business Processes' },
+    { key: 'link', label: 'Link (URL or path)', placeholder: '/applications/wiki/Engineering/…' }
+  ];
+
+  registerLandingBlock({
+    type: 'landing-hero',
+    label: 'Landing hero',
+    itemLabel: 'Stat',
+    defaultKey: 'value',
+    blockFields: [
+      { key: 'eyebrow', label: 'Eyebrow', placeholder: 'noobly Wiki' },
+      { key: 'title', label: 'Title', placeholder: 'One home for how we build.' },
+      { key: 'subtitle', label: 'Lead', type: 'textarea', placeholder: 'What this space holds…' },
+      { key: 'search', label: 'Search prompt', placeholder: 'Ask anything about…' },
+      { key: 'action', label: 'Search button', placeholder: 'Search' }
+    ],
+    itemFields: [
+      { key: 'value', label: 'Value', placeholder: '12,480' },
+      { key: 'label', label: 'Label', placeholder: 'Documents' }
+    ],
+    summarise: (s) => [s.value, s.label].filter(Boolean).join(' — ')
+  });
+
+  registerLandingBlock({
+    type: 'news',
+    label: 'News',
+    itemLabel: 'Item',
+    defaultKey: 'title',
+    blockFields: [
+      { key: 'title', label: 'Section title', placeholder: 'Featured news' },
+      { key: 'subtitle', label: 'Section lead', type: 'textarea', placeholder: '' },
+      { key: 'link-text', label: 'Section link text', placeholder: 'View all updates →' },
+      { key: 'folder', label: 'Section link folder', placeholder: 'Content' },
+      { key: 'across', label: 'Cards per row', type: 'number', placeholder: '3' }
+    ],
+    itemFields: [
+      { key: 'tag', label: 'Tag', placeholder: 'Standards' },
+      {
+        key: 'tone', label: 'Tag colour', type: 'select', options: [
+          { value: '', label: 'Auto (from tag)' },
+          { value: 'teal', label: 'Teal' },
+          { value: 'orange', label: 'Orange' },
+          { value: 'sand', label: 'Sand' }
+        ]
+      },
+      { key: 'title', label: 'Headline', placeholder: 'What changed' },
+      { key: 'date', label: 'Date', placeholder: '2 days ago' },
+      { key: 'excerpt', label: 'Excerpt', type: 'textarea', placeholder: 'One or two sentences.' },
+      ...LINK_FIELDS
+    ],
+    summarise: (n) => n.title || n.tag || ''
+  });
+
+  registerLandingBlock({
+    type: 'tiles',
+    label: 'Tiles',
+    itemLabel: 'Tile',
+    defaultKey: 'title',
+    blockFields: [
+      { key: 'title', label: 'Section title', placeholder: 'Find solutions by ecosystem' },
+      { key: 'subtitle', label: 'Section lead', type: 'textarea', placeholder: '' },
+      { key: 'across', label: 'Tiles per row', type: 'number', placeholder: '3' },
+      {
+        key: 'accent', label: 'Accent', type: 'select', options: [
+          { value: 'teal', label: 'Teal' },
+          { value: 'orange', label: 'Orange' }
+        ]
+      }
+    ],
+    itemFields: [
+      { key: 'title', label: 'Title', placeholder: 'Business Processes' },
+      { key: 'blurb', label: 'Blurb', type: 'textarea', placeholder: 'What lives here.' },
+      { key: 'meta', label: 'Meta line', placeholder: '210 documents →' },
+      { key: 'initial', label: 'Initial (optional)', placeholder: 'B' },
+      ...LINK_FIELDS
+    ],
+    summarise: (t) => t.title || ''
+  });
+
+  registerLandingBlock({
+    type: 'stories',
+    label: 'Stories',
+    itemLabel: 'Story',
+    defaultKey: 'quote',
+    blockFields: [
+      { key: 'title', label: 'Section title', placeholder: 'Team stories' },
+      { key: 'across', label: 'Stories per row', type: 'number', placeholder: '3' }
+    ],
+    itemFields: [
+      { key: 'quote', label: 'Quote', type: 'textarea', placeholder: 'What they said.' },
+      { key: 'name', label: 'Name', placeholder: 'Priya N.' },
+      { key: 'role', label: 'Role', placeholder: 'Staff Engineer' }
+    ],
+    summarise: (s) => s.name || (s.quote || '').slice(0, 60)
+  });
+
+  registerLandingBlock({
+    type: 'cta',
+    label: 'Call to action',
+    itemLabel: 'Card',
+    defaultKey: 'title',
+    blockFields: [
+      { key: 'title', label: 'Title', placeholder: 'Get started' },
+      { key: 'subtitle', label: 'Lead', type: 'textarea', placeholder: 'Three ways in.' },
+      { key: 'across', label: 'Cards per row', type: 'number', placeholder: '3' }
+    ],
+    itemFields: [
+      { key: 'title', label: 'Card title', placeholder: 'Take the tour' },
+      { key: 'text', label: 'Card text', type: 'textarea', placeholder: 'What it does.' },
+      { key: 'action', label: 'Button label', placeholder: 'Start tour' },
+      {
+        key: 'style', label: 'Button style', type: 'select', options: [
+          { value: '', label: 'Ghost (outline)' },
+          { value: 'primary', label: 'Primary (solid)' }
+        ]
+      },
+      ...LINK_FIELDS
+    ],
+    summarise: (c) => c.title || ''
+  });
+
+  // -------------------------------------------------------------------------
+  // site-header (fence: ```header)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'site-header',
+    editable: true,
+    defaultData: () => ({ icon: '', title: '', links: '' }),
+    render(data, ctx) {
+      const shIcon = data?.icon || '';
+      const shTitle = data?.title || '';
+      const shLinks = data?.links || '';
+      const shState = shTitle ? 'collapsed' : 'editing';
+      const shIconHtml = shIcon ? `<img class="editor-site-header-icon" src="${ctx._escapeHtml(ctx._resolveImageSrc(shIcon))}" alt="Icon">` : '';
+      const shLinksHtml = (shLinks.match(/\[([^\]]*)\]\(([^)]*)\)/g) || []).map(m => {
+        const parts = m.match(/\[([^\]]*)\]\(([^)]*)\)/);
+        return `<a href="${ctx._escapeHtml(parts[2])}">${ctx._escapeHtml(parts[1])}</a>`;
+      }).join('');
+      return `
+        <div class="editor-site-header-container ${shState}">
+          <div class="editor-site-header-display">
+            ${shIconHtml}
+            <div class="editor-site-header-title">${ctx._escapeHtml(shTitle) || 'Site Header'}</div>
+            <div class="editor-site-header-links">${shLinksHtml}</div>
+          </div>
+          <div class="editor-site-header-controls">
+            <div class="editor-site-header-badge">Header</div>
+            <label>Icon</label>
+            <input type="text" class="editor-site-header-input" data-role="site-header-icon" value="${ctx._escapeHtml(shIcon)}" placeholder="images/logo.png">
+            <label>Title</label>
+            <input type="text" class="editor-site-header-input" data-role="site-header-title" value="${ctx._escapeHtml(shTitle)}" placeholder="Site name">
+            <label>Links (markdown format: [Text](url) [Text2](url2))</label>
+            <input type="text" class="editor-site-header-input" data-role="site-header-links" value="${ctx._escapeHtml(shLinks)}" placeholder="[Home](/) [About](/about)">
+            <button type="button" class="editor-site-header-save-btn" data-role="site-header-save">Save</button>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const pshIcon = data.icon || '';
+      const pshTitle = data.title || '';
+      const pshLinks = data.links || '';
+      const pshIconHtml = pshIcon ? `<img src="${ctx._escapeHtml(ctx._resolveImageSrc(pshIcon))}" alt="Icon" style="width:32px;height:32px;object-fit:contain;border-radius:4px;">` : '';
+      const pshLinksHtml = (pshLinks.match(/\[([^\]]*)\]\(([^)]*)\)/g) || []).map(m => { const p = m.match(/\[([^\]]*)\]\(([^)]*)\)/); return `<a href="${ctx._escapeHtml(p[2])}" style="color:rgba(255,255,255,0.85);text-decoration:none;font-size:0.9em;">${ctx._escapeHtml(p[1])}</a>`; }).join(' ');
+      return `<div style="display:flex;align-items:center;gap:14px;padding:14px 20px;background:#1a1a2e;color:white;border-radius:6px;margin:10px 0;">${pshIconHtml}<div style="font-weight:700;font-size:1.1em;">${ctx._escapeHtml(pshTitle)}</div><div style="margin-left:auto;display:flex;gap:16px;">${pshLinksHtml}</div></div>`;
+    },
+    handlers: {
+      'site-header-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-site-header-container');
+        if (container) {
+          container.classList.remove('collapsed'); container.classList.add('editing');
+          const inp = container.querySelector('[data-role="site-header-title"]');
+          if (inp) inp.focus();
+        }
+      },
+      'site-header-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const iconInput = blockEl.querySelector('[data-role="site-header-icon"]');
+        const titleInput = blockEl.querySelector('[data-role="site-header-title"]');
+        const linksInput = blockEl.querySelector('[data-role="site-header-links"]');
+        block.data.icon = iconInput.value;
+        block.data.title = titleInput.value;
+        block.data.links = linksInput.value;
+        const display = blockEl.querySelector('.editor-site-header-display');
+        if (display) {
+          const titleEl = display.querySelector('.editor-site-header-title');
+          if (titleEl) titleEl.textContent = titleInput.value || 'Site Header';
+          const existingIcon = display.querySelector('.editor-site-header-icon');
+          if (iconInput.value) {
+            if (existingIcon) existingIcon.src = ctx._resolveImageSrc(iconInput.value);
+            else display.insertAdjacentHTML('afterbegin', `<img class="editor-site-header-icon" src="${ctx._escapeHtml(ctx._resolveImageSrc(iconInput.value))}" alt="Icon">`);
+          } else if (existingIcon) existingIcon.remove();
+          const linksEl = display.querySelector('.editor-site-header-links');
+          if (linksEl) {
+            linksEl.innerHTML = (linksInput.value.match(/\[([^\]]*)\]\(([^)]*)\)/g) || []).map(m => { const p = m.match(/\[([^\]]*)\]\(([^)]*)\)/); return `<a href="${ctx._escapeHtml(p[2])}">${ctx._escapeHtml(p[1])}</a>`; }).join('');
+          }
+        }
+        const container = blockEl.querySelector('.editor-site-header-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._onChange();
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'site-header-icon') block.data.icon = e.target.value;
+      if (e.target.dataset.role === 'site-header-title') block.data.title = e.target.value;
+      if (e.target.dataset.role === 'site-header-links') block.data.links = e.target.value;
+    },
+    toMarkdown(data) {
+      const shParts = [];
+      if (data.icon) shParts.push('icon: ' + data.icon);
+      if (data.title) shParts.push('title: ' + data.title);
+      if (data.links) shParts.push('links: ' + data.links);
+      return '```header\n' + shParts.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'header');
+      if (!fence) return null;
+      const p = parseProps(fence.fenceLines);
+      return {
+        data: { icon: p['icon'] || '', title: p['title'] || '', links: p['links'] || '' },
+        consumed: fence.consumed
+      };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // site-footer (fence: ```footer)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'site-footer',
+    editable: true,
+    defaultData: () => ({ icon: '', title: '', subtitle: '', links: '' }),
+    render(data, ctx) {
+      const sfIcon = data?.icon || '';
+      const sfTitle = data?.title || '';
+      const sfSubtitle = data?.subtitle || '';
+      const sfLinks = data?.links || '';
+      const sfState = sfTitle ? 'collapsed' : 'editing';
+      const sfIconHtml = sfIcon ? `<img class="editor-site-footer-icon" src="${ctx._escapeHtml(ctx._resolveImageSrc(sfIcon))}" alt="Icon">` : '';
+      const sfLinksHtml = (sfLinks.match(/\[([^\]]*)\]\(([^)]*)\)/g) || []).map(m => {
+        const parts = m.match(/\[([^\]]*)\]\(([^)]*)\)/);
+        return `<a href="${ctx._escapeHtml(parts[2])}">${ctx._escapeHtml(parts[1])}</a>`;
+      }).join('');
+      return `
+        <div class="editor-site-footer-container ${sfState}">
+          <div class="editor-site-footer-display">
+            ${sfIconHtml}
+            <div class="editor-site-footer-text">
+              <div class="editor-site-footer-title">${ctx._escapeHtml(sfTitle) || 'Site Footer'}</div>
+              <div class="editor-site-footer-subtitle">${ctx._escapeHtml(sfSubtitle)}</div>
+            </div>
+            <div class="editor-site-footer-links">${sfLinksHtml}</div>
+          </div>
+          <div class="editor-site-footer-controls">
+            <div class="editor-site-footer-badge">Footer</div>
+            <label>Icon</label>
+            <input type="text" class="editor-site-footer-input" data-role="site-footer-icon" value="${ctx._escapeHtml(sfIcon)}" placeholder="images/logo.png">
+            <label>Title</label>
+            <input type="text" class="editor-site-footer-input" data-role="site-footer-title" value="${ctx._escapeHtml(sfTitle)}" placeholder="Site name">
+            <label>Subtitle</label>
+            <input type="text" class="editor-site-footer-input" data-role="site-footer-subtitle" value="${ctx._escapeHtml(sfSubtitle)}" placeholder="Built with love">
+            <label>Links (markdown format: [Text](url) [Text2](url2))</label>
+            <input type="text" class="editor-site-footer-input" data-role="site-footer-links" value="${ctx._escapeHtml(sfLinks)}" placeholder="[Privacy](/privacy) [Terms](/terms)">
+            <button type="button" class="editor-site-footer-save-btn" data-role="site-footer-save">Save</button>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const psfIcon = data.icon || '';
+      const psfTitle = data.title || '';
+      const psfSubtitle = data.subtitle || '';
+      const psfLinks = data.links || '';
+      const psfIconHtml = psfIcon ? `<img src="${ctx._escapeHtml(ctx._resolveImageSrc(psfIcon))}" alt="Icon" style="width:28px;height:28px;object-fit:contain;border-radius:4px;">` : '';
+      const psfLinksHtml = (psfLinks.match(/\[([^\]]*)\]\(([^)]*)\)/g) || []).map(m => { const p = m.match(/\[([^\]]*)\]\(([^)]*)\)/); return `<a href="${ctx._escapeHtml(p[2])}" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:0.85em;">${ctx._escapeHtml(p[1])}</a>`; }).join(' ');
+      return `<div style="display:flex;align-items:center;gap:14px;padding:18px 20px;background:#2d2d44;color:white;border-radius:6px;margin:10px 0;flex-wrap:wrap;">${psfIconHtml}<div style="flex:1;min-width:120px;"><div style="font-weight:700;">${ctx._escapeHtml(psfTitle)}</div><div style="font-size:0.82em;opacity:0.7;">${ctx._escapeHtml(psfSubtitle)}</div></div><div style="display:flex;gap:16px;flex-wrap:wrap;">${psfLinksHtml}</div></div>`;
+    },
+    handlers: {
+      'site-footer-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-site-footer-container');
+        if (container) {
+          container.classList.remove('collapsed'); container.classList.add('editing');
+          const inp = container.querySelector('[data-role="site-footer-title"]');
+          if (inp) inp.focus();
+        }
+      },
+      'site-footer-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const iconInput = blockEl.querySelector('[data-role="site-footer-icon"]');
+        const titleInput = blockEl.querySelector('[data-role="site-footer-title"]');
+        const subtitleInput = blockEl.querySelector('[data-role="site-footer-subtitle"]');
+        const linksInput = blockEl.querySelector('[data-role="site-footer-links"]');
+        block.data.icon = iconInput.value;
+        block.data.title = titleInput.value;
+        block.data.subtitle = subtitleInput.value;
+        block.data.links = linksInput.value;
+        const display = blockEl.querySelector('.editor-site-footer-display');
+        if (display) {
+          const titleEl = display.querySelector('.editor-site-footer-title');
+          const subtitleEl = display.querySelector('.editor-site-footer-subtitle');
+          if (titleEl) titleEl.textContent = titleInput.value || 'Site Footer';
+          if (subtitleEl) subtitleEl.textContent = subtitleInput.value;
+          const existingIcon = display.querySelector('.editor-site-footer-icon');
+          if (iconInput.value) {
+            if (existingIcon) existingIcon.src = ctx._resolveImageSrc(iconInput.value);
+            else display.insertAdjacentHTML('afterbegin', `<img class="editor-site-footer-icon" src="${ctx._escapeHtml(ctx._resolveImageSrc(iconInput.value))}" alt="Icon">`);
+          } else if (existingIcon) existingIcon.remove();
+          const linksEl = display.querySelector('.editor-site-footer-links');
+          if (linksEl) {
+            linksEl.innerHTML = (linksInput.value.match(/\[([^\]]*)\]\(([^)]*)\)/g) || []).map(m => { const p = m.match(/\[([^\]]*)\]\(([^)]*)\)/); return `<a href="${ctx._escapeHtml(p[2])}">${ctx._escapeHtml(p[1])}</a>`; }).join('');
+          }
+        }
+        const container = blockEl.querySelector('.editor-site-footer-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._onChange();
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'site-footer-icon') block.data.icon = e.target.value;
+      if (e.target.dataset.role === 'site-footer-title') block.data.title = e.target.value;
+      if (e.target.dataset.role === 'site-footer-subtitle') block.data.subtitle = e.target.value;
+      if (e.target.dataset.role === 'site-footer-links') block.data.links = e.target.value;
+    },
+    toMarkdown(data) {
+      const sfParts = [];
+      if (data.icon) sfParts.push('icon: ' + data.icon);
+      if (data.title) sfParts.push('title: ' + data.title);
+      if (data.subtitle) sfParts.push('subtitle: ' + data.subtitle);
+      if (data.links) sfParts.push('links: ' + data.links);
+      return '```footer\n' + sfParts.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'footer');
+      if (!fence) return null;
+      const p = parseProps(fence.fenceLines);
+      return {
+        data: { icon: p['icon'] || '', title: p['title'] || '', subtitle: p['subtitle'] || '', links: p['links'] || '' },
+        consumed: fence.consumed
+      };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // tabs (fence: ```tabs)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'tabs',
+    editable: true,
+    defaultData: () => ({ tabs: [{ name: 'Tab 1', content: '' }, { name: 'Tab 2', content: '' }], activeTab: 0 }),
+    render(data, ctx) {
+      const tabs = data?.tabs || [{ name: 'Tab 1', content: '' }];
+      const activeTab = data?.activeTab || 0;
+      const state = 'collapsed';
+
+      const tabsNavHtml = tabs.map((t, i) => `
+        <div class="editor-tabs-nav-item ${i === activeTab ? 'active' : ''}" data-role="tabs-nav-item" data-index="${i}">${ctx._escapeHtml(t.name || `Tab ${i + 1}`)}</div>
+      `).join('');
+      const tabsPanesHtml = tabs.map((t, i) => `
+        <div class="editor-tabs-pane ${i === activeTab ? 'active' : ''}" data-index="${i}">${t.content ? ctx._markdownToHtml(t.content) : '<p style="color:#999;">Empty</p>'}</div>
+      `).join('');
+
+      const editTabsNavHtml = tabs.map((t, i) => `
+        <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: ${i === activeTab ? '#f5f5f5' : '#fff'}; border-bottom: 1px solid #e0e0e0; border-left: 3px solid ${i === activeTab ? '#12284b' : 'transparent'};">
+          <div class="editor-tabs-nav-item ${i === activeTab ? 'active' : ''}" data-role="tabs-edit-nav" data-index="${i}" style="cursor: pointer; flex: 1; padding: 0; margin: 0; border: none;">${ctx._escapeHtml(t.name || `Tab ${i + 1}`)}</div>
+          <button type="button" class="block-edit-btn" data-role="tabs-edit-item" data-index="${i}" style="width: 24px; height: 24px; padding: 0; border: none; background: #f0f0f0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: #666; flex-shrink: 0; transition: all 0.2s;" title="Edit tab">✏️</button>
+          <button type="button" class="block-delete-btn" data-role="tabs-delete-item" data-index="${i}" style="width: 24px; height: 24px; padding: 0; border: none; background: #f0f0f0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: #666; flex-shrink: 0; transition: all 0.2s;" title="Delete tab">✕</button>
+        </div>
+      `).join('');
+      const editTabsContentHtml = tabs.map((t, i) => `
+        <div class="editor-tabs-edit-pane ${i === activeTab ? 'active' : ''}" data-index="${i}" style="${i === activeTab ? '' : 'display: none;'}">
+          <label>Tab Name</label>
+          <input type="text" class="editor-tabs-input" data-role="tabs-name" data-index="${i}" value="${ctx._escapeHtml(t.name || `Tab ${i + 1}`)}">
+          <label style="margin-top: 12px;">Content (Supports Markdown)</label>
+          <textarea class="editor-tabs-edit-textarea" data-role="tabs-content" data-index="${i}" placeholder="Tab content (markdown supported)...">${ctx._escapeHtml(t.content || '')}</textarea>
+        </div>
+      `).join('');
+
+      return `
+        <div class="editor-tabs-container ${state}">
+          <div class="editor-tabs-display">
+            <div class="editor-tabs-nav">${tabsNavHtml}</div>
+            <div class="editor-tabs-content">${tabsPanesHtml}</div>
+          </div>
+          <div class="editor-tabs-controls" style="display: none;">
+            <div class="editor-tabs-nav" style="border-bottom: 2px solid #e0e0e0; margin-bottom: 15px;">${editTabsNavHtml}</div>
+            <div class="editor-tabs-edit-content">${editTabsContentHtml}</div>
+            <div class="editor-tabs-actions" style="margin-top: 15px;">
+              <button type="button" class="editor-tabs-action-btn" data-role="tabs-add">+ Tab</button>
+              <button type="button" class="editor-tabs-action-btn" data-role="tabs-remove">- Tab</button>
+            </div>
+            <button type="button" class="editor-tabs-save-btn" data-role="tabs-save">Save</button>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      // No dedicated preview in original; reuse render-style preview
+      const tabs = data.tabs || [];
+      const activeTab = data.activeTab || 0;
+      const navHtml = tabs.map((t, i) => `<div class="editor-tabs-nav-item ${i === activeTab ? 'active' : ''}">${ctx._escapeHtml(t.name || `Tab ${i + 1}`)}</div>`).join('');
+      const paneHtml = tabs.map((t, i) => `<div class="editor-tabs-pane ${i === activeTab ? 'active' : ''}">${t.content ? ctx._markdownToHtml(t.content) : '<p style="color:#999;">Empty</p>'}</div>`).join('');
+      return `<div class="editor-tabs-container collapsed" style="margin:10px 0;"><div class="editor-tabs-display"><div class="editor-tabs-nav">${navHtml}</div><div class="editor-tabs-content">${paneHtml}</div></div></div>`;
+    },
+    handlers: {
+      'tabs-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-tabs-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          found.blockEl.querySelector('.editor-tabs-controls').style.display = 'block';
+          const firstInput = container.querySelector('[data-role="tabs-name"]');
+          if (firstInput) firstInput.focus();
+        }
+      },
+      'tabs-nav-item'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const tabIndex = parseInt(e.target.dataset.index);
+        block.data.activeTab = tabIndex;
+        blockEl.querySelectorAll('[data-role="tabs-nav-item"]').forEach((item, i) => item.classList.toggle('active', i === tabIndex));
+        blockEl.querySelectorAll('.editor-tabs-pane').forEach((pane, i) => pane.classList.toggle('active', i === tabIndex));
+      },
+      'tabs-edit-nav'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl } = found;
+        const tabIndex = parseInt(e.target.dataset.index);
+        blockEl.querySelectorAll('[data-role="tabs-edit-nav"]').forEach((item, i) => item.classList.toggle('active', i === tabIndex));
+        blockEl.querySelectorAll('[data-role="tabs-edit-nav"]').forEach((item, i) => {
+          const container = item.closest('div[style*="display: flex"]');
+          if (container) {
+            container.style.background = i === tabIndex ? '#f5f5f5' : '#fff';
+            container.style.borderLeftColor = i === tabIndex ? '#12284b' : 'transparent';
+          }
+        });
+        blockEl.querySelectorAll('.editor-tabs-edit-pane').forEach((pane, i) => {
+          if (i === tabIndex) { pane.style.display = 'block'; pane.classList.add('active'); }
+          else { pane.style.display = 'none'; pane.classList.remove('active'); }
+        });
+      },
+      'tabs-delete-item'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const itemIndex = parseInt(e.target.dataset.index);
+        if (block && block.data.tabs && block.data.tabs.length > 1) {
+          block.data.tabs.splice(itemIndex, 1);
+          if (block.data.activeTab >= block.data.tabs.length) block.data.activeTab = block.data.tabs.length - 1;
+          ctx._renderBlockContent(blockEl, 'tabs', block.data);
+          ctx._onChange();
+        }
+      },
+      'tabs-edit-item'(e, ctx) {
+        e.preventDefault();
+        const tabIndex = parseInt(e.target.dataset.index);
+        const navItem = e.target.closest('.editor-block').querySelector(`[data-role="tabs-edit-nav"][data-index="${tabIndex}"]`);
+        if (navItem) navItem.click();
+      },
+      'tabs-add'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const editList = found.blockEl.querySelector('.editor-tabs-edit-list');
+        if (!editList) return;
+        const tabCount = editList.querySelectorAll('.editor-tabs-edit-item').length;
+        const itemEl = document.createElement('div');
+        itemEl.className = 'editor-tabs-edit-item';
+        itemEl.innerHTML = `<label>Tab ${tabCount + 1} Name</label><input type="text" class="editor-tabs-input" data-role="tabs-name" data-index="${tabCount}" placeholder="Tab name" value="Tab ${tabCount + 1}"><label>Content</label><textarea class="editor-tabs-edit-textarea" data-role="tabs-content" data-index="${tabCount}" placeholder="Tab content..."></textarea>`;
+        editList.appendChild(itemEl);
+      },
+      'tabs-remove'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const editList = found.blockEl.querySelector('.editor-tabs-edit-list');
+        if (!editList) return;
+        const items = editList.querySelectorAll('.editor-tabs-edit-item');
+        if (items.length > 1) items[items.length - 1].remove();
+      },
+      'tabs-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const tabNames = blockEl.querySelectorAll('[data-role="tabs-name"]');
+        const tabContents = blockEl.querySelectorAll('[data-role="tabs-content"]');
+        block.data.tabs = Array.from(tabNames).map((input, i) => ({
+          name: input.value || `Tab ${i + 1}`,
+          content: tabContents[i]?.value || ''
+        }));
+        block.data.activeTab = 0;
+        ctx._renderBlockContent(blockEl, 'tabs', block.data);
+        const container = blockEl.querySelector('.editor-tabs-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._onChange();
+      }
+    },
+    toMarkdown(data) {
+      const tParts = ['activeTab: ' + (data.activeTab || 0)];
+      (data.tabs || []).forEach((tab, i) => {
+        tParts.push('- ## ' + (tab.name || `Tab ${i + 1}`));
+        if (tab.content) {
+          tParts.push('  ' + tab.content.split('\n').map(l => '  ' + l).join('\n'));
+        }
+      });
+      return '```tabs\n' + tParts.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'tabs');
+      if (!fence) return null;
+      let activeTab = 0;
+      const tabs = [];
+      let currentTab = null;
+      fence.fenceLines.forEach(l => {
+        const activeMatch = l.match(/^activeTab:\s*(\d+)/);
+        if (activeMatch) { activeTab = parseInt(activeMatch[1]); return; }
+        const tabMatch = l.match(/^-\s*##\s*(.*)$/);
+        if (tabMatch) {
+          if (currentTab) tabs.push(currentTab);
+          currentTab = { name: tabMatch[1].trim(), content: '' };
+          return;
+        }
+        if (currentTab && l.trim()) {
+          const content = l.startsWith('  ') ? l.substring(2) : l;
+          currentTab.content = currentTab.content ? currentTab.content + '\n' + content : content;
+        }
+      });
+      if (currentTab) tabs.push(currentTab);
+      if (tabs.length === 0) tabs.push({ name: 'Tab 1', content: '' }, { name: 'Tab 2', content: '' });
+      return { data: { tabs, activeTab }, consumed: fence.consumed };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // accordion (fence: ```accordion)
+  // -------------------------------------------------------------------------
+
+  MarkdownEditor.registerBlock({
+    type: 'accordion',
+    editable: true,
+    defaultData: () => ({ items: [{ title: 'Item 1', content: '' }, { title: 'Item 2', content: '' }], expandedItems: [0] }),
+    render(data, ctx) {
+      const items = data?.items || [{ title: 'Item 1', content: '' }];
+      const editingIndex = data?.editingIndex !== undefined ? data.editingIndex : 0;
+      const state = 'collapsed';
+
+      const accordionItemsHtml = items.map((item, idx) => `
+        <div class="editor-accordion-item ${idx === 0 ? 'expanded' : ''}">
+          <button type="button" class="editor-accordion-header" data-role="accordion-toggle" data-index="${idx}">${ctx._escapeHtml(item.title || `Item ${idx + 1}`)}</button>
+          <div class="editor-accordion-content">${item.content ? ctx._markdownToHtml(item.content) : '<p style="color:#999;">Empty</p>'}</div>
+        </div>
+      `).join('');
+
+      const accordionEditNavHtml = items.map((item, idx) => `
+        <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: ${idx === editingIndex ? '#f5f5f5' : '#fff'}; border-bottom: 1px solid #e0e0e0; border-left: 3px solid ${idx === editingIndex ? '#12284b' : 'transparent'};">
+          <div class="editor-accordion-edit-header ${idx === editingIndex ? 'active' : ''}" data-role="accordion-edit-nav" data-index="${idx}" style="cursor: pointer; flex: 1; padding: 0; margin: 0; border: none; background: none;">
+            ${ctx._escapeHtml(item.title || `Item ${idx + 1}`)}
+          </div>
+          <button type="button" class="block-edit-btn" data-role="accordion-edit-item" data-index="${idx}" style="width: 24px; height: 24px; padding: 0; border: none; background: #f0f0f0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: #666; flex-shrink: 0; transition: all 0.2s;" title="Edit item">✏️</button>
+          <button type="button" class="block-delete-btn" data-role="accordion-delete-item" data-index="${idx}" style="width: 24px; height: 24px; padding: 0; border: none; background: #f0f0f0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: #666; flex-shrink: 0; transition: all 0.2s;" title="Delete item">✕</button>
+        </div>
+      `).join('');
+
+      const accordionEditContentHtml = items.map((item, idx) => `
+        <div class="editor-accordion-edit-pane ${idx === editingIndex ? 'active' : ''}" data-index="${idx}" style="${idx === editingIndex ? '' : 'display: none;'}">
+          <label style="display: block; font-weight: 600; margin-bottom: 8px;">Item Title</label>
+          <input type="text" class="editor-accordion-input" data-role="accordion-title" data-index="${idx}" placeholder="Item title" value="${ctx._escapeHtml(item.title || `Item ${idx + 1}`)}">
+          <label style="display: block; font-weight: 600; margin-top: 12px; margin-bottom: 8px;">Content (Markdown supported)</label>
+          <textarea class="editor-accordion-edit-textarea" data-role="accordion-content" data-index="${idx}" placeholder="Item content...">${ctx._escapeHtml(item.content || '')}</textarea>
+        </div>
+      `).join('');
+
+      return `
+        <div class="editor-accordion-container ${state}">
+          <div class="editor-accordion-display">
+            <div class="editor-accordion-items">${accordionItemsHtml}</div>
+          </div>
+          <div class="editor-accordion-controls" style="display: none;">
+            <label>Configure Items</label>
+            <div class="editor-accordion-edit-nav" style="border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden; margin-bottom: 15px;">
+              ${accordionEditNavHtml}
+            </div>
+            <div class="editor-accordion-edit-content" style="margin-bottom: 15px;">
+              ${accordionEditContentHtml}
+            </div>
+            <div class="editor-accordion-actions">
+              <button type="button" class="editor-accordion-action-btn" data-role="accordion-add">+ Item</button>
+              <button type="button" class="editor-accordion-action-btn" data-role="accordion-remove">- Item</button>
+            </div>
+            <button type="button" class="editor-accordion-save-btn" data-role="accordion-save">Save</button>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const items = data.items || [];
+      const html = items.map((item, idx) => `
+        <div class="editor-accordion-item ${idx === 0 ? 'expanded' : ''}" style="border-bottom:1px solid #e0e0e0;">
+          <div class="editor-accordion-header" style="padding:14px 18px;font-weight:500;">${ctx._escapeHtml(item.title || `Item ${idx + 1}`)}</div>
+          <div class="editor-accordion-content" style="padding:14px 18px;">${item.content ? ctx._markdownToHtml(item.content) : '<p style="color:#999;">Empty</p>'}</div>
+        </div>
+      `).join('');
+      return `<div class="editor-accordion-container" style="border:1px solid #e0e0e0;border-radius:6px;margin:10px 0;background:white;overflow:hidden;">${html}</div>`;
+    },
+    handlers: {
+      'accordion-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-accordion-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          found.blockEl.querySelector('.editor-accordion-controls').style.display = 'block';
+          const firstInput = container.querySelector('[data-role="accordion-title"]');
+          if (firstInput) firstInput.focus();
+        }
+      },
+      'accordion-toggle'(e, ctx) {
+        e.preventDefault();
+        const item = e.target.closest('.editor-accordion-item');
+        if (!item) return;
+        item.classList.toggle('expanded');
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const expanded = Array.from(blockEl.querySelectorAll('.editor-accordion-item.expanded')).map(el => Array.from(el.closest('.editor-accordion-items').querySelectorAll('.editor-accordion-item')).indexOf(el));
+        block.data.expandedItems = expanded;
+      },
+      'accordion-edit-nav'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const itemIndex = parseInt(e.target.dataset.index);
+        blockEl.querySelectorAll('[data-role="accordion-edit-nav"]').forEach((item, i) => {
+          item.classList.toggle('active', i === itemIndex);
+          const container = item.closest('div[style*="display: flex"]');
+          if (container) {
+            container.style.background = i === itemIndex ? '#f5f5f5' : '#fff';
+            container.style.borderLeftColor = i === itemIndex ? '#12284b' : 'transparent';
+          }
+        });
+        blockEl.querySelectorAll('.editor-accordion-edit-pane').forEach((pane, i) => {
+          if (i === itemIndex) { pane.style.display = 'block'; pane.classList.add('active'); }
+          else { pane.style.display = 'none'; pane.classList.remove('active'); }
+        });
+        block.data.editingIndex = itemIndex;
+      },
+      'accordion-delete-item'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const itemIndex = parseInt(e.target.dataset.index);
+        if (block && block.data.items && block.data.items.length > 1) {
+          block.data.items.splice(itemIndex, 1);
+          if (block.data.editingIndex >= block.data.items.length) block.data.editingIndex = block.data.items.length - 1;
+          ctx._renderBlockContent(blockEl, 'accordion', block.data);
+          ctx._onChange();
+        }
+      },
+      'accordion-edit-item'(e, ctx) {
+        e.preventDefault();
+        const itemIndex = parseInt(e.target.dataset.index);
+        const navItem = e.target.closest('.editor-block').querySelector(`[data-role="accordion-edit-nav"][data-index="${itemIndex}"]`);
+        if (navItem) navItem.click();
+      },
+      'accordion-add'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const editList = found.blockEl.querySelector('.editor-accordion-edit-list');
+        if (!editList) return;
+        const itemCount = editList.querySelectorAll('.editor-accordion-edit-item').length;
+        const itemEl = document.createElement('div');
+        itemEl.className = 'editor-accordion-edit-item';
+        itemEl.innerHTML = `<div class="editor-accordion-edit-item-title">Item ${itemCount + 1}</div><input type="text" class="editor-accordion-input" data-role="accordion-title" data-index="${itemCount}" placeholder="Item title" value="Item ${itemCount + 1}"><textarea class="editor-accordion-edit-textarea" data-role="accordion-content" data-index="${itemCount}" placeholder="Item content..."></textarea>`;
+        editList.appendChild(itemEl);
+      },
+      'accordion-remove'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const editList = found.blockEl.querySelector('.editor-accordion-edit-list');
+        if (!editList) return;
+        const items = editList.querySelectorAll('.editor-accordion-edit-item');
+        if (items.length > 1) items[items.length - 1].remove();
+      },
+      'accordion-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const titles = blockEl.querySelectorAll('[data-role="accordion-title"]');
+        const contents = blockEl.querySelectorAll('[data-role="accordion-content"]');
+        block.data.items = Array.from(titles).map((input, i) => ({
+          title: input.value || `Item ${i + 1}`,
+          content: contents[i]?.value || ''
+        }));
+        block.data.expandedItems = [0];
+        ctx._renderBlockContent(blockEl, 'accordion', block.data);
+        const container = blockEl.querySelector('.editor-accordion-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._onChange();
+      }
+    },
+    toMarkdown(data) {
+      const aParts = ['expanded: ' + (data.expandedItems || [0]).join(',')];
+      (data.items || []).forEach((item, i) => {
+        aParts.push('- ## ' + (item.title || `Item ${i + 1}`));
+        if (item.content) {
+          aParts.push('  ' + item.content.split('\n').map(l => '  ' + l).join('\n'));
+        }
+      });
+      return '```accordion\n' + aParts.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, 'accordion');
+      if (!fence) return null;
+      let expandedItems = [0];
+      const items = [];
+      let currentItem = null;
+      fence.fenceLines.forEach(l => {
+        const expandMatch = l.match(/^expanded:\s*([\d,]+)/);
+        if (expandMatch) { expandedItems = expandMatch[1].split(',').map(Number); return; }
+        const itemMatch = l.match(/^-\s*##\s*(.*)$/);
+        if (itemMatch) {
+          if (currentItem) items.push(currentItem);
+          currentItem = { title: itemMatch[1].trim(), content: '' };
+          return;
+        }
+        if (currentItem && l.trim()) {
+          const content = l.startsWith('  ') ? l.substring(2) : l;
+          currentItem.content = currentItem.content ? currentItem.content + '\n' + content : content;
+        }
+      });
+      if (currentItem) items.push(currentItem);
+      if (items.length === 0) items.push({ title: 'Item 1', content: '' }, { title: 'Item 2', content: '' });
+      return { data: { items, expandedItems }, consumed: fence.consumed };
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // columns (fences: ```container, ```two-col-3-1, ```two-col-1-3, ```three-column)
+  // -------------------------------------------------------------------------
+
+  const COLUMN_LANGUAGES = ['container', 'two-col-3-1', 'two-col-1-3', 'three-column'];
+
+  MarkdownEditor.registerBlock({
+    type: 'columns',
+    editable: true,
+    defaultData: () => ({ layout: 'container', left: '', right: '', middle: '' }),
+    render(data, ctx) {
+      const colLayout = data?.layout || 'container';
+      const colLeft = data?.left || '';
+      const colMiddle = data?.middle || '';
+      const colRight = data?.right || '';
+      const colState = (colLeft || colRight || colMiddle) ? 'collapsed' : 'editing';
+      const isThreeCol = colLayout === 'three-column';
+
+      const layoutBtns = [
+        { key: 'container', bars: '<span class="col-bar" style="flex:1"></span><span class="col-bar" style="flex:1"></span>' },
+        { key: 'two-col-3-1', bars: '<span class="col-bar" style="flex:3"></span><span class="col-bar" style="flex:1"></span>' },
+        { key: 'two-col-1-3', bars: '<span class="col-bar" style="flex:1"></span><span class="col-bar" style="flex:3"></span>' },
+        { key: 'three-column', bars: '<span class="col-bar" style="flex:1"></span><span class="col-bar" style="flex:1"></span><span class="col-bar" style="flex:1"></span>' }
+      ].map(l => `<button type="button" class="editor-columns-layout-btn${l.key === colLayout ? ' active' : ''}" data-role="columns-layout" data-layout="${l.key}">${l.bars}</button>`).join('');
+
+      const leftHtml = colLeft ? ctx._markdownToHtml(colLeft) : '<span class="editor-columns-placeholder">Left column</span>';
+      const rightHtml = colRight ? ctx._markdownToHtml(colRight) : '<span class="editor-columns-placeholder">Right column</span>';
+      const middleHtml = colMiddle ? ctx._markdownToHtml(colMiddle) : '<span class="editor-columns-placeholder">Middle column</span>';
+      const middleSection = isThreeCol ? `<div class="editor-columns-section">${middleHtml}</div>` : '';
+
+      return `
+        <div class="editor-columns-container ${colState}">
+          <div class="editor-columns-display">
+            <div class="editor-columns-grid layout-${colLayout}">
+              <div class="editor-columns-section">${leftHtml}</div>
+              ${middleSection}
+              <div class="editor-columns-section">${rightHtml}</div>
+            </div>
+          </div>
+          <div class="editor-columns-controls">
+            <div class="editor-columns-badge">Columns</div>
+            <div class="editor-columns-layout-picker">${layoutBtns}</div>
+            <label>Left</label>
+            <textarea class="editor-columns-textarea" data-role="columns-left" placeholder="Markdown content for left column">${ctx._escapeHtml(colLeft)}</textarea>
+            <div class="editor-columns-middle-group${isThreeCol ? ' visible' : ''}">
+              <label>Middle</label>
+              <textarea class="editor-columns-textarea" data-role="columns-middle" placeholder="Markdown content for middle column">${ctx._escapeHtml(colMiddle)}</textarea>
+            </div>
+            <label>Right</label>
+            <textarea class="editor-columns-textarea" data-role="columns-right" placeholder="Markdown content for right column">${ctx._escapeHtml(colRight)}</textarea>
+            <button type="button" class="editor-columns-save-btn" data-role="columns-save">Save</button>
+          </div>
+        </div>
+      `;
+    },
+    renderPreview(data, ctx) {
+      const pcLayout = data.layout || 'container';
+      const pcLeft = data.left || '';
+      const pcMiddle = data.middle || '';
+      const pcRight = data.right || '';
+      const gridCols = { 'container': '1fr 1fr', 'two-col-3-1': '3fr 1fr', 'two-col-1-3': '1fr 3fr', 'three-column': '1fr 1fr 1fr' }[pcLayout] || '1fr 1fr';
+      const leftContent = pcLeft ? ctx._markdownToHtml(pcLeft) : '<em style="color:#aaa;">Empty</em>';
+      const rightContent = pcRight ? ctx._markdownToHtml(pcRight) : '<em style="color:#aaa;">Empty</em>';
+      const middleContent = pcMiddle ? ctx._markdownToHtml(pcMiddle) : '<em style="color:#aaa;">Empty</em>';
+      const middleSec = pcLayout === 'three-column' ? `<div style="background:#f8f9fa;border:1px solid #e8e8e8;border-radius:4px;padding:12px;font-size:0.92em;line-height:1.5;">${middleContent}</div>` : '';
+      return `<div style="margin:10px 0;"><div style="display:grid;grid-template-columns:${gridCols};gap:12px;"><div style="background:#f8f9fa;border:1px solid #e8e8e8;border-radius:4px;padding:12px;font-size:0.92em;line-height:1.5;">${leftContent}</div>${middleSec}<div style="background:#f8f9fa;border:1px solid #e8e8e8;border-radius:4px;padding:12px;font-size:0.92em;line-height:1.5;">${rightContent}</div></div></div>`;
+    },
+    handlers: {
+      'columns-edit'(e, ctx) {
+        e.preventDefault(); e.stopPropagation();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const container = found.blockEl.querySelector('.editor-columns-container');
+        if (container) {
+          container.classList.remove('collapsed');
+          container.classList.add('editing');
+          const ta = container.querySelector('[data-role="columns-left"]');
+          if (ta) ta.focus();
+        }
+      },
+      'columns-save'(e, ctx) {
+        e.preventDefault();
+        const found = getBlock(e, ctx);
+        if (!found) return;
+        const { blockEl, block } = found;
+        const leftTA = blockEl.querySelector('[data-role="columns-left"]');
+        const middleTA = blockEl.querySelector('[data-role="columns-middle"]');
+        const rightTA = blockEl.querySelector('[data-role="columns-right"]');
+        block.data.left = leftTA ? leftTA.value : '';
+        block.data.middle = middleTA ? middleTA.value : '';
+        block.data.right = rightTA ? rightTA.value : '';
+        ctx._renderBlockContent(blockEl, 'columns', block.data);
+        const container = blockEl.querySelector('.editor-columns-container');
+        if (container) { container.classList.remove('editing'); container.classList.add('collapsed'); }
+        ctx._onChange();
+      },
+      'columns-layout'(e, ctx) {
+        e.preventDefault();
+        const btn = e.target.dataset.role === 'columns-layout' ? e.target : e.target.closest('[data-role="columns-layout"]');
+        if (!btn) return;
+        const blockEl = btn.closest('.editor-block');
+        if (!blockEl) return;
+        const blockIndex = parseInt(blockEl.dataset.index);
+        const block = ctx._blocks[blockIndex];
+        if (!block) return;
+        const newLayout = btn.dataset.layout;
+        block.data.layout = newLayout;
+        const allBtns = blockEl.querySelectorAll('.editor-columns-layout-btn');
+        allBtns.forEach(b => b.classList.toggle('active', b.dataset.layout === newLayout));
+        const middleGroup = blockEl.querySelector('.editor-columns-middle-group');
+        if (middleGroup) {
+          if (newLayout === 'three-column') middleGroup.classList.add('visible');
+          else middleGroup.classList.remove('visible');
+        }
+      }
+    },
+    onInput(e, blockEl, block) {
+      if (e.target.dataset.role === 'columns-left') block.data.left = e.target.value;
+      if (e.target.dataset.role === 'columns-middle') block.data.middle = e.target.value;
+      if (e.target.dataset.role === 'columns-right') block.data.right = e.target.value;
+    },
+    toMarkdown(data) {
+      const colLayout = data.layout || 'container';
+      const colSections = [];
+      if (data.left !== undefined) {
+        colSections.push('left:\n' + (data.left || '').split('\n').map(l => '  ' + l).join('\n'));
+      }
+      if (colLayout === 'three-column' && data.middle !== undefined) {
+        colSections.push('middle:\n' + (data.middle || '').split('\n').map(l => '  ' + l).join('\n'));
+      }
+      if (data.right !== undefined) {
+        colSections.push('right:\n' + (data.right || '').split('\n').map(l => '  ' + l).join('\n'));
+      }
+      return '```' + colLayout + '\n' + colSections.join('\n') + '\n```';
+    },
+    fromMarkdown(line, lines, i) {
+      const fence = consumeFence(line, lines, i, COLUMN_LANGUAGES);
+      if (!fence) return null;
+      const colData = { layout: fence.lang, left: '', middle: '', right: '' };
+      let currentSection = null;
+      fence.fenceLines.forEach(l => {
+        const secMatch = l.match(/^(left|middle|right):$/);
+        if (secMatch) { currentSection = secMatch[1]; return; }
+        if (currentSection) {
+          const content = l.startsWith('  ') ? l.substring(2) : l;
+          colData[currentSection] = colData[currentSection] ? colData[currentSection] + '\n' + content : content;
+        }
+      });
+      return { data: colData, consumed: fence.consumed };
+    }
+  });
+
+})();

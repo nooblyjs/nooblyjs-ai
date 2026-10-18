@@ -1,0 +1,16 @@
+[{
+  "name": "Heart Beat Workflow",
+  "description": "This workflow is used to test the heart beat functionality of the system. It will run a simple activity that will return a message after a delay. The workflow will be configured to send heart beat signals every 5 seconds while the activity is running.",
+  "steps": [
+    "./steps/step-1.js"
+  ],
+  "tags": [
+    "Testing"
+  ],
+  "defaultInput": {
+    "workflowId": "Heart Beat Workflow - Called Workflow"
+  },
+  "createdAt": "2026-01-20T07:50:00.000Z",
+  "updatedAt": "2026-01-21T17:46:32.473Z",
+  "starred": false
+}]

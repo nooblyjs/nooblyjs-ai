@@ -1,0 +1,494 @@
+/**
+ * Annotation Controller
+ *
+ * Lets any authenticated user annotate document content without "editing" it.
+ * Selecting text in the rendered markdown surfaces an "Annotate" affordance;
+ * the target is inferred from the DOM (a heading → section, a table row → row,
+ * otherwise the text range with surrounding context). The annotation is POSTed
+ * to the annotations API, which writes an inline ```annotation``` block into the
+ * source markdown next to the target. Authors can edit/delete their own
+ * annotations from the rendered callout.
+ *
+ * Mirrors the delegated-listener style of documentController.initializeCommentsForms.
+ *
+ * @author noobly Team
+ * @version 1.0.0
+ * @since 2026-05-30
+ */
+
+import { documentController } from "./documentcontroller.js";
+import { reviewController } from "./reviewcontroller.js";
+import { userContentController } from "./userContentController.js";
+
+const API = '/applications/wiki/api/annotations';
+const CTX_LEN = 24; // chars of before/after context stored with a text anchor
+
+export const annotationController = {
+    app: null,
+    _menu: null,
+    _modal: null,
+    _observer: null,
+    _hoveredBlock: null,
+    _hlEls: [],
+    _cssHl: null,
+
+    init(app) {
+        this.app = app;
+        this._wireContextMenu();
+        this._wireToolbarButton();
+        this._wireBlockActions();
+        this._wireHover();
+        this._observeRenders();
+    },
+
+    // ---- hover an annotation → highlight its target in the document ------
+
+    _wireHover() {
+        document.body.addEventListener('mouseover', (e) => {
+            const block = e.target.closest && e.target.closest('[data-annotation-block]');
+            if (block && block !== this._hoveredBlock) {
+                this._clearHighlight();
+                this._hoveredBlock = block;
+                this._highlightTarget(block);
+            }
+        });
+        document.body.addEventListener('mouseout', (e) => {
+            const block = e.target.closest && e.target.closest('[data-annotation-block]');
+            if (block && (!e.relatedTarget || !block.contains(e.relatedTarget))) {
+                this._clearHighlight();
+                this._hoveredBlock = null;
+            }
+        });
+    },
+
+    _markdownHost() {
+        return document.querySelector('.markdown-content');
+    },
+
+    _parseTargetRaw(raw) {
+        const parts = String(raw || '').split('|').map((s) => s.trim()).filter(Boolean);
+        const t = { kind: (parts.shift() || '').toLowerCase() };
+        for (const p of parts) {
+            const m = p.match(/^([a-zA-Z][\w-]*)\s*=\s*"([\s\S]*)"$/);
+            if (m) t[m[1]] = m[2];
+        }
+        return t;
+    },
+
+    _highlightTarget(block) {
+        const host = this._markdownHost();
+        if (!host) return;
+        const t = this._parseTargetRaw(block.getAttribute('data-annotation-target'));
+        let el = null;
+
+        if (t.kind === 'section' && t.heading) {
+            el = this._find(host, 'h1,h2,h3,h4,h5,h6', t.heading);
+        } else if (t.kind === 'cell' && t.text) {
+            const row = this._findRow(host, t.row);
+            el = row ? Array.from(row.querySelectorAll('td,th')).find(c => c.textContent.trim() === t.text) : null;
+            if (!el) el = this._find(host, 'td,th', t.text);
+        } else if (t.kind === 'row' && t.match) {
+            el = this._findRow(host, t.match);
+        } else if (t.kind === 'table') {
+            el = host.querySelector('table');
+        }
+
+        if (el) { this._addBlockHl(el); this._maybeScrollIntoView(el); return; }
+
+        // text target (or block not found) → highlight the quoted text itself
+        const quote = t.quote || t.text;
+        if (quote) this._highlightText(host, quote, t.before, t.after);
+    },
+
+    /** Smoothly bring a target into view, but only when it isn't already visible. */
+    _maybeScrollIntoView(el) {
+        if (!el || !el.getBoundingClientRect) return;
+        const r = el.getBoundingClientRect();
+        const vh = window.innerHeight || document.documentElement.clientHeight;
+        const margin = 24; // treat near-edge as needing a nudge
+        if (r.top < margin || r.bottom > vh - margin) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    },
+
+    /** First element matching `sel` whose trimmed text equals `text`. */
+    _find(host, sel, text) {
+        return Array.from(host.querySelectorAll(sel)).find(e => e.textContent.trim() === text) || null;
+    },
+
+    _findRow(host, firstCellText) {
+        if (!firstCellText) return null;
+        return Array.from(host.querySelectorAll('tr')).find(tr => {
+            const c = tr.querySelector('td,th');
+            return c && c.textContent.trim() === firstCellText;
+        }) || null;
+    },
+
+    _addBlockHl(el) {
+        el.classList.add('kr-annotation-hl');
+        this._hlEls.push(el);
+    },
+
+    _highlightText(host, quote, before, after) {
+        // Prefer a context-qualified match (before+quote+after) so a common
+        // word lands on the right occurrence; fall back to the bare quote.
+        let range = (before || after)
+            ? this._findTextRange(host, `${before || ''}${quote}${after || ''}`, (before || '').length, quote.length)
+            : null;
+        if (!range) range = this._findTextRange(host, quote, 0, quote.length);
+        if (!range) return;
+
+        if (window.CSS && CSS.highlights && typeof Highlight === 'function') {
+            if (!this._cssHl) { this._cssHl = new Highlight(); CSS.highlights.set('kr-annotation-target', this._cssHl); }
+            this._cssHl.add(range);
+        } else {
+            const el = this._elementOf(range.commonAncestorContainer);
+            if (el) this._addBlockHl(el);
+        }
+        this._maybeScrollIntoView(this._elementOf(range.startContainer));
+    },
+
+    /** Range over `needle` within one text node, then narrowed to [offset, offset+len). */
+    _findTextRange(host, needle, offset, len) {
+        const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+            const idx = node.nodeValue.indexOf(needle);
+            if (idx !== -1) {
+                const range = document.createRange();
+                range.setStart(node, idx + offset);
+                range.setEnd(node, idx + offset + len);
+                return range;
+            }
+        }
+        return null;
+    },
+
+    _clearHighlight() {
+        this._hlEls.forEach(el => el.classList.remove('kr-annotation-hl'));
+        this._hlEls = [];
+        if (this._cssHl) this._cssHl.clear();
+    },
+
+    // ---- toolbar "Annotate" button (discoverable entry point) ------------
+
+    _wireToolbarButton() {
+        const btn = document.getElementById('annotateDocBtn');
+        if (!btn) return;
+        // Preserve the user's text selection: a plain click would blur it, so
+        // prevent the default mousedown focus change and act on click.
+        btn.addEventListener('mousedown', (e) => e.preventDefault());
+        btn.addEventListener('click', (e) => { e.preventDefault(); this.annotateCurrentSelection(); });
+    },
+
+    /**
+     * Annotate the current text selection (or the row/heading it sits in). If
+     * nothing useful is selected, nudge the user toward selecting something.
+     */
+    annotateCurrentSelection() {
+        if (!this._docCtx()) {
+            this._hint('Open a document first, then select text to annotate.');
+            return;
+        }
+        const sel = window.getSelection();
+        const text = sel && !sel.isCollapsed ? sel.toString().trim() : '';
+        const anchorEl = sel && sel.rangeCount ? this._elementOf(sel.getRangeAt(0).commonAncestorContainer) : null;
+        if (!text || text.length < 2 || !anchorEl || !anchorEl.closest('.markdown-content') || anchorEl.closest('.kr-annotation')) {
+            this._hint('Select text, a table row, or a heading in the document, then click Annotate.');
+            return;
+        }
+        this._hideContextMenu();
+        this._openModal({ mode: 'create', target: this._targetFromSelection(sel, text) });
+    },
+
+    _hint(msg) {
+        if (this.app?.showNotification) this.app.showNotification(msg, 'info');
+        else console.info('[Annotations]', msg);
+    },
+
+    // ---- context helpers -------------------------------------------------
+
+    _docCtx() {
+        const d = this.app?.currentDocument;
+        return d && d.path && d.spaceName ? { path: d.path, spaceName: d.spaceName } : null;
+    },
+
+    _userEmail() {
+        return (this.app?.userProfile?.email || '').toLowerCase();
+    },
+
+    // ---- right-click → custom "Annotate" context menu --------------------
+
+    _wireContextMenu() {
+        document.addEventListener('contextmenu', (e) => {
+            const el = this._elementOf(e.target);
+            const host = el && el.closest ? el.closest('.markdown-content') : null;
+            if (!host) return;                            // outside the doc → native menu
+            if (el.closest('.kr-annotation')) return;     // on an existing annotation → native menu
+            if (!this._docCtx()) return;
+            e.preventDefault();                            // replace the native menu with ours
+            this._showContextMenu(e.clientX, e.clientY, el);
+        });
+        document.addEventListener('mousedown', (e) => {
+            if (this._menu && !(e.target.closest && e.target.closest('.kr-annotate-menu'))) this._hideContextMenu();
+        });
+        document.addEventListener('scroll', () => this._hideContextMenu(), true);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { this._hideContextMenu(); this._closeModal(); } });
+    },
+
+    /**
+     * What the menu should annotate: the current selection if there is one,
+     * else the row/heading that was right-clicked. null when there's nothing
+     * sensible to anchor to (e.g. right-clicking empty prose with no selection).
+     */
+    _contextTargetFor(rightClickedEl) {
+        const sel = window.getSelection();
+        const text = sel && !sel.isCollapsed ? sel.toString().trim() : '';
+        if (text && text.length >= 2 && sel.rangeCount) {
+            const anchorEl = this._elementOf(sel.getRangeAt(0).commonAncestorContainer);
+            if (anchorEl && anchorEl.closest('.markdown-content') && !anchorEl.closest('.kr-annotation')) {
+                return this._targetFromSelection(sel, text);
+            }
+        }
+        const heading = rightClickedEl.closest('h1,h2,h3,h4,h5,h6');
+        if (heading) {
+            const h = heading.textContent.trim();
+            return { kind: 'section', heading: h, quote: h };
+        }
+        const cell = rightClickedEl.closest('td,th');
+        const row = rightClickedEl.closest('tr');
+        if (cell && row && rightClickedEl.closest('table')) {
+            const firstCell = row.querySelector('th,td');
+            const rowKey = (firstCell?.textContent || '').trim();
+            const cellText = (cell.textContent || '').trim();
+            return { kind: 'cell', row: rowKey, text: cellText, quote: cellText };
+        }
+        return null;
+    },
+
+    _showContextMenu(x, y, rightClickedEl) {
+        this._hideContextMenu();
+        const target = this._contextTargetFor(rightClickedEl);
+        const sel = window.getSelection();
+        const hasSelection = !!(sel && !sel.isCollapsed && sel.toString().trim().length >= 2);
+        const label = !target ? 'Select text to annotate'
+            : target.kind === 'section' ? 'Annotate section'
+            : target.kind === 'cell' ? 'Annotate cell'
+            : target.kind === 'row' ? 'Annotate row' : 'Annotate selection';
+
+        // While the page is under review, offer a distinct (rose) review
+        // annotation alongside the normal one.
+        const underReview = !!(reviewController?.isUnderReview && reviewController.isUnderReview());
+        const reviewBtn = (underReview && target)
+            ? `<button type="button" class="kr-annotate-menu-review" data-act="annotate-review"><i class="bi bi-clipboard-check"></i> Review annotation</button>`
+            : '';
+
+        const menu = document.createElement('div');
+        menu.className = 'kr-annotate-menu';
+        const addContentLabel = target ? 'Add content' : 'Select a spot to add content';
+        menu.innerHTML = `
+            <button type="button" data-act="annotate"${target ? '' : ' disabled'}>
+                <i class="bi bi-highlighter"></i> ${label}
+            </button>
+            <button type="button" data-act="add-content"${target ? '' : ' disabled'}>
+                <i class="bi bi-pencil-square"></i> ${addContentLabel}
+            </button>
+            ${reviewBtn}
+            ${hasSelection ? '<button type="button" data-act="copy"><i class="bi bi-clipboard"></i> Copy</button>' : ''}
+        `;
+        document.body.appendChild(menu);
+
+        const r = menu.getBoundingClientRect();
+        menu.style.left = `${Math.max(8, Math.min(x, window.innerWidth - r.width - 8))}px`;
+        menu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - r.height - 8))}px`;
+
+        menu.querySelector('[data-act="annotate"]')?.addEventListener('click', () => {
+            this._hideContextMenu();
+            if (target) this._openModal({ mode: 'create', target });
+        });
+        menu.querySelector('[data-act="add-content"]')?.addEventListener('click', () => {
+            this._hideContextMenu();
+            if (target) userContentController.startAddContent(target);
+        });
+        menu.querySelector('[data-act="annotate-review"]')?.addEventListener('click', () => {
+            this._hideContextMenu();
+            if (target) this._openModal({ mode: 'create', target, type: 'review' });
+        });
+        menu.querySelector('[data-act="copy"]')?.addEventListener('click', async () => {
+            const txt = sel ? sel.toString() : '';
+            this._hideContextMenu();
+            try { await navigator.clipboard.writeText(txt); } catch (_) { /* clipboard blocked */ }
+        });
+        this._menu = menu;
+    },
+
+    _hideContextMenu() {
+        if (this._menu) { this._menu.remove(); this._menu = null; }
+    },
+
+    _elementOf(node) {
+        return node && node.nodeType === 3 ? node.parentElement : node;
+    },
+
+    _targetFromSelection(sel, text) {
+        const el = this._elementOf(sel.anchorNode);
+
+        // For block targets we anchor on the stable structural value (heading
+        // text / row's first cell) but also keep `quote` = the user's actual
+        // selection so the callout can show what they highlighted.
+        const heading = el?.closest('h1,h2,h3,h4,h5,h6');
+        if (heading) return { kind: 'section', heading: heading.textContent.trim(), quote: text };
+
+        // A table cell anchors on its own text (plus the row's first-cell key
+        // for uniqueness); the chip shows exactly what was highlighted.
+        const cell = el?.closest('td,th');
+        const row = el?.closest('tr');
+        if (cell && row && el.closest('table')) {
+            const firstCell = row.querySelector('th,td');
+            const rowKey = (firstCell?.textContent || '').trim();
+            const cellText = (cell.textContent || text).trim();
+            return { kind: 'cell', row: rowKey, text: cellText, quote: text || cellText };
+        }
+
+        // Text range with a little surrounding context for robust re-anchoring.
+        const container = el?.textContent || '';
+        const idx = container.indexOf(text);
+        const before = idx > 0 ? container.slice(Math.max(0, idx - CTX_LEN), idx) : '';
+        const after = idx >= 0 ? container.slice(idx + text.length, idx + text.length + CTX_LEN) : '';
+        return { kind: 'text', quote: text, before, after };
+    },
+
+    // ---- modal -----------------------------------------------------------
+
+    _openModal({ mode, target, id, current, type }) {
+        this._closeModal();
+        const isReview = type === 'review';
+        const overlay = document.createElement('div');
+        overlay.className = 'kr-annotation-modal-overlay';
+        const heading = mode === 'edit' ? 'Edit annotation' : (isReview ? 'Add review annotation' : 'Add annotation');
+        const icon = isReview ? 'bi-clipboard-check-fill' : 'bi-pin-angle-fill';
+        overlay.innerHTML = `
+            <div class="kr-annotation-modal${isReview ? ' kr-annotation-modal--review' : ''}" role="dialog" aria-modal="true">
+                <header><i class="bi ${icon}"></i> ${heading}</header>
+                <textarea rows="4" placeholder="${isReview ? 'Write your review note…' : 'Write your annotation…'}"></textarea>
+                <div class="kr-annotation-modal-actions">
+                    <button type="button" data-cancel class="btn btn-ghost btn-sm">Cancel</button>
+                    <button type="button" data-save class="btn btn-primary btn-sm">Save</button>
+                </div>
+                <div class="kr-annotation-modal-status"></div>
+            </div>`;
+        const ta = overlay.querySelector('textarea');
+        if (current) ta.value = current;
+        overlay.querySelector('[data-cancel]').addEventListener('click', () => this._closeModal());
+        overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) this._closeModal(); });
+        overlay.querySelector('[data-save]').addEventListener('click', () => this._save({ mode, target, id, type, textarea: ta, overlay }));
+        document.body.appendChild(overlay);
+        this._modal = overlay;
+        setTimeout(() => ta.focus(), 0);
+    },
+
+    _closeModal() {
+        if (this._modal) { this._modal.remove(); this._modal = null; }
+    },
+
+    async _save({ mode, target, id, type, textarea, overlay }) {
+        const text = (textarea.value || '').trim();
+        const status = overlay.querySelector('.kr-annotation-modal-status');
+        if (!text) { status.textContent = 'Annotation cannot be empty.'; return; }
+        const ctx = this._docCtx();
+        if (!ctx) { status.textContent = 'Cannot identify the current document.'; return; }
+
+        status.textContent = 'Saving…';
+        const body = mode === 'edit'
+            ? { spaceName: ctx.spaceName, path: ctx.path, id, annotation: text }
+            : { spaceName: ctx.spaceName, path: ctx.path, target, annotation: text, type: type === 'review' ? 'review' : undefined };
+        try {
+            const resp = await fetch(API, {
+                method: mode === 'edit' ? 'PATCH' : 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || !data.success) throw new Error(data.error || `HTTP ${resp.status}`);
+            this._closeModal();
+            await documentController.openDocumentByPath(ctx.path, ctx.spaceName);
+        } catch (err) {
+            console.error('[Annotations] save failed:', err);
+            status.textContent = `Failed: ${err.message}`;
+        }
+    },
+
+    // ---- edit / delete on rendered callouts ------------------------------
+
+    _wireBlockActions() {
+        document.body.addEventListener('click', async (e) => {
+            const editBtn = e.target.closest && e.target.closest('[data-annotation-edit]');
+            const delBtn = e.target.closest && e.target.closest('[data-annotation-delete]');
+            if (!editBtn && !delBtn) return;
+            const block = e.target.closest('[data-annotation-block]');
+            if (!block) return;
+            e.preventDefault();
+
+            const id = block.getAttribute('data-annotation-id');
+            const ctx = this._docCtx();
+            if (!id || !ctx) return;
+
+            if (editBtn) {
+                const current = block.querySelector('[data-annotation-text]')?.innerText || '';
+                this._openModal({ mode: 'edit', id, current });
+                return;
+            }
+
+            if (!window.confirm('Delete this annotation?')) return;
+            try {
+                const resp = await fetch(API, {
+                    method: 'DELETE',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ spaceName: ctx.spaceName, path: ctx.path, id })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || !data.success) throw new Error(data.error || `HTTP ${resp.status}`);
+                await documentController.openDocumentByPath(ctx.path, ctx.spaceName);
+            } catch (err) {
+                console.error('[Annotations] delete failed:', err);
+                this.app?.showNotification?.(`Failed to delete annotation: ${err.message}`, 'error');
+            }
+        });
+    },
+
+    // ---- author-only affordance visibility -------------------------------
+
+    /**
+     * Hide edit/delete on annotations the current user did not author. Runs on
+     * any DOM mutation that adds annotation callouts (i.e. each doc render).
+     */
+    _observeRenders() {
+        this.applyAuthorVisibility();
+        this._observer = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                for (const node of m.addedNodes) {
+                    if (node.nodeType !== 1) continue;
+                    if (node.matches?.('[data-annotation-block]') || node.querySelector?.('[data-annotation-block]')) {
+                        this.applyAuthorVisibility(node);
+                    }
+                }
+            }
+        });
+        this._observer.observe(document.body, { childList: true, subtree: true });
+    },
+
+    applyAuthorVisibility(root = document) {
+        const me = this._userEmail();
+        const scope = root.querySelectorAll ? root : document;
+        const blocks = (root.matches && root.matches('[data-annotation-block]'))
+            ? [root]
+            : Array.from(scope.querySelectorAll('[data-annotation-block]'));
+        blocks.forEach(block => {
+            const author = (block.getAttribute('data-annotation-author') || '').toLowerCase();
+            const actions = block.querySelector('.kr-annotation-actions');
+            if (actions) actions.style.display = (me && author === me) ? '' : 'none';
+        });
+    }
+};

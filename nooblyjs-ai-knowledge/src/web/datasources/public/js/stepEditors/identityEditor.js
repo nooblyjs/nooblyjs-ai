@@ -1,0 +1,200 @@
+/**
+ * @fileoverview Identity Step Editor
+ * Provides simple configuration for identity (pass-through) steps with documentation
+ *
+ * @author noobly Team
+ * @version 1.0.0
+ */
+
+/**
+ * IdentityEditor class for managing identity step configuration
+ */
+class IdentityEditor {
+  constructor(stepIndex, step, currentWorkflow) {
+    this.stepIndex = stepIndex;
+    this.step = step;
+    this.currentWorkflow = currentWorkflow;
+    this.modal = null;
+  }
+
+  /**
+   * Initialize the identity editor
+   */
+  init() {
+    const modalHTML = this.createModalHTML();
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    this.modal = document.getElementById('identityEditorModal');
+    this.setupEventListeners();
+  }
+
+  /**
+   * Create modal HTML structure
+   */
+  createModalHTML() {
+    return `
+      <div class="modal fade" id="identityEditorModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+          <div class="modal-content">
+            <div class="modal-header bg-success bg-opacity-10">
+              <h5 class="modal-title">
+                <i class="bi bi-arrow-right me-2"></i>Identity Step Configuration
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+              <!-- Description -->
+              <div class="mb-3">
+                <label class="form-label"><strong>Description / Comment</strong></label>
+                <textarea class="form-control" id="identityDescription" rows="4"
+                          placeholder="Explain why this identity step is here and what it represents in your workflow..."
+                          style="font-size: 12px;">${this.step.config?.description || ''}</textarea>
+                <small class="text-muted d-block mt-2">
+                  Optional description to document the purpose of this step in your workflow
+                </small>
+              </div>
+
+              <!-- What is an Identity Step? -->
+              <div class="card bg-light">
+                <div class="card-header">
+                  <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>What is an Identity Step?</h6>
+                </div>
+                <div class="card-body p-3" style="font-size: 12px;">
+                  <p class="mb-2">
+                    <strong>An identity step passes data through unchanged.</strong> It's a no-op step that returns the input without modification.
+                  </p>
+
+                  <div class="mb-3">
+                    <strong>Use Cases:</strong>
+                    <ul class="mb-0 mt-1">
+                      <li>Add comments/documentation between workflow steps</li>
+                      <li>Create checkpoints for logical workflow segments</li>
+                      <li>Placeholder for future step implementations</li>
+                      <li>Separate concerns or workflow phases visually</li>
+                      <li>Prepare data structure before processing</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <strong>Behavior:</strong>
+                    <ul class="mb-0 mt-1">
+                      <li>Takes input from previous step</li>
+                      <li>Returns input unchanged to next step</li>
+                      <li>Completes immediately (no processing)</li>
+                      <li>Useful for workflow organization</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Example -->
+              <div class="card mt-3">
+                <div class="card-header">
+                  <h6 class="mb-0"><i class="bi bi-code-square me-2"></i>Example</h6>
+                </div>
+                <div class="card-body p-3" style="font-size: 11px; font-family: monospace;">
+                  <div style="margin-bottom: 10px;">
+                    <div style="color: #0066cc; margin-bottom: 5px;"><strong>Step 1: Get User Data</strong></div>
+                    <div style="color: #666;">→ Fetch user from database</div>
+                  </div>
+                  <div style="margin-bottom: 10px;">
+                    <div style="color: #666;">↓</div>
+                  </div>
+                  <div style="margin-bottom: 10px;">
+                    <div style="color: #008000; margin-bottom: 5px;"><strong>[Identity] Checkpoint: Data Validation</strong></div>
+                    <div style="color: #999; font-size: 10px;">← Documents that user data has been loaded</div>
+                  </div>
+                  <div style="margin-bottom: 10px;">
+                    <div style="color: #666;">↓</div>
+                  </div>
+                  <div>
+                    <div style="color: #0066cc; margin-bottom: 5px;"><strong>Step 2: Transform User Data</strong></div>
+                    <div style="color: #666;">→ Clean and enrich user data</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary" id="saveIdentityBtn">
+                <i class="bi bi-check-circle me-1"></i>Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Setup event listeners
+   */
+  setupEventListeners() {
+    // Save button
+    document.getElementById('saveIdentityBtn')?.addEventListener('click', () => {
+      this.saveConfiguration();
+    });
+
+    // Modal dismiss
+    this.modal?.addEventListener('hidden.bs.modal', () => {
+      this.modal.remove();
+      window.identityEditorInstance = null;
+    });
+  }
+
+  /**
+   * Save configuration
+   */
+  saveConfiguration() {
+    const description = document.getElementById('identityDescription')?.value || '';
+
+    // Update step configuration
+    this.step.config.description = description;
+
+    // Update hidden textarea for data binding
+    const textarea = document.querySelector(`textarea[data-field="config.description"][data-step="${this.stepIndex}"]`);
+    if (textarea) {
+      textarea.value = description;
+    }
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(this.modal);
+    modal?.hide();
+
+    // Show toast notification
+    if (window.ui?.showToast) {
+      window.ui.showToast({
+        message: 'Identity step configuration saved!',
+        type: 'success',
+        duration: 2000
+      });
+    }
+  }
+}
+
+/**
+ * Show identity editor modal
+ * @param {number} stepIndex - Index of the step
+ * @param {Object} step - Step configuration
+ * @param {Object} currentWorkflow - Current workflow object
+ */
+function showIdentityEditor(stepIndex, step, currentWorkflow) {
+  // Close existing instance
+  const existingModal = document.getElementById('identityEditorModal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  // Create and initialize editor
+  const editor = new IdentityEditor(stepIndex, step, currentWorkflow);
+  editor.init();
+
+  // Store instance globally
+  window.identityEditorInstance = editor;
+
+  // Show modal
+  const modal = new bootstrap.Modal(document.getElementById('identityEditorModal'));
+  modal.show();
+}

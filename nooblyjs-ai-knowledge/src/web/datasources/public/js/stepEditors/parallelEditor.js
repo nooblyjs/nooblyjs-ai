@@ -1,0 +1,396 @@
+/**
+ * @fileoverview Parallel Step Editor
+ * Provides parallel execution configuration with branch management and result aggregation
+ *
+ * @author noobly Team
+ * @version 1.0.0
+ */
+
+/**
+ * ParallelEditor class for managing parallel step configuration
+ */
+class ParallelEditor {
+  constructor(stepIndex, step, currentWorkflow) {
+    this.stepIndex = stepIndex;
+    this.step = step;
+    this.currentWorkflow = currentWorkflow;
+    this.modal = null;
+    this.branches = step.config?.steps || [];
+  }
+
+  /**
+   * Initialize the parallel editor
+   */
+  init() {
+    const modalHTML = this.createModalHTML();
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    this.modal = document.getElementById('parallelEditorModal');
+    this.setupEventListeners();
+    this.renderBranches();
+  }
+
+  /**
+   * Create modal HTML structure
+   */
+  createModalHTML() {
+    return `
+      <div class="modal fade" id="parallelEditorModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header bg-info bg-opacity-10">
+              <h5 class="modal-title">
+                <i class="bi bi-distribute-vertical me-2"></i>Parallel Step Configuration
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+              <!-- Failure Handling Configuration -->
+              <div class="card mb-3">
+                <div class="card-header">
+                  <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Failure Handling</h6>
+                </div>
+                <div class="card-body">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="failFast"
+                           ${this.step.config?.failFast !== false ? 'checked' : ''}>
+                    <label class="form-check-label" for="failFast">
+                      <strong>Fail Fast</strong>
+                    </label>
+                    <small class="text-muted d-block mt-1">
+                      If checked, entire parallel execution fails if any branch fails.
+                      If unchecked, successful branches complete even if others fail.
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Parallel Branches -->
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h6 class="mb-0"><i class="bi bi-diagram-2 me-2"></i>Parallel Branches</h6>
+                  <button type="button" class="btn btn-sm btn-success" id="addBranchBtn">
+                    <i class="bi bi-plus-circle me-1"></i>Add Branch
+                  </button>
+                </div>
+                <div class="card-body p-0" id="branchesContainer">
+                  <!-- Branches will be rendered here -->
+                </div>
+              </div>
+
+              <!-- Execution Flow Diagram -->
+              <div class="card mt-3">
+                <div class="card-header">
+                  <h6 class="mb-0"><i class="bi bi-lightning me-2"></i>Execution Flow</h6>
+                </div>
+                <div class="card-body" id="executionFlowDiagram">
+                  <!-- Flow diagram will be inserted here -->
+                </div>
+              </div>
+
+              <!-- Result Aggregation Configuration -->
+              <div class="card mt-3">
+                <div class="card-header">
+                  <h6 class="mb-0"><i class="bi bi-collection me-2"></i>Result Aggregation</h6>
+                </div>
+                <div class="card-body">
+                  <div class="alert alert-info small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Results from all parallel branches are combined into a single object using the variable names specified for each branch.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="saveParallelBtn">
+                <i class="bi bi-check-circle me-1"></i>Save Configuration
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Setup event listeners
+   */
+  setupEventListeners() {
+    document.getElementById('addBranchBtn')?.addEventListener('click', () => {
+      this.addBranch();
+    });
+
+    document.getElementById('saveParallelBtn')?.addEventListener('click', () => {
+      this.saveConfiguration();
+    });
+
+    this.modal?.addEventListener('hidden.bs.modal', () => {
+      this.modal.remove();
+      window.parallelEditorInstance = null;
+    });
+  }
+
+  /**
+   * Render branches
+   */
+  renderBranches() {
+    const container = document.getElementById('branchesContainer');
+    if (!container) return;
+
+    if (this.branches.length === 0) {
+      container.innerHTML = `
+        <div class="p-3 text-center text-muted">
+          <p class="mb-0">No branches configured yet. Click "Add Branch" to get started.</p>
+        </div>
+      `;
+      this.updateExecutionFlowDiagram();
+      return;
+    }
+
+    let html = '';
+    this.branches.forEach((branch, idx) => {
+      const branchId = `branch_${idx}`;
+      const stepOptions = this.getStepOptions();
+
+      html += `
+        <div class="border-bottom p-3" id="${branchId}">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label"><strong>Branch ${idx + 1}</strong></label>
+              <input type="text" class="form-control form-control-sm"
+                     placeholder="Output variable name (e.g., 'result1', 'apiResponse')"
+                     data-branch="${idx}" data-field="name"
+                     value="${branch.name || ''}" style="font-size: 12px;">
+              <small class="text-muted d-block mt-1">
+                Results from this branch will be stored in this variable
+              </small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><strong>Starting Step</strong></label>
+              <select class="form-select form-select-sm" data-branch="${idx}" data-field="stepId" style="font-size: 12px;">
+                <option value="">Select a step...</option>
+                ${stepOptions}
+              </select>
+              <small class="text-muted d-block mt-1">
+                The first step to execute in this branch
+              </small>
+            </div>
+          </div>
+
+          <div class="mt-2 d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-branch" data-branch="${idx}">
+              <i class="bi bi-trash me-1"></i>Remove
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+
+    // Setup event listeners for branch inputs
+    document.querySelectorAll('[data-branch]').forEach(el => {
+      el.addEventListener('change', (e) => this.updateBranchData(e));
+      el.addEventListener('input', (e) => this.updateBranchData(e));
+    });
+
+    // Setup remove buttons
+    document.querySelectorAll('.remove-branch').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const branchIdx = parseInt(e.currentTarget.dataset.branch);
+        this.removeBranch(branchIdx);
+      });
+    });
+
+    // Set selected values
+    this.branches.forEach((branch, idx) => {
+      const select = document.querySelector(`[data-branch="${idx}"][data-field="stepId"]`);
+      if (select && branch.stepId) {
+        select.value = branch.stepId;
+      }
+    });
+
+    this.updateExecutionFlowDiagram();
+  }
+
+  /**
+   * Get step options
+   */
+  getStepOptions() {
+    return this.currentWorkflow.steps
+      .map((s, idx) => {
+        // Can't select the parallel step itself
+        if (idx === this.stepIndex) return '';
+        return `<option value="${s.id}">${idx + 1}. ${s.name}</option>`;
+      })
+      .filter(opt => opt !== '')
+      .join('');
+  }
+
+  /**
+   * Update branch data
+   */
+  updateBranchData(event) {
+    const branchIdx = parseInt(event.target.dataset.branch);
+    const field = event.target.dataset.field;
+    const value = event.target.value;
+
+    if (this.branches[branchIdx]) {
+      if (field === 'name') {
+        this.branches[branchIdx].name = value;
+      } else if (field === 'stepId') {
+        this.branches[branchIdx].stepId = value;
+      }
+    }
+
+    this.updateExecutionFlowDiagram();
+  }
+
+  /**
+   * Add a new branch
+   */
+  addBranch() {
+    this.branches.push({
+      name: `branch_${this.branches.length + 1}`,
+      stepId: ''
+    });
+    this.renderBranches();
+  }
+
+  /**
+   * Remove a branch
+   */
+  removeBranch(branchIdx) {
+    this.branches.splice(branchIdx, 1);
+    this.renderBranches();
+  }
+
+  /**
+   * Update execution flow diagram
+   */
+  updateExecutionFlowDiagram() {
+    const diagram = document.getElementById('executionFlowDiagram');
+    if (!diagram) return;
+
+    if (this.branches.length === 0) {
+      diagram.innerHTML = `
+        <div class="text-center text-muted p-3">
+          <p>No branches configured. Diagram will appear once you add branches.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const branchDiagrams = this.branches.map((branch, idx) => {
+      const step = this.currentWorkflow.steps.find(s => s.id === branch.stepId);
+      const stepLabel = step ? `${step.name}` : `(empty)`;
+
+      return `
+        <div style="flex: 1; text-align: center; min-width: 150px;">
+          <div style="border: 1px solid var(--accent); border-radius: 4px; padding: 10px; background-color: var(--accent-tint);">
+            <div style="font-weight: bold; color: var(--accent); margin-bottom: 5px;">Branch ${idx + 1}</div>
+            <div style="font-size: 11px; color: #666; margin-bottom: 5px;">${branch.name || 'unnamed'}</div>
+            <div style="font-size: 12px;">→ ${stepLabel}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    diagram.innerHTML = `
+      <div style="margin-bottom: 15px;">
+        <small class="text-muted">Step ${this.stepIndex + 1}: ${this.step.name}</small>
+      </div>
+      <div style="text-align: center; margin-bottom: 15px;">
+        <div style="display: inline-block;">↓</div>
+      </div>
+      <div style="text-align: center; margin-bottom: 10px; font-weight: bold;">Execute in Parallel</div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+        ${branchDiagrams}
+      </div>
+      <div style="text-align: center; margin-top: 15px;">
+        <div style="display: inline-block;">↓</div>
+      </div>
+      <div style="text-align: center; padding: 10px; background-color: #f0f0f0; border-radius: 4px; margin-top: 10px;">
+        <small><strong>Aggregate Results</strong></small>
+        <div style="font-size: 11px; margin-top: 5px; color: #666;">
+          ${this.branches.map(b => `<code>${b.name}</code>`).join(', ')}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Save configuration
+   */
+  saveConfiguration() {
+    if (this.branches.length === 0) {
+      alert('Please add at least one branch to the parallel step.');
+      return;
+    }
+
+    // Validate all branches have names
+    for (const branch of this.branches) {
+      if (!branch.name) {
+        alert('Please provide output variable names for all branches.');
+        return;
+      }
+      if (!branch.stepId) {
+        alert('Please select a step for all branches.');
+        return;
+      }
+    }
+
+    // Validate unique names
+    const names = this.branches.map(b => b.name);
+    if (new Set(names).size !== names.length) {
+      alert('Branch output variable names must be unique.');
+      return;
+    }
+
+    // Update step configuration
+    const failFast = document.getElementById('failFast')?.checked ?? true;
+    this.step.config.steps = this.branches;
+    this.step.config.failFast = failFast;
+
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(this.modal);
+    modal?.hide();
+
+    // Show toast notification
+    if (window.ui?.showToast) {
+      window.ui.showToast({
+        message: 'Parallel step configuration saved successfully!',
+        type: 'success',
+        duration: 2000
+      });
+    }
+  }
+}
+
+/**
+ * Show parallel editor modal
+ * @param {number} stepIndex - Index of the step
+ * @param {Object} step - Step configuration
+ * @param {Object} currentWorkflow - Current workflow object
+ */
+function showParallelEditor(stepIndex, step, currentWorkflow) {
+  // Close existing instance
+  const existingModal = document.getElementById('parallelEditorModal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  // Create and initialize editor
+  const editor = new ParallelEditor(stepIndex, step, currentWorkflow);
+  editor.init();
+
+  // Store instance globally
+  window.parallelEditorInstance = editor;
+
+  // Show modal
+  const modal = new bootstrap.Modal(document.getElementById('parallelEditorModal'));
+  modal.show();
+}

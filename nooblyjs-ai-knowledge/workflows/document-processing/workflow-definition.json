@@ -1,0 +1,31 @@
+[
+  {
+    "name": "Design: Convert File",
+    "description": "Receives a single document file (DOCX, PDF, PPTX, XLSX) and converts it to a markdown equivalent. Used by the wiki drag-and-drop ingest.",
+    "steps": [
+      "steps/convert-document.js"
+    ],
+    "tags": [
+      "Documents"
+    ],
+    "defaultInput": {},
+    "createdAt": "2026-05-31T00:00:00.000Z",
+    "updatedAt": "2026-05-31T00:00:00.000Z",
+    "starred": false
+  },
+  {
+    "name": "Design: Process File",
+    "description": "Receives a single document file, converts it to markdown, then cleans it (strips cover pages, metadata, sign-off sections and headers/footers).",
+    "steps": [
+      "steps/convert-document.js",
+      "steps/clean-document.js"
+    ],
+    "tags": [
+      "Documents"
+    ],
+    "defaultInput": {},
+    "createdAt": "2026-03-18T00:00:00.000Z",
+    "updatedAt": "2026-05-31T00:00:00.000Z",
+    "starred": false
+  }
+]

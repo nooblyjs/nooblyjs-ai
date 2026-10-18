@@ -1,0 +1,63 @@
+[
+  {
+    "name": "Dashboards: Rebuild All Dashboards",
+    "description": "Walk the content repository for every business-solution home page, then build the Executive, HOD and Solution Architect dashboards under the .dashboards folder.",
+    "steps": [
+      "steps/dashboardDataStep.js",
+      "steps/dashboardContentStep.js"
+    ],
+    "tags": [
+      "Dashboards"
+    ],
+    "defaultInput": {
+      "contentfolders": [
+        "../knowledge-content/enterprise/Solution Design",
+        "../knowledge-content/fintech/Solution Design",
+        "../knowledge-content/people/Solution Design"
+      ]
+    },
+    "createdAt": "2026-06-08T00:00:00.000Z",
+    "updatedAt": "2026-06-08T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Dashboards: Extract Business Solution Data",
+    "description": "Walk the content repository and extract the business-solution records (owner roles, lifecycle status) into the dashboards cache.",
+    "steps": [
+      "steps/dashboardDataStep.js"
+    ],
+    "tags": [
+      "Dashboards"
+    ],
+    "defaultInput": {
+      "contentfolders": [
+        "../knowledge-content/enterprise/Solution Design",
+        "../knowledge-content/fintech/Solution Design",
+        "../knowledge-content/people/Solution Design"
+      ]
+    },
+    "createdAt": "2026-06-08T00:00:00.000Z",
+    "updatedAt": "2026-06-08T00:00:00.000Z",
+    "starred": false
+  },
+  {
+    "name": "Dashboards: Build Dashboards from Cache",
+    "description": "Build the Executive, HOD and Solution Architect dashboard files from the cached records (re-walks the content folder if no cache is present).",
+    "steps": [
+      "steps/dashboardContentStep.js"
+    ],
+    "tags": [
+      "Dashboards"
+    ],
+    "defaultInput": {
+      "contentfolders": [
+        "../knowledge-content/enterprise/Solution Design",
+        "../knowledge-content/fintech/Solution Design",
+        "../knowledge-content/people/Solution Design"
+      ]
+    },
+    "createdAt": "2026-06-08T00:00:00.000Z",
+    "updatedAt": "2026-06-08T00:00:00.000Z",
+    "starred": false
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "name": "Sample wiki export",
+  "description": "A small export of the Enterprise Knowledge Repository for the PRD-031 story. Sample data.",
+  "spaces": {
+    "Enterprise Space": {
+      "description": "Group architecture, the enterprise process model, standards, infrastructure"
+    },
+    "Acme Space": {
+      "description": "Digital products, engineering decisions, specs and runbooks"
+    }
+  }
+}

@@ -1,0 +1,311 @@
+/**
+ * @fileoverview Tab Bar Styling
+ * Styles for the multiple tabs feature using Bootstrap tabs
+ *
+ *@author Digital Techonolgies Team
+ * @version 2.0.0
+ * @since 2025-10-31
+ */
+
+/* Tab Bar Container */
+.tab-bar {
+    background-color: #fff;
+    padding: 0;
+    border-bottom: 1px solid #dee2e6;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
+    min-height: 44px;
+}
+
+.tab-bar.hidden {
+    display: none;
+}
+
+/* Override Bootstrap nav-tabs styling */
+.tab-bar .nav-tabs {
+    border-bottom: none;
+    padding: 0;
+    margin: 0;
+    gap: 0;
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.tab-bar .nav-item {
+    margin: 0;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.tab-bar .nav-tabs .nav-link {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+    color: #495057;
+    padding: 0.5rem 1rem;
+    margin-right: 2px;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    top: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.tab-bar .nav-tabs .nav-link:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.tab-bar .nav-tabs .nav-link.active {
+    background-color: #fff;
+    border-color: #dee2e6;
+    border-bottom-color: #fff;
+    color: #12284b;
+    font-weight: 500;
+}
+
+/* Tab icon */
+.tab-icon {
+    color: #6c757d;
+    flex-shrink: 0;
+}
+
+.tab-bar .nav-tabs .nav-link.active .tab-icon {
+    color: #12284b;
+}
+
+/* Tab title */
+.tab-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 250px;
+    min-width: 50px;
+    flex-shrink: 0;
+}
+
+/* Unsaved indicator (dot) */
+.tab-unsaved-indicator {
+    display: none;
+    width: 8px;
+    height: 8px;
+    background-color: #fd7e14;
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+}
+
+.tab-bar .nav-tabs .nav-link.unsaved .tab-unsaved-indicator {
+    display: inline-block;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Close button */
+.tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+
+.tab-close:hover {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+.tab-bar .nav-tabs .nav-link.active .tab-close:hover {
+    background-color: #dee2e6;
+}
+
+.tab-close:active {
+    background-color: #dee2e6;
+}
+
+/* Tab close icon */
+.tab-close-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* Tab preview tooltip */
+.tab-preview-tooltip {
+    position: fixed;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    max-width: 400px;
+    padding: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.tab-preview-tooltip.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.tab-preview-tooltip img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.tab-preview-tooltip pre {
+    background-color: #f8f9fa;
+    padding: 8px;
+    border-radius: 3px;
+    margin: 0;
+    border: 1px solid #dee2e6;
+}
+
+.tab-preview-tooltip .markdown-preview {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.file-preview-loading {
+    padding: 12px;
+    text-align: center;
+    color: #6c757d;
+}
+
+/* Context menu for tabs */
+.tab-context-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.tab-context-menu-item {
+    display: block;
+    padding: 8px 12px;
+    color: #495057;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 13px;
+    transition: background-color 0.15s ease;
+}
+
+.tab-context-menu-item:hover {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+.tab-context-menu-item.danger {
+    color: #dc3545;
+}
+
+.tab-context-menu-item.danger:hover {
+    background-color: #f8d7da;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tab-bar .nav-tabs .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 12px;
+    }
+
+    .tab-title {
+        max-width: 120px;
+    }
+
+    .tab-close {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .tab-bar {
+        background-color: #fff;
+        border-bottom-color: #dee2e6;
+    }
+
+    .tab-bar .nav-tabs .nav-link {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #495057;
+    }
+
+    .tab-bar .nav-tabs .nav-link:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+    }
+
+    .tab-bar .nav-tabs .nav-link.active {
+        background-color: #fff;
+        border-color: #dee2e6;
+        color: #12284b;
+    }
+
+    .tab-icon {
+        color: #6c757d;
+    }
+
+    .tab-bar .nav-tabs .nav-link.active .tab-icon {
+        color: #12284b;
+    }
+}
+
+/* Animation for tab open/close */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.nav-item.tab-enter {
+    animation: slideIn 0.2s ease;
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+}
+
+.nav-item.tab-exit {
+    animation: slideOut 0.2s ease;
+}

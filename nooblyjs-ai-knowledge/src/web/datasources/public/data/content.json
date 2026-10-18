@@ -1,0 +1,489 @@
+{
+  "index": {
+    "meta": {
+      "title": "noobly Wiki Datasources Manager",
+      "description": "Workflow-driven data transformation platform that automates the creation of searchable markdown documentation from diverse data sources"
+    },
+    "hero": {
+      "title": "noobly Wiki Datasources Manager",
+      "subtitle": "Automate documentation creation with workflow-driven data transformation. Transform raw data into structured, searchable knowledge base documentation with minimal manual intervention.",
+      "image": {
+        "src": "images/noobly-logo-colour.png",
+        "alt": "noobly Wiki Datasources Manager"
+      },
+      "buttons": [
+        {
+          "text": "Launch Application",
+          "href": "/applications/datasources",
+          "type": "secondary"
+        },
+        {
+          "text": "View Documentation",
+          "href": "#documentation-section",
+          "type": "outline"
+        }
+      ]
+    },
+    "sections": [
+      {
+        "heading": "Why Choose noobly Wiki Datasources Manager",
+        "subheading": "Powerful features that make documentation automation faster and easier",
+        "type": "card",
+        "columns": 3,
+        "data": [
+          {
+            "icon": "<i class=\"bi bi-arrow-repeat\"></i>",
+            "title": "Visual Workflow Editor",
+            "details": "Create and edit data transformation workflows using an intuitive visual interface with multiple step types including Transform, API, Conditional, and Parallel execution"
+          },
+          {
+            "icon": "<i class=\"bi bi-clock-fill\"></i>",
+            "title": "Automated Scheduling",
+            "details": "Schedule workflows to run automatically with cron expressions or intervals, ensuring documentation stays synchronized with source data"
+          },
+          {
+            "icon": "<i class=\"bi bi-diagram-3\"></i>",
+            "title": "Multi-Stage Pipeline",
+            "details": "Process data through intermediary stages: source extraction → JSON transformation → markdown generation → organized folder structures"
+          },
+          {
+            "icon": "<i class=\"bi bi-graph-up\"></i>",
+            "title": "Execution Monitoring",
+            "details": "Real-time workflow execution tracking with comprehensive history, performance metrics, and step-by-step progress visualization"
+          },
+          {
+            "icon": "<i class=\"bi bi-pencil-fill\"></i>",
+            "title": "Content Review",
+            "details": "Review and validate both intermediate JSON data files and final markdown output before publication to ensure quality and accuracy"
+          },
+          {
+            "icon": "<i class=\"bi bi-folder-fill\"></i>",
+            "title": "Organized Output",
+            "details": "Automatically generate searchable markdown files organized in folder structures ready for wiki integration and knowledge base presentation"
+          }
+        ]
+      },
+      {
+        "heading": "Key Statistics",
+        "subheading": "",
+        "type": "stats",
+        "columns": 4,
+        "data": [
+          {
+            "number": "6",
+            "label": "Workflow Step Types"
+          },
+          {
+            "number": "80%",
+            "label": "Automation Target"
+          },
+          {
+            "number": "99.5%",
+            "label": "Uptime SLA"
+          },
+          {
+            "number": "24/7",
+            "label": "Automated Execution"
+          }
+        ]
+      },
+      {
+        "heading": "Key Capabilities",
+        "subheading": "Comprehensive workflow-driven platform for automated documentation generation and data transformation",
+        "type": "card",
+        "columns": 3,
+        "data": [
+          {
+            "badge": "<i class=\"bi bi-arrow-repeat\"></i> Core",
+            "badgeType": "primary",
+            "title": "Workflow Management",
+            "href": "/applications/datasources",
+            "description": "Create, edit, and organize workflows with visual editor. Support for Transform, API, Conditional, Parallel, Delay, and Identity steps."
+          },
+          {
+            "badge": "<i class=\"bi bi-lightning-fill\"></i> Automation",
+            "badgeType": "secondary",
+            "title": "Scheduled Execution",
+            "href": "/applications/datasources",
+            "description": "Automatic workflow execution with cron expressions or intervals. Keep documentation synchronized without manual intervention."
+          },
+          {
+            "badge": "<i class=\"bi bi-graph-up\"></i> Monitoring",
+            "badgeType": "secondary",
+            "title": "Execution Dashboard",
+            "href": "/applications/datasources",
+            "description": "Real-time execution monitoring with comprehensive history, performance metrics, and step-by-step progress tracking."
+          },
+          {
+            "badge": "<i class=\"bi bi-hourglass-split\"></i> Pipeline",
+            "badgeType": "primary",
+            "title": "Multi-Stage Processing",
+            "href": "/applications/datasources",
+            "description": "Transform data through multiple stages: source extraction → intermediate JSON → final markdown → folder organization."
+          },
+          {
+            "badge": "<i class=\"bi bi-pencil-fill\"></i> Review",
+            "badgeType": "secondary",
+            "title": "Content Validation",
+            "href": "/applications/datasources",
+            "description": "Review intermediate JSON data files and final markdown output. Preview, compare, and validate before publication."
+          },
+          {
+            "badge": "<i class=\"bi bi-link-45deg\"></i> Integration",
+            "badgeType": "primary",
+            "title": "Wiki Integration",
+            "href": "/applications/datasources",
+            "description": "Seamless integration with wiki systems. Organized folder structures with searchable markdown ready for publication."
+          }
+        ]
+      }
+    ],
+    "testimonial": {
+      "text": "The noobly Wiki Datasources Manager has transformed how we maintain our technical documentation. What used to take hours of manual work now happens automatically through workflows. We've reduced documentation update time by 75% and our docs are always in sync with our systems.",
+      "author": "— Content Manager, Engineering Team"
+    },
+    "footer": {
+      "about": {
+        "title": "About noobly Wiki Datasources Manager",
+        "description": "A workflow-driven data transformation platform that automates the creation of searchable markdown documentation from diverse data sources. Built for teams that need to keep documentation synchronized with rapidly changing systems.",
+        "techStack": ["Node.js", "Express", "Workflow Engine", "Real-time Updates", "Socket.IO", "Multi-stage Pipeline", "JSON Processing", "Markdown Generation"]
+      },
+      "quickLinks": [
+        { "text": "Home", "href": "index.html" },
+        { "text": "Launch Application", "href": "/applications/datasources" }
+      ],
+      "resources": [
+        { "text": "Getting Started", "href": "#documentation-section" },
+        { "text": "Product Requirements", "href": "/docs/PRD.md" },
+        { "text": "Workflow Documentation", "href": "/docs/WORKFLOW_FEATURE.md" }
+      ],
+      "newsletter": {
+        "title": "Stay Updated",
+        "description": "Get notified about new features and workflow templates.",
+        "placeholder": "Enter your email"
+      },
+      "copyright": "© 2025 noobly. All rights reserved.",
+      "legalLinks": [
+        { "text": "Privacy Policy", "href": "#" },
+        { "text": "Terms of Service", "href": "#" },
+        { "text": "ISC License", "href": "#" }
+      ]
+    }
+  },
+  "documentation": {
+    "meta": {
+      "title": "Documentation - noobly Wiki",
+      "description": "Comprehensive documentation and guides for getting started with noobly framework and all its services."
+    },
+    "hero": {
+      "badge": "📚 Documentation",
+      "title": "Documentation",
+      "description": "Comprehensive documentation and guides for getting started with noobly framework and all its services.",
+      "buttons": [
+        {
+          "text": "Quick Start",
+          "href": "#quick-start",
+          "type": "secondary"
+        },
+        {
+          "text": "API Reference",
+          "href": "#api-reference",
+          "type": "outline"
+        }
+      ]
+    },
+    "quickStart": {
+      "title": "Quick Start Guide",
+      "description": "Get up and running with noobly Core in minutes",
+      "steps": [
+        {
+          "title": "1. Installation",
+          "description": "Install noobly Core using npm:",
+          "code": "npm install digital-technologies-core"
+        },
+        {
+          "title": "2. Initialize & Get Services",
+          "description": "Create your Express app and initialize the service registry:",
+          "code": "const express = require('express');\nconst serviceRegistry = require('digital-technologies-core');\n\nconst app = express();\napp.use(express.json());\n\n// Initialize registry FIRST\nserviceRegistry.initialize(app);\n\n// Get services\nconst cache = serviceRegistry.cache('memory');\nconst logger = serviceRegistry.logger('file');"
+        },
+        {
+          "title": "3. Use Services in Routes",
+          "description": "Start using services in your application logic:",
+          "code": "app.get('/api/user/:id', async (req, res) => {\n  const cacheKey = `user:${req.params.id}`;\n  let user = await cache.get(cacheKey);\n  \n  if (!user) {\n    user = await db.getUser(req.params.id);\n    await cache.set(cacheKey, user, 3600);\n  }\n  \n  logger.info(`User retrieved: ${req.params.id}`);\n  res.json(user);\n});\n\napp.listen(3000);"
+        }
+      ]
+    },
+    "services": {
+      "title": "Available Services",
+      "description": "Explore our comprehensive service ecosystem",
+      "items": [
+        {
+          "badge": "<i class=\"bi bi-lightning-fill\"></i> Performance",
+          "badgeType": "default",
+          "title": "Caching Service",
+          "href": "/services",
+          "description": "High-performance distributed caching with Redis, Memcached, and in-memory providers.",
+          "code": "const cache = serviceRegistry.cache('memory');\nawait cache.set('key', 'value');\nconst value = await cache.get('key');"
+        },
+        {
+          "badge": "<i class=\"bi bi-database\"></i> Storage",
+          "badgeType": "secondary",
+          "title": "Data Service",
+          "href": "data.html",
+          "description": "Persistent data storage with MongoDB, SimpleDB, and file-based providers.",
+          "code": "const dataService = serviceRegistry.dataService('file');\nawait dataService.store('user:1', userData);\nconst user = await dataService.retrieve('user:1');"
+        },
+        {
+          "badge": "📝 Monitoring",
+          "badgeType": "outline",
+          "title": "Logging Service",
+          "href": "logging.html",
+          "description": "Multi-level structured logging with console and file outputs.",
+          "code": "const logger = serviceRegistry.logger('file');\nlogger.info('Application started');\nlogger.error('An error occurred', error);"
+        },
+        {
+          "badge": "📊 Analytics",
+          "badgeType": "default",
+          "title": "Measuring Service",
+          "href": "measuring.html",
+          "description": "Real-time metrics collection and time-series analysis.",
+          "code": "const metrics = serviceRegistry.measuring('memory');\nmetrics.increment('api_calls');\nconst count = await metrics.aggregate('api_calls', 'sum');"
+        },
+        {
+          "badge": "<i class='bi bi-bell-fill'></i> Messaging",
+          "badgeType": "secondary",
+          "title": "Notifying Service",
+          "href": "notifying.html",
+          "description": "Pub/sub messaging system with topic-based communication.",
+          "code": "const notify = serviceRegistry.notifying('memory');\nnotify.subscribe('channel', (message) => console.log(message));\nnotify.publish('channel', { event: 'user_created' });"
+        },
+        {
+          "badge": "<i class=\"bi bi-hourglass-split\"></i> Processing",
+          "badgeType": "outline",
+          "title": "Queueing Service",
+          "href": "queueing.html",
+          "description": "FIFO task queueing for background job processing.",
+          "code": "const queue = serviceRegistry.queue('memory');\nqueue.add('email_task', { to: 'user@example.com' });\nconst task = await queue.process();"
+        },
+        {
+          "badge": "<i class=\"bi bi-globe\"></i> Network",
+          "badgeType": "default",
+          "title": "Fetching Service",
+          "href": "fetching.html",
+          "description": "HTTP fetching with caching, deduplication, and analytics. Supports Node.js native fetch and Axios providers.",
+          "code": "const fetching = serviceRegistry.fetching('node');\nconst response = await fetching.fetch('https://api.example.com/data');\nconst analytics = fetching.getAnalytics();"
+        },
+        {
+          "badge": "<i class=\"bi bi-diagram-3\"></i> Structure",
+          "badgeType": "secondary",
+          "title": "App Service",
+          "href": "appservice.html",
+          "description": "Application scaffolding with auto-loading of views, routes, services, and data structures.",
+          "code": "const appService = serviceRegistry.appservice('basic', options);\n// Auto-loads from src/views/, src/routes/, src/services/, src/data/"
+        }
+      ]
+    },
+    "apiReference": {
+      "title": "API Reference",
+      "description": "Complete API documentation for all 15 services and core framework",
+      "coreFramework": {
+        "title": "Service Registry Core Methods",
+        "code": "const serviceRegistry = require('digital-technologies-core');\n\n// Initialize the service registry (REQUIRED - must be first)\nserviceRegistry.initialize(app, eventEmitter, options);\n\n// Get service instances by method name\nconst cache = serviceRegistry.cache(provider, options);\nconst logger = serviceRegistry.logger(provider, options);\nconst dataService = serviceRegistry.dataService(provider, options);\nconst auth = serviceRegistry.authservice(provider, options);\nconst queue = serviceRegistry.queue(provider, options);\nconst notify = serviceRegistry.notifying(provider, options);\n\n// All services auto-register Express routes at /services/{service}/api/*\n// Access service management UI at /services/ (requires authentication)"
+      },
+      "sections": [
+        {
+          "title": "Configuration",
+          "description": "Service configuration options and examples.",
+          "href": "#"
+        },
+        {
+          "title": "Examples",
+          "description": "Real-world usage examples and tutorials.",
+          "href": "#"
+        },
+        {
+          "title": "Best Practices",
+          "description": "Recommended patterns and best practices.",
+          "href": "#"
+        }
+      ]
+    },
+    "footer": {
+      "about": {
+        "title": "Documentation",
+        "description": "Comprehensive guides and API reference for building applications with noobly framework."
+      },
+      "quickLinks": [
+        { "text": "Home", "href": "index.html" },
+        { "text": "Backend", "href": "/services" }
+      ],
+      "resources": [
+        { "text": "Quick Start", "href": "#quick-start" },
+        { "text": "API Reference", "href": "#api-reference" },
+        { "text": "Examples", "href": "#" },
+        { "text": "Best Practices", "href": "#" }
+      ]
+    }
+  },
+  "contact": {
+    "meta": {
+      "title": "Contact - noobly Core",
+      "description": "Have questions about noobly Core? Need integration help or want to contribute? We'd love to hear from you."
+    },
+    "hero": {
+      "badge": "💬 Contact",
+      "title": "Get in Touch",
+      "description": "Have questions about noobly Core? Need integration help or want to contribute? We'd love to hear from you."
+    },
+    "contactMethods": [
+      {
+        "icon": "<i class=\"bi bi-envelope-fill\"></i>",
+        "title": "Email Support",
+        "description": "Get help with technical questions and support issues",
+        "button": {
+          "text": "support@example.com",
+          "href": "mailto:support@example.com",
+          "type": "outline"
+        }
+      },
+      {
+        "icon": "<i class=\"bi bi-bitbucket\"></i>",
+        "title": "BitBucket",
+        "description": "Report bugs, request features, or contribute to the project",
+        "button": {
+          "text": "View Repository",
+          "href": "https://github.com/noobly/nooblyjs-core",
+          "type": "outline"
+        }
+      },
+      {
+        "icon": "<i class=\"bi bi-discord\"></i>",
+        "title": "Community",
+        "description": "Join our Discord server for real-time discussions",
+        "button": {
+          "text": "Join Discord",
+          "href": "#",
+          "type": "outline"
+        }
+      }
+    ],
+    "contactForm": {
+      "title": "Send us a Message",
+      "description": "We'll get back to you as soon as possible",
+      "fields": [
+        {
+          "id": "contactName",
+          "type": "text",
+          "label": "Name",
+          "placeholder": "Your full name",
+          "required": true
+        },
+        {
+          "id": "contactEmail",
+          "type": "email",
+          "label": "Email",
+          "placeholder": "your.email@example.com",
+          "required": true
+        },
+        {
+          "id": "contactSubject",
+          "type": "select",
+          "label": "Subject",
+          "required": true,
+          "options": [
+            { "value": "", "text": "Select a topic" },
+            { "value": "general", "text": "General Question" },
+            { "value": "technical", "text": "Technical Support" },
+            { "value": "feature", "text": "Feature Request" },
+            { "value": "bug", "text": "Bug Report" },
+            { "value": "business", "text": "Business Inquiry" }
+          ]
+        },
+        {
+          "id": "contactMessage",
+          "type": "textarea",
+          "label": "Message",
+          "placeholder": "Tell us how we can help you...",
+          "required": true,
+          "rows": 6
+        }
+      ],
+      "submitText": "Send Message"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "Common questions about noobly Core",
+      "items": [
+        {
+          "question": "What is noobly Core?",
+          "answer": "noobly Core is an enterprise-grade Node.js backend framework providing 13+ integrated modular services with automatic dependency injection, singleton pattern implementation, and pluggable providers for every architectural layer."
+        },
+        {
+          "question": "How many services does noobly Core provide?",
+          "answer": "noobly Core provides 13 core services: Logging, Caching, Filing, Queueing, Data Service, Working, Measuring, Scheduling, Searching, Workflow, Notifying, Authentication, and AI services. Each service supports multiple provider implementations."
+        },
+        {
+          "question": "Is noobly Core free to use?",
+          "answer": "Yes, noobly Core is open-source and free to use for both personal and commercial projects. Check our license for more details."
+        },
+        {
+          "question": "Can I use only specific services?",
+          "answer": "Absolutely! noobly Core is fully modular. You can initialize only the services you need. The dependency injection system handles all inter-service dependencies automatically."
+        },
+        {
+          "question": "What providers are available?",
+          "answer": "Each service supports multiple providers: Caching (Redis, Memcached, in-memory), Data Storage (MongoDB, SimpleDB, file-based), Filing (S3, FTP, GCP), and more. Mix and match based on your infrastructure."
+        }
+      ]
+    },
+    "footer": {
+      "contactInfo": {
+        "title": "Contact Information",
+        "description": "Get in touch with our team for support, questions, or business inquiries.",
+        "details": {
+          "email": "support@example.com",
+          "business": "business@example.com",
+          "responseTime": "Within 24 hours"
+        }
+      },
+      "quickLinks": [
+        { "text": "Home", "href": "index.html" },
+        { "text": "Backend", "href": "/services" }
+      ],
+      "community": [
+        { "text": "Bitbucket", "href": "https://github.com/noobly/nooblyjs-core" },
+        { "text": "Discord", "href": "#" },
+        { "text": "Twitter", "href": "#" },
+        { "text": "Blog", "href": "#" }
+      ]
+    }
+  },
+  "common": {
+    "navigation": {
+      "logo": {
+        "icon": "📊",
+        "text": "Datasources Manager"
+      },
+      "links": [
+        { "text": "Application", "href": "/applications/datasources" },
+        { "text": "Home", "href": "index.html" }      ]
+    },
+    "mobileMenu": {
+      "links": [
+        { "text": "Application", "href": "/applications/datasources" },
+        { "text": "Home", "href": "index.html" } ]
+    },
+    "footer": {
+      "logo": {
+        "icon": "📊",
+        "text": "noobly Wiki Datasources Manager"
+      },
+      "copyright": "© 2025 noobly. All rights reserved.",
+      "legalLinks": [
+        { "text": "Privacy Policy", "href": "#" },
+        { "text": "Terms of Service", "href": "#" },
+        { "text": "ISC License", "href": "#" }
+      ]
+    }
+  }
+}

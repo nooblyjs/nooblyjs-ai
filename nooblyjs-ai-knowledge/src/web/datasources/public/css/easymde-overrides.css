@@ -1,0 +1,173 @@
+/**
+ * @fileoverview EasyMDE Editor Styling Overrides
+ * Fixes styling conflicts with Bootstrap and ensures icons are visible
+ *
+ *@author Digital Techonolgies Team
+ * @version 1.0.0
+ * @since 2025-11-01
+ */
+
+/* EasyMDE Editor Container */
+.CodeMirror {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Toolbar Styling */
+.editor-toolbar {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 8px 12px;
+}
+
+/* Toolbar Buttons */
+.editor-toolbar button,
+.editor-toolbar a {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    color: #495057 !important;
+    padding: 6px 8px;
+    margin: 2px 2px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.editor-toolbar button:hover,
+.editor-toolbar a:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    color: #212529 !important;
+}
+
+.editor-toolbar button:active,
+.editor-toolbar a:active {
+    background-color: #dee2e6;
+}
+
+/* Active toolbar button */
+.editor-toolbar button.active,
+.editor-toolbar a.active {
+    background-color: #12284b;
+    border-color: #12284b;
+    color: #fff !important;
+}
+
+/* Toolbar separators */
+.editor-toolbar i.separator {
+    background-color: #dee2e6;
+    color: #dee2e6;
+    border: none;
+}
+
+/* Ensure icons are visible */
+.editor-toolbar i {
+    color: inherit;
+    font-style: normal;
+}
+
+/* Fix text input fields in toolbar */
+.editor-toolbar input[type="text"] {
+    padding: 6px 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin: 2px 2px;
+    font-size: 14px;
+}
+
+/* Preview pane */
+.editor-preview,
+.editor-preview-side {
+    background-color: #fff;
+    color: #495057;
+}
+
+/* Markdown content styling in preview */
+.editor-preview h1,
+.editor-preview h2,
+.editor-preview h3,
+.editor-preview h4,
+.editor-preview h5,
+.editor-preview h6 {
+    color: #212529;
+    margin: 16px 0 8px 0;
+}
+
+.editor-preview p {
+    margin: 0 0 12px 0;
+}
+
+.editor-preview code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #e83e8c;
+}
+
+.editor-preview pre {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 12px;
+    overflow-x: auto;
+}
+
+.editor-preview blockquote {
+    border-left: 4px solid #dee2e6;
+    padding-left: 12px;
+    margin-left: 0;
+    color: #6c757d;
+}
+
+/* Editor side-by-side mode */
+.CodeMirror-fullscreen {
+    z-index: 9999;
+}
+
+.editor-preview-side {
+    border-left: 1px solid #dee2e6;
+}
+
+/* Fullscreen mode */
+.editor-toolbar.fullscreen,
+.CodeMirror-fullscreen {
+    z-index: 999;
+}
+
+/* Make sure toolbar is not white text */
+.editor-toolbar {
+    color: #495057;
+}
+
+/* Override any conflicting Bootstrap styles */
+.CodeMirror button,
+.editor-toolbar button {
+    font-size: 14px;
+    line-height: 1;
+    padding: 6px 8px !important;
+}
+
+/* Status bar styling */
+.editor-statusbar {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    color: #6c757d;
+}
+
+/* Fix Icon Display */
+.editor-toolbar button i::before,
+.editor-toolbar a i::before {
+    color: #495057;
+}
+
+.editor-toolbar button:hover i::before,
+.editor-toolbar a:hover i::before {
+    color: #212529;
+}
+
+.editor-toolbar button.active i::before,
+.editor-toolbar a.active i::before {
+    color: #fff;
+}

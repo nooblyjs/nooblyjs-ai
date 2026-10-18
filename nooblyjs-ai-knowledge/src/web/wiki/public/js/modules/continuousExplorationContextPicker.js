@@ -1,0 +1,525 @@
+/**
+ * Continuous Exploration Context Picker — the "which wiki content grounds this
+ * exploration" control, shared by the wizard's step 3 and the standalone
+ * context editor modal.
+ *
+ * Three surfaces over ONE ordered list:
+ *
+ *   1. A search box, scoped to a SINGLE space — the one the exploration lives
+ *      in. Grounding is read out of that space's content root, so offering the
+ *      other spaces only invited picks that the loader would then have to reach
+ *      across a boundary the space itself draws.
+ *   2. The ordered selection list. Order is not cosmetic: wikiContextLoader
+ *      walks the entries in array order and stops at a 60 KB budget, so what
+ *      sits at the top is what the AI is guaranteed to see.
+ *   3. A collapsible browse tree, for picking a folder by where it sits rather
+ *      than by what it is called.
+ *
+ * Search draws on two sources, because neither covers the space alone:
+ *   - the space's own folder tree (`?depth=4`), which is the ONLY source of
+ *     FOLDERS — there is no server-side folder search, and the nav tree is lazy
+ *     precisely because an exhaustive walk of these content roots costs
+ *     thousands of sequential readdirs. Four levels is what the old picker
+ *     already accepted here: deep enough to pick a grounding folder, bounded.
+ *   - the search index (`/search/suggestions?documents=true` + `/search`),
+ *     which is how a FILE deeper than that walk — or one that matches on its
+ *     CONTENT rather than its name — becomes reachable at all.
+ *
+ * An entry is `{ spaceId, spaceName, folderPath, name, kind }` where `kind` is
+ * 'folder' | 'file' and `folderPath` is space-relative ('' = the whole space).
+ * Entries naming ANOTHER space (written before this picker was space-scoped)
+ * are kept and shown with their space name — search will not offer them again,
+ * but editing context must never silently drop grounding somebody chose.
+ *
+ * @author noobly Team
+ * @version 1.0.0
+ * @since 2026-08-21
+ */
+
+const WIKI_API = '/applications/wiki/api';
+
+const SEARCH_DEBOUNCE_MS = 220;
+const MIN_QUERY_CHARS = 2;
+const MAX_RESULTS = 14;
+const TREE_DEPTH = 4;
+
+/**
+ * Flattened folder trees, keyed by space id, for the life of the page. Both the
+ * wizard step (re-rendered every time the user walks back to it) and the modal
+ * mount fresh pickers, and each one would otherwise pay for the depth-4 walk
+ * again.
+ */
+const flatTreeCache = new Map();
+
+function esc(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+/** Space-relative, POSIX separators, no leading/trailing slash. */
+function normPath(p) {
+    return String(p || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+}
+
+/** Identity of a context entry: a path within a space. */
+export function contextKey(c) {
+    return `${c.spaceId}::${normPath(c && c.folderPath)}`;
+}
+
+/** Fill in the shape the backend stores, tolerating legacy records. */
+function normaliseEntry(entry, space) {
+    const folderPath = normPath(entry.folderPath);
+    const sameSpace = String(entry.spaceId ?? space.id) === String(space.id);
+    return {
+        spaceId: Number(entry.spaceId ?? space.id),
+        spaceName: entry.spaceName || (sameSpace ? space.name : ''),
+        folderPath,
+        name: entry.name || (folderPath ? folderPath.split('/').pop() : (entry.spaceName || space.name)),
+        // Legacy records predate `kind` and were all folders; a path with a file
+        // extension is the one safe re-reading of that.
+        kind: entry.kind === 'file' ? 'file' : (!entry.kind && /\.[a-z0-9]{1,8}$/i.test(folderPath) ? 'file' : 'folder')
+    };
+}
+
+async function getJson(url) {
+    try {
+        const res = await fetch(url, { credentials: 'include' });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (err) {
+        console.warn('[continuous-exploration] context picker request failed:', url, err);
+        return null;
+    }
+}
+
+/**
+ * Flatten a lean folder tree into searchable rows.
+ *
+ * `leanTree` on the server strips `path` (it is implied by the nesting), so
+ * paths are rebuilt from names on the way down — the same thing the old
+ * collectFolders() did. Dot-folders never appear in the tree, but a defensive
+ * skip keeps `.system` artefacts out if that ever changes.
+ */
+function flattenTree(nodes, parentPath, depth, out) {
+    if (!Array.isArray(nodes)) return out;
+    for (const node of nodes) {
+        const name = node.name || node.title || '';
+        if (!name || name.startsWith('.')) continue;
+        const path = parentPath ? `${parentPath}/${name}` : name;
+        const isFolder = node.type === 'folder' || node.isDirectory === true;
+        out.push({ kind: isFolder ? 'folder' : 'file', name, path, depth });
+        if (isFolder) flattenTree(node.children, path, depth + 1, out);
+    }
+    return out;
+}
+
+/**
+ * Mount a context picker into `mount`.
+ *
+ * @param {Object}   options
+ * @param {Element}  options.mount     - container; its contents are replaced
+ * @param {Object}   options.space     - { id, name } the search is scoped to
+ * @param {Array}    [options.selection] - existing entries (copied, not mutated)
+ * @param {Function} [options.onChange]  - called with the ordered entry array
+ * @returns {{ items: Function, clear: Function, focus: Function }}
+ */
+export function createContextPicker({ mount, space, selection = [], onChange = () => {} }) {
+    const state = {
+        items: (Array.isArray(selection) ? selection : []).map(e => normaliseEntry(e, space)),
+        flat: flatTreeCache.get(space.id) || null,   // null = folder tree not loaded yet
+        treeError: '',
+        query: '',
+        results: [],
+        searching: false,
+        searchSeq: 0,
+        dragFrom: -1
+    };
+
+    let searchTimer = null;
+
+    // ─── DOM ─────────────────────────────────────────────────────────────
+
+    // Every listener hangs off `root`, a FRESH element, never off `mount`. The
+    // context modal reuses one mount div across opens, so binding there would
+    // stack a second set of handlers — each closed over a dead `state` — on the
+    // second open.
+    const root = document.createElement('div');
+    root.className = 'ce-ctx';
+    root.innerHTML = `
+      <div class="ce-ctx-search">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="text" class="ce-ctx-input" data-ctx-search autocomplete="off" spellcheck="false"
+               aria-label="Search folders and files in ${esc(space.name)}"
+               placeholder="Search folders and files in ${esc(space.name)}…">
+        <button type="button" class="ce-btn ghost sm" data-ctx-action="add-space"
+                title="Ground on everything in this space">
+          <i class="bi bi-collection"></i> Whole space
+        </button>
+      </div>
+      <div class="ce-ctx-results" data-ctx-results hidden></div>
+
+      <div class="ce-ctx-head">
+        <strong>Selected context</strong>
+        <small data-ctx-order-hint>read top to bottom — put the most important first</small>
+        <button type="button" class="ce-btn ghost sm" data-ctx-action="clear">Clear</button>
+      </div>
+      <div data-ctx-list-wrap></div>
+
+      <details class="ce-ctx-browse">
+        <summary>Browse all folders in ${esc(space.name)}</summary>
+        <div class="ce-ctx-tree" data-ctx-tree></div>
+      </details>
+    `;
+    mount.innerHTML = '';
+    mount.appendChild(root);
+
+    const input = root.querySelector('[data-ctx-search]');
+    const resultsEl = root.querySelector('[data-ctx-results]');
+    const listWrap = root.querySelector('[data-ctx-list-wrap]');
+    const treeEl = root.querySelector('[data-ctx-tree]');
+
+    // ─── Selection ───────────────────────────────────────────────────────
+
+    function commit() {
+        onChange(state.items.slice());
+        renderList();
+        renderResults();
+        renderTree();
+    }
+
+    function isSelected(entry) {
+        const key = contextKey(entry);
+        return state.items.some(c => contextKey(c) === key);
+    }
+
+    function add(entry) {
+        if (isSelected(entry)) return;
+        state.items.push(normaliseEntry(entry, space));
+        commit();
+    }
+
+    function removeAt(idx) {
+        if (idx < 0 || idx >= state.items.length) return;
+        state.items.splice(idx, 1);
+        commit();
+    }
+
+    function move(from, to) {
+        if (from === to || from < 0 || to < 0) return;
+        if (from >= state.items.length || to >= state.items.length) return;
+        const [row] = state.items.splice(from, 1);
+        state.items.splice(to, 0, row);
+        commit();
+    }
+
+    // ─── Search ──────────────────────────────────────────────────────────
+
+    /** Rank name matches over path matches, and folders over files within each. */
+    function score(row, needle) {
+        const name = String(row.name || '').toLowerCase();
+        const path = String(row.folderPath ?? row.path ?? '').toLowerCase();
+        const named = name.startsWith(needle) ? 0 : (name.includes(needle) ? 1 : (path.includes(needle) ? 2 : 3));
+        return named * 2 + ((row.kind || 'folder') === 'folder' ? 0 : 1);
+    }
+
+    async function fetchDocuments(query) {
+        const encoded = encodeURIComponent(query);
+        // spaceId scoping expands server-side to every space sharing this
+        // content root, then filters each hit through THIS space's
+        // allowedPaths/excludedPaths — which is what "limit it to the space
+        // you are in" actually means when four spaces share one directory.
+        const scope = `&spaceId=${encodeURIComponent(space.id)}`;
+        const rows = [];
+        const suggestions = await getJson(
+            `${WIKI_API}/search/suggestions?q=${encoded}&limit=12&documents=true${scope}`
+        );
+        if (Array.isArray(suggestions)) rows.push(...suggestions);
+        // Fall back to full search so a document is findable by its CONTENT too,
+        // not just by name — the same pairing the pane/link pickers use.
+        if (rows.length < 6) {
+            const hits = await getJson(`${WIKI_API}/search?q=${encoded}&limit=12${scope}`);
+            if (Array.isArray(hits)) rows.push(...hits);
+        }
+        return rows
+            .filter(r => r && typeof r === 'object')
+            .map(r => {
+                const path = normPath(r.path || r.relativePath);
+                if (!path) return null;
+                return {
+                    spaceId: space.id,
+                    spaceName: space.name,
+                    folderPath: path,
+                    name: r.title || r.name || path.split('/').pop(),
+                    kind: 'file'
+                };
+            })
+            .filter(Boolean);
+    }
+
+    async function runSearch(query) {
+        const seq = ++state.searchSeq;
+        const needle = query.toLowerCase();
+        const seen = new Set();
+        const out = [];
+        const push = (entry) => {
+            const key = contextKey(entry);
+            if (seen.has(key)) return;
+            seen.add(key);
+            out.push(entry);
+        };
+
+        // Folders (and files shallow enough to be in the walk) from the tree.
+        for (const row of (state.flat || [])) {
+            if (out.length >= MAX_RESULTS * 3) break;
+            if (!row.name.toLowerCase().includes(needle) && !row.path.toLowerCase().includes(needle)) continue;
+            push({
+                spaceId: space.id, spaceName: space.name,
+                folderPath: row.path, name: row.name, kind: row.kind
+            });
+        }
+
+        (await fetchDocuments(query)).forEach(push);
+        if (seq !== state.searchSeq) return;   // a newer keystroke already won
+
+        state.results = out.sort((a, b) => score(a, needle) - score(b, needle)).slice(0, MAX_RESULTS);
+        state.searching = false;
+        renderResults();
+    }
+
+    function onQueryInput() {
+        state.query = input.value.trim();
+        clearTimeout(searchTimer);
+        if (state.query.length < MIN_QUERY_CHARS) {
+            state.searchSeq++;                 // strand any in-flight search
+            state.results = [];
+            state.searching = false;
+            renderResults();
+            return;
+        }
+        state.searching = true;
+        renderResults();
+        searchTimer = setTimeout(() => runSearch(state.query), SEARCH_DEBOUNCE_MS);
+    }
+
+    // ─── Render: results ─────────────────────────────────────────────────
+
+    function renderResults() {
+        if (state.query.length < MIN_QUERY_CHARS) {
+            resultsEl.hidden = true;
+            resultsEl.innerHTML = '';
+            return;
+        }
+        resultsEl.hidden = false;
+        if (state.searching && !state.results.length) {
+            resultsEl.innerHTML = `<div class="ce-ctx-empty">Searching ${esc(space.name)}…</div>`;
+            return;
+        }
+        if (!state.results.length) {
+            resultsEl.innerHTML = `<div class="ce-ctx-empty">
+              Nothing in ${esc(space.name)} matches “${esc(state.query)}”.
+            </div>`;
+            return;
+        }
+        resultsEl.innerHTML = state.results.map((r, i) => {
+            const already = isSelected(r);
+            const folder = r.folderPath.includes('/') ? r.folderPath.slice(0, r.folderPath.lastIndexOf('/')) : '';
+            return `
+              <button type="button" class="ce-ctx-result" data-ctx-action="add" data-idx="${i}" ${already ? 'disabled' : ''}>
+                <i class="bi bi-${r.kind === 'folder' ? 'folder' : 'file-earmark-text'}" aria-hidden="true"></i>
+                <span class="ce-ctx-label">
+                  <strong>${esc(r.name)}</strong>
+                  <small class="ce-ctx-path">${esc(folder || (r.kind === 'folder' ? 'top level' : ''))}</small>
+                </span>
+                <span class="ce-ctx-flag">${already ? 'Added' : '<i class="bi bi-plus-lg"></i>'}</span>
+              </button>`;
+        }).join('');
+    }
+
+    // ─── Render: the ordered list ────────────────────────────────────────
+
+    function renderList() {
+        const hint = root.querySelector('[data-ctx-order-hint]');
+        const clearBtn = root.querySelector('[data-ctx-action="clear"]');
+        if (clearBtn) clearBtn.style.display = state.items.length ? '' : 'none';
+        if (hint) hint.style.display = state.items.length > 1 ? '' : 'none';
+
+        if (!state.items.length) {
+            listWrap.innerHTML = `<div class="ce-ctx-empty-list">
+              Nothing selected — the AI will use only the requirement and template.
+            </div>`;
+            return;
+        }
+        listWrap.innerHTML = `<ol class="ce-ctx-list" data-ctx-list>${state.items.map((c, i) => {
+            const crossSpace = String(c.spaceId) !== String(space.id);
+            const where = c.folderPath
+                ? (crossSpace ? `${c.spaceName} / ${c.folderPath}` : c.folderPath)
+                : `${c.spaceName || space.name} — entire space`;
+            const icon = !c.folderPath ? 'collection' : (c.kind === 'file' ? 'file-earmark-text' : 'folder2');
+            return `
+              <li class="ce-ctx-item" draggable="true" data-idx="${i}">
+                <span class="ce-ctx-grip" aria-hidden="true"><i class="bi bi-grip-vertical"></i></span>
+                <span class="ce-ctx-num">${i + 1}</span>
+                <i class="bi bi-${icon}" aria-hidden="true"></i>
+                <span class="ce-ctx-label">
+                  <strong>${esc(c.name)}</strong>
+                  <small>${esc(where)}</small>
+                </span>
+                <span class="ce-ctx-move-group">
+                  <button type="button" class="ce-ctx-move" data-ctx-action="up" data-idx="${i}"
+                          ${i === 0 ? 'disabled' : ''} title="Move up" aria-label="Move ${esc(c.name)} up">
+                    <i class="bi bi-arrow-up"></i>
+                  </button>
+                  <button type="button" class="ce-ctx-move" data-ctx-action="down" data-idx="${i}"
+                          ${i === state.items.length - 1 ? 'disabled' : ''} title="Move down" aria-label="Move ${esc(c.name)} down">
+                    <i class="bi bi-arrow-down"></i>
+                  </button>
+                  <button type="button" class="ce-ctx-move" data-ctx-action="remove" data-idx="${i}"
+                          title="Remove" aria-label="Remove ${esc(c.name)}">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </span>
+              </li>`;
+        }).join('')}</ol>`;
+    }
+
+    // ─── Render: browse tree ─────────────────────────────────────────────
+
+    function renderTree() {
+        if (state.treeError) {
+            treeEl.innerHTML = `<div class="ce-ctx-empty" style="color:#b54545;">${esc(state.treeError)}</div>`;
+            return;
+        }
+        if (!state.flat) {
+            treeEl.innerHTML = `<div class="ce-ctx-empty">Loading folders…</div>`;
+            return;
+        }
+        const folders = state.flat.filter(r => r.kind === 'folder');
+        if (!folders.length) {
+            treeEl.innerHTML = `<div class="ce-ctx-empty">This space has no subfolders.</div>`;
+            return;
+        }
+        treeEl.innerHTML = folders.map(f => {
+            const selected = isSelected({ spaceId: space.id, folderPath: f.path });
+            return `
+              <div class="ce-ctx-branch" style="padding-left: ${12 + (f.depth - 1) * 16}px;">
+                <i class="bi bi-folder" aria-hidden="true"></i>
+                <span class="ce-ctx-branch-name">${esc(f.name)}</span>
+                <button type="button" class="ce-btn ghost sm" data-ctx-action="add-folder"
+                        data-path="${esc(f.path)}" data-name="${esc(f.name)}" ${selected ? 'disabled' : ''}>
+                  ${selected ? 'Added' : 'Add'}
+                </button>
+              </div>`;
+        }).join('');
+    }
+
+    // ─── Events ──────────────────────────────────────────────────────────
+
+    input.addEventListener('input', onQueryInput);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            input.value = '';
+            onQueryInput();
+            return;
+        }
+        // Enter adds the top hit — building a list of five folders should not
+        // need five round trips to the mouse.
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const first = state.results.find(r => !isSelected(r));
+            if (first) add(first);
+        }
+    });
+
+    root.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-ctx-action]');
+        if (!btn || !root.contains(btn)) return;
+        const action = btn.getAttribute('data-ctx-action');
+        const idx = Number(btn.getAttribute('data-idx'));
+        if (action === 'add') {
+            const entry = state.results[idx];
+            if (entry) add(entry);
+        } else if (action === 'add-space') {
+            add({ spaceId: space.id, spaceName: space.name, folderPath: '', name: space.name, kind: 'folder' });
+        } else if (action === 'add-folder') {
+            add({
+                spaceId: space.id, spaceName: space.name,
+                folderPath: btn.getAttribute('data-path'),
+                name: btn.getAttribute('data-name'),
+                kind: 'folder'
+            });
+        } else if (action === 'remove') {
+            removeAt(idx);
+        } else if (action === 'up') {
+            move(idx, idx - 1);
+        } else if (action === 'down') {
+            move(idx, idx + 1);
+        } else if (action === 'clear') {
+            state.items = [];
+            commit();
+        }
+    });
+
+    // Drag to reorder. Delegated, so it survives the list being re-rendered
+    // after every change.
+    root.addEventListener('dragstart', (e) => {
+        const row = e.target.closest('.ce-ctx-item');
+        if (!row) return;
+        state.dragFrom = Number(row.getAttribute('data-idx'));
+        row.classList.add('dragging');
+        if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'move';
+            // Firefox refuses to start a drag with an empty payload.
+            e.dataTransfer.setData('text/plain', String(state.dragFrom));
+        }
+    });
+    root.addEventListener('dragover', (e) => {
+        if (state.dragFrom < 0) return;
+        const row = e.target.closest('.ce-ctx-item');
+        if (!row) return;
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        root.querySelectorAll('.ce-ctx-item.drop-target').forEach(n => n.classList.remove('drop-target'));
+        row.classList.add('drop-target');
+    });
+    root.addEventListener('drop', (e) => {
+        const row = e.target.closest('.ce-ctx-item');
+        if (!row || state.dragFrom < 0) return;
+        e.preventDefault();
+        const to = Number(row.getAttribute('data-idx'));
+        const from = state.dragFrom;
+        state.dragFrom = -1;
+        move(from, to);
+    });
+    root.addEventListener('dragend', () => {
+        state.dragFrom = -1;
+        root.querySelectorAll('.dragging, .drop-target')
+            .forEach(n => n.classList.remove('dragging', 'drop-target'));
+    });
+
+    // ─── Boot ────────────────────────────────────────────────────────────
+
+    renderList();
+    renderResults();
+    renderTree();
+
+    if (!state.flat) {
+        getJson(`${WIKI_API}/spaces/${space.id}/folder-tree?depth=${TREE_DEPTH}`).then(body => {
+            if (!body || !body.tree) {
+                state.treeError = 'Could not load this space’s folders — search still covers documents.';
+            } else {
+                state.flat = flattenTree(body.tree, '', 1, []);
+                flatTreeCache.set(space.id, state.flat);
+            }
+            renderTree();
+            // A query typed while the walk was in flight only saw documents.
+            if (state.query.length >= MIN_QUERY_CHARS) runSearch(state.query);
+        });
+    }
+
+    return {
+        items: () => state.items.slice(),
+        clear: () => { state.items = []; commit(); },
+        focus: () => input.focus()
+    };
+}

@@ -1,0 +1,272 @@
+/**
+ * @fileoverview Documentation View Controller
+ * Manages documentation browsing, preview, and viewing functionality
+ *
+ * Features:
+ * - Load and display available documentation files
+ * - Show document previews with metadata
+ * - Render full markdown content with syntax highlighting
+ * - Download documentation files
+ * - Search and filter documentation
+ *
+ * @author noobly Team
+ * @version 1.0.0
+ */
+
+export const documentationController = {
+  app: null,
+  currentDoc: null,
+  documentsList: [],
+
+  init(app) {
+    this.app = app;
+    this.bindEventListeners();
+  },
+
+  /**
+   * Bind all event listeners
+   */
+  bindEventListeners() {
+    // Documentation button in header
+    const docBtn = document.getElementById('documentationBtn');
+    if (docBtn) {
+      docBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showDocumentationView();
+      });
+    }
+
+    // Close documentation view
+    const closeBtn = document.getElementById('docCloseBtn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.hideDocumentationView());
+    }
+
+    // Download button
+    const downloadBtn = document.getElementById('docDownloadBtn');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', () => this.downloadCurrentDoc());
+    }
+  },
+
+  /**
+   * Show documentation view and load list
+   */
+  showDocumentationView() {
+    this.app.setActiveView('documentation');
+    this.loadDocumentationList();
+  },
+
+  /**
+   * Hide documentation view
+   */
+  hideDocumentationView() {
+    this.app.setActiveView('home');
+  },
+
+  /**
+   * Load list of available documentation files
+   */
+  async loadDocumentationList() {
+    try {
+      const response = await fetch('/applications/wiki/api/documentation/list');
+      const data = await response.json();
+
+      if (data.success && data.docs) {
+        this.documentsList = data.docs;
+        this.renderDocumentationList(data.docs);
+      }
+    } catch (error) {
+      console.error('Error loading documentation list:', error);
+      this.showError('Failed to load documentation list');
+    }
+  },
+
+  /**
+   * Render documentation list with previews
+   */
+  renderDocumentationList(docs) {
+    const container = document.getElementById('docListContainer');
+    if (!container) return;
+
+    if (docs.length === 0) {
+      container.innerHTML = `
+        <div class="text-center text-muted py-4">
+          <i class="bi bi-inbox"></i>
+          <p class="mt-2">No documentation found</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = docs.map(doc => `
+      <div class="list-group-item list-group-item-action p-3 border-bottom cursor-pointer doc-item"
+           data-doc-id="${doc.id}" title="Click to view">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <h6 class="mb-0 flex-grow-1">
+            <i class="bi bi-file-earmark-text me-2"></i>${this.escapeHtml(doc.title)}
+          </h6>
+          <small class="text-muted">${doc.size} bytes</small>
+        </div>
+        <p class="text-muted small mb-1" style="line-height: 1.4;">
+          ${this.escapeHtml(doc.excerpt)}
+        </p>
+        <small class="text-muted">
+          <i class="bi bi-calendar me-1"></i>${new Date(doc.modified).toLocaleDateString()}
+        </small>
+      </div>
+    `).join('');
+
+    // Add click handlers to document items
+    container.querySelectorAll('.doc-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const docId = item.dataset.docId;
+        this.loadDocumentation(docId);
+        // Highlight selected item
+        container.querySelectorAll('.doc-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+  },
+
+  /**
+   * Load and display a specific documentation file
+   */
+  async loadDocumentation(docId) {
+    try {
+      const response = await fetch(`/applications/wiki/api/documentation/${docId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        this.currentDoc = data;
+        this.renderDocumentation(data);
+      }
+    } catch (error) {
+      console.error('Error loading documentation:', error);
+      this.showError('Failed to load documentation file');
+    }
+  },
+
+  /**
+   * Render markdown content in viewer
+   */
+  renderDocumentation(doc) {
+    const viewer = document.getElementById('docViewerContent');
+    const title = document.getElementById('docViewerTitle');
+
+    if (!viewer || !title) return;
+
+    // Update title
+    title.innerHTML = `<i class="bi bi-book me-2"></i>${this.escapeHtml(doc.title)}`;
+
+    // Convert markdown to HTML using marked
+    let htmlContent = '';
+    try {
+      htmlContent = parseMarkdown(doc.content);
+    } catch (error) {
+      console.error('Error parsing markdown:', error);
+      htmlContent = `<pre>${this.escapeHtml(doc.content)}</pre>`;
+    }
+
+    // Render HTML content
+    viewer.innerHTML = htmlContent;
+
+    // Enable syntax highlighting on code blocks
+    viewer.querySelectorAll('pre code').forEach(block => {
+      if (window.Prism) {
+        Prism.highlightElement(block);
+      }
+    });
+
+    // Make links safe
+    viewer.querySelectorAll('a').forEach(link => {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    });
+
+    // Update download button state
+    const downloadBtn = document.getElementById('docDownloadBtn');
+    if (downloadBtn) {
+      downloadBtn.classList.remove('disabled');
+    }
+  },
+
+  /**
+   * Download current documentation as markdown file
+   */
+  downloadCurrentDoc() {
+    if (!this.currentDoc) {
+      this.showError('No document selected');
+      return;
+    }
+
+    const filename = this.currentDoc.id + '.md';
+    const content = this.currentDoc.content;
+
+    // Create blob and download
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Show error message
+   */
+  showError(message) {
+    const viewer = document.getElementById('docViewerContent');
+    if (viewer) {
+      viewer.innerHTML = `
+        <div class="alert alert-danger m-3" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Error:</strong> ${this.escapeHtml(message)}
+        </div>
+      `;
+    }
+  },
+
+  /**
+   * Escape HTML special characters for safe display
+   */
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  },
+
+  /**
+   * Search documentation by title or content
+   */
+  searchDocumentation(query) {
+    if (!query || query.trim() === '') {
+      this.renderDocumentationList(this.documentsList);
+      return;
+    }
+
+    const lowerQuery = query.toLowerCase();
+    const filtered = this.documentsList.filter(doc =>
+      doc.title.toLowerCase().includes(lowerQuery) ||
+      doc.excerpt.toLowerCase().includes(lowerQuery)
+    );
+
+    this.renderDocumentationList(filtered);
+  },
+
+  /**
+   * Get documentation statistics
+   */
+  getStatistics() {
+    return {
+      totalDocuments: this.documentsList.length,
+      totalSize: this.documentsList.reduce((sum, doc) => sum + doc.size, 0),
+      lastModified: this.documentsList.length > 0
+        ? new Date(this.documentsList[0].modified).toLocaleDateString()
+        : 'N/A'
+    };
+  }
+};

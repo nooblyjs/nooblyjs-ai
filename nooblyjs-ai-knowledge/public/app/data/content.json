@@ -1,0 +1,489 @@
+{
+  "index": {
+    "meta": {
+      "title": "noobly Wiki",
+      "description": "Multi-platform wiki and knowledge management system for creating, organizing, and accessing documentation across web, desktop, and browser extension interfaces"
+    },
+    "hero": {
+      "title": "noobly Wiki",
+      "subtitle": "Collaborative documentation made simple. Create, organize, and access knowledge across web, desktop, VS Code, and Chrome - with real-time synchronization and AI-powered insights.",
+      "image": {
+        "src": "images/noobly-logo-colour.png",
+        "alt": "noobly Wiki"
+      },
+      "buttons": [
+        {
+          "text": "Launch Application",
+          "href": "/applications/wiki",
+          "type": "secondary"
+        },
+        {
+          "text": "View Documentation",
+          "href": "#documentation-section",
+          "type": "outline"
+        }
+      ]
+    },
+    "sections": [
+      {
+        "heading": "Why Choose noobly Wiki",
+        "subheading": "Comprehensive features for modern knowledge management",
+        "type": "card",
+        "columns": 3,
+        "data": [
+          {
+            "icon": "<i class=\"bi bi-cloud-check\"></i>",
+            "title": "Multi-Platform Access",
+            "details": "Access your documentation from web browser, desktop app, VS Code extension, or Chrome extension - seamlessly synchronized across all platforms"
+          },
+          {
+            "icon": "<i class=\"bi bi-lightning-fill\"></i>",
+            "title": "Real-Time Synchronization",
+            "details": "WebSocket-powered real-time updates ensure all users see changes instantly. File system monitoring keeps everything in sync across platforms"
+          },
+          {
+            "icon": "<i class=\"bi bi-search\"></i>",
+            "title": "Full-Text Search",
+            "details": "Advanced search indexing with instant results. Quickly find documents, sections, and content across your entire knowledge base"
+          },
+          {
+            "icon": "<i class=\"bi bi-robot\"></i>",
+            "title": "AI-Powered Insights",
+            "details": "AI context generation powered by local LLM integration. Get intelligent suggestions and automated content analysis"
+          },
+          {
+            "icon": "<i class=\"bi bi-file-earmark-pdf\"></i>",
+            "title": "Multi-Format Import",
+            "details": "Import documents from PDF, Word, Excel, and PowerPoint - automatically converted to searchable, editable markdown"
+          },
+          {
+            "icon": "<i class=\"bi bi-lock-fill\"></i>",
+            "title": "Secure Authentication",
+            "details": "Local authentication with bcrypt password security or Google OAuth integration. Session-based access control"
+          }
+        ]
+      },
+      {
+        "heading": "Key Features",
+        "subheading": "",
+        "type": "stats",
+        "columns": 4,
+        "data": [
+          {
+            "number": "4",
+            "label": "Platform Access Points"
+          },
+          {
+            "number": "5",
+            "label": "Import Format Types"
+          },
+          {
+            "number": "Real-Time",
+            "label": "Synchronization"
+          },
+          {
+            "number": "AI",
+            "label": "Powered"
+          }
+        ]
+      },
+      {
+        "heading": "Core Capabilities",
+        "subheading": "Everything you need for collaborative knowledge management",
+        "type": "card",
+        "columns": 3,
+        "data": [
+          {
+            "badge": "<i class=\"bi bi-pencil-fill\"></i> Editing",
+            "badgeType": "primary",
+            "title": "Markdown Editor",
+            "href": "/",
+            "description": "Rich markdown editing with live preview, syntax highlighting, and formatting tools. Create professional documentation effortlessly."
+          },
+          {
+            "badge": "<i class=\"bi bi-folder-fill\"></i> Organization",
+            "badgeType": "secondary",
+            "title": "Spaces & Folders",
+            "href": "/",
+            "description": "Organize documents into wiki spaces and folder hierarchies. Logical structure for easy navigation and discovery."
+          },
+          {
+            "badge": "<i class=\"bi bi-cloud-sync\"></i> Sync",
+            "badgeType": "secondary",
+            "title": "Real-Time Updates",
+            "href": "/",
+            "description": "Changes sync instantly across all platforms. WebSocket communication ensures everyone stays on the same page."
+          },
+          {
+            "badge": "<i class=\"bi bi-globe\"></i> Access",
+            "badgeType": "primary",
+            "title": "Multi-Platform",
+            "href": "/",
+            "description": "Web, Desktop, VS Code, and Chrome interfaces. Access your knowledge base from anywhere, anytime."
+          },
+          {
+            "badge": "<i class=\"bi bi-search\"></i> Discovery",
+            "badgeType": "secondary",
+            "title": "Full-Text Search",
+            "href": "/",
+            "description": "Powerful search engine indexes all documents. Find exactly what you need in milliseconds with advanced filtering."
+          },
+          {
+            "badge": "<i class=\"bi bi-shield-lock\"></i> Security",
+            "badgeType": "primary",
+            "title": "Access Control",
+            "href": "/",
+            "description": "User authentication, password security with bcrypt, OAuth integration, and session management."
+          }
+        ]
+      }
+    ],
+    "testimonial": {
+      "text": "noobly Wiki transformed how our team manages documentation. What used to take hours to maintain across platforms now syncs in real-time. We've cut documentation overhead by 70% while improving accessibility. The multi-platform support means our distributed team stays connected, whether they're in VS Code, the desktop app, or a web browser.",
+      "author": "— Documentation Lead, Engineering Team"
+    },
+    "footer": {
+      "about": {
+        "title": "About noobly Wiki",
+        "description": "A modern, multi-platform wiki and knowledge management system enabling teams to create, organize, and access documentation across web, desktop, and browser extension interfaces. Built on Node.js with real-time synchronization and AI-powered insights.",
+        "techStack": ["Node.js", "Express", "Socket.IO", "Electron", "Passport Auth", "Full-Text Search", "AI Integration", "Multi-Format Import"]
+      },
+      "quickLinks": [
+        { "text": "Home", "href": "index.html" },
+        { "text": "Launch Application", "href": "/applications/wiki" }
+      ],
+      "resources": [
+        { "text": "Getting Started", "href": "#documentation-section" },
+        { "text": "Installation Guide", "href": "#" },
+        { "text": "API Documentation", "href": "#" }
+      ],
+      "newsletter": {
+        "title": "Stay Updated",
+        "description": "Get notified about new features and improvements.",
+        "placeholder": "Enter your email"
+      },
+      "copyright": "© 2025 noobly. All rights reserved.",
+      "legalLinks": [
+        { "text": "Privacy Policy", "href": "#" },
+        { "text": "Terms of Service", "href": "#" },
+        { "text": "ISC License", "href": "#" }
+      ]
+    }
+  },
+  "documentation": {
+    "meta": {
+      "title": "Documentation - noobly Wiki",
+      "description": "Comprehensive documentation and guides for getting started with noobly framework and all its services."
+    },
+    "hero": {
+      "badge": "📚 Documentation",
+      "title": "Documentation",
+      "description": "Comprehensive documentation and guides for getting started with noobly framework and all its services.",
+      "buttons": [
+        {
+          "text": "Quick Start",
+          "href": "#quick-start",
+          "type": "secondary"
+        },
+        {
+          "text": "API Reference",
+          "href": "#api-reference",
+          "type": "outline"
+        }
+      ]
+    },
+    "quickStart": {
+      "title": "Quick Start Guide",
+      "description": "Get up and running with noobly Core in minutes",
+      "steps": [
+        {
+          "title": "1. Installation",
+          "description": "Install noobly Core using npm:",
+          "code": "npm install digital-technologies-core"
+        },
+        {
+          "title": "2. Initialize & Get Services",
+          "description": "Create your Express app and initialize the service registry:",
+          "code": "const express = require('express');\nconst serviceRegistry = require('digital-technologies-core');\n\nconst app = express();\napp.use(express.json());\n\n// Initialize registry FIRST\nserviceRegistry.initialize(app);\n\n// Get services\nconst cache = serviceRegistry.cache('memory');\nconst logger = serviceRegistry.logger('file');"
+        },
+        {
+          "title": "3. Use Services in Routes",
+          "description": "Start using services in your application logic:",
+          "code": "app.get('/api/user/:id', async (req, res) => {\n  const cacheKey = `user:${req.params.id}`;\n  let user = await cache.get(cacheKey);\n  \n  if (!user) {\n    user = await db.getUser(req.params.id);\n    await cache.set(cacheKey, user, 3600);\n  }\n  \n  logger.info(`User retrieved: ${req.params.id}`);\n  res.json(user);\n});\n\napp.listen(3000);"
+        }
+      ]
+    },
+    "services": {
+      "title": "Available Services",
+      "description": "Explore our comprehensive service ecosystem",
+      "items": [
+        {
+          "badge": "<i class=\"bi bi-lightning-fill\"></i> Performance",
+          "badgeType": "default",
+          "title": "Caching Service",
+          "href": "/services",
+          "description": "High-performance distributed caching with Redis, Memcached, and in-memory providers.",
+          "code": "const cache = serviceRegistry.cache('memory');\nawait cache.set('key', 'value');\nconst value = await cache.get('key');"
+        },
+        {
+          "badge": "<i class=\"bi bi-database\"></i> Storage",
+          "badgeType": "secondary",
+          "title": "Data Service",
+          "href": "data.html",
+          "description": "Persistent data storage with MongoDB, SimpleDB, and file-based providers.",
+          "code": "const dataService = serviceRegistry.dataService('file');\nawait dataService.store('user:1', userData);\nconst user = await dataService.retrieve('user:1');"
+        },
+        {
+          "badge": "📝 Monitoring",
+          "badgeType": "outline",
+          "title": "Logging Service",
+          "href": "logging.html",
+          "description": "Multi-level structured logging with console and file outputs.",
+          "code": "const logger = serviceRegistry.logger('file');\nlogger.info('Application started');\nlogger.error('An error occurred', error);"
+        },
+        {
+          "badge": "📊 Analytics",
+          "badgeType": "default",
+          "title": "Measuring Service",
+          "href": "measuring.html",
+          "description": "Real-time metrics collection and time-series analysis.",
+          "code": "const metrics = serviceRegistry.measuring('memory');\nmetrics.increment('api_calls');\nconst count = await metrics.aggregate('api_calls', 'sum');"
+        },
+        {
+          "badge": "<i class='bi bi-bell-fill'></i> Messaging",
+          "badgeType": "secondary",
+          "title": "Notifying Service",
+          "href": "notifying.html",
+          "description": "Pub/sub messaging system with topic-based communication.",
+          "code": "const notify = serviceRegistry.notifying('memory');\nnotify.subscribe('channel', (message) => console.log(message));\nnotify.publish('channel', { event: 'user_created' });"
+        },
+        {
+          "badge": "<i class=\"bi bi-hourglass-split\"></i> Processing",
+          "badgeType": "outline",
+          "title": "Queueing Service",
+          "href": "queueing.html",
+          "description": "FIFO task queueing for background job processing.",
+          "code": "const queue = serviceRegistry.queue('memory');\nqueue.add('email_task', { to: 'user@example.com' });\nconst task = await queue.process();"
+        },
+        {
+          "badge": "<i class=\"bi bi-globe\"></i> Network",
+          "badgeType": "default",
+          "title": "Fetching Service",
+          "href": "fetching.html",
+          "description": "HTTP fetching with caching, deduplication, and analytics. Supports Node.js native fetch and Axios providers.",
+          "code": "const fetching = serviceRegistry.fetching('node');\nconst response = await fetching.fetch('https://api.example.com/data');\nconst analytics = fetching.getAnalytics();"
+        },
+        {
+          "badge": "<i class=\"bi bi-diagram-3\"></i> Structure",
+          "badgeType": "secondary",
+          "title": "App Service",
+          "href": "appservice.html",
+          "description": "Application scaffolding with auto-loading of views, routes, services, and data structures.",
+          "code": "const appService = serviceRegistry.appservice('basic', options);\n// Auto-loads from src/views/, src/routes/, src/services/, src/data/"
+        }
+      ]
+    },
+    "apiReference": {
+      "title": "API Reference",
+      "description": "Complete API documentation for all 15 services and core framework",
+      "coreFramework": {
+        "title": "Service Registry Core Methods",
+        "code": "const serviceRegistry = require('digital-technologies-core');\n\n// Initialize the service registry (REQUIRED - must be first)\nserviceRegistry.initialize(app, eventEmitter, options);\n\n// Get service instances by method name\nconst cache = serviceRegistry.cache(provider, options);\nconst logger = serviceRegistry.logger(provider, options);\nconst dataService = serviceRegistry.dataService(provider, options);\nconst auth = serviceRegistry.authservice(provider, options);\nconst queue = serviceRegistry.queue(provider, options);\nconst notify = serviceRegistry.notifying(provider, options);\n\n// All services auto-register Express routes at /services/{service}/api/*\n// Access service management UI at /services/ (requires authentication)"
+      },
+      "sections": [
+        {
+          "title": "Configuration",
+          "description": "Service configuration options and examples.",
+          "href": "#"
+        },
+        {
+          "title": "Examples",
+          "description": "Real-world usage examples and tutorials.",
+          "href": "#"
+        },
+        {
+          "title": "Best Practices",
+          "description": "Recommended patterns and best practices.",
+          "href": "#"
+        }
+      ]
+    },
+    "footer": {
+      "about": {
+        "title": "Documentation",
+        "description": "Comprehensive guides and API reference for building applications with noobly framework."
+      },
+      "quickLinks": [
+        { "text": "Home", "href": "index.html" },
+        { "text": "Application", "href": "/applications/wiki" }
+      ],
+      "resources": [
+        { "text": "Quick Start", "href": "#quick-start" },
+        { "text": "API Reference", "href": "#api-reference" }
+      ]
+    }
+  },
+  "contact": {
+    "meta": {
+      "title": "Contact - noobly Core",
+      "description": "Have questions about noobly Core? Need integration help or want to contribute? We'd love to hear from you."
+    },
+    "hero": {
+      "badge": "💬 Contact",
+      "title": "Get in Touch",
+      "description": "Have questions about noobly Core? Need integration help or want to contribute? We'd love to hear from you."
+    },
+    "contactMethods": [
+      {
+        "icon": "<i class=\"bi bi-envelope-fill\"></i>",
+        "title": "Email Support",
+        "description": "Get help with technical questions and support issues",
+        "button": {
+          "text": "support@example.com",
+          "href": "mailto:support@example.com",
+          "type": "outline"
+        }
+      },
+      {
+        "icon": "<i class=\"bi bi-bitbucket\"></i>",
+        "title": "BitBucket",
+        "description": "Report bugs, request features, or contribute to the project",
+        "button": {
+          "text": "View Repository",
+          "href": "https://github.com/noobly/nooblyjs-core",
+          "type": "outline"
+        }
+      },
+      {
+        "icon": "<i class=\"bi bi-discord\"></i>",
+        "title": "Community",
+        "description": "Join our Discord server for real-time discussions",
+        "button": {
+          "text": "Join Discord",
+          "href": "#",
+          "type": "outline"
+        }
+      }
+    ],
+    "contactForm": {
+      "title": "Send us a Message",
+      "description": "We'll get back to you as soon as possible",
+      "fields": [
+        {
+          "id": "contactName",
+          "type": "text",
+          "label": "Name",
+          "placeholder": "Your full name",
+          "required": true
+        },
+        {
+          "id": "contactEmail",
+          "type": "email",
+          "label": "Email",
+          "placeholder": "your.email@example.com",
+          "required": true
+        },
+        {
+          "id": "contactSubject",
+          "type": "select",
+          "label": "Subject",
+          "required": true,
+          "options": [
+            { "value": "", "text": "Select a topic" },
+            { "value": "general", "text": "General Question" },
+            { "value": "technical", "text": "Technical Support" },
+            { "value": "feature", "text": "Feature Request" },
+            { "value": "bug", "text": "Bug Report" },
+            { "value": "business", "text": "Business Inquiry" }
+          ]
+        },
+        {
+          "id": "contactMessage",
+          "type": "textarea",
+          "label": "Message",
+          "placeholder": "Tell us how we can help you...",
+          "required": true,
+          "rows": 6
+        }
+      ],
+      "submitText": "Send Message"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "Common questions about noobly Core",
+      "items": [
+        {
+          "question": "What is noobly Core?",
+          "answer": "noobly Core is an enterprise-grade Node.js backend framework providing 13+ integrated modular services with automatic dependency injection, singleton pattern implementation, and pluggable providers for every architectural layer."
+        },
+        {
+          "question": "How many services does noobly Core provide?",
+          "answer": "noobly Core provides 13 core services: Logging, Caching, Filing, Queueing, Data Service, Working, Measuring, Scheduling, Searching, Workflow, Notifying, Authentication, and AI services. Each service supports multiple provider implementations."
+        },
+        {
+          "question": "Is noobly Core free to use?",
+          "answer": "Yes, noobly Core is open-source and free to use for both personal and commercial projects. Check our license for more details."
+        },
+        {
+          "question": "Can I use only specific services?",
+          "answer": "Absolutely! noobly Core is fully modular. You can initialize only the services you need. The dependency injection system handles all inter-service dependencies automatically."
+        },
+        {
+          "question": "What providers are available?",
+          "answer": "Each service supports multiple providers: Caching (Redis, Memcached, in-memory), Data Storage (MongoDB, SimpleDB, file-based), Filing (S3, FTP, GCP), and more. Mix and match based on your infrastructure."
+        }
+      ]
+    },
+    "footer": {
+      "contactInfo": {
+        "title": "Contact Information",
+        "description": "Get in touch with our team for support, questions, or business inquiries.",
+        "details": {
+          "email": "support@example.com",
+          "business": "business@example.com",
+          "responseTime": "Within 24 hours"
+        }
+      },
+      "quickLinks": [
+        { "text": "Home", "href": "index.html" },
+        { "text": "Backend", "href": "/services" }
+      ],
+      "community": [
+        { "text": "Bitbucket", "href": "https://github.com/noobly/nooblyjs-core" },
+        { "text": "Discord", "href": "#" },
+        { "text": "Twitter", "href": "#" },
+        { "text": "Blog", "href": "#" }
+      ]
+    }
+  },
+  "common": {
+    "navigation": {
+      "logo": {
+        "icon": "📚",
+        "text": "noobly Wiki"
+      },
+      "links": [
+        { "text": "Application", "href": "/applications/wiki" },
+        { "text": "Home", "href": "index.html" }
+      ]
+    },
+    "mobileMenu": {
+      "links": [
+        { "text": "Application", "href": "/applications/wiki" },
+        { "text": "Home", "href": "index.html" }
+      ]
+    },
+    "footer": {
+      "logo": {
+        "icon": "📚",
+        "text": "noobly Wiki"
+      },
+      "copyright": "© 2025 noobly. All rights reserved.",
+      "legalLinks": [
+        { "text": "Privacy Policy", "href": "#" },
+        { "text": "Terms of Service", "href": "#" },
+        { "text": "ISC License", "href": "#" }
+      ]
+    }
+  }
+}

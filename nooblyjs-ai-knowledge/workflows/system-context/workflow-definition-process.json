@@ -1,0 +1,59 @@
+[
+  {
+    "name": "Context: Business Processes - Enterprise Collaboration Space",
+    "description": "Periodic job. Walks a wiki space's folder tree from the root to the deepest folders, then works back up generating AI context sidecars under each folder's .context/ directory: a <= 250-char .context/{filename}.context summary for every markdown file (skipped if one already exists), and a .context/{foldername}.context roll-up that summarises the folder from its file summaries plus the overviews of the folders beneath it. Reads (folder tree + document content) come straight off the space's on-disk baseDir: the worker shares the platform filesystem, so no HTTP call is made back into the backend. The AI agent is the one tagged 'Folder Processing' in the Agents screen. Every AI call is bounded by a timeout and retried. Attach this to a daily/periodic schedule. The only platform .env setting needed is APP_BASE_DIR.",
+    "steps": [
+      "steps/build-context.js"
+    ],
+    "tags": [
+      "Context"
+    ],
+    "defaultInput": {
+      "path": "../knowledge-content/enterprise/Business Processes/",
+      "appBaseDir": "../.application", 
+      "agent": "",  
+      "force": false
+    },
+    "createdAt": "2026-06-09T00:00:00.000Z",
+    "updatedAt": "2026-06-09T00:00:00.000Z",
+    "starred": false
+  },  
+  {
+    "name": "Context: Business Processes - Fintech Collaboration Space",
+    "description": "Periodic job. Walks a wiki space's folder tree from the root to the deepest folders, then works back up generating AI context sidecars under each folder's .context/ directory: a <= 250-char .context/{filename}.context summary for every markdown file (skipped if one already exists), and a .context/{foldername}.context roll-up that summarises the folder from its file summaries plus the overviews of the folders beneath it. Reads (folder tree + document content) come straight off the space's on-disk baseDir: the worker shares the platform filesystem, so no HTTP call is made back into the backend. The AI agent is the one tagged 'Folder Processing' in the Agents screen. Every AI call is bounded by a timeout and retried. Attach this to a daily/periodic schedule. The only platform .env setting needed is APP_BASE_DIR.",
+    "steps": [
+      "steps/build-context.js"
+    ],
+    "tags": [
+      "Context"
+    ],
+    "defaultInput": {
+      "path": "../knowledge-content/fintech/Business Processes/",
+      "appBaseDir": "../.application", 
+      "agent": "",  
+      "force": false
+    },
+    "createdAt": "2026-06-09T00:00:00.000Z",
+    "updatedAt": "2026-06-09T00:00:00.000Z",
+    "starred": false
+  },  
+  {
+    "name": "Context: Business Processes - People Collaboration Space",
+    "description": "Periodic job. Walks a wiki space's folder tree from the root to the deepest folders, then works back up generating AI context sidecars under each folder's .context/ directory: a <= 250-char .context/{filename}.context summary for every markdown file (skipped if one already exists), and a .context/{foldername}.context roll-up that summarises the folder from its file summaries plus the overviews of the folders beneath it. Reads (folder tree + document content) come straight off the space's on-disk baseDir: the worker shares the platform filesystem, so no HTTP call is made back into the backend. The AI agent is the one tagged 'Folder Processing' in the Agents screen. Every AI call is bounded by a timeout and retried. Attach this to a daily/periodic schedule. The only platform .env setting needed is APP_BASE_DIR.",
+    "steps": [
+      "steps/build-context.js"
+    ],
+    "tags": [
+      "Context"
+    ],
+    "defaultInput": {
+      "path": "../knowledge-content/people/Business Processes/",
+      "appBaseDir": "../.application", 
+      "agent": "",  
+      "force": false
+    },
+    "createdAt": "2026-06-09T00:00:00.000Z",
+    "updatedAt": "2026-06-09T00:00:00.000Z",
+    "starred": false
+  }
+]

@@ -1,0 +1,203 @@
+{
+  "spaces": [
+    {
+      "id": 1,
+      "name": "Personal Space",
+      "description": "Your private workspace for personal notes, ideas, and drafts",
+      "icon": "👤",
+      "visibility": "private",
+      "type": "personal",
+      "permissions": "read-write",
+      "defaultPath": "documents",
+      "folders": [
+        {
+          "name": "Getting Started",
+          "files": [
+            {
+              "filename": "welcome.md",
+              "title": "Welcome to Your Personal Space",
+              "tags": [
+                "welcome",
+                "getting-started"
+              ],
+              "content": "# Welcome to Your Personal Space\n\nThis is your private workspace where you can:\n\n- 📝 Create personal notes and documentation\n- 💡 Capture ideas and brainstorm\n- 📋 Draft documents before sharing\n- 🔒 Keep private information secure\n\n## Quick Start\n\n1. Click \"New Document\" to create your first page\n2. Use markdown for rich formatting\n3. Organize with tags and folders\n4. Search across all your documents\n\n## Tips\n\n- Use tags like #todo, #idea, #important to organize\n- Create folder structures that match your workflow\n- Link between documents for better navigation\n\nHappy documenting! 🚀"
+            },
+            {
+              "filename": "markdown-guide.md",
+              "title": "Markdown Quick Reference",
+              "tags": [
+                "reference",
+                "markdown"
+              ],
+              "content": "# Markdown Quick Reference\n\nA quick guide to markdown formatting in your wiki.\n\n## Headers\n\n```\n# H1 Header\n## H2 Header\n### H3 Header\n```\n\n## Text Formatting\n\n- **Bold text**: `**bold**`\n- *Italic text*: `*italic*`\n- ~~Strikethrough~~: `~~strikethrough~~`\n- `Code`: `` `code` ``\n\n## Lists\n\n### Unordered Lists\n```\n- Item 1\n- Item 2\n  - Nested item\n```\n\n### Ordered Lists\n```\n1. First item\n2. Second item\n3. Third item\n```\n\n## Links and Images\n\n- Link: `[Link Text](https://example.com)`\n- Image: `![Alt Text](image-url.jpg)`\n\n## Code Blocks\n\n\\`\\`\\`javascript\nconst example = \"code block\";\n\\`\\`\\`\n\n## Tables\n\n```\n| Column 1 | Column 2 |\n|----------|----------|\n| Data 1   | Data 2   |\n```\n\n## Blockquotes\n\n```\n> This is a quote\n```"
+            }
+          ]
+        },
+        {
+          "name": "Projects",
+          "files": [
+            {
+              "filename": "project-template.md",
+              "title": "Project Template",
+              "tags": [
+                "template",
+                "project"
+              ],
+              "content": "# Project Name\n\n## Overview\n\nBrief description of the project.\n\n## Goals\n\n- [ ] Goal 1\n- [ ] Goal 2\n- [ ] Goal 3\n\n## Timeline\n\n| Phase | Start Date | End Date | Status |\n|-------|------------|----------|--------|\n| Planning | | | |\n| Development | | | |\n| Testing | | | |\n| Launch | | | |\n\n## Resources\n\n- Resource 1\n- Resource 2\n\n## Notes\n\nAdd your project notes here..."
+            }
+          ]
+        },
+        {
+          "name": "Notes",
+          "files": [
+            {
+              "filename": "daily-notes-template.md",
+              "title": "Daily Notes Template",
+              "tags": [
+                "template",
+                "notes"
+              ],
+              "content": "# Daily Notes - [Date]\n\n## Tasks\n\n- [ ] Task 1\n- [ ] Task 2\n- [ ] Task 3\n\n## Meeting Notes\n\n### Meeting 1\n- **Time**: \n- **Attendees**: \n- **Notes**: \n\n## Ideas\n\n- \n\n## Follow-up\n\n- "
+            }
+          ]
+        },
+        {
+          "name": ".templates",
+          "files": [
+            {
+              "filename": "standard-templates.md",
+              "title": "Standard Document Templates",
+              "tags": [
+                "templates",
+                "reference"
+              ],
+              "content": "# Standard Document Templates\n\nUse these templates to maintain consistency across documentation.\n\n## Available Templates\n\n### 1. Project Documentation Template\nFor documenting projects and initiatives.\n- Overview and goals\n- Timeline and milestones\n- Resources and stakeholders\n- Status tracking\n\n### 2. Meeting Notes Template\nFor recording meeting discussions and decisions.\n- Attendees and agenda\n- Discussion points\n- Action items\n- Next steps\n\n### 3. Process Documentation Template\nFor step-by-step procedures.\n- Purpose and scope\n- Prerequisites\n- Detailed steps\n- Troubleshooting\n\n### 4. Technical Specification Template\nFor technical documentation.\n- Requirements\n- Architecture\n- Implementation details\n- Testing criteria\n\n### 5. How-To Guide Template\nFor instructional content.\n- Objective\n- Required knowledge\n- Step-by-step instructions\n- Examples and screenshots\n\n## Using Templates\n\n1. Copy the template content\n2. Create a new document\n3. Paste and customize\n4. Fill in all sections\n5. Remove unused sections\n\n## Custom Templates\n\nTeams can create custom templates in the Shared Space for specialized needs."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Shared Space",
+      "description": "Collaborative workspace for team documentation and knowledge sharing",
+      "icon": "👥",
+      "visibility": "team",
+      "type": "shared",
+      "permissions": "read-write",
+      "defaultPath": "documents-shared",
+      "folders": [
+        {
+          "name": "Team Guidelines",
+          "files": [
+            {
+              "filename": "collaboration-guidelines.md",
+              "title": "Collaboration Guidelines",
+              "tags": [
+                "guidelines",
+                "team"
+              ],
+              "content": "# Collaboration Guidelines\n\nWelcome to the team's shared workspace!\n\n## Purpose\n\nThis space is designed for:\n- 📚 Team documentation\n- 🤝 Collaborative projects\n- 💬 Knowledge sharing\n- 📊 Process documentation\n\n## Best Practices\n\n### Creating Documents\n1. Use clear, descriptive titles\n2. Add relevant tags for discoverability\n3. Include creation date and author\n4. Keep documents focused on a single topic\n\n### Editing Documents\n1. Check if anyone else is editing\n2. Make incremental changes\n3. Add meaningful update notes\n4. Preserve existing formatting\n\n### Organization\n- Use consistent folder structure\n- Tag documents appropriately\n- Archive outdated content\n- Link related documents\n\n## Document Types\n\n- **Meeting Notes**: Use the meeting notes template\n- **Process Docs**: Step-by-step procedures\n- **Guides**: How-to and reference materials\n- **Projects**: Project documentation and planning\n\n## Tips\n\n- Search before creating to avoid duplicates\n- Use tags like #important, #draft, #archived\n- Update the table of contents regularly\n- Keep formatting consistent across documents"
+            },
+            {
+              "filename": "meeting-notes-template.md",
+              "title": "Meeting Notes Template",
+              "tags": [
+                "template",
+                "meetings"
+              ],
+              "content": "# Meeting Notes - [Meeting Name]\n\n**Date**: [Date]\n**Time**: [Time]\n**Location**: [Location/Video Link]\n\n## Attendees\n\n- Name 1\n- Name 2\n- Name 3\n\n## Agenda\n\n1. Agenda item 1\n2. Agenda item 2\n3. Agenda item 3\n\n## Discussion\n\n### Topic 1\n- Discussion point\n- Key decisions\n- Action items\n\n### Topic 2\n- Discussion point\n- Key decisions\n- Action items\n\n## Action Items\n\n| Task | Owner | Due Date | Status |\n|------|-------|----------|--------|\n| Task 1 | Name | Date | ⏳ Pending |\n| Task 2 | Name | Date | ⏳ Pending |\n\n## Next Meeting\n\n**Date**: \n**Time**: \n**Agenda**: "
+            }
+          ]
+        },
+        {
+          "name": "Processes",
+          "files": [
+            {
+              "filename": "onboarding-checklist.md",
+              "title": "Team Onboarding Checklist",
+              "tags": [
+                "onboarding",
+                "checklist"
+              ],
+              "content": "# Team Onboarding Checklist\n\nWelcome to the team! Complete these items during your first week.\n\n## Day 1\n\n- [ ] Review team collaboration guidelines\n- [ ] Set up development environment\n- [ ] Get access to necessary tools and platforms\n- [ ] Meet the team\n- [ ] Review current projects\n\n## First Week\n\n- [ ] Complete system orientation\n- [ ] Shadow team members\n- [ ] Review key documentation\n- [ ] Attend team meetings\n- [ ] Set up wiki account and personal space\n- [ ] Complete first small task\n\n## Resources\n\n- [Team Guidelines](collaboration-guidelines.md)\n- Development Setup Guide\n- Communication Channels\n- Project Overview\n\n## Questions?\n\nReach out to your onboarding buddy or team lead!"
+            }
+          ]
+        },
+        {
+          "name": "Projects",
+          "files": [
+            {
+              "filename": "projects-overview.md",
+              "title": "Projects Overview",
+              "tags": [
+                "projects",
+                "overview"
+              ],
+              "content": "# Projects Overview\n\n## Active Projects\n\n### Project Alpha\n- **Status**: In Progress\n- **Lead**: Team Member\n- **Timeline**: Q1 2025\n- **Description**: Brief description of the project\n- [Project Documentation →]()\n\n### Project Beta\n- **Status**: Planning\n- **Lead**: Team Member\n- **Timeline**: Q2 2025\n- **Description**: Brief description of the project\n- [Project Documentation →]()\n\n## Completed Projects\n\n### Project Gamma\n- **Status**: Completed\n- **Completion Date**: December 2024\n- **Summary**: Project outcomes and lessons learned\n- [Final Report →]()\n\n## Project Archive\n\nFor archived projects, see the Archive folder."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Read-Only Space",
+      "description": "Reference materials, policies, and official documentation",
+      "icon": "📚",
+      "visibility": "public",
+      "type": "readonly",
+      "permissions": "read-only",
+      "defaultPath": "documents-readonly",
+      "folders": [
+        {
+          "name": "Policies",
+          "files": [
+            {
+              "filename": "documentation-policy.md",
+              "title": "Documentation Policy",
+              "tags": [
+                "policy",
+                "documentation"
+              ],
+              "content": "# Documentation Policy\n\n**Effective Date**: January 2025\n**Version**: 1.0\n\n## Purpose\n\nThis policy establishes standards for creating and maintaining documentation within the organization.\n\n## Scope\n\nApplies to all team members creating or maintaining documentation in the wiki system.\n\n## Standards\n\n### Document Quality\n1. **Accuracy**: All information must be verified and accurate\n2. **Clarity**: Use clear, concise language\n3. **Completeness**: Cover all relevant aspects of the topic\n4. **Currency**: Keep documents up-to-date\n\n### Document Structure\n1. Clear title and purpose statement\n2. Table of contents for long documents\n3. Logical section organization\n4. Consistent formatting\n5. Proper use of headers and lists\n\n### Maintenance\n1. Review documents quarterly\n2. Update as processes change\n3. Archive outdated content\n4. Maintain version history\n\n## Document Types\n\n### Policies\n- Official organizational policies\n- Must be approved before publication\n- Stored in Read-Only Space\n\n### Procedures\n- Step-by-step instructions\n- Include screenshots where helpful\n- Regularly tested and updated\n\n### Reference Materials\n- Technical specifications\n- API documentation\n- System architecture\n\n### Guides\n- How-to documentation\n- Best practices\n- Training materials\n\n## Approval Process\n\n1. Draft in personal or shared space\n2. Review by subject matter experts\n3. Approval by designated authority\n4. Publication to appropriate space\n\n## Compliance\n\nNon-compliance with this policy may result in documentation being revised or removed.\n\n## Questions\n\nContact the documentation team lead for clarification."
+            }
+          ]
+        },
+        {
+          "name": "Reference",
+          "files": [
+            {
+              "filename": "wiki-user-guide.md",
+              "title": "Wiki User Guide",
+              "tags": [
+                "guide",
+                "reference"
+              ],
+              "content": "# Wiki User Guide\n\nComplete guide to using the noobly Wiki.\n\n## Table of Contents\n\n1. [Getting Started](#getting-started)\n2. [Creating Documents](#creating-documents)\n3. [Organizing Content](#organizing-content)\n4. [Searching](#searching)\n5. [Spaces](#spaces)\n\n## Getting Started\n\n### Logging In\n1. Navigate to the wiki homepage\n2. Click \"Sign In\"\n3. Authenticate with your credentials\n\n### Dashboard Overview\n- **Recent Documents**: Your recently accessed pages\n- **Spaces**: Available workspaces\n- **Search**: Find documents across all spaces\n- **Quick Actions**: Create new documents, browse folders\n\n## Creating Documents\n\n### New Document\n1. Click \"New Document\" button\n2. Enter title and select space\n3. Add tags for organization\n4. Write content using Markdown\n5. Click \"Save\"\n\n### Markdown Support\nThe wiki supports full Markdown formatting:\n- Headers, lists, and text formatting\n- Links and images\n- Code blocks and syntax highlighting\n- Tables and blockquotes\n\nSee the [Markdown Quick Reference](markdown-guide.md) for details.\n\n## Organizing Content\n\n### Using Tags\n- Add multiple tags separated by commas\n- Use consistent tag names\n- Common tags: #important, #draft, #review, #template\n\n### Folder Structure\n- Documents are organized into folders within spaces\n- Create logical folder hierarchies\n- Use descriptive folder names\n\n## Searching\n\n### Basic Search\n1. Enter search terms in the search bar\n2. Results show matching documents\n3. Click to view full document\n\n### Advanced Search\n- Search in specific spaces\n- Filter by tags\n- Search within date ranges\n\n## Spaces\n\n### Personal Space\n- Private workspace\n- Visible only to you\n- Full read-write access\n\n### Shared Space\n- Team collaboration\n- Visible to all team members\n- Full read-write access\n\n### Read-Only Space\n- Official documentation\n- Visible to all\n- Read-only access\n- Content managed by administrators\n\n## Tips and Best Practices\n\n1. **Use Templates**: Start with templates for consistency\n2. **Tag Everything**: Makes searching easier\n3. **Link Documents**: Create connections between related content\n4. **Regular Reviews**: Keep content current\n5. **Clear Titles**: Use descriptive, searchable titles\n\n## Support\n\nFor help or questions, contact your system administrator."
+            },
+            {
+              "filename": "keyboard-shortcuts.md",
+              "title": "Keyboard Shortcuts",
+              "tags": [
+                "reference",
+                "shortcuts"
+              ],
+              "content": "# Keyboard Shortcuts\n\nSpeed up your workflow with these keyboard shortcuts.\n\n## Navigation\n\n| Shortcut | Action |\n|----------|--------|\n| `Ctrl/Cmd + K` | Quick search |\n| `Ctrl/Cmd + N` | New document |\n| `Ctrl/Cmd + /` | Toggle sidebar |\n| `Ctrl/Cmd + B` | Browse spaces |\n\n## Editing\n\n| Shortcut | Action |\n|----------|--------|\n| `Ctrl/Cmd + S` | Save document |\n| `Ctrl/Cmd + E` | Edit mode |\n| `Ctrl/Cmd + P` | Preview mode |\n| `Esc` | Cancel edit |\n\n## Formatting\n\n| Shortcut | Action |\n|----------|--------|\n| `Ctrl/Cmd + B` | Bold text |\n| `Ctrl/Cmd + I` | Italic text |\n| `Ctrl/Cmd + K` | Insert link |\n| `Ctrl/Cmd + Shift + C` | Code block |\n\n## Document Management\n\n| Shortcut | Action |\n|----------|--------|\n| `Ctrl/Cmd + D` | Duplicate |\n| `Ctrl/Cmd + Delete` | Delete document |\n| `Ctrl/Cmd + Shift + T` | Add tags |\n\n*Note: Use Cmd on Mac, Ctrl on Windows/Linux*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "version": "1.0",
+    "description": "Default space initialization configuration for noobly Wiki",
+    "autoCreateFolders": true,
+    "autoCreateSampleFiles": true,
+    "folderPermissions": "755",
+    "filePermissions": "644",
+    "excerptLength": 150,
+    "defaultAuthor": "System"
+  }
+}

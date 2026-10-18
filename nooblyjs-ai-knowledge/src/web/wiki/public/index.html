@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-colors="off">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>noobly Wiki</title>
+
+    <!-- Embed bootstrap: when this page is loaded inside a host shell (the Teams
+         tab) as ?embed=1, this installs the bearer-token fetch shim + applies
+         the Teams skin BEFORE the deferred app.js module runs its auth check.
+         On a normal web visit it is a complete no-op. MUST stay first + classic
+         (synchronous) so the fetch patch is in place before any API call. -->
+    <script src="/applications/wiki/js/embed-bootstrap.js?v=20260723a"></script>
+
+    <!-- Brand identity. The logo/title/favicon come from the current space's
+         `theme` key in spaces.json, applied by spacesController.selectSpace().
+         Colours do NOT: data-theme-colors="off" on <html> keeps every space in
+         the shared noobly theme (styles.css). -->
+    <script src="/js/theme.js?v=20260803a"></script>
+
+    <!-- Client config (feature flags + the client cache epoch). Kicked off here,
+         in <head>, so the request overlaps the rest of the page download: app.js
+         AWAITS this promise at module scope before it lets anything read a
+         cached navigation tree, and every millisecond spent waiting for it is a
+         millisecond of boot. Parked on window so the flag handling further down
+         and app.js share ONE request. Classic + non-blocking; never throws. -->
+    <script>
+        window.__wikiConfigPromise = fetch('/applications/wiki/api/config', { cache: 'no-store' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; });
+    </script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+
+    <!-- noobly fonts (styles.css also @imports these; linking them here
+         starts the download without waiting for that stylesheet to parse) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 + Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <!-- Bootstrap 5 JavaScript Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Markdown Parser (used by document viewer) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+
+    <!-- Markdown Block Editor (orchestrator + block definitions) -->
+    <!-- ?v bust: bump when the editor JS changes so browsers fetch the new copy -->
+    <script src="/js/markdown/markdown-editor.js?v=20260724b"></script>
+    <script src="/js/markdown/markdown-editor-blocks.js?v=20260826b"></script>
+
+    <!-- Shared noobly theme (copy of noobly/styling/styles.css) -->
+    <link rel="stylesheet" href="/css/styles.css?v=20261008a">
+
+    <!-- Onboarding wizard -->
+    <link rel="stylesheet" href="/applications/wiki/css/onboarding.css?v=20261008a">
+
+    <!-- Wiki-specific overrides + components (theme bridge, layout, blocks) -->
+    <link rel="stylesheet" href="/applications/wiki/css/wiki.css?v=20261008a">
+
+</head>
+<body>
+    <!-- Main Wiki Application -->
+    <div id="wikiApp" class="kr-app hidden">
+        <!-- Topbar -->
+        <header class="kr-topbar">
+            <div class="kr-brand">
+                <button id="toggleSidebarBtn" class="kr-icon-btn" title="Toggle sidebar" style="margin-right: 4px;">
+                    <i class="bi bi-layout-text-window-reverse"></i>
+                </button>
+                <!-- src/alt are swapped at runtime by /js/theme.js; sizing is in
+                     CSS (.kr-brand-logo) so a theme can restyle it. -->
+                <img id="brandLogo" class="kr-brand-logo" src="/images/noobly-logo-colour.png" alt="noobly Wiki">
+                <!-- Stands in for the logo while it is loading or while the
+                     space is still unknown. Setting img.src does not clear the
+                     picture already on screen, so without this the PREVIOUS
+                     space's mark stays in the header until the new file
+                     decodes. Shown/hidden purely by data-brand-loading /
+                     data-brand-pending on <html> (see /js/theme.js). -->
+                <span class="kr-brand-logo-skeleton" aria-hidden="true"></span>
+                <!-- Title/subtitle come from the current space's theme (see
+                     /js/theme.js). The text below is the unbranded default and
+                     is what a space with no theme reverts to, so keep the two
+                     elements even when a brand always overwrites them. -->
+                <div class="name" id="brandName"><span class="kr-brand-title">noobly</span><small class="kr-brand-subtitle">Wiki</small></div>
+            </div>
+            <div class="kr-search">
+                <div class="wrap">
+                    <input type="text" id="globalSearch" placeholder="Search files, spaces, capabilities, people…"
+                           title="Tip: put quotes around words to match that exact phrase — &quot;Oracle MySQL&quot;">
+                    <!-- Folder-scope chip: appears to the RIGHT of the query when you're
+                         inside a folder so search is limited to it. Styling lives in
+                         .kr-search-scope (kr-base.css). Click to clear and search the
+                         whole wiki. -->
+                    <button type="button" id="searchScopeChip" class="kr-search-scope hidden" title="Searching within this folder. Click to clear and search the whole wiki.">
+                        <i class="bi bi-folder2"></i>
+                        <span id="searchScopeChipText">in folder</span>
+                        <i class="bi bi-x"></i>
+                    </button>
+                    <span class="kbd">⌘K</span>
+                    <div id="searchSuggestions" class="position-absolute top-100 start-0 w-100 bg-white border shadow-sm hidden" style="z-index: 10;">
+                        <!-- Search suggestions will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div class="kr-topbar-actions">
+                <!-- Persona layout switcher (Detailed / Content / Chat / Search).
+                     Wired by layoutController; the active layout is stored in
+                     localStorage and chosen during onboarding. -->
+                <div class="kr-layout-switch" id="layoutSwitch" role="tablist" aria-label="Choose your view">
+                    <button type="button" class="kr-layout-btn active" data-layout="detailed" role="tab" aria-selected="true" title="Detailed — full tree navigation">
+                        <i class="bi bi-layout-sidebar"></i><span>Detailed</span>
+                    </button>
+                    <button type="button" class="kr-layout-btn" data-layout="content" role="tab" aria-selected="false" title="Content — browsing first">
+                        <i class="bi bi-grid-1x2"></i><span>Content</span>
+                    </button>
+                    <button type="button" class="kr-layout-btn" data-layout="chat" role="tab" aria-selected="false" title="Chat — full-page assistant">
+                        <i class="bi bi-chat-dots"></i><span>Chat</span>
+                    </button>
+                    <button type="button" class="kr-layout-btn" data-layout="search" role="tab" aria-selected="false" title="Search — start at the search bar">
+                        <i class="bi bi-search"></i><span>Search</span>
+                    </button>
+                </div>
+                <button id="helpToggleBtn" class="kr-icon-btn" title="Help">
+                    <i class="bi bi-question-circle"></i>
+                </button>
+                <button id="aiChatToggleBtn" class="kr-icon-btn" title="Toggle AI Assistant">
+                    <i class="bi bi-robot"></i>
+                </button>
+                <div id="notificationBellWrapper" style="position: relative;">
+                    <button id="notificationBellBtn" class="kr-icon-btn" title="Notifications">
+                        <i class="bi bi-bell"></i>
+                        <!-- Local class, NOT Bootstrap utilities: this app loads
+                             Bootstrap's JS but not its CSS, so the old
+                             `position-absolute … bg-danger d-none` markup was
+                             entirely inert — the count could never be hidden and
+                             rendered as bare text beside the bell. -->
+                        <span id="notificationBadge" class="kr-bell-badge" hidden>0</span>
+                    </button>
+                </div>
+                <div class="kr-avatar-pill" id="userProfileBadge">
+                    <span id="userName">User</span>
+                    <div class="av" id="userAvatar">U</div>
+                </div>
+                <a href="#" id="logoutBtn" class="kr-icon-btn" title="Logout" style="margin-left: 4px;">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- Headline banner — full-width announcement under the topbar. Hidden
+             (and its grid row collapsed) unless an admin has set a headline.
+             Backed by /applications/wiki/api/headline; driven by headlineController. -->
+        <div id="headlineBanner" class="kr-headline hidden" role="status" aria-live="polite">
+            <i class="bi bi-megaphone-fill" aria-hidden="true"></i>
+            <span data-headline-text></span>
+        </div>
+
+        <!-- Left Sidebar -->
+        <aside id="leftSidebar" class="kr-sidebar">
+            <div class="kr-side-section">
+                <div class="kr-side-head" id="shortcutsHeader" data-bs-toggle="collapse" data-bs-target="#shortcutsContent" role="button" style="cursor: pointer;">
+                    <span>Shortcuts</span>
+                    <i class="bi bi-chevron-down" style="font-size: 9px; color: var(--kr-ink-400);"></i>
+                </div>
+                <div id="shortcutsContent" class="collapse show">
+                    <a href="#" id="shortcutHome" class="kr-nav-item">
+                        <i class="bi bi-house-door"></i> Home
+                    </a>
+                    <a href="#" id="shortcutRecent" class="kr-nav-item">
+                        <i class="bi bi-clock-history"></i> Recent
+                    </a>
+                    <a href="#" id="shortcutStarred" class="kr-nav-item">
+                        <i class="bi bi-star"></i> Starred
+                    </a>
+                    <a href="#" id="shortcutTemplates" class="kr-nav-item">
+                        <i class="bi bi-journal-code"></i> Templates
+                    </a>
+                </div>
+            </div>
+
+            <div class="kr-side-section">
+                <div class="kr-side-head">
+                    <span>Files</span>
+                    <div class="acts">
+                        <button id="createFileBtn" title="New File"><i class="bi bi-file-earmark-plus"></i></button>
+                        <button id="createFolderBtn" title="New Folder"><i class="bi bi-folder-plus"></i></button>
+                        <button id="uploadBtn" title="Upload File"><i class="bi bi-upload"></i></button>
+                    </div>
+                </div>
+                <div id="fileTree" class="file-tree kr-tree" style="min-height: 200px;">
+                    <!-- Loading placeholder -->
+                    <div class="placeholder-glow">
+                        <div class="placeholder col-10 mb-2"></div>
+                        <div class="placeholder col-8 mb-2 ms-3"></div>
+                        <div class="placeholder col-9 mb-2 ms-3"></div>
+                        <div class="placeholder col-7 mb-2"></div>
+                        <div class="placeholder col-11 mb-2 ms-3"></div>
+                    </div>
+                </div>
+                <label class="kr-hide-empty" title="Hide folders with no content (hidden files don't count)">
+                    <input type="checkbox" id="hideEmptyFoldersToggle">
+                    <span>Hide empty folders</span>
+                </label>
+                <label class="kr-hide-empty" title="Show a folder that holds only one subfolder as a single row (Parent &rsaquo; Child). Every part stays clickable.">
+                    <input type="checkbox" id="collapseChainsToggle" checked>
+                    <span>Collapse single-folder chains</span>
+                </label>
+
+                <!-- In-page navigation for the open markdown document. Sits
+                     directly below the file tree (inside the Files section) and
+                     is hidden when no document is open. Populated by
+                     documentOutline.build(). -->
+                <div class="kr-outline-section" id="docOutlineSection" style="display: none;">
+                    <div class="kr-side-head">
+                        <span>On this page</span>
+                    </div>
+                    <nav id="docOutline" class="kr-outline" aria-label="Document outline"></nav>
+                </div>
+            </div>
+
+            <div class="kr-side-section">
+                <div class="kr-side-head" id="spacesHeader" data-bs-toggle="collapse" data-bs-target="#spacesContent" role="button" style="cursor: pointer;">
+                    <span>Spaces</span>
+                    <i class="bi bi-chevron-down" style="font-size: 9px; color: var(--kr-ink-400);"></i>
+                </div>
+                <div id="spacesContent" class="collapse show">
+                    <div id="spacesList">
+                        <!-- Loading placeholder -->
+                        <div class="placeholder-glow">
+                            <div class="d-flex align-items-center mb-2 p-2">
+                                <div class="placeholder rounded-circle me-2" style="width: 16px; height: 16px;"></div>
+                                <div class="placeholder col-8"></div>
+                            </div>
+                            <div class="d-flex align-items-center mb-2 p-2">
+                                <div class="placeholder rounded-circle me-2" style="width: 16px; height: 16px;"></div>
+                                <div class="placeholder col-7"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resize Handle -->
+            <div id="sidebarResizeHandle" class="sidebar-resize-handle kr-sidebar-resize"></div>
+        </aside>
+
+        <!-- Chat-first layout: conversation history sidebar (only visible when
+             data-layout="chat"). Populated by layoutController from localStorage. -->
+        <aside id="chatSessionsSidebar" class="kr-chat-sidebar">
+            <button type="button" id="newChatBtn" class="kr-newchat-btn">
+                <i class="bi bi-plus-lg"></i> New chat
+            </button>
+            <div class="kr-chat-recent-label">Recent</div>
+            <div id="chatSessionsList" class="kr-chat-sessions"></div>
+        </aside>
+
+        <!-- Search-first layout: previous-searches sidebar (only visible when
+             data-layout="search"). Populated by layoutController from localStorage. -->
+        <aside id="searchHistorySidebar" class="kr-chat-sidebar kr-search-history">
+            <div class="kr-chat-recent-label">Previous searches</div>
+            <div id="searchHistoryList" class="kr-chat-sessions"></div>
+            <button type="button" id="clearSearchHistoryBtn" class="kr-clearhistory-btn">
+                <i class="bi bi-trash"></i> Clear history
+            </button>
+            <!-- Search-first layout: the faceted Filters panel is moved here from
+                 the results area (searchController renders into it when the
+                 layout is "search"); empty in every other layout. -->
+            <div id="searchFacetsSlot" class="kr-search-facets-slot"></div>
+        </aside>
+
+            <!-- Main Content Area -->
+        <main id="mainContent" class="kr-main">
+                <!-- Search-first layout: prominent search box at the top of the
+                     content area (only visible when data-layout="search"). -->
+                <div id="layoutSearchPanel">
+                    <div class="kr-search-hero">
+                        <div class="kr-search-hero-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="layoutSearchInput" placeholder="Search files, spaces, capabilities, people…" autocomplete="off"
+                                   title="Tip: put quotes around words to match that exact phrase — &quot;Oracle MySQL&quot;">
+                            <span class="kbd">⌘K</span>
+                        </div>
+                        <div class="kr-search-hero-hint">Type to search across every space, then press Enter to see all results.</div>
+                    </div>
+                </div>
+                <!-- Home View -->
+                <div id="homeView" class="view">
+                    <nav class="breadcrumb mb-3">
+                        <a href="#" id="homeBreadcrumbLink" class="text-decoration-none" style="color: var(--accent-link); font-weight: bold;">Spaces</a>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="last" id="homeBreadcrumbLast" style="color: var(--accent-link); font-weight: bold;">Home</span>
+                    </nav>
+
+                    <div class="kr-page-hero" style="display:none">
+                        <div class="eyebrow" id="homeHeroEyebrow">Default Space</div>
+                        <h1 id="workspaceTitle">Welcome to the Wiki</h1>
+                        <p id="workspaceSubtitle">Your documentation workspace dashboard.</p>
+                        <div class="stats" id="homeHeroStats">
+                            <div class="stat"><div class="k" id="statDocs">—</div><div class="l">Documents</div></div>
+                            <div class="stat"><div class="k" id="statSpaces">—</div><div class="l">Active spaces</div></div>
+                            <div class="stat"><div class="k" id="statRecent">—</div><div class="l">Recently visited</div></div>
+                            <div class="stat"><div class="k" id="statStarred">—</div><div class="l">Starred</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Home Content Area (for home.md)
+
+                         Deliberately NO notes chip here. A landing page has no
+                         action row for one to sit in, so it could only float in
+                         the top-right corner — where it lands on top of whatever
+                         the page opens with, which for a `landing-hero` is a
+                         full-bleed dark band it is unreadable against.
+                         Notes still target this page: app.js calls
+                         notesController.setTarget() when the home content loads,
+                         independently of any chip, so the panel opens on the
+                         right page from the document and folder chips or from
+                         wherever it was left open. -->
+                    <div id="homeContentArea" class="kr-surface mb-3 hidden">
+                        <div class="kr-surface-body markdown-content" style="padding: 24px 28px;">
+                            <div id="homeContentBody">
+                                <!-- home.md content will be rendered here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Dashboard (.dashboards/{email-prefix}.md) — read-only -->
+                    <section id="userDashboardSection" class="kr-surface mb-3 hidden">
+                        <div class="kr-surface-head">
+                            <h3><i class="bi bi-speedometer2"></i> My dashboard</h3>
+                        </div>
+                        <div class="kr-surface-body markdown-content" style="padding: 24px 28px;">
+                            <div id="userDashboardBody">
+                                <!-- user's personal dashboard rendered by loadUserDashboard() -->
+                            </div>
+                        </div>
+                    </section>
+
+
+
+                    <!-- Home folder browse -->
+                    <section id="homeFolderSection" class="kr-surface mb-3">
+                        <div class="kr-surface-head">
+                            <h3><i class="bi bi-folder2-open"></i> <span id="homeFolderTitle">Browse</span></h3>
+                            <div class="kr-seg view-mode-switcher" data-target="homeFolder">
+                                <button class="view-mode-btn active" data-view="details" title="List view"><i class="bi bi-list-ul"></i> List</button>
+                                <button class="view-mode-btn" data-view="grid" title="Grid view"><i class="bi bi-grid-3x3-gap"></i> Grid</button>
+                                <button class="view-mode-btn" data-view="feature" title="Feature view — cover image and headline"><i class="bi bi-view-stacked"></i> Feature</button>
+                                <button class="view-mode-btn" data-view="cards" title="Cards view"><i class="bi bi-card-image"></i> Cards</button>
+                            </div>
+                        </div>
+                        <div class="kr-surface-body">
+                            <div id="homeFolderContent">
+                                <!-- root folder list rendered by loadHomeFolder() -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Pinned Documents and Folders -->
+                    <section class="kr-surface mb-3">
+                        <div class="kr-surface-head">
+                            <h3><i class="bi bi-pin-angle-fill"></i> Pinned documents and folders</h3>
+                            <button id="refreshPinnedBtn" class="kr-icon-btn" style="color: var(--kr-ink-500); border: 1px solid var(--kr-border);" title="Refresh">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                        <div class="kr-surface-body">
+                            <div id="pinnedFilesContent">
+                                <div class="kr-empty-tile">
+                                    <div class="ico"><i class="bi bi-pin-angle"></i></div>
+                                    <h4>Nothing pinned yet</h4>
+                                    <p>Use the Pin button on a folder or document to anchor it here.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+
+                    <!-- Recent Files (full width) -->
+                    <section class="kr-surface mb-3">
+                        <div class="kr-surface-head">
+                            <h3><i class="bi bi-clock-history"></i> Recent files</h3>
+                            <div class="d-flex gap-2 align-items-center">
+                                <span style="font-size:10px; color: var(--kr-ink-400)">Sort: most recent</span>
+                                <div class="kr-seg view-mode-switcher" data-target="recentHome">
+                                    <button class="view-mode-btn active" data-view="details" title="List view"><i class="bi bi-list-ul"></i> List</button>
+                                    <button class="view-mode-btn" data-view="grid" title="Grid view"><i class="bi bi-grid-3x3-gap"></i> Grid</button>
+                                    <button class="view-mode-btn" data-view="feature" title="Feature view — cover image and headline"><i class="bi bi-view-stacked"></i> Feature</button>
+                                    <button class="view-mode-btn" data-view="cards" title="Cards view"><i class="bi bi-card-image"></i> Cards</button>
+                                </div>
+                                <button id="refreshRecentBtn" class="kr-icon-btn" style="color: var(--kr-ink-500); border: 1px solid var(--kr-border);" title="Refresh">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="kr-surface-body">
+                            <div id="recentFilesContent">
+                                <div class="kr-empty-tile">
+                                    <div class="ico"><i class="bi bi-clock-history"></i></div>
+                                    <h4>No recent files yet</h4>
+                                    <p>Files you open will appear here for quick access.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Starred Files (full width) -->
+                    <section class="kr-surface">
+                        <div class="kr-surface-head">
+                            <h3><i class="bi bi-star-fill"></i> Starred files</h3>
+                            <div class="kr-seg view-mode-switcher" data-target="starredHome">
+                                <button class="view-mode-btn active" data-view="details" title="List view"><i class="bi bi-list-ul"></i> List</button>
+                                <button class="view-mode-btn" data-view="grid" title="Grid view"><i class="bi bi-grid-3x3-gap"></i> Grid</button>
+                                <button class="view-mode-btn" data-view="feature" title="Feature view — cover image and headline"><i class="bi bi-view-stacked"></i> Feature</button>
+                                <button class="view-mode-btn" data-view="cards" title="Cards view"><i class="bi bi-card-image"></i> Cards</button>
+                            </div>
+                        </div>
+                        <div class="kr-surface-body">
+                            <div id="starredFilesContent">
+                                <div class="kr-empty-tile">
+                                    <div class="ico"><i class="bi bi-star"></i></div>
+                                    <h4>No starred files yet</h4>
+                                    <p>Star documents to pin them here for quick access across your team.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Spaces View -->
+                <div id="spacesView" class="view hidden">
+                    <nav class="kr-breadcrumb">
+                        <a href="#"><i class="bi bi-house-door"></i></a>
+                        <span class="sep">›</span>
+                        <span class="last">Spaces</span>
+                    </nav>
+
+                    <div class="kr-page-hero">
+                        <div class="eyebrow">Workspaces</div>
+                        <h1>Available Spaces</h1>
+                        <p>Pick a workspace to browse its documents, capabilities, and architecture.</p>
+                    </div>
+
+                    <div id="spacesGrid" class="kr-spaces-list">
+                        <!-- Dynamic content -->
+                    </div>
+
+                    <!-- Quick Access: starred + recently-visited docs grouped by
+                         space (ported from the Teams wiki SpacesView). Populated
+                         by app.renderQuickAccess(); hidden when there's no activity. -->
+                    <div id="spacesQuickAccess" class="kr-quick-access" style="display:none;">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Space Detail View -->
+                <div id="spaceView" class="view hidden">
+                    <div class="space-header">
+                        <nav class="breadcrumb">
+                            <a href="#" id="backToHome">Home</a>
+                            <span class="breadcrumb-separator">/</span>
+                            <span id="currentSpaceName"></span>
+                        </nav>
+                        <div class="space-actions">
+                            <button id="createDocInSpace" class="btn btn-secondary">+ New Document</button>
+                            <button id="createFolderInSpace" class="btn btn-secondary">+ New Folder</button>
+                        </div>
+                    </div>
+
+                    <div class="space-content-sections">
+                        <!-- Recent Files in Space -->
+                        <section class="space-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <svg width="20" height="20" class="section-icon">
+                                        <use href="#icon-history"></use>
+                                    </svg>
+                                    <h2>Recent Files</h2>
+                                </div>
+                            </div>
+                            <div id="spaceRecentFiles" class="files-grid">
+                                <!-- Recent files will be loaded here -->
+                            </div>
+                        </section>
+
+                        <!-- Starred Files in Space -->
+                        <section class="space-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <svg width="20" height="20" class="section-icon">
+                                        <use href="#icon-star"></use>
+                                    </svg>
+                                    <h2>Starred Files</h2>
+                                </div>
+                            </div>
+                            <div id="spaceStarredFiles" class="files-grid">
+                                <!-- Starred files will be loaded here -->
+                            </div>
+                        </section>
+
+                        <!-- Root Files and Folders -->
+                        <section class="space-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <svg width="20" height="20" class="section-icon">
+                                        <use href="#icon-folder"></use>
+                                    </svg>
+                                    <h2>Files & Folders</h2>
+                                </div>
+                            </div>
+                            <div id="spaceRootItems" class="items-grid">
+                                <!-- Root level files and folders will be loaded here -->
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- Content is rendered directly into documentView below -->
+
+                <!-- Editor View -->
+                <div id="editorView" class="view hidden">
+                    <!-- Rendered by documentController.renderEditorBreadcrumb in the
+                         shared folder-view style (Spaces / space / folders / file). -->
+                    <nav class="breadcrumb" id="editorBreadcrumb"></nav>
+
+                    <div class="kr-doc-toolbar">
+                        <div class="lhs">
+                            <div class="doc-icon" id="editorDocIcon">md</div>
+                            <div>
+                                <h2 id="editorDocTitle">Document</h2>
+                                <div class="meta" id="editorDocMeta"></div>
+                            </div>
+                        </div>
+                        <div class="rhs">
+                            <span id="lastSavedIndicator" class="text-muted small me-2" style="display: none;">
+                                <i class="bi bi-clock-history me-1"></i>
+                                <span id="lastSavedTime">Never saved</span>
+                            </span>
+                            <button id="saveDoc" class="btn btn-primary btn-sm">
+                                <i class="bi bi-check-lg"></i> Save
+                            </button>
+                            <button id="closeEditor" class="btn btn-ghost btn-sm">
+                                <i class="bi bi-x-lg"></i> Close
+                            </button>
+                            <div class="kr-seg editor-mode-toggle" role="tablist" aria-label="Editor mode">
+                                <button type="button" id="editorModeBlocks" class="active" data-mode="blocks" aria-pressed="true" title="Visual block editor">
+                                    <i class="bi bi-grid-1x2"></i> Blocks
+                                </button>
+                                <button type="button" id="editorModeMarkdown" data-mode="markdown" aria-pressed="false" title="Raw markdown — paste/edit text directly">
+                                    <i class="bi bi-markdown"></i> Markdown
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="editor-container">
+                        <div class="editor-main">
+                            <div id="markdownEditor" class="editor-pane">
+                                <!-- Markdown Block Editor will be initialized here -->
+                                <div id="editorTextarea"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Document View -->
+                <div id="documentView" class="view hidden">
+                    <nav class="kr-breadcrumb" id="docBreadcrumb">
+                        <a href="#" id="docBackToSpace"><i class="bi bi-house-door"></i> Space</a>
+                    </nav>
+
+                    <div class="kr-doc-toolbar">
+                        <div class="lhs">
+                            <div class="doc-icon" id="docIcon">md</div>
+                            <div>
+                                <h2 id="currentDocTitle">Document</h2>
+                                <div class="meta" id="docMeta"></div>
+                            </div>
+                        </div>
+                        <div class="rhs">
+                            <button id="pinDocBtn" class="btn btn-ghost btn-sm pin-btn">
+                                <i class="bi bi-pin-angle"></i>
+                                <span class="pin-text">Pin</span>
+                            </button>
+                            <button id="starDocBtn" class="btn btn-ghost btn-sm star-btn">
+                                <i class="bi bi-star"></i>
+                                <span class="star-text">Star</span>
+                            </button>
+                            <button id="subscribeDocBtn" class="btn btn-ghost btn-sm" title="Subscribe to changes">
+                                <i class="bi bi-bell"></i> Subscribe
+                            </button>
+                            <button id="requestReviewBtn" class="btn btn-ghost btn-sm" title="Request a review of this page from a colleague">
+                                <i class="bi bi-clipboard-check"></i> Request review
+                            </button>
+                            <button id="shareDocBtn" class="btn btn-ghost btn-sm" title="Copy a shareable link to this document">
+                                <i class="bi bi-share"></i> Share
+                            </button>
+                            <button id="downloadDocBtn" class="btn btn-ghost btn-sm">
+                                <i class="bi bi-download"></i> Download
+                            </button>
+                            <button id="refreshDocBtn" class="btn btn-ghost btn-sm" title="Rebuild this content from source (runs the workflow declared in the document)" style="display: none;">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                            <button id="convertToMarkdownBtn" class="btn btn-secondary btn-sm" style="display: none;">
+                                <i class="bi bi-file-earmark-text"></i> Convert to Markdown
+                            </button>
+                            <button id="fullscreenDocBtn" class="btn btn-ghost btn-sm" title="View fullscreen">
+                                <i class="bi bi-arrows-fullscreen"></i>
+                            </button>
+                            <!-- Notes toggle. Every one of these across the app
+                                 carries data-notes-toggle and is driven by one
+                                 delegated handler in notesController — no ids,
+                                 so a view can render as many as it needs. -->
+                            <button type="button" class="btn btn-ghost btn-sm kr-notes-chip" data-notes-toggle
+                                    title="Your private notes about this page">
+                                <i class="bi bi-journal-text"></i> <span>Notes</span>
+                                <span class="kr-notes-count" data-notes-count hidden>0</span>
+                            </button>
+                            <!-- Link documents. Carries no target of its own —
+                                 linkedDocumentsController infers the open
+                                 document, so the same markup works for every
+                                 markdown page the document view shows. -->
+                            <button type="button" id="linkDocsBtn" class="btn btn-ghost btn-sm" data-link-documents
+                                    title="Link related documents and folders to this page">
+                                <i class="bi bi-diagram-3"></i> Link documents
+                            </button>
+                            <button id="editDocBtn" class="btn btn-primary btn-sm">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Content / editor tabs (markdown documents only). Switching
+                         tabs saves the active editor and keeps every view in sync.
+                         Replaces the old Edit + Visualise toolbar buttons. -->
+                    <div class="kr-doc-tabs" id="docTabs" role="tablist" aria-label="Document views" style="display: none;">
+                        <button type="button" class="kr-doc-tab active" data-tab="content" role="tab" aria-selected="true">
+                            <i class="bi bi-file-text"></i> Content
+                        </button>
+                        <button type="button" class="kr-doc-tab" data-tab="blocks" role="tab" aria-selected="false">
+                            <i class="bi bi-grid-1x2"></i> Blocks
+                        </button>
+                        <button type="button" class="kr-doc-tab" data-tab="markdown" role="tab" aria-selected="false">
+                            <i class="bi bi-markdown"></i> Markdown
+                        </button>
+                        <button type="button" class="kr-doc-tab" data-tab="visualise" role="tab" aria-selected="false">
+                            <i class="bi bi-diagram-3"></i> Visualise
+                        </button>
+                        <button type="button" class="kr-doc-tab" data-tab="card" role="tab" aria-selected="false">
+                            <i class="bi bi-card-image"></i> Card
+                        </button>
+                        <!-- PDF documents only: the rendered PDF, and the derived
+                             markdown that feeds search/AI (editable, autosaving). -->
+                        <button type="button" class="kr-doc-tab" data-tab="pdf" role="tab" aria-selected="false">
+                            <i class="bi bi-file-earmark-pdf"></i> Document
+                        </button>
+                        <button type="button" class="kr-doc-tab" data-tab="derived" role="tab" aria-selected="false">
+                            <i class="bi bi-markdown"></i> Extracted text
+                        </button>
+                        <span class="kr-doc-tabs-status" id="docTabsStatus" aria-live="polite"></span>
+                    </div>
+
+                    <div class="document-container kr-doc-paper">
+                        <!-- Content will be inserted directly here by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Search Results View -->
+                <div id="searchView" class="view hidden">
+                    <div class="view-header">
+                        <h1>Search Results</h1>
+                        <span id="searchQuery" class="search-query"></span>
+                    </div>
+                    <div id="searchResults" class="search-results">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Profile View (rendered by profileController) -->
+                <div id="profileView" class="view hidden">
+                    <div id="profileContent"></div>
+                </div>
+
+                <!-- Templates hub (rendered by templatesController): document
+                     templates (.templates/) + continuous exploration templates and
+                     continuous explorations (.continuous-explorations/) -->
+                <div id="templatesView" class="view hidden">
+                    <div id="templatesContent"></div>
+                </div>
+
+                <!-- Continuous Exploration workspace (rendered by continuousExplorationController) -->
+                <div id="continuousExplorationView" class="view hidden">
+                    <div id="continuousExplorationContent"></div>
+                </div>
+
+                <!-- Continuous Exploration creation wizard (rendered by continuousExplorationWizard) -->
+                <div id="continuousExplorationWizardView" class="view hidden">
+                    <div id="continuousExplorationWizardContent"></div>
+                </div>
+
+                <!-- Deep Link Error View -->
+                <div id="deepLinkErrorView" class="view hidden">
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:28px;text-align:center;">
+                        <i class="bi bi-exclamation-triangle" style="font-size:70px;color:#dc3545;margin-bottom:21px;"></i>
+                        <h2 id="deepLinkErrorTitle" style="font-size:22px;font-weight:600;margin-bottom:10.5px;">Page Not Found</h2>
+                        <p id="deepLinkErrorDetail" style="font-size:15px;color:#6c757d;max-width:480px;margin-bottom:28px;">
+                            The page you requested could not be found.
+                        </p>
+                        <button class="btn btn-primary" onclick="window.wikiApp && window.wikiApp.showHome()">
+                            <i class="bi bi-house me-2"></i>Go to Home
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+        <!-- Notification Center Panel — sibling of #mainContent (NOT inside it),
+             so it still opens in the chat persona, which hides #mainContent. It's
+             position:fixed, so DOM location doesn't affect where it renders. -->
+        <div id="notificationPanel" class="notification-panel hidden d-flex" style="position: fixed; right: 0; top: 56px; width: 380px; max-width: 90vw; height: calc(100vh - 56px); background: var(--bs-body-bg); border-left: 1px solid var(--bs-border-color); z-index: 1000; overflow-y: auto; box-shadow: -2px 0 8px rgba(0,0,0,0.15); display: none;  flex-direction: column; ">
+            <!-- Panel Header with Close Button -->
+            <div class="notification-panel-header d-flex justify-content-between align-items-center p-3" style="border-bottom: 1px solid var(--bs-border-color);">
+                <h6 class="mb-0">Updates</h6>
+                <button id="closeNotificationPanel" class="btn btn-sm btn-close"></button>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="notification-tabs d-flex" style="border-bottom: 1px solid var(--bs-border-color);">
+                <button id="notificationsTab" class="btn btn-link flex-fill rounded-0 active" style="border: none; border-bottom: 2px solid var(--bs-primary); color: var(--bs-body-color); text-decoration: none;">
+                    <i class="bi bi-bell me-1"></i>Notifications
+                </button>
+                <button id="subscriptionsTab" class="btn btn-link flex-fill rounded-0" style="border: none; border-bottom: 2px solid transparent; color: var(--bs-secondary); text-decoration: none;">
+                    <i class="bi bi-bookmark me-1"></i>Subscriptions
+                </button>
+            </div>
+
+            <!-- List Container -->
+            <div id="notificationList" class="notification-list p-2 flex-grow-1" style="overflow-y: auto;"></div>
+        </div>
+
+        <!-- AI Chat Panel (Right Sidebar) -->
+        <aside id="aiChatPanel" class="ai-chat-panel kr-ai">
+            <!-- Resize Handle -->
+            <div id="aiChatResizeHandle" class="ai-chat-resize-handle"></div>
+
+            <!-- AI Chat Header -->
+            <div class="kr-ai-head">
+                <div class="title">
+                    <div class="badge-pulse"><i class="bi bi-stars"></i></div>
+                    <div>
+                        <div class="t" id="aiChatHeaderTitle">AI Assistant</div>
+                        <div class="s">Online · grounded on your space</div>
+                    </div>
+                </div>
+                <div class="acts">
+                    <button id="aiContextViewToggleBtn" title="Toggle Context View"><i class="bi bi-folder-symlink"></i></button>
+                    <button id="aiChatClearBtn" title="Clear chat history"><i class="bi bi-trash"></i></button>
+                    <button id="aiChatCollapseBtn" title="Close"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </div>
+
+            <!-- Chat Body (messages / context view / context editor share this region) -->
+            <div class="kr-ai-body">
+                <div id="aiChatMessages" class="ai-chat-messages">
+                    <!-- Welcome message -->
+                    <div class="ai-chat-welcome kr-ai-greet">
+                        <div class="glyph"><i class="bi bi-robot"></i></div>
+                        <h4>Welcome to AI Assistant</h4>
+                        <p>Ask me anything about your wiki documents!</p>
+                        <small class="text-muted">Configure AI settings to get started</small>
+                    </div>
+                </div>
+
+                <!-- Context View Area -->
+                <div id="aiContextView" class="ai-context-view hidden">
+                    <div class="ai-context-container">
+                        <div class="ai-context-toolbar p-2 border-bottom">
+                            <button class="btn btn-secondary btn-sm" id="createContextBtn">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Create Context
+                            </button>
+                        </div>
+                        <div class="ai-context-list" id="aiContextList">
+                            <div class="text-center text-muted p-4">
+                                <i class="bi bi-folder-symlink" style="font-size: 42px;"></i>
+                                <p class="mt-3 mb-1"><strong>No context files found</strong></p>
+                                <p class="small">Create context for folders to help AI understand your documents</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Context Editor Area -->
+                <div id="aiContextEditor" class="ai-context-editor hidden">
+                    <div class="ai-context-editor-header p-2 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <button class="btn btn-ghost btn-sm" id="contextEditorBackBtn">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                Back
+                            </button>
+                            <span class="ms-2 text-muted" id="contextEditorPath"></span>
+                        </div>
+                        <!-- Icon-only: the panel is narrow and the folder path beside
+                             these can run to three lines, which squeezed labelled
+                             buttons off the edge. The name lives in title/aria-label. -->
+                        <div class="kr-ctx-actions">
+                            <!-- Per-file regenerate. Hidden for the _folder.md
+                                 roll-up, which has no source document — that one
+                                 is rebuilt from the folder view's toolbar. -->
+                            <button class="btn btn-secondary btn-sm iconly hidden" id="regenerateContextBtn"
+                                    aria-label="Regenerate context"
+                                    title="Regenerate this document's AI context. Runs in the background; the text below updates as it is written."><i class="bi bi-arrow-clockwise"></i></button>
+                            <button class="btn btn-primary btn-sm iconly" id="saveContextBtn"
+                                    aria-label="Save context" title="Save context"><i class="bi bi-save"></i></button>
+                        </div>
+                    </div>
+                    <!-- Live progress strip, shown only while a regeneration runs. -->
+                    <div class="kr-ctx-status hidden" id="contextEditorStatus" role="status" aria-live="polite"></div>
+                    <div class="ai-context-editor-body">
+                        <!-- Height is owned by the stylesheet (~50 lines, shrinking
+                             to fit a short panel); an inline height would only
+                             re-introduce the percentage-of-auto-height dead end. -->
+                        <textarea id="contextEditorTextarea" class="form-control border-0" style="resize: none;" placeholder="Enter context information for this folder...
+
+Examples:
+- Purpose of this folder
+- What files are stored here
+- Important conventions or standards
+- Related documentation"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="kr-ai-foot">
+                <!-- Quick prompts — only shown in the chat-first layout. -->
+                <div id="chatQuickPrompts" class="kr-chat-quickprompts">
+                    <button type="button" data-prompt="Summarise this space">Summarise this space</button>
+                    <button type="button" data-prompt="What changed this week?">What changed this week?</button>
+                    <button type="button" data-prompt="Explain a diagram">Explain a diagram</button>
+                </div>
+                <form id="aiChatForm" class="ai-chat-form">
+                    <div class="kr-ai-input">
+                        <textarea id="aiChatInput" placeholder="Ask anything…" rows="1" style="resize: none; max-height: 120px; flex: 1; border: 0; outline: 0; background: transparent; font-size: 11.5px; font-family: inherit;"></textarea>
+                        <button type="submit" class="send" id="aiChatSendBtn">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </form>
+                <!-- Scope toggle: ticked = only the current folder/page; unticked = whole wiki.
+                     Auto-ticks and relabels as you move between folders and pages. -->
+                <div class="ai-chat-scope" id="aiChatScope" style="display:none; align-items:center; padding:2px 10px 0;">
+                    <label class="ai-chat-scope-label kr-hide-empty" id="aiChatScopeLabel" style="margin:0;" title="When ticked, the assistant only looks within where you are. Untick to search the whole wiki.">
+                        <input type="checkbox" id="aiChatScopeToggle" style="accent-color: var(--kr-teal-600, #02797d);">
+                        <i class="bi bi-folder2" id="aiChatScopeIcon" style="font-size:11px;"></i>
+                        <span id="aiChatScopeText">Search the whole wiki</span>
+                    </label>
+                </div>
+                <div class="ai-chat-status text-muted small px-2 py-1" id="aiChatStatus">
+                    <span id="aiChatStatusText"></span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Notes Panel (Right Sidebar) — private per-user notes about whatever
+             content is open (document, folder or space home). A grid child in
+             column 4, so opening it reflows the page rather than covering it;
+             it stays open across navigation until the Notes toggle is clicked
+             again. Driven by modules/notesController.js. -->
+        <aside id="notesPanel" class="kr-notes-panel hidden" aria-label="Notes">
+            <div class="kr-notes-head">
+                <div class="title">
+                    <i class="bi bi-journal-text"></i>
+                    <div>
+                        <div class="t">Notes</div>
+                        <div class="s" id="notesTargetLabel">Private to you</div>
+                    </div>
+                </div>
+                <button id="notesCloseBtn" class="kr-icon-btn" title="Close notes"><i class="bi bi-x-lg"></i></button>
+            </div>
+
+            <div class="kr-notes-body" id="notesBody">
+                <div class="kr-notes-actions">
+                    <button type="button" class="kr-notes-new" id="notesNewBtn">
+                        <i class="bi bi-plus-lg"></i> New note
+                    </button>
+                    <!-- Hidden until notesController confirms this browser can
+                         record. getUserMedia needs a SECURE CONTEXT, so over
+                         plain http (or in an iframe with no `microphone` in its
+                         allow list) navigator.mediaDevices is simply undefined
+                         — failing closed keeps a dead button off the panel. -->
+                    <button type="button" class="kr-notes-new kr-notes-record" id="notesRecordBtn" hidden>
+                        <i class="bi bi-mic"></i> Record
+                    </button>
+                </div>
+
+                <!-- Live recorder. Shown in place of the two buttons above
+                     while a recording is running. -->
+                <div class="kr-notes-recorder" id="notesRecorder" hidden>
+                    <span class="kr-rec-dot" aria-hidden="true"></span>
+                    <span class="kr-rec-time" id="notesRecorderTime" role="timer" aria-live="off">0:00</span>
+                    <div class="kr-rec-actions">
+                        <button type="button" class="btn btn-sm btn-primary" id="notesRecorderStop">
+                            <i class="bi bi-stop-fill"></i> Stop
+                        </button>
+                        <button type="button" class="btn btn-sm btn-ghost" id="notesRecorderCancel">Discard</button>
+                    </div>
+                </div>
+
+                <!-- "Keep going?" prompt, shown in place of the recorder every
+                     RECORD_PROMPT_MS. The recording is PAUSED behind this, and
+                     an unanswered prompt stops and SAVES rather than running
+                     on — so a microphone is never left live on nobody's behalf.
+                     `assertive` because it interrupts: a screen-reader user has
+                     a limited window to answer before it stops itself. -->
+                <div class="kr-notes-confirm" id="notesRecorderConfirm" hidden
+                     role="alertdialog" aria-live="assertive"
+                     aria-labelledby="notesRecorderConfirmLabel">
+                    <div class="kr-rec-ask" id="notesRecorderConfirmLabel">
+                        <i class="bi bi-pause-circle-fill" aria-hidden="true"></i>
+                        Still recording? <b id="notesRecorderElapsed">30:00</b> so far.
+                    </div>
+                    <div class="kr-rec-actions">
+                        <button type="button" class="btn btn-sm btn-primary" id="notesRecorderContinue">
+                            <i class="bi bi-record-fill"></i> Continue
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" id="notesRecorderFinish">
+                            Stop &amp; save
+                        </button>
+                        <span class="kr-rec-countdown" id="notesRecorderCountdown">Stopping in 60s</span>
+                    </div>
+                </div>
+
+                <div class="kr-notes-list" id="notesList"></div>
+            </div>
+
+            <div class="kr-notes-foot">
+                <span id="notesFootStatus">Autosaved</span>
+            </div>
+        </aside>
+
+        <!-- Picture viewer for the notes panel.
+             The figure inside is built fresh on every open and REMOVED on
+             close: it is a `.kr-image` canvas, which the markdown parser's own
+             pan/zoom runtime hydrates (ctrl/cmd+wheel zoom, drag to pan, and
+             the -/%/+/fit toolbar) — exactly the zoom a picture in a document
+             gets. That runtime measures the canvas to pick an opening zoom, so
+             the figure can only be inserted once this dialog is visible, and it
+             marks an image as hydrated, so a stale one would never re-fit.
+             Driven by modules/notesController.js. -->
+        <div class="kr-note-viewer" id="noteImageViewer" hidden
+             role="dialog" aria-modal="true" aria-label="Picture from a note">
+            <div class="kr-note-viewer-panel" id="noteImageViewerPanel"></div>
+            <button type="button" class="kr-note-viewer-close" id="noteImageViewerClose"
+                    aria-label="Close picture"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <!-- Help & support drawer (opened from the topbar ? button) -->
+        <aside id="helpDrawer" class="kr-help-drawer hidden" aria-label="Help and support">
+            <div class="kr-help-head">
+                <div class="title"><i class="bi bi-question-circle"></i> Help &amp; support</div>
+                <button id="helpCloseBtn" class="kr-icon-btn" title="Close help"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="kr-help-search">
+                <i class="bi bi-search"></i>
+                <input id="helpSearchInput" type="text" placeholder="Search help…" autocomplete="off" spellcheck="false">
+                <span class="kr-help-count" id="helpSearchCount"></span>
+                <button id="helpSearchPrev" class="kr-help-nav-btn" title="Previous match"><i class="bi bi-chevron-up"></i></button>
+                <button id="helpSearchNext" class="kr-help-nav-btn" title="Next match"><i class="bi bi-chevron-down"></i></button>
+            </div>
+            <div class="kr-help-thispage hidden" id="helpThisPage"><i class="bi bi-geo-alt"></i> Help for this page</div>
+            <nav class="kr-help-nav" id="helpNav"></nav>
+            <div class="kr-help-body markdown-content" id="helpBody"></div>
+            <div class="kr-help-foot" id="helpFoot">
+                <a id="helpSupportBtn" class="kr-help-support-btn" href="#" style="display:none;"><i class="bi bi-life-preserver"></i> Contact support</a>
+            </div>
+        </aside>
+
+        <!-- Source preview drawer — opened by clicking an AI chat source link.
+             Renders the linked document's markdown with the shared parser. -->
+        <aside id="docPreviewDrawer" class="kr-doc-preview hidden" aria-label="Document preview">
+            <div class="kr-doc-preview-head">
+                <div class="title"><i class="bi bi-file-earmark-text"></i> <span id="docPreviewTitle">Document</span></div>
+                <div class="kr-doc-preview-actions">
+                    <button id="docPreviewOpenBtn" class="kr-doc-preview-open" title="Open this document in Content view"><i class="bi bi-box-arrow-up-right"></i> Open</button>
+                    <button id="docPreviewCloseBtn" class="kr-icon-btn" title="Close preview"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </div>
+            <div class="kr-doc-preview-sub" id="docPreviewSub"></div>
+            <div class="kr-doc-preview-body markdown-content" id="docPreviewBody"></div>
+        </aside>
+    </div>
+
+    <!-- Modals -->
+    <!-- Space Manager Modal
+         The five dialogs below are Bootstrap modals opened by app.showModal(),
+         not by Bootstrap's JS: `d-block` keeps them laid out and the wiki's
+         `.hidden` (display:none !important, loaded after Bootstrap) is what
+         hides them; #overlay is the matching .modal-backdrop. -->
+    <div id="spaceManagerModal" class="modal d-block hidden" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="spaceManagerModalTitle">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="spaceManagerModalTitle">Manage Spaces</h5>
+                    <button type="button" id="closeSpaceManagerModal" class="btn-close" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Toggle which spaces appear in your sidebar.</p>
+                    <div id="spaceManagerList" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Space items rendered dynamically -->
+                        <div class="text-center text-muted py-3">Loading spaces...</div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" id="spaceManagerCreateBtn" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>Create New Space
+                    </button>
+                    <button type="button" id="spaceManagerDoneBtn" class="btn btn-primary btn-sm">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="createSpaceModal" class="modal d-block hidden" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="createSpaceModalTitle">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createSpaceModalTitle">Create New Space</h5>
+                    <button type="button" id="closeCreateSpaceModal" class="btn-close" aria-label="Close"></button>
+                </div>
+                <form id="createSpaceForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="spaceName" class="form-label">Space Name</label>
+                            <input type="text" class="form-control" id="spaceName" name="spaceName" placeholder="My Space" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="spaceDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="spaceDescription" name="spaceDescription" rows="2" placeholder="Brief description of this space"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="spaceVisibility" class="form-label">Visibility</label>
+                            <select class="form-select" id="spaceVisibility" name="spaceVisibility">
+                                <option value="private">Private</option>
+                                <option value="team">Team</option>
+                                <option value="public">Public</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="spaceType" class="form-label">Space Type</label>
+                            <select class="form-select" id="spaceType" name="spaceType">
+                                <option value="personal">Personal Space (Private, read-write)</option>
+                                <option value="shared">Shared Space (Team, read-write)</option>
+                                <option value="readonly">Read-Only Space (Reference materials)</option>
+                            </select>
+                            <div class="form-text">Template determines folders and sample files to create</div>
+                        </div>
+                        <div class="mb-0">
+                            <label for="spacePath" class="form-label">Folder Path</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="spacePath" name="spacePath" placeholder="documents-my-space" required>
+                                <button class="btn btn-outline-secondary" type="button" id="browseSpaceFolder" title="Browse folder">
+                                    <i class="bi bi-folder2-open"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Relative path from application root (e.g., documents-my-space)</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="cancelCreateSpace" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Space</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Folder Modal -->
+    <div id="createFolderModal" class="modal d-block hidden" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="createFolderModalTitle">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createFolderModalTitle">Create New Folder</h5>
+                    <button type="button" id="closeCreateFolderModal" class="btn-close" aria-label="Close"></button>
+                </div>
+                <form id="createFolderForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="folderName" class="form-label">Folder Name</label>
+                            <input type="text" id="folderName" name="folderName" class="form-control" required>
+                        </div>
+                        <div class="mb-0" id="folderLocationInfo" style="display: none;">
+                            <span class="form-label" style="margin: 0;">Location: <span id="folderLocationText" class="text-muted fw-normal">Root</span></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="cancelCreateFolder" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Folder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create File Modal -->
+    <div id="createFileModal" class="modal d-block hidden" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="createFileModalTitle">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createFileModalTitle">Create New File</h5>
+                    <button type="button" id="closeCreateFileModal" class="btn-close" aria-label="Close"></button>
+                </div>
+                <form id="createFileForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="fileName" class="form-label">File Name</label>
+                            <input type="text" id="fileName" name="fileName" class="form-control" placeholder="MyDocument.md" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fileLocation" class="form-label">Location</label>
+                            <select id="fileLocation" name="fileLocation" class="form-select">
+                                <option value="">Root</option>
+                                <!-- Dynamic options will be added here -->
+                            </select>
+                        </div>
+                        <div class="mb-0" id="fileTemplatesGroup">
+                            <div class="kr-tpl-chips" id="fileTemplateChips">
+                                <div class="kr-tpl-chips-empty">No templates available for this space.</div>
+                            </div>
+                            <input type="hidden" id="selectedTemplatePath" name="selectedTemplatePath" value="">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="cancelCreateFile" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create File</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div id="renameModal" class="modal d-block hidden" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="renameModalTitle">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="renameModalTitle">Rename <span id="renameItemType">Item</span></h5>
+                    <button type="button" id="closeRenameModal" class="btn-close" aria-label="Close"></button>
+                </div>
+                <form id="renameForm">
+                    <div class="modal-body">
+                        <label for="newItemName" class="form-label">New Name</label>
+                        <input type="text" id="newItemName" name="newItemName" class="form-control" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="cancelRename" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Rename</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu for File Tree -->
+    <div id="fileContextMenu" class="context-menu hidden">
+        <div class="context-menu-item" id="contextCreateFolder">
+            <svg width="16" height="16">
+                <use href="#icon-folder"></use>
+            </svg>
+            <span>Create Folder</span>
+        </div>
+        <div class="context-menu-item" id="contextCreateFile">
+            <svg width="16" height="16">
+                <use href="#icon-plus"></use>
+            </svg>
+            <span>Create File</span>
+        </div>
+        <div class="context-menu-item" id="contextUpload">
+            <svg width="16" height="16">
+                <use href="#icon-share"></use>
+            </svg>
+            <span>Upload File</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" id="contextCreateContinuousExploration">
+            <i class="bi bi-flask me-2"></i>
+            <span>Create Continuous Exploration</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" id="contextAddFileContext">
+            <i class="bi bi-file-text me-2"></i>
+            <span>Add Context</span>
+        </div>
+        <div class="context-menu-item context-menu-has-submenu" id="contextSetFolderType">
+            <i class="bi bi-palette me-2"></i>
+            <span>Folder File Type</span>
+            <i class="bi bi-chevron-right context-submenu-caret"></i>
+            <div class="context-submenu" id="folderTypeSubmenu">
+                <div class="context-menu-item folder-type-option" data-status="default">
+                    <span class="folder-type-swatch kr-ftype-default"></span><span>Default</span>
+                </div>
+                <div class="context-menu-item folder-type-option" data-status="success">
+                    <span class="folder-type-swatch kr-ftype-success"></span><span>Success</span>
+                </div>
+                <div class="context-menu-item folder-type-option" data-status="danger">
+                    <span class="folder-type-swatch kr-ftype-danger"></span><span>Danger</span>
+                </div>
+                <div class="context-menu-item folder-type-option" data-status="warning">
+                    <span class="folder-type-swatch kr-ftype-warning"></span><span>Warning</span>
+                </div>
+                <div class="context-menu-item folder-type-option" data-status="light">
+                    <span class="folder-type-swatch kr-ftype-light"></span><span>Light</span>
+                </div>
+                <div class="context-menu-item folder-type-option" data-status="continuous-exploration">
+                    <span class="folder-type-swatch kr-ftype-continuous-exploration"></span><span>Continuous Exploration</span>
+                </div>
+            </div>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" id="contextRename">
+            <svg width="16" height="16">
+                <use href="#icon-edit"></use>
+            </svg>
+            <span>Rename</span>
+        </div>
+        <div class="context-menu-item context-menu-item-danger" id="contextDelete">
+            <svg width="16" height="16">
+                <use href="#icon-x"></use>
+            </svg>
+            <span>Delete</span>
+        </div>
+    </div>
+
+    <!-- Hidden file input for uploads -->
+    <input type="file" id="fileUploadInput" multiple style="display: none;">
+
+    <div id="overlay" class="modal-backdrop show hidden"></div>
+
+    <!-- Sidebar and AI Panel Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('toggleSidebarBtn');
+            const sidebar = document.getElementById('leftSidebar');
+            const sidebarStorageKey = 'sidebarCollapsed';
+
+            const aiToggleBtn = document.getElementById('aiChatToggleBtn');
+            const aiPanel = document.getElementById('aiChatPanel');
+            const aiStorageKey = 'aiPanelHidden';
+
+            if (localStorage.getItem(sidebarStorageKey) === 'true' && sidebar) {
+                sidebar.classList.add('collapsed');
+            }
+            if (localStorage.getItem(aiStorageKey) === 'true' && aiPanel) {
+                aiPanel.classList.add('hidden');
+            }
+
+            toggleBtn?.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!sidebar) return;
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem(sidebarStorageKey, sidebar.classList.contains('collapsed'));
+            });
+
+            let aiChatEnabled = true;
+
+            aiToggleBtn?.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!aiChatEnabled || !aiPanel) return;
+                aiPanel.classList.toggle('hidden');
+                localStorage.setItem(aiStorageKey, aiPanel.classList.contains('hidden'));
+            });
+
+            // Feature flags: when AI chat or editing is disabled on the server.
+            // Reuses the request started in <head> (see __wikiConfigPromise) —
+            // app.js awaits the same promise, so this must not re-fetch.
+            window.wikiConfig = {};
+            Promise.resolve(window.__wikiConfigPromise || null)
+                .then((cfg) => {
+                    if (!cfg) return;
+                    window.wikiConfig = cfg;
+
+                    if (cfg.aiChatEnabled === false) {
+                        aiChatEnabled = false;
+                        if (aiPanel) {
+                            aiPanel.classList.add('hidden');
+                            aiPanel.style.display = 'none';
+                        }
+                        if (aiToggleBtn) {
+                            aiToggleBtn.disabled = true;
+                            aiToggleBtn.classList.add('disabled');
+                            aiToggleBtn.setAttribute('aria-disabled', 'true');
+                            aiToggleBtn.title = 'AI Assistant disabled';
+                            aiToggleBtn.style.opacity = '0.4';
+                            aiToggleBtn.style.cursor = 'not-allowed';
+                            aiToggleBtn.style.pointerEvents = 'none';
+                        }
+                    }
+
+                    if (cfg.editingEnabled === false) {
+                        const editBtn = document.getElementById('editDocBtn');
+                        const saveBtn = document.getElementById('saveDoc');
+                        const editorModeBlocks = document.getElementById('editorModeBlocks');
+                        const editorModeMarkdown = document.getElementById('editorModeMarkdown');
+                        const docTabs = document.getElementById('docTabs');
+                        const createFileBtn = document.getElementById('createFileBtn');
+                        const createFolderBtn = document.getElementById('createFolderBtn');
+                        const uploadBtn = document.getElementById('uploadBtn');
+
+                        if (editBtn) {
+                            editBtn.disabled = true;
+                            editBtn.classList.add('disabled');
+                            editBtn.title = 'Editing is disabled';
+                            editBtn.style.opacity = '0.4';
+                            editBtn.style.cursor = 'not-allowed';
+                            editBtn.style.pointerEvents = 'none';
+                        }
+                        if (saveBtn) {
+                            saveBtn.disabled = true;
+                            saveBtn.classList.add('disabled');
+                            saveBtn.title = 'Editing is disabled';
+                        }
+                        if (editorModeBlocks) {
+                            editorModeBlocks.disabled = true;
+                            editorModeBlocks.classList.add('disabled');
+                            editorModeBlocks.style.backgroundColor = '#f0f0f0';
+                            editorModeBlocks.style.color = '#999';
+                            editorModeBlocks.style.cursor = 'not-allowed';
+                        }
+                        if (editorModeMarkdown) {
+                            editorModeMarkdown.disabled = true;
+                            editorModeMarkdown.classList.add('disabled');
+                            editorModeMarkdown.style.backgroundColor = '#f0f0f0';
+                            editorModeMarkdown.style.color = '#999';
+                            editorModeMarkdown.style.cursor = 'not-allowed';
+                        }
+                        if (createFileBtn) {
+                            createFileBtn.disabled = true;
+                            createFileBtn.style.opacity = '0.4';
+                            createFileBtn.style.cursor = 'not-allowed';
+                            createFileBtn.style.pointerEvents = 'none';
+                            createFileBtn.title = 'Editing is disabled';
+                        }
+                        if (createFolderBtn) {
+                            createFolderBtn.disabled = true;
+                            createFolderBtn.style.opacity = '0.4';
+                            createFolderBtn.style.cursor = 'not-allowed';
+                            createFolderBtn.style.pointerEvents = 'none';
+                            createFolderBtn.title = 'Editing is disabled';
+                        }
+                        if (uploadBtn) {
+                            uploadBtn.disabled = true;
+                            uploadBtn.style.opacity = '0.4';
+                            uploadBtn.style.cursor = 'not-allowed';
+                            uploadBtn.style.pointerEvents = 'none';
+                            uploadBtn.title = 'Editing is disabled';
+                        }
+                        if (docTabs) {
+                            // Disable the tabs that WRITE. The read-only views must
+                            // stay clickable — 'content' for markdown docs, and 'pdf'
+                            // for PDFs, which is the only way to see the document at
+                            // all. ('derived' edits the extracted text, so it goes.)
+                            const READ_ONLY_TABS = ['content', 'pdf'];
+                            const tabs = docTabs.querySelectorAll('.kr-doc-tab');
+                            tabs.forEach(tab => {
+                                if (!READ_ONLY_TABS.includes(tab.dataset.tab)) {
+                                    tab.disabled = true;
+                                    tab.classList.add('disabled');
+                                    tab.style.backgroundColor = '#f0f0f0';
+                                    tab.style.color = '#999';
+                                    tab.style.cursor = 'not-allowed';
+                                }
+                            });
+                        }
+                    }
+                })
+                .catch(() => { /* leave defaults if the config call fails */ });
+        });
+    </script>
+
+    <!-- Debug: Cache clearing utility for console -->
+    <script>
+        window.wikiClearAllCache = async function() {
+            console.log('🧹 Starting comprehensive cache clear...');
+
+            // 1. Clear localStorage
+            const localStorageKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key) localStorageKeys.push(key);
+            }
+            localStorageKeys.forEach(key => {
+                localStorage.removeItem(key);
+                console.log(`  ✓ Removed localStorage: ${key}`);
+            });
+
+            // 2. Clear sessionStorage
+            const sessionStorageKeys = [];
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                if (key) sessionStorageKeys.push(key);
+            }
+            sessionStorageKeys.forEach(key => {
+                sessionStorage.removeItem(key);
+                console.log(`  ✓ Removed sessionStorage: ${key}`);
+            });
+
+            // 3. Clear all cookies
+            document.cookie.split(";").forEach((c) => {
+                const eqPos = c.indexOf("=");
+                const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim();
+                if (name) {
+                    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+                    console.log(`  ✓ Removed cookie: ${name}`);
+                }
+            });
+
+            // 4. Clear Service Worker cache
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    for (const cacheName of cacheNames) {
+                        await caches.delete(cacheName);
+                        console.log(`  ✓ Deleted cache: ${cacheName}`);
+                    }
+                } catch (error) {
+                    console.warn('  ⚠ Could not clear service worker cache:', error);
+                }
+            }
+
+            // 5. Unregister Service Workers
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const reg of registrations) {
+                        await reg.unregister();
+                        console.log(`  ✓ Unregistered Service Worker: ${reg.scope}`);
+                    }
+                } catch (error) {
+                    console.warn('  ⚠ Could not unregister Service Workers:', error);
+                }
+            }
+
+            // 6. Clear backend cache via API
+            try {
+                const response = await fetch('/applications/wiki/api/admin/clear-tree-cache', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                console.log(`  ✓ Backend cache cleared: ${result.message}`);
+            } catch (error) {
+                console.warn('  ⚠ Could not clear backend cache:', error);
+            }
+
+            console.log('✅ Cache clearing complete! Reloading page...');
+            // Force a hard reload to get fresh data
+            window.location.href = window.location.href.split('?')[0] + '?clearCache=all&t=' + Date.now();
+        };
+
+        console.log('💡 Tip: Run window.wikiClearAllCache() in the console to clear everything');
+    </script>
+
+    <!-- External Scripts -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+
+    <!-- Custom Markdown Parser (extends marked.js) -->
+    <!-- ?v bust: bump when markdown-parser.js changes so browsers fetch the new copy -->
+    <script src="/js/markdown/markdown-parser.js?v=20261008a"></script>
+
+    <!-- Application Scripts (?v bust: module files were renamed for Continuous Exploration) -->
+    <script type="module" src="/applications/wiki/js/app.js?v=20260825a"></script>
+</body>
+</html>

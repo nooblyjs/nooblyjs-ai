@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Design Processes: Retrieve Business Processes",
+    "description": "Retrieve the Data for the Business Processes and create content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessProcessesData.js",
+      "steps/businessProcessesContent.js"
+    ],
+    "tags": [
+      "Business Processes"
+    ],
+    "defaultInput": { "useCache": false, "cacheAgeDays": 1,"filter": {"modelId": "d496ce00-1ef4-11de-7d4f-000c29300558", "cacheFile": "businessProcesses.json"}},
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "updatedAt": "2026-03-06T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Design Processes: Retrieve Team Business Processes",
+    "description": "Retrieve the Data for the Team Business Processes and create content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessProcessesData.js",
+      "steps/businessProcessesContent.js"
+    ],
+    "tags": [
+      "Business Processes"
+    ],
+    "defaultInput": { "useCache": false, "cacheAgeDays": 1, "filter": {"modelId" : "fd55dd50-7ba1-11f1-00be-005056bd2116" , "cacheFile": "businessSolutions-digital-infrastructure-team.json" }},
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "updatedAt": "2026-03-06T00:00:00.000Z",
+    "starred": true
+  }
+]

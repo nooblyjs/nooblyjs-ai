@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Review - Workflow Outputs</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .content-review-container {
+            display: flex;
+            height: calc(100vh - 80px);
+            gap: 0;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .sidebar-header {
+            margin-bottom: 15px;
+        }
+
+        .sidebar-header h5 {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+            color: #333;
+        }
+
+        #contentSearch {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .content-tabs {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+
+        [data-content-tab] {
+            padding: 8px 12px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #6c757d;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        [data-content-tab].active,
+        [data-content-tab]:hover {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+
+        #folderTree {
+            margin-top: 10px;
+        }
+
+        .tree-item {
+            margin: 2px 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .tree-item.selected .tree-item-header {
+            background-color: #e7f3ff;
+            border-radius: 4px;
+        }
+
+        .tree-item-header {
+            display: flex;
+            align-items: center;
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .tree-item-header:hover {
+            background-color: #f0f0f0;
+        }
+
+        .tree-item-toggle {
+            width: 20px;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .tree-item-icon {
+            margin: 0 5px;
+            font-size: 16px;
+        }
+
+        .tree-item-name {
+            flex: 1;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .tree-item-size {
+            font-size: 11px;
+            color: #999;
+            margin-left: 5px;
+        }
+
+        .tree-item-children {
+            margin-left: 10px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .content-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+
+        .content-header h4 {
+            margin: 0;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .content-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        #fileContent {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .file-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+
+        .file-info h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .file-metadata {
+            display: flex;
+            gap: 15px;
+            font-size: 13px;
+            color: #666;
+            flex-wrap: wrap;
+        }
+
+        .file-metadata span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .json-content pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #dee2e6;
+        }
+
+        .json-content code {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .markdown-preview {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .markdown-preview h1,
+        .markdown-preview h2,
+        .markdown-preview h3,
+        .markdown-preview h4,
+        .markdown-preview h5 {
+            margin: 20px 0 10px 0;
+            font-weight: 600;
+        }
+
+        .markdown-preview h1 {
+            font-size: 28px;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+
+        .markdown-preview h2 {
+            font-size: 24px;
+        }
+
+        .markdown-preview h3 {
+            font-size: 20px;
+        }
+
+        .markdown-preview code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .markdown-preview pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        .markdown-preview pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .markdown-preview strong {
+            font-weight: 600;
+        }
+
+        .markdown-preview em {
+            font-style: italic;
+        }
+
+        .folder-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #12284b 0%, #3b435f 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .file-types {
+            margin-top: 20px;
+        }
+
+        .file-types h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .file-types ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .file-types li {
+            padding: 5px 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .file-actions .btn {
+            font-size: 13px;
+            padding: 6px 12px;
+        }
+
+        .diff-view {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+
+        .diff-line {
+            display: flex;
+            padding: 2px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .line-number {
+            display: inline-block;
+            width: 40px;
+            padding: 2px 10px;
+            background: #f5f5f5;
+            color: #999;
+            text-align: right;
+            user-select: none;
+            border-right: 1px solid #dee2e6;
+        }
+
+        .diff-content {
+            flex: 1;
+            padding: 2px 10px;
+            word-break: break-all;
+        }
+
+        .diff-add {
+            background: #e6ffed;
+        }
+
+        .diff-add .line-number {
+            background: #c6f6d5;
+        }
+
+        .diff-remove {
+            background: #ffeef0;
+        }
+
+        .diff-remove .line-number {
+            background: #fcc2d7;
+        }
+
+        .diff-modify {
+            background: #fff8e1;
+        }
+
+        .diff-modify .line-number {
+            background: #fce8aa;
+        }
+
+        .diff-keep {
+            background: white;
+        }
+
+        .comparison-view {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .comparison-files {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .comparison-file {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .comparison-file h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .comparison-summary {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        .stat-added {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .stat-removed {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .stat-unchanged {
+            color: #6b7280;
+        }
+
+        .search-results {
+            margin-top: 10px;
+        }
+
+        .search-result-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .search-result-item:hover {
+            background: #f5f5f5;
+        }
+
+        .result-icon {
+            font-size: 20px;
+        }
+
+        .result-info {
+            flex: 1;
+        }
+
+        .result-name {
+            font-weight: 500;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .result-path {
+            color: #999;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .result-meta {
+            display: flex;
+            gap: 10px;
+            color: #ccc;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .alert {
+            margin: 20px;
+        }
+
+        .content-tab-pane {
+            display: none;
+        }
+
+        .content-tab-pane.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .content-review-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 300px;
+            }
+
+            .folder-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-files {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="content-review-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h5>Content Review</h5>
+                <input type="text" id="contentSearch" placeholder="🔍 Search files...">
+            </div>
+
+            <div class="content-tabs">
+                <button data-content-tab="browse" class="active">Browse</button>
+                <button data-content-tab="compare">Compare</button>
+            </div>
+
+            <div id="folderTree"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h4>Workflow Output Files</h4>
+                <div class="content-actions">
+                    <button id="enterCompareMode" class="btn btn-sm btn-secondary">
+                        📊 Enter Comparison Mode
+                    </button>
+                </div>
+            </div>
+
+            <div id="fileContent" class="content-viewer">
+                <div class="text-center text-muted mt-5">
+                    <p>📁 Select a file or folder to view its contents</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Mode UI (hidden by default) -->
+    <div id="comparisonPanel" style="display: none; padding: 15px; background: #f8f9fa; border-top: 1px solid #dee2e6;">
+        <h5>File Comparison</h5>
+        <div class="row">
+            <div class="col-md-5">
+                <small class="text-muted">File 1:</small>
+                <div id="file1Selected" class="badge bg-secondary">Select file</div>
+            </div>
+            <div class="col-md-5">
+                <small class="text-muted">File 2:</small>
+                <div id="file2Selected" class="badge bg-secondary">Select file</div>
+            </div>
+            <div class="col-md-2">
+                <button id="performCompare" class="btn btn-sm btn-primary">
+                    🔍 Compare
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/src/views/js/modules/apiClient.js"></script>
+    <script src="/src/views/js/modules/contentReviewController.js"></script>
+    <script>
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            contentReviewController.initialize();
+        });
+    </script>
+</body>
+</html>

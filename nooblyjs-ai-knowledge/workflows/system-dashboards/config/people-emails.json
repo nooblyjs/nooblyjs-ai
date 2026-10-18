@@ -1,0 +1,4 @@
+{
+  "_README": "Maps a person's name (as it appears in the ARIS document blocks) to their email LOCAL-PART (the bit before @), which is how the wiki home/profile loader finds .dashboards/<prefix>.md. Value is a string, or an array of strings when a person logs in with more than one email (one dashboard file is written per prefix). Names not listed here fall back to first-initial+lastname. Add your organisation's people under \"people\"; none are kept in the repo.",
+  "people": {}
+}

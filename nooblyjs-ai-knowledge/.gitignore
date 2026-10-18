@@ -1,0 +1,49 @@
+#application specific
+**/.application/
+**/.cache/
+**/.data/
+**/documents/
+**/documents-readonly/
+**/documents-shared/
+**/temp-data/
+
+#nodent goes here...
+**/node_modules/
+
+#electron**/
+dist/
+.DS_Store
+*.log
+
+#env
+**/.env
+**/.env*
+# ...but keep committable templates
+!**/.env.example
+!**/.env.sample
+
+#tests
+**/.test/
+**/.test-files/
+
+#screenshots
+**/screenshots/*
+**/.screenshots/*
+
+#Deployments
+**/scripts/deployment*/*
+
+#keys
+*.key
+*.pem
+*.crt
+*.srl
+
+#generated TLS certs (dev) — regenerate with `npm run certs`
+**/certs/
+
+#shell files
+*.sh
+
+#test scratch written by tests/backend/datasources/workflowManager.test.js
+**/.application-test/

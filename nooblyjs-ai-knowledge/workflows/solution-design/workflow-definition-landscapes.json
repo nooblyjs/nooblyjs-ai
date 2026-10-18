@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Design Solution: Retrieve Application Architecture",
+    "description": "Retrieve the Application Landscapes inventory and publish the Application Architecture content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessLandscapes.js"
+    ],
+    "tags": [
+      "Architecture"
+    ],
+    "defaultInput": {
+      "landscape": {
+        "landscapefolder": "Application Landscapes",
+        "model": "c36892e0-6fe2-11e4-17c9-005056a80022",
+        "inventoryroot": "188f6420-6fe2-11e4-17c9-005056a80022",
+        "modelfile": "businessLandscapes.json"
+      },
+      "contentfolder": "../knowledge-content/enterprise/Solution Design", 
+      "useCache": false, "cacheAgeDays": 8
+    },
+    "createdAt": "2026-05-31T00:00:00.000Z",
+    "updatedAt": "2026-05-31T00:00:00.000Z",
+    "starred": true
+  },
+  {
+    "name": "Design Solution: Retrieve Reference Architecture",
+    "description": "Retrieve the Reference Landscapes inventory and publish the Reference Architecture content",
+    "steps": [
+      "steps/authToken.js",
+      "steps/businessLandscapes.js"
+    ],
+    "tags": [
+      "Architecture"
+    ],
+    "defaultInput": {
+      "landscape": {
+        "landscapefolder": "Reference Landscapes",
+        "model": "f2c34860-a10c-11e2-1234-005056a80022",
+        "inventoryroot": "d3f8d100-5adc-11f1-00be-005056bd2116",
+        "modelfile": "referenceLandscapes.json"
+      },
+      "contentfolder": "../knowledge-content/enterprise/Solution Design",
+      "useCache": false, "cacheAgeDays": 8
+    },
+    "createdAt": "2026-05-31T00:00:00.000Z",
+    "updatedAt": "2026-05-31T00:00:00.000Z",
+    "starred": true
+  }
+]

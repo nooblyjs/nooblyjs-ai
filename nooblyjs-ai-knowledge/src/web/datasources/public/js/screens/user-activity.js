@@ -1,0 +1,558 @@
+/* User Activity screens — /api/user-activity
+   A list of everyone the platform knows about with a usage summary, and a
+   per-user view showing what they have been reading plus a daily visit chart.
+
+   Two screens, registered separately so the browser-less Router can address
+   them: `user-activity` (the list) and `user-activity-detail` (one person,
+   params { userKey, name, days }).
+
+   THE CHART. Two series (viewed / edited) stacked per day. Colours are
+   --chart-1 / --chart-2 in datasources.css, validated for colour-vision
+   deficiency separation — see the note there before changing them. A legend is
+   always drawn because identity must not rest on colour alone, and hovering a
+   day updates a text readout rather than relying on a tooltip.
+
+   WHAT THE NUMBERS MEAN. Days are counted server-side; anything before the
+   tally started is inferred from the capped `recent` list and is a FLOOR, not a
+   count (src/wiki/components/visitTally.js). The screen says so instead
+   of presenting a thin early chart as fact. */
+(function () {
+  const { escapeHtml, fmtDate, fmtDateTime, timeAgo, toast } = window.DS.util;
+  const api = window.DS.api;
+
+  /** Windows offered by the segmented control, in days. */
+  const WINDOWS = [7, 30, 90];
+  const DEFAULT_WINDOW = 30;
+
+  function windowOf(state) {
+    const days = Number(state && state.params && state.params.days);
+    return WINDOWS.includes(days) ? days : DEFAULT_WINDOW;
+  }
+
+  function windowPicker(days) {
+    return `<div class="seg">${WINDOWS.map((d) => `
+      <button data-action="set-window" data-days="${d}" class="${d === days ? 'active' : ''}">${d} days</button>`
+    ).join('')}</div>`;
+  }
+
+  /* ---------------------------------------------------------------- chart */
+
+  /**
+    * Axis ceiling at or above `value`: the next EVEN multiple of a
+    * one-significant-figure step.
+    *
+    * Even, because the chart draws a midpoint gridline and `max / 2` has to
+    * label as a whole number — a peak of 5 tick-labelled "2.5" reads as a bug.
+    * One significant figure keeps it tight: a peak of 6 gets a ceiling of 6, not
+    * the 10 a plain 1/2/5 decade rule would pick, which would waste 40% of the
+    * plot on empty space and flatten every bar.
+    */
+  function niceMax(value) {
+    if (!(value > 0)) return 2;
+    const unit = Math.pow(10, Math.max(0, Math.floor(Math.log10(value)) - 1));
+    return Math.ceil(value / (2 * unit)) * 2 * unit;
+  }
+
+  /** Bar path with the two data-end corners rounded and the base square. */
+  function barPath(x, y, w, h, r) {
+    const radius = Math.max(0, Math.min(r, w / 2, h));
+    const n = (v) => Number(v.toFixed(2));
+    return `M${n(x)} ${n(y + h)}V${n(y + radius)}a${radius} ${radius} 0 0 1 ${radius} ${-radius}` +
+      `h${n(w - radius * 2)}a${radius} ${radius} 0 0 1 ${radius} ${radius}V${n(y + h)}Z`;
+  }
+
+  /** Short axis label for an ISO day. */
+  function axisLabel(iso) {
+    const d = new Date(`${iso}T00:00:00`);
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  }
+
+  /** Long readout label for an ISO day. */
+  function readoutLabel(iso) {
+    const d = new Date(`${iso}T00:00:00`);
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  /**
+   * Stacked bar chart of daily visits, as inline SVG.
+   *
+   * Drawn in a fixed 900×240 user-space box and scaled with CSS, so it fits any
+   * column width without a resize observer or a re-render on layout change.
+   */
+  function visitChart(series) {
+    const W = 900;
+    const H = 240;
+    const PAD = { top: 16, right: 14, bottom: 34, left: 42 };
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = H - PAD.top - PAD.bottom;
+
+    const max = niceMax(series.reduce((m, p) => Math.max(m, p.total), 0));
+    const slot = plotW / series.length;
+    // Thin marks: ~60% of the slot, so the surface between bars stays visible at
+    // 90 days and a 7-day window does not turn into four fat blocks.
+    const barW = Math.max(2, Math.min(slot * 0.62, 34));
+    const yOf = (value) => PAD.top + plotH - (value / max) * plotH;
+
+    // Three gridlines is enough to read a magnitude; more is chart junk.
+    const ticks = [0, max / 2, max].filter((v, i, a) => a.indexOf(v) === i);
+    const grid = ticks.map((value) => {
+      const y = yOf(value);
+      return `<line x1="${PAD.left}" y1="${y.toFixed(1)}" x2="${W - PAD.right}" y2="${y.toFixed(1)}" class="ua-grid"/>` +
+        `<text x="${PAD.left - 8}" y="${(y + 3.5).toFixed(1)}" class="ua-axis" text-anchor="end">${value}</text>`;
+    }).join('');
+
+    // Label the ends and roughly every fifth day; 30 labels would collide.
+    const step = Math.max(1, Math.round(series.length / 6));
+    const xAxis = series.map((point, i) => {
+      if (i !== series.length - 1 && i % step !== 0) return '';
+      const x = PAD.left + i * slot + slot / 2;
+      return `<text x="${x.toFixed(1)}" y="${H - 12}" class="ua-axis" text-anchor="middle">${escapeHtml(axisLabel(point.date))}</text>`;
+    }).join('');
+
+    const bars = series.map((point, i) => {
+      const x = PAD.left + i * slot + (slot - barW) / 2;
+      if (point.total === 0) {
+        // A visible baseline tick, so an empty day reads as "nothing happened"
+        // rather than as a gap in the data.
+        return `<rect x="${x.toFixed(1)}" y="${(PAD.top + plotH - 1.5).toFixed(1)}" width="${barW.toFixed(1)}" height="1.5" class="ua-zero"/>`;
+      }
+      const totalH = (point.total / max) * plotH;
+      const viewedH = (point.viewed / max) * plotH;
+      const editedH = totalH - viewedH;
+      const top = PAD.top + plotH - totalH;
+
+      // The topmost non-zero segment carries the rounded data-end; the one below
+      // it is square and stops 2 units short, leaving a surface gap between them.
+      if (editedH > 0 && viewedH > 0) {
+        return `<path d="${barPath(x, top, barW, editedH, 4)}" class="ua-bar-edited"/>` +
+          `<rect x="${x.toFixed(1)}" y="${(top + editedH + 2).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(0.5, viewedH - 2).toFixed(1)}" class="ua-bar-viewed"/>`;
+      }
+      const cls = editedH > 0 ? 'ua-bar-edited' : 'ua-bar-viewed';
+      return `<path d="${barPath(x, top, barW, totalH, 4)}" class="${cls}"/>`;
+    }).join('');
+
+    // Full-height transparent hit targets — bigger than the marks, so a quiet
+    // day is just as hoverable as a busy one.
+    const hits = series.map((point, i) => `
+      <rect class="ua-hit" data-i="${i}" x="${(PAD.left + i * slot).toFixed(1)}" y="${PAD.top}"
+            width="${slot.toFixed(1)}" height="${plotH}"
+            data-date="${escapeHtml(point.date)}" data-viewed="${point.viewed}" data-edited="${point.edited}"/>`).join('');
+
+    return `
+      <div class="ua-chart" data-region="chart">
+        <div class="ua-chart-head">
+          <div class="ua-legend">
+            <span class="ua-key"><i class="ua-swatch ua-sw-viewed"></i>Viewed</span>
+            <span class="ua-key"><i class="ua-swatch ua-sw-edited"></i>Edited</span>
+          </div>
+          <div class="ua-readout" data-region="readout" role="status" aria-live="polite">
+            Hover a day for its counts
+          </div>
+        </div>
+        <svg viewBox="0 0 ${W} ${H}" class="ua-svg" role="img"
+             aria-label="Document visits per day for the last ${series.length} days">
+          ${grid}${bars}${xAxis}
+          <rect class="ua-cursor" data-region="cursor" x="0" y="${PAD.top}" width="${slot.toFixed(1)}" height="${plotH}"/>
+          ${hits}
+        </svg>
+      </div>`;
+  }
+
+  /** Bind the chart's hover readout. Delegated, so a re-render re-binds cleanly. */
+  function bindChart(root) {
+    const chart = root.querySelector('[data-region="chart"]');
+    if (!chart) return;
+    const readout = chart.querySelector('[data-region="readout"]');
+    const cursor = chart.querySelector('[data-region="cursor"]');
+    const idle = 'Hover a day for its counts';
+
+    chart.addEventListener('mouseover', (e) => {
+      const hit = e.target.closest('.ua-hit');
+      if (!hit) return;
+      const viewed = Number(hit.dataset.viewed);
+      const edited = Number(hit.dataset.edited);
+      const total = viewed + edited;
+      readout.innerHTML = `<b>${escapeHtml(readoutLabel(hit.dataset.date))}</b> — ` +
+        (total === 0 ? 'no activity' : `${total} visit${total === 1 ? '' : 's'} ` +
+          `<span class="ua-muted">(${viewed} viewed · ${edited} edited)</span>`);
+      cursor.setAttribute('x', hit.getAttribute('x'));
+      // A class, not the `hidden` attribute: `[hidden]` is an HTML rule and does
+      // nothing to an SVG element, so the cursor sat over day one permanently.
+      cursor.classList.add('on');
+    });
+
+    chart.addEventListener('mouseleave', () => {
+      readout.textContent = idle;
+      cursor.classList.remove('on');
+    });
+  }
+
+  /** Row sparkline — magnitude only, no axis; the table cell carries the number. */
+  function sparkline(values) {
+    const points = Array.isArray(values) ? values : [];
+    if (!points.length) return '';
+    const max = Math.max(1, ...points);
+    const slot = 84 / points.length;
+    const bars = points.map((v, i) => {
+      const h = v === 0 ? 1 : Math.max(2, (v / max) * 22);
+      return `<rect x="${(i * slot).toFixed(2)}" y="${(24 - h).toFixed(2)}" width="${Math.max(1, slot - 0.8).toFixed(2)}" height="${h.toFixed(2)}" class="${v === 0 ? 'ua-zero' : 'ua-bar-viewed'}"/>`;
+    }).join('');
+    return `<svg viewBox="0 0 84 24" class="ua-spark" aria-hidden="true">${bars}</svg>`;
+  }
+
+  /* ----------------------------------------------------------- list screen */
+
+  function userRow(user) {
+    const label = user.name || user.email || user.userKey;
+    const initial = (label.trim().charAt(0) || '?').toUpperCase();
+    const avatar = user.email
+      ? `<img src="/applications/wiki/avatars/${encodeURIComponent(user.email)}" alt="" onerror="this.remove()"/>`
+      : '';
+
+    return `<tr class="ua-row" data-action="open-user" data-key="${escapeHtml(user.userKey)}" data-name="${escapeHtml(label)}">
+      <td>
+        <div class="row" style="gap:10px;align-items:center">
+          <span class="av">${initial}${avatar}</span>
+          <div class="cell-main">
+            <div class="title">${escapeHtml(label)}</div>
+            <div class="sub">${escapeHtml(user.email || `${user.userKey} · no account`)}</div>
+          </div>
+        </div>
+      </td>
+      <td class="muted" style="font-size:12px">${user.lastVisitAt ? escapeHtml(timeAgo(user.lastVisitAt)) : '—'}</td>
+      <td>
+        <div class="row" style="gap:10px;align-items:center">
+          ${sparkline(user.spark)}
+          <span class="mono" style="font-weight:600">${user.window.total}</span>
+        </div>
+      </td>
+      <td class="mono">${user.documents}</td>
+      <td>${(user.roles || []).map((r) => `<span class="tag">${escapeHtml(r)}</span>`).join('') ||
+        (user.registered ? '' : '<span class="badge neutral">no account</span>')}</td>
+      <td><button class="btn btn-icon-sm" title="View activity" data-action="open-user"
+                  data-key="${escapeHtml(user.userKey)}" data-name="${escapeHtml(label)}">${icon('chevronRight', 13)}</button></td>
+    </tr>`;
+  }
+
+  function listBody(data) {
+    const users = data.users || [];
+    if (!users.length) {
+      return `<div class="card"><div class="empty-state">
+        <div class="ico">${icon('users', 22)}</div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink-800)">No users yet</div>
+        <div style="font-size:12.5px;margin:4px 0">Activity appears here once somebody opens a document in the wiki.</div>
+      </div></div>`;
+    }
+
+    const active = users.filter((u) => u.window.total > 0).length;
+    const visits = users.reduce((sum, u) => sum + u.window.total, 0);
+    const documents = users.reduce((sum, u) => sum + u.documents, 0);
+    const shared = users.filter((u) => u.sharedKey);
+
+    return `
+      <div class="kpi-grid">
+        <div class="kpi gold">
+          <div class="kpi-ico">${icon('users', 17)}</div>
+          <div class="kpi-label">PEOPLE</div>
+          <div class="kpi-value"><span class="num">${users.length}</span></div>
+          <div class="kpi-trend"><span class="vs">known to the platform</span></div>
+        </div>
+        <div class="kpi success">
+          <div class="kpi-ico">${icon('activity', 17)}</div>
+          <div class="kpi-label">ACTIVE</div>
+          <div class="kpi-value"><span class="num">${active}</span><span class="unit">of ${users.length}</span></div>
+          <div class="kpi-trend"><span class="vs">in the last ${data.days} days</span></div>
+        </div>
+        <div class="kpi info">
+          <div class="kpi-ico">${icon('eye', 17)}</div>
+          <div class="kpi-label">VISITS</div>
+          <div class="kpi-value"><span class="num">${visits}</span></div>
+          <div class="kpi-trend"><span class="vs">in the last ${data.days} days</span></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-ico">${icon('fileText', 17)}</div>
+          <div class="kpi-label">DOCUMENTS</div>
+          <div class="kpi-value"><span class="num">${documents}</span></div>
+          <div class="kpi-trend"><span class="vs">on record across all users</span></div>
+        </div>
+      </div>
+
+      ${shared.length ? `<div class="ua-note">${icon('alertTriangle', 14)}
+        <span>${shared.map((u) => escapeHtml(u.sharedKey.join(' and '))).join('; ')} share one activity folder
+        (<span class="mono">${escapeHtml(shared.map((u) => u.userKey).join(', '))}</span>), because activity is
+        stored under the email name before the <span class="mono">@</span>. Their reading is combined below.</span>
+      </div>` : ''}
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">${icon('users', 16)} Users</div>
+          <span class="muted" style="font-size:12px">Click a row to see what they have been reading</span>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr>
+              <th>User</th>
+              <th style="width:130px">Last active</th>
+              <th style="width:180px">Visits · ${data.days}d</th>
+              <th style="width:110px">Documents</th>
+              <th style="width:180px">Roles</th>
+              <th style="width:52px"></th>
+            </tr></thead>
+            <tbody>${users.map((u) => userRow(u)).join('')}</tbody>
+          </table>
+        </div>
+      </div>
+
+      ${(data.roots || []).length ? `<div class="ua-roots">
+        ${icon('database', 13)} Reading
+        ${data.roots.length === 1 ? 'one content root' : `${data.roots.length} content roots`}:
+        ${data.roots.map((r) => `<span class="tag" title="${escapeHtml(r.dir)}">${escapeHtml(r.spaces.map((s) => s.name).join(' · ') || r.key)}</span>`).join('')}
+      </div>` : ''}`;
+  }
+
+  function listHtml(state) {
+    const actions = `${windowPicker(windowOf(state))}
+      <button class="btn" data-action="refresh">${icon('refresh', 14)} Refresh</button>`;
+    return `${pageHead('user-activity', actions)}<div data-region="body"></div>`;
+  }
+
+  function listInit(root, state) {
+    window.DS.util.loadRegion(root, async () => {
+      return api.get(`/api/user-activity?days=${windowOf(state)}`);
+    }, (data) => listBody(data));
+  }
+
+  /* --------------------------------------------------------- detail screen */
+
+  /**
+    * Which spaces expose a path, collapsed.
+    *
+    * Several spaces sit on one content root, so most rows list all of them and
+    * the column becomes wallpaper — the signal is the row listing FEWER. Showing
+    * two and a count keeps that contrast readable; the full list is in the title.
+    */
+  function spaceTags(spaces) {
+    if (!spaces.length) return '<span class="muted" style="font-size:11.5px">no space exposes this path</span>';
+    const shown = spaces.slice(0, 2).map((s) => `<span class="tag">${escapeHtml(s)}</span>`).join('');
+    const rest = spaces.length - 2;
+    return `<span class="ua-spaces" title="${escapeHtml(spaces.join(', '))}">${shown}` +
+      (rest > 0 ? `<span class="tag ua-more">+${rest}</span>` : '') + '</span>';
+  }
+
+  function visitsTable(visits) {
+    if (!visits.length) {
+      return `<div class="empty-state">
+        <div class="ico">${icon('fileText', 22)}</div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink-800)">Nothing recorded</div>
+        <div style="font-size:12.5px;margin:4px 0">This user has not opened a document, or their history was cleared.</div>
+      </div>`;
+    }
+    // `table` alone is auto-layout, which sizes the first column to the longest
+    // path and scrolls every other column out of the wrap — and an auto-sized
+    // cell also gives `text-overflow` nothing to truncate against. `ua-visits`
+    // fixes the layout so the widths below are honoured and the path clips.
+    return `<div class="table-wrap"><table class="table ua-visits">
+      <thead><tr>
+        <th>Document</th>
+        <th style="width:100px">Action</th>
+        <th style="width:170px">Opened</th>
+        <th style="width:220px">Visible in</th>
+      </tr></thead>
+      <tbody>${visits.map((v) => `<tr>
+        <td><div class="cell-main">
+          <div class="title">${escapeHtml(v.title)}</div>
+          <div class="sub mono ua-path" title="${escapeHtml(v.path)}">${escapeHtml(v.path)}</div>
+        </div></td>
+        <td><span class="badge ${v.action === 'edited' ? 'violet' : 'neutral'}">${escapeHtml(v.action)}</span></td>
+        <td class="muted" style="font-size:12px" title="${escapeHtml(fmtDateTime(v.visitedAt))}">${escapeHtml(timeAgo(v.visitedAt))}</td>
+        <td>${spaceTags(v.spaces || [])}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  /**
+   * The provenance line under the chart.
+   *
+   * Days before the tally started can only be inferred from the capped `recent`
+   * list, so those bars are a floor. Saying which is which is the difference
+   * between a chart an admin can act on and one that quietly under-reports.
+   */
+  function provenanceNote(data) {
+    if (!data.tallyStartedAt) {
+      return `<div class="ua-note">${icon('info', 14)}
+        <span>Per-visit counting has not recorded anything for this user yet, so these bars are inferred from
+        their recent-documents list — one visit per document, capped at 50 per content root. Treat them as a
+        <b>minimum</b>. Exact counts accumulate from their next visit onward.</span></div>`;
+    }
+    const started = new Date(data.tallyStartedAt);
+    const windowStart = data.series.length ? new Date(`${data.series[0].date}T00:00:00`) : null;
+    if (windowStart && started > windowStart) {
+      return `<div class="ua-note">${icon('info', 14)}
+        <span>Exact per-visit counting started on <b>${escapeHtml(fmtDate(data.tallyStartedAt))}</b>. Earlier bars are
+        inferred from the recent-documents list and are a minimum, not a count.</span></div>`;
+    }
+    return '';
+  }
+
+  function detailBody(data, days) {
+    const label = data.name || data.email || data.userKey;
+    const initial = (label.trim().charAt(0) || '?').toUpperCase();
+    const w = data.window;
+
+    return `
+      <div class="card ua-id">
+        <span class="av av-lg">${initial}${data.email
+          ? `<img src="/applications/wiki/avatars/${encodeURIComponent(data.email)}" alt="" onerror="this.remove()"/>` : ''}</span>
+        <div class="ua-id-main">
+          <div class="ua-id-name">${escapeHtml(label)}</div>
+          <div class="ua-id-sub">${escapeHtml(data.email || 'No matching account — history only')}</div>
+          <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">
+            ${(data.roles || []).map((r) => `<span class="tag">${escapeHtml(r)}</span>`).join('')}
+            ${data.registered
+              ? (data.isActive === false ? '<span class="badge danger">disabled</span>' : '')
+              : '<span class="badge neutral">no account</span>'}
+            ${data.sharedKey ? `<span class="badge warn">shared folder: ${escapeHtml(data.sharedKey.join(', '))}</span>` : ''}
+          </div>
+        </div>
+        <div class="ua-id-meta">
+          <div><span>Last signed in</span><b>${data.lastLogin ? escapeHtml(fmtDateTime(data.lastLogin)) : '—'}</b></div>
+          <div><span>Account created</span><b>${data.createdAt ? escapeHtml(fmtDate(data.createdAt)) : '—'}</b></div>
+          <div><span>Activity folder</span><b class="mono">${escapeHtml(data.userKey)}</b></div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi gold">
+          <div class="kpi-ico">${icon('activity', 17)}</div>
+          <div class="kpi-label">VISITS</div>
+          <div class="kpi-value"><span class="num">${w.total}</span></div>
+          <div class="kpi-trend"><span class="vs">in the last ${days} days</span></div>
+        </div>
+        <div class="kpi info">
+          <div class="kpi-ico">${icon('eye', 17)}</div>
+          <div class="kpi-label">VIEWED</div>
+          <div class="kpi-value"><span class="num">${w.viewed}</span></div>
+          <div class="kpi-trend"><span class="vs">documents opened to read</span></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-ico">${icon('pencil', 17)}</div>
+          <div class="kpi-label">EDITED</div>
+          <div class="kpi-value"><span class="num">${w.edited}</span></div>
+          <div class="kpi-trend"><span class="vs">documents opened to change</span></div>
+        </div>
+        <div class="kpi success">
+          <div class="kpi-ico">${icon('schedule', 17)}</div>
+          <div class="kpi-label">ACTIVE DAYS</div>
+          <div class="kpi-value"><span class="num">${w.activeDays}</span><span class="unit">of ${days}</span></div>
+          <div class="kpi-trend"><span class="vs">${w.busiestDay
+            ? `busiest ${escapeHtml(fmtDate(w.busiestDay.date))} · ${w.busiestDay.total}`
+            : 'no activity in this window'}</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:22px">
+        <div class="card-head">
+          <div class="card-title">${icon('barChart', 16)} Visits by day</div>
+          <span class="muted" style="font-size:12px">Last ${days} days</span>
+        </div>
+        <div class="card-pad">
+          ${visitChart(data.series || [])}
+          ${provenanceNote(data)}
+        </div>
+      </div>
+
+      <div class="card"${data.starred && data.starred.length ? ' style="margin-bottom:22px"' : ''}>
+        <div class="card-head">
+          <div class="card-title">${icon('fileText', 16)} Documents visited</div>
+          <span class="muted" style="font-size:12px">${data.visits.length} on record${
+            data.visits.length >= 50 ? ' · the store keeps the 50 most recent per content root' : ''}</span>
+        </div>
+        ${visitsTable(data.visits || [])}
+      </div>
+
+      ${(data.roots || []).length ? `<div class="ua-roots">
+        ${icon('database', 13)} Read from
+        ${data.roots.length === 1 ? 'one content root' : `${data.roots.length} content roots`}:
+        ${data.roots.map((r) => `<span class="tag" title="${escapeHtml(r.dir)}">${
+          escapeHtml(r.spaces.map((sp) => sp.name).join(' · ') || r.key)} · ${r.visits} on record</span>`).join('')}
+      </div>` : ''}
+
+      ${data.starred && data.starred.length ? `<div class="card">
+        <div class="card-head"><div class="card-title">${icon('star', 16)} Starred</div></div>
+        <div class="table-wrap"><table class="table ua-visits">
+          <thead><tr><th>Document</th><th style="width:170px">Starred</th></tr></thead>
+          <tbody>${data.starred.map((s) => `<tr>
+            <td><div class="cell-main">
+              <div class="title">${escapeHtml(s.title)}</div>
+              <div class="sub mono ua-path" title="${escapeHtml(s.path)}">${escapeHtml(s.path)}</div>
+            </div></td>
+            <td class="muted" style="font-size:12px">${escapeHtml(timeAgo(s.starredAt))}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>` : ''}`;
+  }
+
+  function detailHtml(state) {
+    const name = (state.params && state.params.name) || (state.params && state.params.userKey) || 'User';
+    const actions = `${windowPicker(windowOf(state))}
+      <button class="btn" data-action="back">${icon('chevronLeft', 14)} All users</button>`;
+    // pageHead() reads STATIC meta, but this one screen shows many people —
+    // so the meta carries a placeholder and it is substituted here. Global,
+    // because the name appears in both the title and the breadcrumb.
+    const head = pageHead('user-activity-detail', actions).replace(/__USER__/g, escapeHtml(name));
+    return `${head}<div data-region="body"></div>`;
+  }
+
+  function detailInit(root, state) {
+    const days = windowOf(state);
+    const userKey = state.params && state.params.userKey;
+    if (!userKey) {
+      window.Router.navigate('user-activity');
+      return;
+    }
+    window.DS.util.loadRegion(root, async () => {
+      return api.get(`/api/user-activity/${encodeURIComponent(userKey)}?days=${days}`);
+    }, (data) => detailBody(data, days), {
+      onRendered: () => bindChart(root)
+    });
+  }
+
+  /* --------------------------------------------------------------- events */
+
+  function handle(action, el, e, state) {
+    if (action === 'retry' || action === 'refresh') return rerenderScreen();
+
+    if (action === 'set-window') {
+      const days = Number(el.dataset.days);
+      window.Router.navigate(state.screen, { ...state.params, days });
+      return;
+    }
+
+    if (action === 'open-user') {
+      const userKey = el.dataset.key;
+      if (!userKey) return toast('That user has no activity folder', 'warn');
+      window.Router.navigate('user-activity-detail', {
+        userKey, name: el.dataset.name, days: windowOf(state)
+      });
+      return;
+    }
+
+    if (action === 'back') {
+      window.Router.navigate('user-activity', { days: windowOf(state) });
+    }
+  }
+
+  window.Router.register('user-activity', { html: listHtml, init: listInit, handle }, {
+    title: 'User Activity',
+    sub: 'Who is using the wiki, and what they have been reading.',
+    crumb: ['Knowledge', 'User Activity'],
+  });
+
+  window.Router.register('user-activity-detail', { html: detailHtml, init: detailInit, handle }, {
+    title: '__USER__',
+    sub: 'Everything this person has opened, and how often.',
+    crumb: ['Knowledge', 'User Activity', '__USER__'],
+  });
+})();

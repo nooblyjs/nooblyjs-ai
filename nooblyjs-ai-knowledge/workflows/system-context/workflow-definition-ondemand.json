@@ -1,0 +1,28 @@
+[
+  {
+    "name": "Context: Overwrite Context (On-Demand)",
+    "description": "Event-driven (NOT scheduled) context (re)build with overwrite. The wiki platform (backend/src/wiki/activities/contextTrigger.js, shared by the file-watcher on add/change and by artifactCleanup.js on delete) resolves this workflow BY NAME and executes it in TARGETED mode with a `files` and/or `removedFiles` list — the input fields are read at the TOP LEVEL of the workflow input (the build step reads data.space/data.folder/data.files/data.removedFiles/data.force directly, NOT a data.settings wrapper). TARGETED mode (what the platform uses): executeWorkflow(id, { space: '<Space Name>', files: ['<space-relative file path>', ...], removedFiles: ['<space-relative path that was deleted>', ...], force: true, appBaseDir: '<abs .application dir>', aiTimeoutMs: 120000 }). All paths must share one folder; the step re-summarises ONLY the `files` (ContextProcessor.runFiles) and rebuilds ONLY their folder's .system/context/_folder.md roll-up, reusing the folder's other sidecars with no AI call — cost is (changed files) + 1 roll-up call. DELETES: `removedFiles` names documents (or a folder) that are GONE — they are never summarised, but they identify the folder whose roll-up still describes them, so passing them here rebuilds that one roll-up for a single AI call instead of the recursive FOLDER-mode walk. Every run also PRUNES: context sidecars whose source document no longer exists, and the roll-up of a folder that has been emptied. FOLDER mode (no `files`): { space, folder: '<folder rel to space root>', force: true } walks that folder + its subfolders bottom-up (the periodic sweep's granularity). Both run in wiki-API/space mode, reading over the wiki HTTP API so they warm the live caches AND write .system/context at the true space root; parent roll-ups are only propagated by the full bottom-up sweep, not by a targeted run. Disk mode alt: { path: '<abs folder path>', force: true } — no backend/auth, but treats that folder as the root so .system/context lands inside it. Optional input: agent (override the 'Folder Processing' agent by name), extensions (defaults to ['.md']), includeDerived (default true; false = markdown only). The watcher accumulates changed files per folder, debounces, and runs jobs one at a time to avoid stampeding the AI on a bulk drop; toggle with the CONTEXT_ON_CHANGE / CONTEXT_ON_CHANGE_DEBOUNCE_MS env vars. Uses the worker-safe 'Folder Processing' AI agent with the same timeout/retry behaviour as the scheduled context workflows. IMPORTANT: the watcher's serialized per-folder queue means one stalled AI call blocks every other queued folder behind it — the watcher explicitly passes aiTimeoutMs:120000 (overridable via CONTEXT_ON_CHANGE_AI_TIMEOUT_MS on the backend) so a stuck call fails that one job (3 retries, then skipped) instead of wedging the queue forever. A manual/UI-triggered run with no explicit aiTimeoutMs falls back to this workflow's defaultInput below, NOT to build-context.js's own 0/no-timeout default. Reads come straight off disk; the only platform .env setting needed is APP_BASE_DIR.",
+    "steps": [
+      "steps/build-context.js"
+    ],
+    "tags": [
+      "Context",
+      "AI"
+    ],
+    "defaultInput": {
+      "path": "",
+      "space": "",
+      "folder": "",
+      "files": [],
+      "removedFiles": [],
+      "appBaseDir": "../.application",
+      "agent": "",
+      "force": true,
+      "aiTimeoutMs": 120000,
+      "aiRetries": 3
+    },
+    "createdAt": "2026-07-20T00:00:00.000Z",
+    "updatedAt": "2026-07-20T00:00:00.000Z",
+    "starred": false
+  }
+]

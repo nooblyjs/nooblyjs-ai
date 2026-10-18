@@ -1,0 +1,12 @@
+# Extra exclusions for engx-ai-knowledge (migration-plan.md M9): real company documents, screenshots of real
+# company content, a map of real people, and the UI that `npm run port:ui` generates (regenerated, not copied).
+/workflows/document-processing/tests/example/
+/workflows/solution-design/tests/output_image.png
+/workflows/system-dashboards/config/people-emails.json
+/public/image.png
+/public/images/wiki-*.png
+/public/images/guide/
+/public/images/content/
+/public/app/
+/public/vendor/
+/workflows/solution-design/data/user-structures.md

@@ -1,0 +1,38 @@
+/* The wiki inside the NooblyJS frame: what differs from the standalone page. Every selector is scoped to the frame's
+   content area for this app ([data-module="wiki"]). The app's own rules are in wiki-app.css, generated from the
+   standalone stylesheets by scripts/port-wiki-ui.mjs; this file is hand-written and loads after it. */
+
+/* The wiki is a full-width workspace with its own navigation tree and panels, so it takes the whole area beside
+   the rail: the frame's content column is unbounded and its padding (on the frame's <main>) is cancelled. */
+[data-module="wiki"] {
+  max-width: none;
+  gap: 0;
+  margin: calc(-1 * var(--content-pad-y)) calc(-1 * var(--content-pad-x)) -72px;
+}
+
+/* The frame draws the brand, the person and sign-out: the wiki's own copies go. */
+[data-module="wiki"] #brandLogo,
+[data-module="wiki"] #brandName,
+[data-module="wiki"] #logoutBtn { display: none; }
+
+/* The way to the datasources screens, in the wiki's top bar (pages/wiki.js adminLink). */
+[data-module="wiki"] .wk-admin-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+[data-module="wiki"] .wk-admin-link:hover,
+[data-module="wiki"] .wk-admin-link:focus-visible { border-color: var(--accent); color: var(--accent); }
+
+/* The datasources screens (pages/datasources.js) sit in the frame's usual layout, beside its sidebar: the frame's
+   padding is theirs again, and their tables take the width there is. */
+[data-module="wiki"]:has(> .ds-root) { margin: 0; }
+[data-module="wiki"] .ds-root { min-width: 0; }
