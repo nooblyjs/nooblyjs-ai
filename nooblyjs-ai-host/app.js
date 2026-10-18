@@ -6,7 +6,7 @@
  *   2. applies the shared middleware (helmet, compression, body parsing, rate limits, session, Passport),
  *   3. initialises nooblyjs-core's service registry and the core services. This is how core is meant to be hosted:
  *      the host owns the app and passes it to serviceRegistry.initialize(app, …),
- *   4. sets up sign-in (nooblyjs-core's authservice; Microsoft Entra ID when AUTH_METHOD=azure),
+ *   4. sets up sign-in (nooblyjs-core's authservice; Microsoft Entra ID when AUTH_METHOD=azure, Google when google),
  *   5. mounts NooblyJS (src/noobly.js): the seed, the event and audit logs, CSRF, roles, dev sign-in, /api/v1/shell and
  *      the hosted apps listed in data/config/hosted-apps.yaml, which attach through register() on this same app,
  *   6. binds the port last.
@@ -269,7 +269,7 @@ export async function createApp({ config, devtoolsFetch, devtoolsGitRemote, team
   }
 
   // ==========================================================================
-  // STEP 6: Sign-in (nooblyjs-core authservice; Microsoft Entra ID when AUTH_METHOD=azure)
+  // STEP 6: Sign-in (nooblyjs-core authservice; Microsoft Entra ID when AUTH_METHOD=azure, Google when google)
   // ==========================================================================
   // The file provider creates admin@localhost with a random password on first start and writes it to
   // INITIAL_ADMIN_PASSWORD.txt (mode 0600) in its own folder. Never log the password itself.
@@ -277,6 +277,17 @@ export async function createApp({ config, devtoolsFetch, devtoolsGitRemote, team
     log.info(`Default nooblyjs-core admin ${email} created. Its password is in ${path.join(config.dataDir, 'core', 'auth')} (INITIAL_ADMIN_PASSWORD.txt): change it after first sign-in, then delete the file.`);
   });
   eventEmitter.on('auth:default-admin-creation-error', ({ error }) => log.error(`Failed to create the default admin user: ${error}`));
+
+  // Google comes back to this path, the one registered with Google (after the base URL). Signing in starts here too.
+  const GOOGLE_CALLBACK_PATH = '/services/authservice/openid';
+  // core's sign-in page asks /sso-config whether to go straight to an SSO provider, and core's answer (registered
+  // with the file provider below) only knows Azure. With Google on, answer first.
+  if (config.authMethod === 'google') {
+    app.get('/services/authservice/api/sso-config', (req, res) => res.json({
+      success: true,
+      data: { enabled: true, provider: 'google', initiateUrl: GOOGLE_CALLBACK_PATH },
+    }));
+  }
 
   // After signing in, core sends the person back to the page they were heading to (a same-origin returnUrl),
   // otherwise to loginSuccessRedirectUrl: NooblyJS's home, not core's default /services.
@@ -332,7 +343,50 @@ export async function createApp({ config, devtoolsFetch, devtoolsGitRemote, team
     app.post('/services/authservice/openid', onAzureCallback);
     app.get('/services/authservice/openid', onAzureCallback);
   }
-  log.info(`Sign-in method: ${config.authMethod === 'azure' ? 'Microsoft Entra ID' : 'local'}${config.devLogin ? ' (+ development person picker)' : ''}`);
+  if (config.authMethod === 'google') {
+    // Google through core's google provider. No 'express-app' (it would register every auth route a second time),
+    // and since the registry adds the app to every service's options, it is cleared rather than left out.
+    const googleAuth = serviceRegistry.authservice('google', {
+      'express-app': null,
+      clientID: config.google.clientId,
+      clientSecret: config.google.secret,
+      // Relative unless GOOGLE_AUTH_BASE_URL is set, so Passport builds it from the request's own scheme and host.
+      callbackURL: config.google.baseUrl + GOOGLE_CALLBACK_PATH,
+      loginSuccessRedirectUrl: LOGIN_SUCCESS_REDIRECT,
+    });
+    // Unlike the azure provider, core's google provider takes neither `passport` nor `userStore`. It puts its
+    // strategy on core's own copy of Passport, so move that to ours, and it keeps users in memory, so give it the
+    // file provider's. The email is what links a Google account to an existing person, so it must be verified,
+    // and it is lowercased as the azure provider does: one person, one account, however they sign in. Google's
+    // tokens stay out of the user store, because NooblyJS never calls Google with them.
+    passport.use(googleAuth.getPassport()._strategy('google'));
+    const handleGoogleAuth = googleAuth.handleGoogleAuth_.bind(googleAuth);
+    Object.assign(googleAuth, {
+      passport_: passport,
+      getUser: (email) => authservice.getUser(email),
+      createUser: (user) => authservice.createUser(user),
+      updateUser: (email, { accessToken, refreshToken, ...updates }) => authservice.updateUser(email, updates),
+      handleGoogleAuth_: (profile, ...rest) => {
+        const email = profile.emails?.[0];
+        if (email?.verified !== true) throw new Error('Google did not return a verified email address');
+        return handleGoogleAuth({ ...profile, emails: [{ ...email, value: email.value.toLowerCase() }] }, ...rest);
+      },
+    });
+    // /login and core's sign-in page start here; Google comes back here with ?code (or ?error).
+    app.get(GOOGLE_CALLBACK_PATH, async (req, res, next) => {
+      try {
+        if (!req.query.code && !req.query.error) return googleAuth.initiateGoogleAuth(req, res, next);
+        const result = await googleAuth.handleGoogleCallback(req, res, next);
+        const target = result?.redirectUrl;
+        res.redirect(typeof target === 'string' && /^\/(?![/\\])/.test(target) ? target : LOGIN_SUCCESS_REDIRECT);
+      } catch (err) {
+        log.error(`Google sign-in callback failed: ${err.message}${err.code ? ` (${err.code})` : ''}`);
+        res.redirect(`/services/authservice/views/login.html?local=1&error=${encodeURIComponent('Google sign-in failed. Try again or sign in with credentials.')}`);
+      }
+    });
+  }
+  const methodName = { azure: 'Microsoft Entra ID', google: 'Google' }[config.authMethod] ?? 'local';
+  log.info(`Sign-in method: ${methodName}${config.devLogin ? ' (+ development person picker)' : ''}`);
   startup.checkpoint('core services + sign-in ready');
 
   // ==========================================================================

@@ -40,6 +40,15 @@ test('AUTH_METHOD=azure without the Entra settings falls back to local, and says
   assert.equal(loadConfig({ AUTH_METHOD: 'azure', AZURE_AD_CLIENT_ID: 'id', AZURE_AD_TENANT_ID: 'tenant' }).authMethod, 'azure');
 });
 
+test('AUTH_METHOD=google without the Google settings falls back to local, and says why', () => {
+  const c = loadConfig({ AUTH_METHOD: 'google', GOOGLE_AUTH_CLIENTID: 'id' });
+  assert.equal(c.authMethod, 'local');
+  assert.match(c.authWarning, /GOOGLE_AUTH_SECRET/);
+  const google = loadConfig({ AUTH_METHOD: 'Google', GOOGLE_AUTH_CLIENTID: 'id', GOOGLE_AUTH_SECRET: 'secret', GOOGLE_AUTH_BASE_URL: 'https://noobly.example/' });
+  assert.equal(google.authMethod, 'google');
+  assert.equal(google.google.baseUrl, 'https://noobly.example');
+});
+
 test('app.js refuses to start with dev login in production', () => {
   const run = spawnSync(process.execPath, ['app.js'], {
     cwd: fileURLToPath(new URL('..', import.meta.url)),

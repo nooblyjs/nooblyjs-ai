@@ -17,6 +17,10 @@ export function sessionRoutes({ express, config, people, authservice, events, id
       if (!config.devLogin && config.authMethod === 'azure' && !req.user) {
         return res.redirect(302, `/services/authservice/api/azure?returnUrl=${encodeURIComponent(safeNext(req.query.next))}`);
       }
+      // Likewise Google's with AUTH_METHOD=google: app.js starts it at Google's callback path.
+      if (!config.devLogin && config.authMethod === 'google' && !req.user) {
+        return res.redirect(302, `/services/authservice/openid?returnUrl=${encodeURIComponent(safeNext(req.query.next))}`);
+      }
       const everyone = config.devLogin ? (await people.list()).filter((p) => p.active) : [];
       res.type('html').send(String(loginPage({ people: everyone, csrfToken: req.csrfToken, next: safeNext(req.query.next), devLogin: config.devLogin })));
     } catch (err) {

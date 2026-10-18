@@ -25,7 +25,7 @@ unless `DEVTOOLS_WRITES=true`, an Owner switched that system to Send, and a writ
 recorded in the outbox. There is no write that merges or deletes, and **tests never write: use
 `test/fixtures/atlassian.js`, never a real fetch**. Phase 13 also added backup and restore (`npm run backup`,
 `npm run restore`), `npm run perf`, `docs/runbooks/` and `docs/security/`. NooblyJS
-boots, signs you in (dev picker, local or Entra, creating a person record on first sign-in), and
+boots, signs you in (dev picker, local, Entra or Google, creating a person record on first sign-in), and
 serves one frame from the nooblyjs-core UI kit (`nooblyjs-core/public/ui/`, at `/ui/`). Home, Platform and
 Dev are built-in app modules (`src/built-in-apps.js`, `public/js/modules/`). Home's **Overview,
 Lifecycle, Approvals and Activity** are real (`public/js/pages/home/`, over the lifecycle engine at

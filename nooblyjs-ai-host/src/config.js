@@ -11,9 +11,9 @@ export class ConfigError extends Error {}
 const flag = (value) => /^(1|true|yes|on)$/i.test(String(value ?? '').trim());
 
 /**
- * AUTH_METHOD selects how people sign in: `local` (nooblyjs-core accounts; the dev picker when NOOBLY_DEV_LOGIN=true)
- * or `azure` (Microsoft Entra ID). `azure` needs AZURE_AD_CLIENT_ID and AZURE_AD_TENANT_ID, or NooblyJS falls back
- * to local sign-in and says why.
+ * AUTH_METHOD selects how people sign in: `local` (nooblyjs-core accounts; the dev picker when NOOBLY_DEV_LOGIN=true),
+ * `azure` (Microsoft Entra ID) or `google`. `azure` needs AZURE_AD_CLIENT_ID and AZURE_AD_TENANT_ID, and `google`
+ * needs GOOGLE_AUTH_CLIENTID and GOOGLE_AUTH_SECRET, or NooblyJS falls back to local sign-in and says why.
  */
 function resolveAuthMethod(env) {
   const raw = (env.AUTH_METHOD || 'local').trim().toLowerCase();
@@ -23,7 +23,11 @@ function resolveAuthMethod(env) {
     if (env.AZURE_AD_CLIENT_ID && env.AZURE_AD_TENANT_ID) return { authMethod: 'azure', authWarning: null };
     return { authMethod: 'local', authWarning: 'AUTH_METHOD=azure but AZURE_AD_CLIENT_ID / AZURE_AD_TENANT_ID are not set: using local sign-in.' };
   }
-  return { authMethod: 'local', authWarning: knownLocal ? null : `AUTH_METHOD="${raw}" is not recognised: using local sign-in. Set AUTH_METHOD=local or azure.` };
+  if (raw === 'google') {
+    if (env.GOOGLE_AUTH_CLIENTID && env.GOOGLE_AUTH_SECRET) return { authMethod: 'google', authWarning: null };
+    return { authMethod: 'local', authWarning: 'AUTH_METHOD=google but GOOGLE_AUTH_CLIENTID / GOOGLE_AUTH_SECRET are not set: using local sign-in.' };
+  }
+  return { authMethod: 'local', authWarning: knownLocal ? null : `AUTH_METHOD="${raw}" is not recognised: using local sign-in. Set AUTH_METHOD=local, azure or google.` };
 }
 
 /**
@@ -92,6 +96,13 @@ export function loadConfig(env = process.env, { cwd = process.cwd() } = {}) {
     // The Microsoft sign-in also asks for User.Read, to read the person's job title from Graph (Phase 12). Off by
     // default: where the tenant wants admin consent for it, asking stops every sign-in at "Approval required".
     azureReadProfile: env.AZURE_AD_READ_PROFILE === 'true',
+    // Google sign-in (AUTH_METHOD=google). Google's redirect URI is the base URL + /services/authservice/openid; the
+    // base comes from each request unless GOOGLE_AUTH_BASE_URL is set (needed behind a proxy).
+    google: Object.freeze({
+      clientId: env.GOOGLE_AUTH_CLIENTID || null,
+      secret: env.GOOGLE_AUTH_SECRET || null,
+      baseUrl: String(env.GOOGLE_AUTH_BASE_URL ?? '').replace(/\/+$/, ''),
+    }),
     // Backups of data/ (Phase 13): where they go, how many are kept, and the hour of the nightly one (local time).
     backup: Object.freeze({
       dir: env.BACKUP_DIR ? path.resolve(cwd, env.BACKUP_DIR) : '',
