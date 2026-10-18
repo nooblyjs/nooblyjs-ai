@@ -284,7 +284,7 @@ test('activities are read as Teams sends them: mentions, card data, and conversa
     type: 'message', timestamp: '2026-10-10T12:00:00Z', conversation: { id: '19:meeting_Abc==@thread.v2', name: 'Sync' }, from: { id: '29:x', name: 'Lerato M.', aadObjectId: 'lerato-m' },
     text: '<at>NooblyJS</at> &nbsp;and @Ada <b>what</b> is blocking?', entities: [{ type: 'mention', mentioned: { id: 'noobly-bot', name: 'NooblyJS' } }, { type: 'clientInfo' }],
   });
-  assert.deepEqual([a.botMentioned, a.mentioned, a.text, a.at], [true, ['noobly', 'ada'], 'and what is blocking?', '2026-10-10T12:00:00.000Z']);
+  assert.deepEqual([a.botMentioned, a.mentioned, a.text, a.at], [true, ['nooblyjs', 'ada'], 'and what is blocking?', '2026-10-10T12:00:00.000Z']);
   assert.match(a.conversationKey, /^c_[0-9a-f]{32}$/);
   assert.equal(conversationKey('sim-slot-rollout-sync'), 'sim-slot-rollout-sync');
   assert.deepEqual(readActivity({ type: 'message', conversation: { id: 'c' }, from: { id: 'u' }, value: { noobly: 'add', teammateId: 'ada-quill' } }).action, { name: 'add', teammateId: 'ada-quill' });

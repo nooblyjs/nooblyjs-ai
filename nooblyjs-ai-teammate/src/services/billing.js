@@ -1,21 +1,34 @@
 // Month-end and billing administration: closing a month into an invoice, invoice downloads (CSV, PDF),
 // the settings and model price screens, and the token view of billing (usage and API cost against billed amounts).
-import { HttpError, badRequest, notFound } from '../util/errors.js';
-import { addMonths, isoDate, longDate, monthName, periodRange } from '../util/dates.js';
-import { round1, round2 } from '../util/ids.js';
-import { ENTRY_HEADER, entryRow, toCsv } from '../util/csv.js';
-import { PdfDocument, fit } from '../util/pdf.js';
+import { availableModels } from 'nooblyjs-ai-common/discovery';
+import { HttpError, badRequest, notFound } from '../utils/errors.js';
+import { addMonths, isoDate, longDate, monthName, periodRange } from '../utils/dates.js';
+import { round1, round2 } from '../utils/ids.js';
+import { ENTRY_HEADER, entryRow, toCsv } from '../utils/csv.js';
+import { PdfDocument, fit } from '../utils/pdf.js';
 import { invoiceSummary, sumEntries } from './team.js';
+import { BOARD_DEFAULTS } from '../config/board.js';
 
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const MODEL_ID = /^[\w.:/@-]{1,100}$/;
+const TIERS = ['LIGHT', 'BALANCED', 'PREMIUM'];
+// A tier's rate card when no offered model has it yet (the seed's Haiku, Sonnet and Opus).
+const TIER_DEFAULTS = {
+  LIGHT: { symbol: '$', baseRate: 4, computePerHour: 2.5, toolsPerHour: 0.5, color: '#F2A27E', maxTokens: 16000 },
+  BALANCED: { symbol: '$$', baseRate: 16, computePerHour: 10, toolsPerHour: 2, color: '#C2471F', maxTokens: 32000, effort: 'medium' },
+  PREMIUM: { symbol: '$$$', baseRate: 50, computePerHour: 31, toolsPerHour: 5, color: '#241C1A', maxTokens: 64000, effort: 'high' },
+};
+/** "gpt-6.1-sol" → "gpt-6-1-sol": a models.md key. */
+const keyOf = (modelId) => String(modelId).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'model';
 const usd = (v) => `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const monthLabel = (month) => `${monthName(`${month}-01`)} ${month.slice(0, 4)}`;
 const invalid = (errors) => new HttpError(422, 'validation_failed', 'Please fix the highlighted fields', errors);
 
 export class BillingService {
-  constructor(repos, team, { now = () => isoDate(), store } = {}) {
+  /** `discover` lists the models the providers offer (nooblyjs-ai-common's discovery; tests pass a fake). */
+  constructor(repos, team, { now = () => isoDate(), store, discover = ({ refresh } = {}) => availableModels({ refresh }) } = {}) {
     this.repos = repos;
+    this.discover = discover;
     this.team = team;
     this.today = now;
     this.store = store;
@@ -242,6 +255,7 @@ export class BillingService {
       timezone: s.timezone ?? 'UTC',
       billing: { estimateOutputTokens: 4000, ...(s.billing ?? {}) },
       alerts: { warnAtPct: 80, ...(s.alerts ?? {}) },
+      board: { ...BOARD_DEFAULTS, ...(s.board ?? {}) },
     };
   }
 
@@ -277,6 +291,23 @@ export class BillingService {
     num('billing', 'estimateHoursPerMonth', 1, 744);
     num('billing', 'estimateOutputTokens', 100, 1000000, { integer: true });
     num('alerts', 'warnAtPct', 1, 100, { integer: true });
+    // The Team board (.claude/specs/team-board/design.md §8).
+    num('board', 'briefingTokens', 200, 8000, { integer: true });
+    num('board', 'agentPostsPerDay', 0, 500, { integer: true });
+    num('board', 'agentRepliesPerDay', 0, 1000, { integer: true });
+    num('board', 'restAfterAgentReplies', 1, 20, { integer: true });
+    num('board', 'staleClaimHours', 1, 720, { integer: true });
+    if (input.board?.standupTime !== undefined) {
+      const time = String(input.board.standupTime ?? '').trim();
+      if (time && !/^([01]\d|2[0-3]):([0-5]\d)$/.test(time)) errors['board.standupTime'] = 'Use a 24-hour time like 09:00, or leave it empty for no stand-ups';
+      else (patch.board ??= { ...(current.board ?? {}) }).standupTime = time;
+    }
+    if (input.board?.digestTeammate !== undefined) {
+      const slug = String(input.board.digestTeammate ?? '').trim();
+      const t = slug ? await this.repos.teammates.get(slug) : null;
+      if (slug && (!t || t.retiredAt)) errors['board.digestTeammate'] = 'Choose an active teammate, or nobody';
+      else (patch.board ??= { ...(current.board ?? {}) }).digestTeammate = slug || null;
+    }
 
     if (input.timezone !== undefined) {
       const tz = String(input.timezone ?? '').trim();
@@ -318,12 +349,80 @@ export class BillingService {
       const age = m.pricingReviewedAt ? Math.floor((Date.parse(today) - Date.parse(m.pricingReviewedAt)) / 86400000) : null;
       return {
         id, name: m.name, tier: m.tier, symbol: m.symbol, color: m.color, description: m.description, provider: m.provider, modelId: m.modelId,
+        priceSource: m.priceSource ?? (m.provider === 'anthropic' ? 'catalogue' : null),
         baseRate: m.baseRate, computePerHour: m.computePerHour ?? 0, toolsPerHour: m.toolsPerHour ?? 0,
         pricing: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, ...(m.pricing ?? {}) },
         pricingReviewedAt: m.pricingReviewedAt ?? null,
         reviewStale: age == null || age > 90,
       };
     });
+  }
+
+  /**
+   * Every model the configured providers offer right now (nooblyjs-ai-common's discovery: each provider's own list, priced
+   * from the catalogue, the provider, or OpenRouter as a labelled reference), each marked when it is already offered
+   * here. Cached for a day; `refresh` asks the providers again.
+   */
+  async availableModels({ refresh = false } = {}) {
+    const [found, models] = await Promise.all([this.discover({ refresh }), this.repos.config.getModels()]);
+    const offered = new Map(Object.entries(models).map(([id, m]) => [`${m.provider}:${m.modelId}`, id]));
+    return {
+      ...found,
+      providers: found.providers.map((p) => ({ ...p, models: p.models.map((m) => ({ ...m, offeredAs: offered.get(`${m.provider}:${m.id}`) ?? null })) })),
+      tiers: TIERS,
+    };
+  }
+
+  /**
+   * Offers a discovered model to teammates under a tier: a new models.md entry with that tier's rate card (from a
+   * model already in the tier, else the defaults) and the model's list price with where it came from. An OpenRouter
+   * or unknown price is marked unreviewed, so the screen asks a person to check it. Returns the new model.
+   */
+  async addModel({ provider, modelId, tier } = {}) {
+    const errors = {};
+    if (!TIERS.includes(tier)) errors.tier = `Choose one of ${TIERS.join(', ')}`;
+    if (!MODEL_ID.test(String(modelId ?? ''))) errors.modelId = 'Letters, digits and . : / @ - _ only';
+    if (Object.keys(errors).length) throw invalid(errors);
+    const found = (await this.discover()).providers.find((p) => p.id === provider)?.models.find((m) => m.id === modelId);
+    if (!found) throw invalid({ modelId: `${provider ?? 'That provider'} does not list "${modelId}" right now. Refresh the list.` });
+    const models = await this.repos.config.getModels();
+    const existing = Object.entries(models).find(([, m]) => m.provider === provider && m.modelId === modelId);
+    if (existing) throw new HttpError(409, 'model_offered', `${found.label} is already offered as "${existing[1].name}".`);
+    const template = Object.values(models).find((m) => m.tier === tier) ?? {};
+    const defaults = TIER_DEFAULTS[tier];
+    let id = keyOf(modelId);
+    for (let n = 2; models[id]; n++) id = `${keyOf(modelId)}-${n}`;
+    const reviewed = found.priceSource === 'catalogue' || found.priceSource === 'local';
+    const entry = {
+      name: String(found.label).slice(0, 40),
+      tier,
+      symbol: template.symbol ?? defaults.symbol,
+      description: `${found.providerLabel}. ${found.priceNote}.`.slice(0, 160),
+      provider,
+      modelId,
+      baseRate: template.baseRate ?? defaults.baseRate,
+      computePerHour: template.computePerHour ?? defaults.computePerHour,
+      toolsPerHour: template.toolsPerHour ?? defaults.toolsPerHour,
+      color: template.color ?? defaults.color,
+      ...(template.effort ?? defaults.effort ? { effort: template.effort ?? defaults.effort } : {}),
+      maxTokens: Math.min(template.maxTokens ?? defaults.maxTokens, found.maxOutput ?? Infinity),
+      pricing: { input: 0, output: 0, cacheRead: 0, ...(found.pricing ?? {}) },
+      priceSource: found.priceSource ?? 'unknown',
+      ...(reviewed ? { pricingReviewedAt: this.today() } : {}),
+    };
+    await this.repos.config.addModel(id, entry);
+    return (await this.models()).find((m) => m.id === id);
+  }
+
+  /** Stops offering a model. One a teammate runs on, or that writes memories, stays. */
+  async removeModel(id) {
+    const models = await this.repos.config.getModels();
+    if (!models[id]) throw notFound('Model');
+    const using = (await this.repos.teammates.list({ includeRetired: true })).filter((t) => t.model === id);
+    if (using.length) throw new HttpError(409, 'model_in_use', `${models[id].name} is what ${using.map((t) => t.name).join(', ')} run${using.length === 1 ? 's' : ''} on. Move ${using.length === 1 ? 'them' : 'them'} to another model first.`);
+    if ((await this.repos.config.getReflectionModelId()) === id) throw new HttpError(409, 'model_in_use', `${models[id].name} writes teammates' memories. Choose another model for that first.`);
+    await this.repos.config.removeModel(id);
+    return { removed: id };
   }
 
   async updateModel(id, input = {}) {

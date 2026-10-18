@@ -1,8 +1,7 @@
 // Teammate profile (/team/:id): hero, about, skills, timesheet, model & cost, memory, billing chart.
 // Also hosts the "Assign work" flow that calls the teammate's endpoint and streams the result.
-import { api, stream, ApiError } from '../api.js';
-import { html } from '../html.js';
-import { icons } from '../icons.js';
+import { html } from '/ui/js/html.js';
+import { icon } from '/ui/js/icons.js';
 import { avatar, bandColor, deepColor } from '../avatar.js';
 import { money, rate, hours, hours1, tokens, count } from '../format.js';
 import { statusPill, LEVELS, openDialog, confirmDialog, toast } from '../ui.js';
@@ -11,6 +10,7 @@ import { mountAvatarPicker } from '../avatar-picker.js';
 import { showWorkItem, usedSummary } from '../work-dialog.js';
 import { memoryRow, byPinnedThenNewest } from '../memory-ui.js';
 import { toolsCard, editTools, schedulesCard, editSchedule, runSchedule } from '../profile-automation.js';
+import { api, stream, ApiError, appUrl, enter } from '../client.js';
 
 const MEMORY_COLORS = { fact: '#7A2E14', preference: '#C2471F', source: '#F2A27E' };
 const KIND_LABEL = { fact: 'Fact', preference: 'Preference', source: 'Source' };
@@ -92,14 +92,14 @@ function knowledgeCard(t) {
       <div class="card-head">
         <h2 class="card-title" id="knowledge-h">Knowledge</h2>
         <div class="d-flex gap-2">
-          <button type="button" class="btn btn-secondary" data-action="upload-docs">${icons.upload}Upload</button>
+          <button type="button" class="btn btn-secondary" data-action="upload-docs">${icon('upload')}Upload</button>
           <button type="button" class="btn btn-secondary" data-action="add-doc">Write</button>
         </div>
       </div>
       ${t.knowledge?.length
         ? html`<div class="doc-list">${t.knowledge.map((d) => html`
             <button type="button" class="doc-row" data-action="edit-doc" data-doc="${d.id}">
-              <span class="doc-icon" aria-hidden="true">${icons.doc}</span>
+              <span class="doc-icon" aria-hidden="true">${icon('doc')}</span>
               <span class="doc-main">
                 <span class="doc-title">${d.title}${d.project ? html` <span class="project-chip">${d.project}</span>` : ''}</span>
                 <span class="doc-excerpt">${d.excerpt}</span>
@@ -115,9 +115,9 @@ function timesheetCard(t) {
   const { entries, totals } = t.timesheet;
   return html`
     <section class="card" id="timesheet" aria-labelledby="ts-h">
-      <div class="card-head"><h2 class="card-title" id="ts-h">Timesheet · this week</h2><span class="d-flex gap-2"><a href="/timeline?teammate=${t.id}">Timeline</a><a href="/billing">All billing</a></span></div>
+      <div class="card-head"><h2 class="card-title" id="ts-h">Timesheet · this week</h2><span class="d-flex gap-2"><a href="${appUrl(`/timeline?teammate=${t.id}`)}">Timeline</a><a href="${appUrl('/billing')}">All billing</a></span></div>
       ${entries.length
-        ? html`<div class="table-wrap"><table class="table">
+        ? html`<div class="table-wrap" tabindex="0" role="region" aria-label="Table"><table class="table">
             <thead><tr><th scope="col">Day</th><th scope="col">Task</th><th scope="col">Hours</th><th scope="col">Tokens</th><th scope="col">Billed</th></tr></thead>
             <tbody>${entries.map(
               (e) => html`<tr>
@@ -163,15 +163,30 @@ function memoryCard(t) {
             ${['fact', 'preference', 'source'].map((k) => html`<span class="memory-kind"><span class="sw" style="background:${MEMORY_COLORS[k]}" aria-hidden="true"></span><strong>${KIND_LABEL[k]}s</strong>${count(m.byKind[k])}</span>`)}
           </div>
           <div class="recent-title">Recently learned</div>
-          <div class="recent-list">
+          <div class="recent-list" tabindex="0" role="region" aria-label="Recent memories">
             ${m.recent.length
-              ? m.recent.map((r) => html`<div class="recent-item"><p>${r.pinned ? html`<span class="pin-mark" title="Pinned">${icons.pin}</span>` : ''}${r.text}</p><div class="meta">${KIND_LABEL[r.kind]} · learned ${r.learned}${r.project ? html` · <span class="project-chip">${r.project}</span>` : ''}</div></div>`)
+              ? m.recent.map((r) => html`<div class="recent-item"><p>${r.pinned ? html`<span class="pin-mark" title="Pinned">${icon('pin')}</span>` : ''}${r.text}</p><div class="meta">${KIND_LABEL[r.kind]} · learned ${r.learned}${r.project ? html` · <span class="project-chip">${r.project}</span>` : ''}</div></div>`)
               : html`<p class="help">Nothing yet. Memories appear after ${t.name.split(' ')[0]} finishes a task.</p>`}
           </div>`}
       <div class="memory-actions">
         <button type="button" class="btn btn-secondary" data-action="review-memory" ${session && !m.count ? 'disabled' : ''}>Review memory</button>
         <button type="button" class="btn btn-danger" data-action="reset-memory" ${!m.count ? 'disabled' : ''}>Reset</button>
       </div>
+    </section>`;
+}
+
+/** What the teammate has said on the Team board lately, its claim first (posts by this teammate, newest first). */
+function boardCard(t, posts) {
+  const first = t.name.split(' ')[0];
+  const claim = posts.find((p) => p.kind === 'working-on' && p.state === 'active');
+  const rest = posts.filter((p) => p !== claim).slice(0, 5);
+  return html`
+    <section class="card" id="on-the-board" aria-labelledby="board-h">
+      <div class="card-head"><h2 class="card-title" id="board-h">On the board</h2><a href="${appUrl(`/board?q=${encodeURIComponent(t.name)}`)}">Team board</a></div>
+      ${claim ? html`<p class="help"><strong>Working on:</strong> <a href="${appUrl(`/board/${claim.id}`)}">${claim.claim?.title ?? claim.preview}</a> · ${claim.topics[0]}</p>` : ''}
+      ${rest.length
+        ? html`<div class="recent-list" tabindex="0" role="region" aria-label="${first}'s recent board posts">${rest.map((p) => html`<div class="recent-item"><p><a href="${appUrl(`/board/${p.id}`)}">${p.kindLabel}${p.stateLabel ? ` · ${p.stateLabel}` : ''}</a>: ${p.hidden ? 'hidden' : p.preview}</p><div class="meta">${p.topics.join(' · ')}${p.replyCount ? ` · ${p.replyCount} ${p.replyCount === 1 ? 'reply' : 'replies'}` : ''}</div></div>`)}</div>`
+        : html`<p class="help">${first} hasn't posted on the team board yet. Give ${first} the board tools under Tools &amp; handoffs to let them share findings and ask the team.</p>`}
     </section>`;
 }
 
@@ -190,7 +205,7 @@ function billedCard(t, warnAtPct) {
         ${t.weekly.map((w) => html`<span class="${w.current ? 'current' : ''}" style="height:${(w.amount / max) * 100}%"></span>`)}
       </div>
       <div class="billed-labels" aria-hidden="true">${t.weekly.map((w) => html`<span class="${w.current ? 'current' : ''}">${w.label}</span>`)}</div>
-      ${t.monthlyCap ? html`<div class="billed-foot${capWarn ? ' warn' : ''}">${capWarn ? icons.alert : ''}${money(t.monthBilled)} of the ${money(t.monthlyCap)} monthly cap used this month (${capPct}%)</div>` : ''}
+      ${t.monthlyCap ? html`<div class="billed-foot${capWarn ? ' warn' : ''}">${capWarn ? icon('alert') : ''}${money(t.monthBilled)} of the ${money(t.monthlyCap)} monthly cap used this month (${capPct}%)</div>` : ''}
     </section>`;
 }
 
@@ -237,7 +252,7 @@ async function assignWork(t, ctx, onFinished, followUp = null) {
       </div>`,
     footer: html`<button type="button" class="btn btn-secondary" data-close id="assign-cancel">Cancel</button>
       <button type="button" class="btn btn-secondary" id="assign-follow" hidden>Follow up</button>
-      <button type="submit" form="assign-form" class="btn btn-primary" id="assign-submit">${icons.arrowRight}Start work</button>`,
+      <button type="submit" form="assign-form" class="btn btn-primary" id="assign-submit">${icon('arrowRight')}Start work</button>`,
     setup(dialog) {
       const form = dialog.querySelector('#assign-form');
       const runEl = dialog.querySelector('#run');
@@ -256,7 +271,7 @@ async function assignWork(t, ctx, onFinished, followUp = null) {
       const resetCost = () => {
         confirmCost = false;
         costBox.hidden = true;
-        submit.innerHTML = String(html`${icons.arrowRight}Start work`);
+        submit.innerHTML = String(html`${icon('arrowRight')}Start work`);
       };
       form.task.addEventListener('input', () => confirmCost && resetCost());
 
@@ -312,7 +327,7 @@ async function assignWork(t, ctx, onFinished, followUp = null) {
         meta.innerHTML = String(html`<span class="spinner" aria-hidden="true"></span> <span>${t.name.split(' ')[0]} is working…</span>`);
         controller = new AbortController();
         try {
-          await stream(`/api/teammates/${t.id}/tasks`, data, {
+          await stream(`/api/v1/teammates/${t.id}/tasks`, data, {
             start: (s) => {
               meta.innerHTML = String(html`<span class="spinner" aria-hidden="true"></span><span>Working on <strong>${s.model}</strong>${s.provider === 'mock' ? ' (offline mock)' : ''}</span>`);
             },
@@ -352,7 +367,7 @@ async function assignWork(t, ctx, onFinished, followUp = null) {
               confirmCost = true;
               costBox.hidden = false;
               costBox.innerHTML = String(html`This task is estimated at <strong class="num">${money(estimate.amount)}</strong> (${hours1(estimate.hours)}, about ${tokens(estimate.tokens)} tokens), over ${first}'s ${money(threshold)} approval threshold. As the owner you can approve it and start now.`);
-              submit.innerHTML = String(html`${icons.check}Approve &amp; start`);
+              submit.innerHTML = String(html`${icon('check')}Approve &amp; start`);
               submit.focus();
             }
           }
@@ -400,7 +415,7 @@ async function changeModel(t, ctx, onSaved) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         try {
-          await api.patch(`/api/teammates/${t.id}`, { model: form.model.value, rate: Number(form.rate.value) });
+          await api.patch(`/api/v1/teammates/${t.id}`, { model: form.model.value, rate: Number(form.rate.value) });
           toast(`${t.name.split(' ')[0]} now runs on ${models.find((m) => m.id === form.model.value).name}`);
           dialog.close('saved');
           onSaved();
@@ -446,7 +461,7 @@ async function addSkill(t, ctx, onSaved) {
         e.preventDefault();
         const body = Object.fromEntries(new FormData(form));
         try {
-          await api.post(`/api/teammates/${t.id}/skills`, { ...body, level: Number(body.level) });
+          await api.post(`/api/v1/teammates/${t.id}/skills`, { ...body, level: Number(body.level) });
           dialog.close('saved');
           await ctx.refreshMeta();
           onSaved();
@@ -459,7 +474,7 @@ async function addSkill(t, ctx, onSaved) {
 }
 
 async function reviewMemory(t, onChanged) {
-  let { items } = await api.get(`/api/teammates/${t.id}/memory`);
+  let { items } = await api.get(`/api/v1/teammates/${t.id}/memory`);
   let changed = false;
   const others = (m) => (m.teammateId !== t.id ? 'a teammate' : '');
   await openDialog({
@@ -467,7 +482,7 @@ async function reviewMemory(t, onChanged) {
     wide: true,
     body: html`
       <p class="muted">${MODE_LABEL[t.memory.mode]} · ${count(items.length)} of ${count(t.memory.cap)} items. Pin what matters: pinned items are always used and never merged. Delete anything wrong or out of date.</p>
-      <div class="memory-list" id="memory-list"></div>`,
+      <div class="memory-list" id="memory-list" tabindex="0" role="region" aria-label="Memories"></div>`,
     footer: html`<button type="button" class="btn btn-secondary" data-close>Done</button>`,
     setup(dialog) {
       const list = dialog.querySelector('#memory-list');
@@ -482,13 +497,13 @@ async function reviewMemory(t, onChanged) {
         try {
           if (del) {
             del.disabled = true;
-            await api.del(`/api/teammates/${t.id}/memory/${del.dataset.delete}`);
+            await api.del(`/api/v1/teammates/${t.id}/memory/${del.dataset.delete}`);
             items = items.filter((m) => m.id !== del.dataset.delete);
             changed = true;
             draw();
           } else if (pin) {
             const item = items.find((m) => m.id === pin.dataset.pin);
-            const updated = await api.patch(`/api/teammates/${t.id}/memory/${item.id}`, { pinned: !item.pinned });
+            const updated = await api.patch(`/api/v1/teammates/${t.id}/memory/${item.id}`, { pinned: !item.pinned });
             item.pinned = updated.pinned;
             changed = true;
             draw();
@@ -518,7 +533,7 @@ function viewWork(t, workId, ctx, reload) {
 
 /** Add or edit a knowledge document. Upload fills the form from a .md/.txt file. */
 async function editDocument(t, ctx, docId, onSaved) {
-  const doc = docId ? await api.get(`/api/teammates/${t.id}/knowledge/${docId}`) : { title: '', content: '', project: '' };
+  const doc = docId ? await api.get(`/api/v1/teammates/${t.id}/knowledge/${docId}`) : { title: '', content: '', project: '' };
   const projects = ctx.meta?.projects ?? [];
   let changed = false;
   await openDialog({
@@ -563,8 +578,8 @@ async function editDocument(t, ctx, docId, onSaved) {
         const body = { title: f.title.value, content: f.content.value, project: f.project.value };
         if (filename) body.filename = filename;
         try {
-          if (docId) await api.patch(`/api/teammates/${t.id}/knowledge/${docId}`, body);
-          else await api.post(`/api/teammates/${t.id}/knowledge`, body);
+          if (docId) await api.patch(`/api/v1/teammates/${t.id}/knowledge/${docId}`, body);
+          else await api.post(`/api/v1/teammates/${t.id}/knowledge`, body);
           changed = true;
           toast(docId ? 'Document saved' : `Added “${body.title.trim() || filename}”`);
           dialog.close('saved');
@@ -582,7 +597,7 @@ async function editDocument(t, ctx, docId, onSaved) {
         const ok = await confirmDialog({ title: `Delete “${doc.title}”?`, message: `${t.name.split(' ')[0]} will stop using it. Work items that already cited it keep the reference.`, confirmLabel: 'Delete document' });
         if (!ok) return;
         try {
-          await api.del(`/api/teammates/${t.id}/knowledge/${docId}`);
+          await api.del(`/api/v1/teammates/${t.id}/knowledge/${docId}`);
           changed = true;
           toast('Document deleted');
           dialog.close('deleted');
@@ -611,7 +626,7 @@ async function uploadDocuments(t, files, onDone) {
       continue;
     }
     try {
-      await api.post(`/api/teammates/${t.id}/knowledge`, { filename: file.name, content: await file.text() });
+      await api.post(`/api/v1/teammates/${t.id}/knowledge`, { filename: file.name, content: await file.text() });
       added += 1;
     } catch (err) {
       toast(`${file.name}: ${err.message}`, { error: true });
@@ -709,7 +724,7 @@ async function editProfile(t, ctx, { onSaved, onRetired }) {
         if (traits.length > 12) missing.traits = 'Up to 12 traits';
         if (Object.keys(missing).length) return fieldErrors(form, missing);
         try {
-          await api.patch(`/api/teammates/${t.id}`, body);
+          await api.patch(`/api/v1/teammates/${t.id}`, body);
           toast('Profile saved');
           dialog.close('saved');
           onSaved();
@@ -728,7 +743,7 @@ async function editProfile(t, ctx, { onSaved, onRetired }) {
         });
         if (!ok) return;
         try {
-          await api.post(`/api/teammates/${t.id}/retire`);
+          await api.post(`/api/v1/teammates/${t.id}/retire`);
           dialog.close('retired');
           onRetired();
         } catch (err) {
@@ -782,7 +797,7 @@ async function editPersona(t, onSaved) {
       dialog.querySelector('#persona-save').addEventListener('click', async () => {
         if (!input.value.trim()) return toast('The persona cannot be empty', { error: true });
         try {
-          await api.patch(`/api/teammates/${t.id}`, { instructions: input.value });
+          await api.patch(`/api/v1/teammates/${t.id}`, { instructions: input.value });
           saved = true;
           toast('Persona saved');
           dialog.close('saved');
@@ -798,7 +813,7 @@ async function editPersona(t, onSaved) {
         });
         if (!ok) return;
         try {
-          const updated = await api.post(`/api/teammates/${t.id}/persona/reset`);
+          const updated = await api.post(`/api/v1/teammates/${t.id}/persona/reset`);
           input.value = updated.instructions;
           saved = true;
           select(tabs[0]);
@@ -814,7 +829,7 @@ async function editPersona(t, onSaved) {
 
 async function editSkill(t, skillId, onSaved) {
   const own = t.skills.find((s) => s.id === skillId);
-  const lib = await api.get(`/api/skills/${encodeURIComponent(skillId)}`).catch(() => null);
+  const lib = await api.get(`/api/v1/skills/${encodeURIComponent(skillId)}`).catch(() => null);
   const first = t.name.split(' ')[0];
   const others = (lib?.usedBy ?? []).filter((u) => u.id !== t.id).map((u) => u.name);
   let changed = false;
@@ -848,9 +863,9 @@ async function editSkill(t, skillId, onSaved) {
         e.preventDefault();
         const f = form.elements;
         try {
-          if (Number(f.level.value) !== own.level) await api.patch(`/api/teammates/${t.id}/skills/${encodeURIComponent(skillId)}`, { level: Number(f.level.value) });
+          if (Number(f.level.value) !== own.level) await api.patch(`/api/v1/teammates/${t.id}/skills/${encodeURIComponent(skillId)}`, { level: Number(f.level.value) });
           if (lib && (f.description.value !== lib.description || f.instructions.value !== lib.instructions)) {
-            await api.patch(`/api/skills/${encodeURIComponent(skillId)}`, { description: f.description.value, instructions: f.instructions.value });
+            await api.patch(`/api/v1/skills/${encodeURIComponent(skillId)}`, { description: f.description.value, instructions: f.instructions.value });
           }
           changed = true;
           dialog.close('saved');
@@ -862,7 +877,7 @@ async function editSkill(t, skillId, onSaved) {
         const ok = await confirmDialog({ title: `Remove ${own.name}?`, message: `${first} will stop using this skill. You can add it back at any time.`, confirmLabel: 'Remove skill' });
         if (!ok) return;
         try {
-          await api.del(`/api/teammates/${t.id}/skills/${encodeURIComponent(skillId)}`);
+          await api.del(`/api/v1/teammates/${t.id}/skills/${encodeURIComponent(skillId)}`);
           changed = true;
           dialog.close('removed');
         } catch (err) {
@@ -876,28 +891,32 @@ async function editSkill(t, skillId, onSaved) {
 
 // ---------- Page ----------
 
-export async function render(view, { params, ctx, isCurrent }) {
-  const [id] = params;
+let leave = null;
+
+export async function render(frameView, { params, ctx: frame }) {
+  const { view, ctx } = await enter(frameView, frame, 'profile');
+  const { id } = params;
   if (!ctx.meta) await ctx.refreshMeta();
   let current = null;
 
   let catalogue = [];
   const load = async () => {
-    const [t, tools, sched, roster] = await Promise.all([
-      api.get(`/api/teammates/${id}`), api.get('/api/tools'), api.get(`/api/schedules?teammate=${encodeURIComponent(id)}`), api.get('/api/teammates'),
+    const [t, tools, sched, roster, board] = await Promise.all([
+      api.get(`/api/v1/teammates/${id}`), api.get('/api/v1/tools'), api.get(`/api/v1/schedules?teammate=${encodeURIComponent(id)}`), api.get('/api/v1/teammates'),
+      api.get(`/api/v1/board/posts?author=${encodeURIComponent(id)}&limit=6`).catch(() => ({ posts: [] })),
     ]);
-    if (!isCurrent()) return;
+    if (!ctx.isCurrent()) return;
     catalogue = tools.tools;
     current = t;
     if (!t.retiredAt) ctx.rememberProfile(t.id);
     document.title = `${t.name} · Teammates`;
     view.classList.toggle('is-retired', Boolean(t.retiredAt));
     view.innerHTML = String(html`
-      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/team">Team roster</a> / <span aria-current="page">${t.name}</span></nav>
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="${appUrl('/team')}">Team roster</a> / <span aria-current="page">${t.name}</span></nav>
       ${heroCard(t)}
       <div class="content-grid">
         <div>${aboutCard(t)}${skillsCard(t)}${knowledgeCard(t)}${toolsCard(t, catalogue, roster.teammates)}${schedulesCard(t, sched.schedules)}${timesheetCard(t)}</div>
-        <div>${modelCard(t)}${memoryCard(t)}${billedCard(t, ctx.meta?.warnAtPct)}</div>
+        <div>${modelCard(t)}${memoryCard(t)}${boardCard(t, board.posts)}${billedCard(t, ctx.meta?.warnAtPct)}</div>
       </div>`);
     view.onclick = (e) => handle(e, t);
     view.onchange = (e) => {
@@ -921,7 +940,7 @@ export async function render(view, { params, ctx, isCurrent }) {
       if (action === 'toggle-pause') {
         const resume = t.status === 'paused' || t.status === 'off';
         btn.disabled = true;
-        await api.patch(`/api/teammates/${t.id}`, { status: resume ? 'available' : 'paused' });
+        await api.patch(`/api/v1/teammates/${t.id}`, { status: resume ? 'available' : 'paused' });
         toast(`${t.name.split(' ')[0]} is ${resume ? 'available again' : 'paused'}`);
         await reload();
       } else if (action === 'assign') {
@@ -941,7 +960,7 @@ export async function render(view, { params, ctx, isCurrent }) {
         });
       } else if (action === 'reinstate') {
         btn.disabled = true;
-        await api.post(`/api/teammates/${t.id}/reinstate`);
+        await api.post(`/api/v1/teammates/${t.id}/reinstate`);
         toast(`${t.name.split(' ')[0]} is back on the team`);
         await reload();
       } else if (action === 'edit-persona') await editPersona(t, reload);
@@ -957,7 +976,7 @@ export async function render(view, { params, ctx, isCurrent }) {
           confirmLabel: 'Reset memory',
           danger: true,
         })) {
-          await api.del(`/api/teammates/${t.id}/memory`);
+          await api.del(`/api/v1/teammates/${t.id}/memory`);
           toast('Memory reset');
           await reload();
         }
@@ -967,7 +986,7 @@ export async function render(view, { params, ctx, isCurrent }) {
       else if (action === 'upload-docs') view.querySelector('#doc-files').click();
       else if (action === 'edit-tools') await editTools(t, catalogue, reload);
       else if (action === 'add-schedule') await editSchedule(t, null, ctx, reload);
-      else if (action === 'edit-schedule') await editSchedule(t, (await api.get(`/api/schedules?teammate=${t.id}`)).schedules.find((x) => x.id === btn.dataset.schedule), ctx, reload);
+      else if (action === 'edit-schedule') await editSchedule(t, (await api.get(`/api/v1/schedules?teammate=${t.id}`)).schedules.find((x) => x.id === btn.dataset.schedule), ctx, reload);
       else if (action === 'run-schedule') {
         btn.disabled = true;
         await runSchedule(btn.dataset.schedule);
@@ -1003,14 +1022,18 @@ export async function render(view, { params, ctx, isCurrent }) {
   });
 
   await load();
-  return {
-    cleanup: () => {
-      view.onclick = null;
-      view.onchange = null;
-      view.classList.remove('is-retired');
-      offSchedule();
-      offStatus();
-      offTime();
-    },
+  leave = () => {
+    view.onclick = null;
+    view.onchange = null;
+    view.classList.remove('is-retired');
+    offSchedule();
+    offStatus();
+    offTime();
   };
+}
+
+/** The frame calls this when the person leaves the page. */
+export function destroy() {
+  leave?.();
+  leave = null;
 }

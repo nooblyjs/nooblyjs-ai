@@ -1,5 +1,5 @@
 // Audit trail of sign-ins, key changes and configuration changes: data/system/audit/YYYY-MM.md (Markdown table).
-import { parseTable, renderTable } from '../store/md-table.js';
+import { parseTable, renderTable } from '../utils/md-table.js';
 
 const COLUMNS = ['ts', 'actor', 'action', 'target', 'detail'];
 const file = (month) => ['system', 'audit', `${month}.md`];

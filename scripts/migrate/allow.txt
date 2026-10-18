@@ -3,3 +3,5 @@ scripts/migrate/:.*
 .claude/steering/migration-plan.md:.*
 # The harness's feedback/eval "checkers" start sentences with a capital (the word, not the brand).
 nooblyjs-ai-harness/:Checkers (are|look at|test)
+# Migration notes say where a project came from.
+CLAUDE.md:came over from the EngX workspace

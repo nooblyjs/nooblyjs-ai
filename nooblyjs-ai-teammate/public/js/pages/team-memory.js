@@ -1,15 +1,21 @@
 // Team memory (/team-memory): everything teammates in "Shared team memory" mode have learned, with who added it.
-import { api } from '../api.js';
-import { html } from '../html.js';
+import { html } from '/ui/js/html.js';
 import { avatar } from '../avatar.js';
 import { toast, confirmDialog } from '../ui.js';
 import { memoryRow, byPinnedThenNewest, KIND_LABEL } from '../memory-ui.js';
 import { showWorkItem } from '../work-dialog.js';
+import { api, appUrl, enter } from '../client.js';
 
 const KINDS = [['all', 'Everything'], ['fact', 'Facts'], ['preference', 'Preferences'], ['source', 'Sources']];
 
-export async function render(view, { query }) {
-  let data = await api.get('/api/team-memory');
+let leave = null;
+
+export async function render(frameView, { query, ctx: frame }) {
+  const { view, ctx } = await enter(frameView, frame, 'team-memory');
+  let data = await api.get('/api/v1/team-memory');
+  // Findings on the Team board that people found useful: a person can promote them here.
+  let suggested = (await api.get('/api/v1/board/suggestions').catch(() => ({ posts: [] }))).posts;
+  const mayPromote = ctx.can('post');
   const state = { kind: KINDS.some(([k]) => k === query.get('kind')) ? query.get('kind') : 'all', project: query.get('project') ?? '' };
 
   const draw = () => {
@@ -44,7 +50,7 @@ export async function render(view, { query }) {
         <div class="summary-card" style="grid-column: span 2">
           <div class="summary-label">Teammates sharing memory</div>
           ${data.members.length
-            ? html`<div class="member-row">${data.members.map((m) => html`<a class="member" href="/team/${m.id}">${avatar(m.avatar, 40)}<span>${m.name}</span></a>`)}</div>`
+            ? html`<div class="member-row">${data.members.map((m) => html`<a class="member" href="${appUrl(`/team/${m.id}`)}">${avatar(m.avatar, 40)}<span>${m.name}</span></a>`)}</div>`
             : html`<p class="summary-detail">Nobody yet. Set a teammate's memory to “Shared team memory” in their Edit dialog.</p>`}
         </div>
       </section>
@@ -53,9 +59,15 @@ export async function render(view, { query }) {
         ${KINDS.map(([k, label]) => html`<button type="button" class="filter-pill" data-kind="${k}" aria-pressed="${state.kind === k}">${label} ${count(k)}</button>`)}
       </div>
 
+      ${suggested.length ? html`<section class="card" aria-labelledby="sugg-h">
+        <div class="card-head"><h2 class="card-title" id="sugg-h">Suggested from the board</h2><a href="${appUrl('/board?kind=finding&sort=useful')}">All findings</a></div>
+        <p class="help">Findings people marked Useful. Promoting one adds it here, for every teammate in shared-memory mode.</p>
+        <ul class="board-suggestions">${suggested.map((p) => html`<li class="recent-item"><p>${p.preview}</p><div class="meta">${p.author.name} · Useful ${p.signals.useful} · ${p.topics.join(' · ')} · <a href="${appUrl(`/board/${p.id}`)}">Open on the board</a>${mayPromote ? html` · <button type="button" class="btn-link" data-promote="${p.id}">Promote to team memory</button>` : ''}</div></li>`)}</ul>
+      </section>` : ''}
+
       <section class="card" aria-label="Shared memory items">
         ${shown.length
-          ? html`<div class="memory-list team-memory-list">${shown.map((m) => memoryRow(m, { contributor: m.contributor }))}</div>`
+          ? html`<div class="memory-list team-memory-list" tabindex="0" role="region" aria-label="Team memories">${shown.map((m) => memoryRow(m, { contributor: m.contributor }))}</div>`
           : html`<div class="empty-state"><h2 class="card-title">Nothing here yet</h2><p>${data.items.length ? 'No items match these filters.' : 'Shared memory fills up as teammates in shared-memory mode finish tasks.'}</p></div>`}
       </section>`);
     const url = new URL(location.href);
@@ -75,21 +87,28 @@ export async function render(view, { query }) {
     const pin = e.target.closest('[data-pin]');
     const del = e.target.closest('[data-delete]');
     const work = e.target.closest('[data-work]');
+    const promote = e.target.closest('[data-promote]');
     try {
-      if (kind) {
+      if (promote) {
+        await api.post(`/api/v1/board/posts/${encodeURIComponent(promote.dataset.promote)}/promote`);
+        [data, suggested] = await Promise.all([api.get('/api/v1/team-memory'), api.get('/api/v1/board/suggestions').then((r) => r.posts)]);
+        toast('Added to team memory');
+        draw();
+        view.querySelector('[data-kind="all"]')?.focus();
+      } else if (kind) {
         state.kind = kind.dataset.kind;
         draw();
         view.querySelector(`[data-kind="${state.kind}"]`)?.focus();
       } else if (pin) {
         const item = data.items.find((i) => i.id === pin.dataset.pin);
-        item.pinned = (await api.patch(`/api/team-memory/${item.id}`, { pinned: !item.pinned })).pinned;
+        item.pinned = (await api.patch(`/api/v1/team-memory/${item.id}`, { pinned: !item.pinned })).pinned;
         draw();
         view.querySelector(`[data-pin="${item.id}"]`)?.focus();
       } else if (del) {
         const item = data.items.find((i) => i.id === del.dataset.delete);
         const ok = await confirmDialog({ title: 'Delete this memory?', message: `“${item.text.slice(0, 120)}” (${KIND_LABEL[item.kind] ?? item.kind}, added by ${item.contributor}) will be removed for every teammate.`, confirmLabel: 'Delete' });
         if (!ok) return;
-        await api.del(`/api/team-memory/${item.id}`);
+        await api.del(`/api/v1/team-memory/${item.id}`);
         data = { ...data, items: data.items.filter((i) => i.id !== item.id) };
         toast('Memory deleted');
         draw();
@@ -102,5 +121,11 @@ export async function render(view, { query }) {
   };
 
   draw();
-  return { cleanup: () => { view.onclick = null; view.onchange = null; } };
+  leave = () => { view.onclick = null; view.onchange = null; };
+}
+
+/** The frame calls this when the person leaves the page. */
+export function destroy() {
+  leave?.();
+  leave = null;
 }

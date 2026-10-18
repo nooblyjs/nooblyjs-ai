@@ -1,20 +1,21 @@
-// Authentication for the JSON API: the nooblyjs-core sign-in (session cookie, plus a CSRF header on changes) or an
-// API key (teammate calls only). People sign in on core's login page; see src/core.
-import { HttpError } from '../util/errors.js';
-import { atLeast, roleFromCore } from '../services/auth.js';
+// Authentication for the JSON API: the person the host signed in (host.auth puts them on req.person; plus a CSRF
+// header on changes) or an API key (teammate calls only). Role checks are the host's (host.requireRole).
+import { HttpError } from '../utils/errors.js';
+import { atLeast, roleFromAccess } from '../services/auth.js';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
-/** The signed-in person as the app sees them, from core's user record. */
-export const actorFromCoreUser = (user) => ({
-  type: 'user', id: user.email, name: user.fullName || user.email, role: roleFromCore(user.roles ?? user.role), username: user.email,
-});
+/** The signed-in person as the app sees them, from the host's person record. */
+export const actorFromPerson = (person) => {
+  const email = person.email ?? person.id;
+  return { type: 'user', id: email, name: person.name || email, role: roleFromAccess(person.accessRole), accessRole: person.accessRole, username: email };
+};
 
 /**
- * Works out who is calling and sets req.actor. Does not reject anything by itself. Runs after coreSession(), which
- * puts the person signed in with core on req.user.
+ * Works out who is calling and sets req.actor. An API key is checked here; anyone else goes through the host's
+ * `auth`, which answers 401 itself when nobody is signed in.
  */
-export function identify({ auth }) {
+export function authenticate({ auth, hostAuth, hostChecksCsrf = false }) {
   return async (req, res, next) => {
     try {
       const header = req.get('authorization') ?? '';
@@ -25,20 +26,24 @@ export function identify({ auth }) {
         req.actor = { type: 'key', id: key.id, name: key.name, key };
         return next();
       }
-      if (req.user?.email && req.user.isActive !== false) {
-        req.actor = actorFromCoreUser(req.user);
-        req.csrf = auth.csrfFor(req.sessionID);
-      } else {
-        req.actor = { type: 'anonymous', ip: req.ip };
-      }
-      next();
     } catch (err) {
-      next(err);
+      return next(err);
     }
+    hostAuth(req, res, (err) => {
+      if (err) return next(err);
+      if (!req.person) return next(new HttpError(401, 'unauthenticated', 'Sign in to continue.'));
+      req.actor = actorFromPerson(req.person);
+      // NooblyJS checks a CSRF token on every change before any app sees the request (host.checksCsrf); a host that
+      // doesn't leaves it to the app's own token (GET /api/v1/session hands it out).
+      if (hostChecksCsrf) req.csrfByHost = true;
+      else req.csrf = auth.csrfFor(req.sessionID);
+      next();
+    });
   };
 }
 
 function checkCsrf(req) {
+  if (req.csrfByHost) return;
   if (UNSAFE.has(req.method) && (!req.csrf || req.get('x-csrf-token') !== req.csrf)) {
     throw new HttpError(403, 'csrf_failed', 'Your session has expired. Refresh the page and try again.');
   }
@@ -46,7 +51,7 @@ function checkCsrf(req) {
 
 /** A signed-in person required (plus the CSRF header on changes). */
 export function requireUser(req, res, next) {
-  if (req.actor?.type === 'key') return next(new HttpError(403, 'key_not_allowed', 'API keys can only call teammates (POST /api/teammates/:id/tasks).'));
+  if (req.actor?.type === 'key') return next(new HttpError(403, 'key_not_allowed', 'API keys can only call teammates (POST <mount path>/api/v1/teammates/:id/tasks).'));
   if (req.actor?.type !== 'user') return next(new HttpError(401, 'unauthenticated', 'Sign in to continue.'));
   try {
     checkCsrf(req);
@@ -74,9 +79,15 @@ export function requireUserOrKey({ auth, limiter }) {
   };
 }
 
-/** Signed-in user with at least `role` (viewer < manager < owner). Use after requireUser. */
+/**
+ * Signed-in user with at least `role` (viewer < manager < owner). Use after requireUser. The host decides, through
+ * the permission for that role (req.roleGates, set by the app's router); without one, the Teammates role decides.
+ */
 export const requireRole = (role) => (req, res, next) => {
-  if (req.actor?.type === 'user' && !atLeast(req.actor, role)) {
+  if (req.actor?.type !== 'user') return next();
+  const gate = req.roleGates?.[role];
+  if (gate) return gate(req, res, next);
+  if (!atLeast(req.actor, role)) {
     return next(new HttpError(403, 'forbidden', `This needs the ${role} role. You are signed in as a ${req.actor.role}.`));
   }
   next();

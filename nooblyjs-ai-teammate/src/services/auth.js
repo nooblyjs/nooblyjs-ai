@@ -1,9 +1,9 @@
-// People sign in with nooblyjs-core's authservice (see src/core): their account, password and roles live in
-// data/core/auth/. This service maps those roles to Teammates roles, keeps the secret that signs the session and
-// CSRF tokens, and manages API keys for calling teammates (data/system/api-keys.md; only key hashes are stored).
+// People sign in with the host (NooblyJS, or the stand-in host in test/fixtures/host.js), which puts them on
+// req.person with their NooblyJS access role. This service maps access roles to Teammates roles, keeps the secret that
+// signs CSRF tokens, and manages API keys for calling teammates (data/system/api-keys.md; only key hashes are stored).
 import crypto from 'node:crypto';
-import { HttpError } from '../util/errors.js';
-import { newId } from '../util/ids.js';
+import { HttpError } from '../utils/errors.js';
+import { newId } from '../utils/ids.js';
 
 const KEY_PREFIX = 'dtk';
 const KEYS_FILE = ['system', 'api-keys.md'];
@@ -18,9 +18,33 @@ const safeEqual = (a, b) => {
 };
 
 export const ROLES = ['viewer', 'manager', 'owner'];
-const RANK = { viewer: 1, manager: 2, owner: 3 };
+// `hire` is not a role but an action only owners take (NooblyJS product.md §6: "Hire teammates, set budgets").
+const RANK = { viewer: 1, manager: 2, owner: 3, hire: 3 };
+// `post` (on the Team board) is NooblyJS's `draft`: every access role but Viewer, so Contributors post too.
+const POSTERS = new Set(['contributor', 'approver', 'architect', 'owner']);
 /** True when `actor` is a signed-in user with at least `role`. */
-export const atLeast = (actor, role) => actor?.type === 'user' && (RANK[actor.role] ?? 0) >= RANK[role];
+export const atLeast = (actor, role) => actor?.type === 'user'
+  && (role === 'post' ? POSTERS.has(String(actor.accessRole ?? '').toLowerCase()) || (RANK[actor.role] ?? 0) >= RANK.manager : (RANK[actor.role] ?? 0) >= RANK[role]);
+
+/**
+ * NooblyJS permissions behind the Teammates roles: a route that needs a role asks the host for this permission
+ * (host.requireRole), from the NooblyJS matrix (../nooblyjs-ai-host/.claude/steering/product.md §6, data/access/roles.yaml):
+ * viewers read; managers give work and approve timesheets and pending tasks (`approve`: Approver, Architect, Owner);
+ * owners run settings, billing and admin (`set-budgets`: Owner); hiring is `hire-teammates` (Owner). The browser
+ * uses the same table (public/js/client.js). `post` is posting on the Team board (`draft`: Contributor and up).
+ */
+export const PERMISSION_FOR_ROLE = { viewer: 'read', manager: 'approve', owner: 'set-budgets', hire: 'hire-teammates', post: 'draft' };
+
+/**
+ * The Teammates role for a NooblyJS access role (Viewer, Contributor, Approver, Architect, Owner). Owners own; Approvers
+ * and Architects manage (give work, approve timesheets); Contributors and Viewers look. [CONFIRM] (NOOBLY.md)
+ */
+export function roleFromAccess(accessRole = '') {
+  const role = String(accessRole).toLowerCase();
+  if (role === 'owner') return 'owner';
+  if (role === 'approver' || role === 'architect') return 'manager';
+  return 'viewer';
+}
 
 /**
  * The Teammates role for a core user: core admins and `owner` are owners, `manager` is a manager, and anyone else

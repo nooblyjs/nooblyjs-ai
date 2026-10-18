@@ -1,11 +1,11 @@
 // Billing & timesheets (/billing): period totals, budget, spend by model, cost by teammate, invoices and month close,
 // tasks waiting for approval, timesheet approvals, and a token view (usage and API cost against billed amounts).
-import { api, ApiError } from '../api.js';
-import { html } from '../html.js';
-import { icons } from '../icons.js';
+import { html } from '/ui/js/html.js';
+import { icon } from '/ui/js/icons.js';
 import { avatar } from '../avatar.js';
 import { money, hours, hours1, tokens, plural } from '../format.js';
 import { meter, openDialog, toast } from '../ui.js';
+import { api, ApiError, appUrl, enter } from '../client.js';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -41,7 +41,7 @@ const callerLabel = (c) => (!c ? '' : c.type === 'key' ? `API key “${c.name}�
 function alertsBanner(alerts) {
   if (!alerts.items.length) return '';
   return html`<section class="alert-list" aria-label="Spending alerts">${alerts.items.map(
-    (a) => html`<div class="alert-item alert-${a.level}" role="status">${icons.alert}<span>${a.message}</span>${a.kind === 'cap' ? html`<a href="/team/${a.id}">Open profile</a>` : html`<a href="/settings">Budgets</a>`}</div>`,
+    (a) => html`<div class="alert-item alert-${a.level}" role="status">${icon('alert')}<span>${a.message}</span>${a.kind === 'cap' ? html`<a href="${appUrl(`/team/${a.id}`)}">Open profile</a>` : html`<a href="${appUrl('/settings')}">Budgets</a>`}</div>`,
   )}</section>`;
 }
 
@@ -108,7 +108,7 @@ function hoursView(d, alerts, approvals) {
                 <div class="teammate-info">
                   ${avatar(r.avatar, 40)}
                   <div>
-                    <a class="teammate-name" href="/team/${r.id}">${r.name}</a>
+                    <a class="teammate-name" href="${appUrl(`/team/${r.id}`)}">${r.name}</a>
                     <div class="teammate-hours">${hours(r.hours)} · ${money(r.rate)}</div>
                   </div>
                 </div>
@@ -129,14 +129,14 @@ function hoursView(d, alerts, approvals) {
               </button>`,
             )
           : html`<p class="muted">No invoices yet. Close a month to create the first one.</p>`}
-        <p class="help mt-2"><a class="text-link" href="/api/billing/export.csv?period=${d.range.period}&offset=${d.range.offset}" download>Export CSV</a> downloads every timesheet entry in ${d.range.label}.</p>
+        <p class="help mt-2"><a class="text-link" href="${appUrl(`/api/v1/billing/export.csv?period=${d.range.period}&offset=${d.range.offset}`)}" download>Export CSV</a> downloads every timesheet entry in ${d.range.label}.</p>
       </section>
     </div>
 
     <section class="card" aria-labelledby="rv-h">
       <div class="card-head"><h2 class="card-title" id="rv-h">Timesheets to review</h2><span class="help" id="pending-count" aria-live="polite">${reviewHeader(d.review.pendingCount)}</span></div>
       ${d.review.entries.length
-        ? html`<div class="table-wrap"><table class="table">
+        ? html`<div class="table-wrap" tabindex="0" role="region" aria-label="Table"><table class="table">
             <thead><tr><th scope="col">Teammate</th><th scope="col">Task</th><th scope="col">Cost centre</th><th scope="col">Hours</th><th scope="col">Tokens</th><th scope="col">Amount</th><th scope="col">Status</th></tr></thead>
             <tbody>${d.review.entries.map(
               (e) => html`<tr>
@@ -156,7 +156,7 @@ function tokenTable(caption, rows, { first, firstCell }) {
   return html`
     <section class="card" aria-labelledby="${caption.replace(/\W+/g, '-')}">
       <h2 class="card-title" id="${caption.replace(/\W+/g, '-')}">${caption}</h2>
-      <div class="table-wrap"><table class="table num-table">
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Table"><table class="table num-table">
         <thead><tr><th scope="col">${first}</th><th scope="col">Tokens</th><th scope="col">Hours</th><th scope="col">Billed</th><th scope="col">API cost</th><th scope="col">Margin</th><th scope="col">API cost / 1M</th><th scope="col">Billed / 1M</th></tr></thead>
         <tbody>${rows.map((r) => html`<tr>
           <td>${firstCell(r)}</td><td>${tokens(r.tokens)}</td><td>${hours1(r.hours)}</td><td>${money(r.amount)}</td><td>${money(r.apiCost)}</td>
@@ -194,10 +194,10 @@ function tokensView(t) {
     </section>
     ${t.totals.entries
       ? html`<div class="admin-stack">
-        ${tokenTable('By teammate', t.byTeammate, { first: 'Teammate', firstCell: (r) => html`<a href="/team/${r.id}">${r.name}</a> <span class="help">${r.modelName}</span>` })}
+        ${tokenTable('By teammate', t.byTeammate, { first: 'Teammate', firstCell: (r) => html`<a href="${appUrl(`/team/${r.id}`)}">${r.name}</a> <span class="help">${r.modelName}</span>` })}
         ${tokenTable('By model', t.byModel, { first: 'Model', firstCell: (r) => html`<span class="sw" style="background:${r.color}" aria-hidden="true"></span>${r.name}` })}
         ${tokenTable('By cost centre', t.byCostCentre, { first: 'Cost centre', firstCell: (r) => r.name })}
-        <p class="help">API cost is the provider's list price for the tokens each task used, recorded when the task ran. Billed is hours × each teammate's rate. Edit list prices under <a href="/settings?tab=models">Settings → Models &amp; pricing</a>.</p></div>`
+        <p class="help">API cost is the provider's list price for the tokens each task used, recorded when the task ran. Billed is hours × each teammate's rate. Edit list prices under <a href="${appUrl('/settings?tab=models')}">Settings → Models &amp; pricing</a>.</p></div>`
       : html`<section class="card"><p class="muted">No tasks ran in ${t.range.label}.</p></section>`}`;
 }
 
@@ -228,7 +228,7 @@ async function closeMonthDialog(onDone, initialMonth = null) {
         submit.disabled = true;
         box.innerHTML = String(html`<p class="help">Loading…</p>`);
         try {
-          preview = await api.get(`/api/invoices/close-preview?month=${form.month.value}`);
+          preview = await api.get(`/api/v1/invoices/close-preview?month=${form.month.value}`);
         } catch (err) {
           box.innerHTML = String(html`<p class="field-error">${err.message}</p>`);
           return;
@@ -260,7 +260,7 @@ async function closeMonthDialog(onDone, initialMonth = null) {
         e.preventDefault();
         submit.disabled = true;
         try {
-          created = await api.post('/api/invoices', { month: form.month.value, excludePending: Boolean(form.excludePending?.checked) });
+          created = await api.post('/api/v1/invoices', { month: form.month.value, excludePending: Boolean(form.excludePending?.checked) });
           toast(`${created.id} for ${created.monthLabel}: ${money(created.amount)}`);
           dialog.close('done');
         } catch (err) {
@@ -278,7 +278,7 @@ async function closeMonthDialog(onDone, initialMonth = null) {
 }
 
 async function invoiceDialog(id, onChanged) {
-  const inv = await api.get(`/api/invoices/${id}`);
+  const inv = await api.get(`/api/v1/invoices/${id}`);
   let changed = false;
   await openDialog({
     title: `${inv.id} · ${inv.monthLabel}`,
@@ -297,8 +297,8 @@ async function invoiceDialog(id, onChanged) {
           </div>`
         : html`<p class="help">This invoice was imported with a total only, so it has no line items.</p>`}
       <div class="button-group invoice-downloads">
-        <a class="btn btn-secondary" href="/api/invoices/${inv.id}/pdf" download>${icons.download}PDF</a>
-        <a class="btn btn-secondary" href="/api/invoices/${inv.id}/csv" download>${icons.download}CSV</a>
+        <a class="btn btn-secondary" href="${appUrl(`/api/v1/invoices/${inv.id}/pdf`)}" download>${icon('download')}PDF</a>
+        <a class="btn btn-secondary" href="${appUrl(`/api/v1/invoices/${inv.id}/csv`)}" download>${icon('download')}CSV</a>
         ${inv.status === 'open' && inv.lines.length ? html`<button type="button" class="btn btn-secondary needs-owner" id="inv-regen">Regenerate</button>` : ''}
       </div>`,
     footer: html`<button type="button" class="btn btn-secondary" data-close>Close</button>
@@ -309,7 +309,7 @@ async function invoiceDialog(id, onChanged) {
         const next = inv.status === 'open' ? 'paid' : 'open';
         toggle.disabled = true;
         try {
-          const updated = await api.patch(`/api/invoices/${inv.id}`, { status: next });
+          const updated = await api.patch(`/api/v1/invoices/${inv.id}`, { status: next });
           inv.status = updated.status;
           changed = true;
           toast(next === 'paid' ? `${inv.id} marked paid` : `${inv.id} is open again`);
@@ -346,13 +346,16 @@ async function declineDialog(id) {
     },
   });
   if (reason === null) return false;
-  await api.post(`/api/approvals/${id}/decline`, { reason });
+  await api.post(`/api/v1/approvals/${id}/decline`, { reason });
   return true;
 }
 
 // ---------- Page ----------
 
-export async function render(view, { query, ctx }) {
+let leave = null;
+
+export async function render(frameView, { query, ctx: frame }) {
+  const { view, ctx } = await enter(frameView, frame, 'billing');
   const state = {
     period: ['week', 'month', 'quarter'].includes(query.get('period')) ? query.get('period') : 'month',
     offset: Number.parseInt(query.get('offset') ?? '0', 10) || 0,
@@ -363,9 +366,9 @@ export async function render(view, { query, ctx }) {
   const draw = async () => {
     const tokensMode = state.view === 'tokens';
     const [d, alerts, { approvals }] = await Promise.all([
-      api.get(`/api/${tokensMode ? 'billing/tokens' : 'billing'}?period=${state.period}&offset=${state.offset}`),
-      tokensMode ? { items: [] } : api.get('/api/alerts'),
-      tokensMode ? { approvals: [] } : api.get('/api/approvals?status=pending'),
+      api.get(`/api/v1/${tokensMode ? 'billing/tokens' : 'billing'}?period=${state.period}&offset=${state.offset}`),
+      tokensMode ? { items: [] } : api.get('/api/v1/alerts'),
+      tokensMode ? { approvals: [] } : api.get('/api/v1/approvals?status=pending'),
     ]);
     const url = new URL(location.href);
     url.searchParams.set('period', state.period);
@@ -387,11 +390,11 @@ export async function render(view, { query, ctx }) {
             <button type="button" class="period-btn" data-view="tokens" aria-pressed="${tokensMode}">Tokens</button>
           </div>
           <div class="period-controls" role="group" aria-label="Billing period">
-            <button type="button" class="period-step" data-step="-1" aria-label="Previous period">${icons.chevronLeft}</button>
+            <button type="button" class="period-step" data-step="-1" aria-label="Previous period">${icon('chevronLeft')}</button>
             ${['week', 'month', 'quarter'].map(
               (p) => html`<button type="button" class="period-btn" data-period="${p}" aria-pressed="${state.period === p}">${state.period === p ? d.range.label : labels[p]}</button>`,
             )}
-            <button type="button" class="period-step" data-step="1" aria-label="Next period" ${state.offset >= 0 ? 'disabled' : ''}>${icons.chevronRight}</button>
+            <button type="button" class="period-step" data-step="1" aria-label="Next period" ${state.offset >= 0 ? 'disabled' : ''}>${icon('chevronRight')}</button>
           </div>
         </div>
       </div>
@@ -426,7 +429,7 @@ export async function render(view, { query, ctx }) {
           await closeMonthDialog(draw);
         } else if (run) {
           run.disabled = true;
-          const result = await api.post(`/api/approvals/${run.dataset.run}/approve`);
+          const result = await api.post(`/api/v1/approvals/${run.dataset.run}/approve`);
           toast(result?.kind === 'action' ? (result.outcome === 'failed' ? `Approved, but it failed: ${result.output}` : 'Approved and done.') : 'Approved. The task is running; its time appears here when it finishes.', { error: result?.outcome === 'failed' });
           await draw();
         } else if (decline) {
@@ -442,7 +445,7 @@ export async function render(view, { query, ctx }) {
           pending -= 1;
           view.querySelector('#pending-count').textContent = reviewHeader(pending);
           try {
-            await api.post(`/api/teammates/${approve.dataset.teammate}/timesheet/${approve.dataset.approve}/approve`);
+            await api.post(`/api/v1/teammates/${approve.dataset.teammate}/timesheet/${approve.dataset.approve}/approve`);
           } catch (err) {
             cell.innerHTML = previous;
             pending += 1;
@@ -466,11 +469,15 @@ export async function render(view, { query, ctx }) {
 
   if (!ctx.meta) ctx.refreshMeta();
   await draw();
-  return {
-    cleanup: () => {
-      view.onclick = null;
-      offApproval();
-      offAlert();
-    },
+  leave = () => {
+    view.onclick = null;
+    offApproval();
+    offAlert();
   };
+}
+
+/** The frame calls this when the person leaves the page. */
+export function destroy() {
+  leave?.();
+  leave = null;
 }

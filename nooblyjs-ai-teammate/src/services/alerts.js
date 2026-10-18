@@ -2,7 +2,7 @@
 // weekly/monthly/quarterly budgets. Crossing the warning share (default 80%) or 100% raises an alert once per
 // period: it is shown on screen (an `alert` live event) and sent to webhooks subscribed to it.
 import { sumEntries } from './team.js';
-import { monthName, periodRange } from '../util/dates.js';
+import { monthName, periodRange } from '../utils/dates.js';
 
 const STATE = ['system', 'alerts.md'];
 const KEEP_SENT = 300;

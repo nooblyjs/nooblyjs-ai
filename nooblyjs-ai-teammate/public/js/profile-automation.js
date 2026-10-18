@@ -1,8 +1,8 @@
 // Profile cards for Phase 6: the tools a teammate may use, who they may hand work to, and their scheduled tasks.
-import { api, ApiError } from './api.js';
-import { html } from './html.js';
-import { icons } from './icons.js';
+import { html } from '/ui/js/html.js';
+import { icon } from '/ui/js/icons.js';
 import { openDialog, confirmDialog, toast } from './ui.js';
+import { api, ApiError, appUrl } from './client.js';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const STATUS = { completed: 'Last run done', running: 'Running now', failed: 'Last run failed', awaiting_approval: 'Last run waiting for approval' };
@@ -32,13 +32,13 @@ export function toolsCard(t, catalogue, teammates) {
         : html`<p class="help">${first} can't use any tools yet, only what you give them in the task.</p>`}
       <div class="recent-title">Can hand work to</div>
       ${delegates.length
-        ? html`<div class="traits">${delegates.map((d) => html`<a class="skill" href="/team/${d.id}">${d.name} · ${d.role}</a>`)}</div>`
+        ? html`<div class="traits">${delegates.map((d) => html`<a class="skill" href="${appUrl(`/team/${d.id}`)}">${d.name} · ${d.role}</a>`)}</div>`
         : html`<p class="help">Nobody. Allow handoffs and ${first} can ask teammates for help; their time is billed to them and linked to ${first}'s task.</p>`}
     </section>`;
 }
 
 export async function editTools(t, catalogue, onSaved) {
-  const { teammates } = await api.get('/api/teammates');
+  const { teammates } = await api.get('/api/v1/teammates');
   const others = teammates.filter((m) => m.id !== t.id);
   const first = t.name.split(' ')[0];
   await openDialog({
@@ -68,7 +68,7 @@ export async function editTools(t, catalogue, onSaved) {
         e.preventDefault();
         const checked = (name) => [...dialog.querySelectorAll(`input[name="${name}"]:checked`)].map((c) => c.value);
         try {
-          await api.patch(`/api/teammates/${t.id}`, { tools: checked('tools'), delegatesTo: checked('delegatesTo') });
+          await api.patch(`/api/v1/teammates/${t.id}`, { tools: checked('tools'), delegatesTo: checked('delegatesTo') });
           toast(`${first}'s tools are saved`);
           dialog.close('saved');
           onSaved();
@@ -86,7 +86,7 @@ export function schedulesCard(t, schedules) {
   const first = t.name.split(' ')[0];
   return html`
     <section class="card" id="schedules" aria-labelledby="sch-h">
-      <div class="card-head"><h2 class="card-title" id="sch-h">Schedules</h2><button type="button" class="btn btn-secondary needs-manager" data-action="add-schedule">${icons.plus}Add</button></div>
+      <div class="card-head"><h2 class="card-title" id="sch-h">Schedules</h2><button type="button" class="btn btn-secondary needs-manager" data-action="add-schedule">${icon('plus')}Add</button></div>
       ${schedules.length
         ? schedules.map((s) => html`
           <div class="schedule-row${s.enabled === false ? ' paused' : ''}">
@@ -136,7 +136,7 @@ export async function editSchedule(t, schedule, ctx, onSaved) {
       form.name.focus();
       dialog.querySelector('#sch-delete')?.addEventListener('click', async () => {
         if (!(await confirmDialog({ title: `Delete “${schedule.name}”?`, message: 'Past runs stay in the timeline and timesheets.', confirmLabel: 'Delete schedule' }))) return;
-        await api.del(`/api/schedules/${schedule.id}`);
+        await api.del(`/api/v1/schedules/${schedule.id}`);
         toast('Schedule deleted');
         dialog.close('deleted');
         onSaved();
@@ -150,7 +150,7 @@ export async function editSchedule(t, schedule, ctx, onSaved) {
         if (schedule) body.enabled = form.enabled.checked;
         else body.teammateId = t.id;
         try {
-          const saved = schedule ? await api.patch(`/api/schedules/${schedule.id}`, body) : await api.post('/api/schedules', body);
+          const saved = schedule ? await api.patch(`/api/v1/schedules/${schedule.id}`, body) : await api.post('/api/v1/schedules', body);
           toast(saved.enabled === false ? 'Schedule paused' : `Next run ${when(saved.nextRunAt)}`);
           dialog.close('saved');
           onSaved();
@@ -163,6 +163,6 @@ export async function editSchedule(t, schedule, ctx, onSaved) {
 }
 
 export async function runSchedule(id) {
-  await api.post(`/api/schedules/${id}/run`);
+  await api.post(`/api/v1/schedules/${id}/run`);
   toast('Running now. It appears in the timesheet and timeline when it finishes.');
 }

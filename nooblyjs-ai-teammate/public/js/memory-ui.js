@@ -1,6 +1,6 @@
 // Memory rows shared by the profile's memory review and the Team memory screen.
-import { html } from './html.js';
-import { icons } from './icons.js';
+import { html } from '/ui/js/html.js';
+import { icon } from '/ui/js/icons.js';
 
 export const KIND_LABEL = { fact: 'Fact', preference: 'Preference', source: 'Source' };
 
@@ -10,7 +10,7 @@ export const byPinnedThenNewest = (a, b) => Number(b.pinned) - Number(a.pinned) 
 export const memoryRow = (m, { contributor } = {}) => html`
   <div class="recent-item memory-row${m.pinned ? ' is-pinned' : ''}" data-row="${m.id}">
     <div>
-      <p>${m.pinned ? html`<span class="pin-mark" title="Pinned">${icons.pin}<span class="visually-hidden">Pinned:</span></span>` : ''}${m.text}</p>
+      <p>${m.pinned ? html`<span class="pin-mark" title="Pinned">${icon('pin')}<span class="visually-hidden">Pinned:</span></span>` : ''}${m.text}</p>
       <div class="meta">
         ${KIND_LABEL[m.kind] ?? m.kind} · learned ${m.learned}${contributor ? ` · by ${contributor}` : ''}
         ${m.project ? html` · <span class="project-chip">${m.project}</span>` : ''}
@@ -19,7 +19,7 @@ export const memoryRow = (m, { contributor } = {}) => html`
       </div>
     </div>
     <div class="row-actions">
-      <button type="button" class="icon-btn" data-pin="${m.id}" aria-pressed="${Boolean(m.pinned)}" aria-label="${m.pinned ? 'Unpin' : 'Pin'}: ${m.text.slice(0, 60)}" title="${m.pinned ? 'Unpin' : 'Pin: always used and never merged'}">${icons.pin}</button>
-      <button type="button" class="icon-btn" data-delete="${m.id}" aria-label="Delete memory: ${m.text.slice(0, 60)}" title="Delete">${icons.trash}</button>
+      <button type="button" class="icon-btn" data-pin="${m.id}" aria-pressed="${Boolean(m.pinned)}" aria-label="${m.pinned ? 'Unpin' : 'Pin'}: ${m.text.slice(0, 60)}" title="${m.pinned ? 'Unpin' : 'Pin: always used and never merged'}">${icon('pin')}</button>
+      <button type="button" class="icon-btn" data-delete="${m.id}" aria-label="Delete memory: ${m.text.slice(0, 60)}" title="Delete">${icon('trash')}</button>
     </div>
   </div>`;

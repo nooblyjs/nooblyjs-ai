@@ -1,9 +1,9 @@
 // Work item dialog: request, response, who asked, and what the teammate drew on (documents, memories, skills).
-import { api } from './api.js';
-import { html, raw } from './html.js';
+import { html, raw } from '/ui/js/html.js';
 import { money, hours1, tokens } from './format.js';
 import { openDialog } from './ui.js';
 import { renderMarkdown } from './markdown.js';
+import { api } from './client.js';
 
 const callerLabel = (c) => (!c ? '' : c.type === 'key' ? `API key “${c.name}”` : c.type === 'schedule' ? `schedule “${c.name}”` : c.type === 'teammate' ? `${c.name} (teammate)` : c.name ?? c.type);
 const TOOL_STATUS = { ok: 'Done', error: 'Failed', queued: 'Waiting for approval', approved: 'Approved and run', declined: 'Declined', failed: 'Approved, but failed' };
@@ -31,7 +31,7 @@ export const usedSummary = (w, skillNames = new Map()) => html`
  * Opens a work item. `onFollowUp(work)` adds a "Follow up" button (omitted when the teammate can't take work).
  */
 export async function showWorkItem({ teammateId, workId, skillNames, onFollowUp }) {
-  const w = await api.get(`/api/teammates/${teammateId}/work/${workId}`);
+  const w = await api.get(`/api/v1/teammates/${teammateId}/work/${workId}`);
   let follow = false;
   let jump = null;
   await openDialog({
@@ -48,8 +48,8 @@ export async function showWorkItem({ teammateId, workId, skillNames, onFollowUp 
         ${w.schedule ? html`<span>Scheduled run</span>` : ''}
         ${w.approvedBy ? html`<span>Approved by <strong>${w.approvedBy}</strong>${w.estimate ? ` (estimated ${money(w.estimate.amount)})` : ''}</span>` : ''}
       </div>
-      <div class="form-group"><span class="form-label">Request</span><div class="output">${w.request}</div></div>
-      <div class="form-group"><span class="form-label">Response</span><div class="output md">${w.response ? raw(renderMarkdown(w.response)) : w.error || ''}</div></div>
+      <div class="form-group"><span class="form-label">Request</span><div class="output" tabindex="0" role="region" aria-label="Request">${w.request}</div></div>
+      <div class="form-group"><span class="form-label">Response</span><div class="output md" tabindex="0" role="region" aria-label="Response">${w.response ? raw(renderMarkdown(w.response)) : w.error || ''}</div></div>
       ${toolLog(w)}
       ${w.knowledgeUsed || w.memoryUsed || w.skillsUsed ? html`<div class="form-group"><span class="form-label">What the teammate drew on</span>${usedSummary(w, skillNames)}</div>` : ''}`,
     footer: html`${onFollowUp && w.thread && w.status !== 'failed' ? html`<button type="button" class="btn btn-primary" id="work-follow">Follow up</button>` : ''}<button type="button" class="btn btn-secondary" data-close>Close</button>`,

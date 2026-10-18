@@ -1,9 +1,9 @@
 // Avatar picker: six generated faces plus an image upload. Shared by Hire and Edit profile.
-import { api } from './api.js';
-import { html } from './html.js';
-import { icons } from './icons.js';
+import { html } from '/ui/js/html.js';
+import { icon } from '/ui/js/icons.js';
 import { avatar, PALETTE } from './avatar.js';
 import { toast } from './ui.js';
+import { api } from './client.js';
 
 export const AVATAR_OPTIONS = [
   { ...PALETTE[1], hair: 'crop' },
@@ -28,7 +28,7 @@ export function mountAvatarPicker(container, { value, onChange }) {
     container.innerHTML = String(html`
       ${AVATAR_OPTIONS.map((a, i) => html`<button type="button" class="avatar-option" data-avatar="${i}" aria-pressed="${same(a, current)}" aria-label="Avatar option ${i + 1}">${avatar(a, 64)}</button>`)}
       ${extra ? html`<button type="button" class="avatar-option" aria-pressed="true" aria-label="${extra.type === 'upload' ? 'Uploaded image' : 'Current avatar'}">${avatar(extra, 64)}</button>` : ''}
-      <button type="button" class="avatar-upload" data-upload aria-label="Upload an image">${icons.upload}</button>`);
+      <button type="button" class="avatar-upload" data-upload aria-label="Upload an image">${icon('upload')}</button>`);
     if (focusIndex != null) container.querySelector(`[data-avatar="${focusIndex}"]`)?.focus();
   };
 
@@ -53,7 +53,7 @@ export function mountAvatarPicker(container, { value, onChange }) {
       reader.readAsDataURL(file);
     });
     try {
-      const { url } = await api.post('/api/uploads', { dataUrl });
+      const { url } = await api.post('/api/v1/uploads', { dataUrl });
       current = { type: 'upload', url, bg: current.bg };
       draw();
       onChange(current);

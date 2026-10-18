@@ -1,12 +1,12 @@
 // Read models for the four screens plus teammate mutations. All totals are derived from timesheet entries.
 import { defaultInstructions } from './persona.js';
 import { normalizeProject } from './retrieval.js';
-import { HttpError, badRequest, notFound } from '../util/errors.js';
-import { addDays, isoDate, isoWeek, longDate, monthName, periodRange, relativeDay, shortDay, startOfWeek } from '../util/dates.js';
-import { round1, round2 } from '../util/ids.js';
-import { MEMORY_ID } from '../repos/memory.js';
-import { DOC_ID } from '../repos/knowledge.js';
-import { ENTRY_HEADER, entryRow, toCsv } from '../util/csv.js';
+import { HttpError, badRequest, notFound } from '../utils/errors.js';
+import { addDays, isoDate, isoWeek, longDate, monthName, periodRange, relativeDay, shortDay, startOfWeek } from '../utils/dates.js';
+import { round1, round2 } from '../utils/ids.js';
+import { MEMORY_ID } from '../models/memory.js';
+import { DOC_ID } from '../models/knowledge.js';
+import { ENTRY_HEADER, entryRow, toCsv } from '../utils/csv.js';
 
 const MAX_DOC_CHARS = 500000;
 const docSummary = ({ content, ...meta }) => ({ ...meta, excerpt: content.replace(/^#{1,6}\s+/gm, '').replace(/[*_`>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 200) });
@@ -424,6 +424,7 @@ export class TeamService {
         delegatedFrom: w.delegatedFrom ? { ...w.delegatedFrom, teammate: who(w.delegatedFrom.teammateId), title: index.get(w.delegatedFrom.workId)?.title } : null,
         delegations, totalAmount: round2((w.amount ?? 0) + delegatedAmount),
         tools: (w.toolCalls ?? []).map((c) => ({ name: c.name, label: c.label, status: c.status })),
+        boardPostsRead: (w.boardPosts ?? []).length,
       };
     });
 

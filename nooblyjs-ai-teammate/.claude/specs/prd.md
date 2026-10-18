@@ -158,7 +158,7 @@ Teams use general-purpose AI chat tools ad hoc. That leads to:
 | **Performance** | Platform overhead (excluding the model call) under 50 ms p95 for invocation with up to 500 knowledge docs and 1,000 memory notes per teammate. Indexes are cached in memory and rebuilt when files change. |
 | **Scale target (v1)** | A single node and a single process, up to about 50 teammates and about 100k work items per year. |
 | **Observability** | Structured JSON logs, a `/health` endpoint, and a request ID on every call that is written into the work item. |
-| **Portability** | Runs with `npm start` and no external services, apart from the AI providers. The Mock provider lets the app run fully offline. |
+| **Portability** | Runs inside NooblyJS (`npm start` in `../nooblyjs-ai-host`) with no external services, apart from the AI providers. It has no standalone server. The Mock provider lets the app run fully offline. |
 | **Accessibility** | The UI meets WCAG 2.1 AA, including keyboard navigation and light and dark themes. |
 
 ## 9. Example teammates

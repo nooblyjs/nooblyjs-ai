@@ -1,12 +1,13 @@
 // The task pipeline: a teammate is "called" with a task, does the work on its configured model,
 // writes memory about it, and logs the time to its timesheet.
 import { priceUsage } from 'nooblyjs-ai-common/cost';
-import { HttpError, badRequest } from '../util/errors.js';
-import { isoDate } from '../util/dates.js';
-import { newId, round1, round2 } from '../util/ids.js';
+import { PRICES } from 'nooblyjs-ai-common/models';
+import { HttpError, badRequest } from '../utils/errors.js';
+import { isoDate } from '../utils/dates.js';
+import { newId, round1, round2 } from '../utils/ids.js';
 import { sumEntries } from './team.js';
 import { normalizeProject, projectAllows, retrieve, selectSkills } from './retrieval.js';
-import { THREAD_ID } from '../repos/threads.js';
+import { THREAD_ID } from '../models/threads.js';
 import { checkInput, newActionId } from './tools.js';
 
 const MEMORY_IN_PROMPT = 40;
@@ -15,6 +16,7 @@ const HISTORY_TURNS = 6;
 const HISTORY_CHARS = 24000;
 const KIND_LABEL = { fact: 'Facts', preference: 'Preferences', source: 'Sources' };
 const MAX_TOOL_ROUNDS = 8;
+const BOARD_TOOL = /^board_/;
 const MAX_DELEGATION_DEPTH = 2; // a task may delegate, and that work may delegate once more
 const clip = (text, max) => { const s = String(text ?? ''); return s.length > max ? `${s.slice(0, max - 1)}…` : s; };
 const ZERO_USAGE = () => ({ inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 });
@@ -30,6 +32,8 @@ export class InvocationService {
     this.alerts = alerts;
     this.tools = tools;
     this.webhooks = webhooks;
+    this.board = null; // the Team board (services/board.js): its briefing and tools; set by index.js
+    this.boardAuto = null; // the board's automatic posts (services/board-auto.js): told when a task starts and ends
     this.active = new Map(); // teammateId -> running task count
     this.background = new Set(); // approved tasks and alert checks that outlive the request
   }
@@ -116,6 +120,17 @@ export class InvocationService {
     return { inputTokens, outputTokens, tokens: inputTokens + outputTokens, hours, amount: round2(hours * rate) };
   }
 
+  /**
+   * The teammate's model config with a route's model in it: { model, provider (bedrock | vertex | azure), label }.
+   * The price is the catalogue's for that model, so the cost is what the routed model charges.
+   */
+  static routedModel(own, route) {
+    return {
+      ...own, name: route.modelLabel ?? route.model, modelId: route.model, provider: route.provider,
+      pricing: PRICES[route.model] ?? own.pricing, fallbacks: false, routed: true,
+    };
+  }
+
   /** What the provider charged us for `usage`, at the model's price from models.md. */
   static apiCost(usage, pricing = {}) {
     return round2(priceUsage(pricing, usage));
@@ -186,10 +201,15 @@ export class InvocationService {
    * Resolves with the work summary, or with `{ status: 'awaiting_approval' }` when the estimate is over the
    * teammate's approval threshold and the caller is not the owner. Throws HttpError for business-rule failures.
    * `confirmCost` is the owner going ahead past the threshold; `preApproved` is a task the owner approved earlier.
+   *
+   * The last four options are for work another NooblyJS app asks for (services/host-tasks.js): `extraContext` is added
+   * to the volatile context, `meta` (itemId, system, workType, team) is kept on the work item, `useTools: false`
+   * runs without tools, and `scripted` ({ text, costUsd }) is the answer the offline mock plays instead of its own.
    */
   async assign(teammateId, {
     task, costCentre, thread: threadId, project, skill, caller = { type: 'system', id: 'system', name: 'system' }, signal, onEvent = () => {},
     workId: presetWorkId, preApproved = false, approvedBy, confirmCost = false, delegatedFrom, chain = [], schedule,
+    extraContext = '', meta = null, useTools = true, scripted = null, route = null,
   }) {
     task = String(task ?? '').trim();
     if (!task) throw badRequest('Describe the work in a sentence or two');
@@ -219,8 +239,10 @@ export class InvocationService {
     }
 
     const [models, settings] = await Promise.all([this.repos.config.getModels(), this.repos.config.getSettings()]);
-    const model = models[teammate.model];
-    if (!model) throw new HttpError(500, 'model_missing', `Model "${teammate.model}" is not configured`);
+    const own = models[teammate.model];
+    if (!own) throw new HttpError(500, 'model_missing', `Model "${teammate.model}" is not configured`);
+    // A model route from the host (NooblyJS Platform) replaces the teammate's own model for this work type.
+    const model = route ? InvocationService.routedModel(own, route) : own;
 
     const today = this.today();
     const centre = costCentre && (settings.costCentres ?? []).includes(costCentre) ? costCentre : teammate.costCentre;
@@ -231,7 +253,16 @@ export class InvocationService {
     const query = [task, history.at(-2)?.content ?? ''].join('\n');
     const passages = retrieve(await this.repos.knowledge.list(teammate.id), query, { project, budgetTokens: KNOWLEDGE_TOKENS });
     const system = await this.buildSystem(teammate, chosen);
-    const context = [this.buildMemoryContext(memory), this.buildKnowledgeContext(passages)].filter(Boolean).join('\n\n');
+    // What the team said on the board about this task's item or project (R4 of the board spec), after memory and knowledge.
+    const brief = this.board
+      ? await this.board.briefingFor({ teammateId: teammate.id, itemId: meta?.itemId, project, team: centre, workType: meta?.workType }).catch((err) => {
+        this.log.warn?.(`[board] no briefing for ${teammate.id}: ${err.message}`);
+        return { text: '', postIds: [] };
+      })
+      : { text: '', postIds: [] };
+    const context = [this.buildMemoryContext(memory), this.buildKnowledgeContext(passages), brief.text, extraContext].filter(Boolean).join('\n\n');
+    // A script is only ever played by the offline mock: a real provider answers for itself.
+    const script = scripted && provider.name === 'mock' ? scripted : null;
     const messages = [...history, { role: 'user', content: task }];
     const callerInfo = { type: caller.type, id: caller.id, name: caller.name };
 
@@ -267,25 +298,30 @@ export class InvocationService {
     if (estimate) used.estimate = estimate;
     if (delegatedFrom) used.delegatedFrom = delegatedFrom;
     if (schedule) used.schedule = schedule;
+    if (meta) Object.assign(used, meta);
+    if (brief.postIds.length) used.boardPosts = brief.postIds;
+    if (script) used.scripted = true;
     const title = task.split('\n')[0].slice(0, 80);
 
     // Tools this teammate may use; every call is logged on the work item, delegations are linked both ways.
     const toolCalls = [];
     const delegations = [];
-    const toolCtx = { workId, centre, project, chain: [...chain, teammate.id], caller: callerInfo, delegations, signal };
-    const tools = await this.toolsFor(teammate, toolCtx);
+    const toolCtx = { workId, centre, project, itemId: meta?.itemId ?? null, system: meta?.system ?? null, chain: [...chain, teammate.id], caller: callerInfo, delegations, signal };
+    const tools = useTools ? await this.toolsFor(teammate, toolCtx) : [];
 
     await this.setBusy(teammate, task);
+    this.boardAuto?.taskStarted({ teammate, workId, title, itemId: meta?.itemId ?? null, project, team: centre, workType: meta?.workType ?? null });
     onEvent('start', { workId, thread: thr, project, teammate: teammate.name, model: model.name, provider: provider.name, tools: tools.map((t) => t.spec.name) });
     try {
       let result;
       try {
-        result = await this.runWithTools(provider, { model, system, context, messages, signal, onText: (text) => onEvent('delta', { text }) }, tools, { onEvent, toolCalls });
+        result = await this.runWithTools(provider, { model, system, context, messages, signal, onText: (text) => onEvent('delta', { text }), ...(script ? { scripted: script.text } : {}) }, tools, { onEvent, toolCalls });
       } catch (err) {
         await this.repos.work.save(teammate.id, {
           id: workId, teammateId: teammate.id, status: 'failed', model: teammate.model, provider: provider.name, caller: callerInfo, ...used,
           toolCalls, delegations, startedAt, durationMs: Date.now() - started, error: err.message, request: task, response: '',
         });
+        await this.boardAuto?.taskFinished({ teammateId: teammate.id, workId, status: 'failed', error: err.name === 'AbortError' || signal?.aborted ? 'cancelled' : err.message });
         if (err.name === 'AbortError' || signal?.aborted) {
           this.metrics?.record('task.cancelled');
           throw new HttpError(499, 'cancelled', 'Task cancelled');
@@ -297,9 +333,10 @@ export class InvocationService {
       }
 
       const usage = { ...result.usage };
-      let apiCost = InvocationService.apiCost(result.usage, model.pricing);
+      // A script names its own model cost (sample data), and writes no memory: nothing was learned.
+      let apiCost = script ? round2(Number(script.costUsd) || 0) : InvocationService.apiCost(result.usage, model.pricing);
       let memoriesAdded = [];
-      if (teammate.memoryMode !== 'session' && result.text && result.stopReason !== 'refusal') {
+      if (!script && teammate.memoryMode !== 'session' && result.text && result.stopReason !== 'refusal') {
         try {
           const reflection = await this.reflect(teammate, task, result.text, provider, models, signal);
           for (const k of Object.keys(usage)) usage[k] += reflection.usage[k] ?? 0;
@@ -332,6 +369,10 @@ export class InvocationService {
         toolCalls, delegations, startedAt, durationMs: Date.now() - started, request: task, response: result.text,
       });
       await this.repos.threads.append(teammate.id, thr, { workId, title, project });
+      await this.boardAuto?.taskFinished({
+        teammateId: teammate.id, workId, status: result.stopReason === 'refusal' ? 'declined' : 'succeeded', amount, apiCost, output: result.text,
+        modelRoute: script ? 'mock/scripted' : `${provider.name}/${model.modelId}`,
+      });
       const durationMs = Date.now() - started;
       this.metrics?.record('task.completed');
       this.metrics?.record('task.duration_ms', durationMs);
@@ -350,7 +391,8 @@ export class InvocationService {
 
       return {
         status: 'completed', workId, output: result.text, stopReason: result.stopReason, stopDetails: result.stopDetails,
-        provider: provider.name, usage, tokens, hours, amount, apiCost, entry, memoriesAdded, toolCalls, delegations, ...used,
+        provider: provider.name, modelId: model.modelId, usage, tokens, hours, amount, apiCost, costCentre: centre,
+        entry, memoriesAdded, toolCalls, delegations, ...used,
       };
     } finally {
       await this.setIdle(teammate.id);
@@ -458,6 +500,11 @@ export class InvocationService {
       });
     }
     for (const tool of this.tools ? await this.tools.toolsFor(teammate, { signal: ctx.signal }) : []) {
+      // The board tools write as this teammate, on this task (services/board.js runTool).
+      if (BOARD_TOOL.test(tool.spec.name)) {
+        out.push({ ...tool, run: (input) => (this.board ? this.board.runTool(tool.spec.name, input, teammate, ctx) : { text: 'The team board is not available.', isError: true }) });
+        continue;
+      }
       out.push(tool.sideEffects ? { ...tool, run: (input) => this.queueAction(teammate, tool, input, ctx) } : tool);
     }
     return out;

@@ -1,10 +1,10 @@
 // Hire a teammate (/hire): five numbered fieldsets and a live preview with a monthly cost estimate.
-import { api, ApiError } from '../api.js';
-import { html } from '../html.js';
+import { html } from '/ui/js/html.js';
 import { avatar } from '../avatar.js';
 import { AVATAR_OPTIONS, mountAvatarPicker } from '../avatar-picker.js';
 import { money, rate } from '../format.js';
 import { toast } from '../ui.js';
+import { api, ApiError, appUrl, enter } from '../client.js';
 
 const MEMORY_MODES = [
   { id: 'session', title: 'Session only', desc: 'Starts fresh on every task. Cheapest and most private.' },
@@ -24,7 +24,8 @@ function parseSkillPack(text, fileName) {
   };
 }
 
-export async function render(view, { query, ctx }) {
+export async function render(frameView, { query, ctx: frame }) {
+  const { view, ctx } = await enter(frameView, frame, 'hire');
   const meta = ctx.meta ?? (await ctx.refreshMeta());
   if (!meta) throw new Error('Could not load the model catalogue');
   const models = meta.models;
@@ -48,7 +49,7 @@ export async function render(view, { query, ctx }) {
   const draftId = query.get('draft');
   if (draftId) {
     try {
-      const d = await api.get(`/api/drafts/${encodeURIComponent(draftId)}`);
+      const d = await api.get(`/api/v1/drafts/${encodeURIComponent(draftId)}`);
       Object.assign(state, {
         draftId: d.id, name: d.name ?? '', role: d.role ?? '', avatar: d.avatar ?? state.avatar, model: d.model ?? state.model,
         skills: new Set(d.skills ?? []), memoryMode: d.memoryMode ?? state.memoryMode, rate: d.rate ?? state.rate,
@@ -65,7 +66,7 @@ export async function render(view, { query, ctx }) {
 
   view.innerHTML = String(html`
     <div class="header" style="display:block">
-      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/team">Team roster</a> / <span aria-current="page">Hire</span></nav>
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="${appUrl('/team')}">Team roster</a> / <span aria-current="page">Hire</span></nav>
       <h1>Hire a teammate</h1>
       <p class="header-subtitle">Five decisions: who they are, what they run on, what they can do, what they remember and what they cost.</p>
     </div>
@@ -77,7 +78,7 @@ export async function render(view, { query, ctx }) {
           <legend class="section-header"><span class="section-number" aria-hidden="true">1</span><span class="section-title">Identity</span></legend>
           <div class="form-group">
             <label class="form-label" for="f-name">Name</label>
-            <input class="form-input" id="f-name" name="name" maxlength="60" autocomplete="off" required placeholder="e.g. Ada Quill" value="${state.name}" aria-describedby="err-name">
+            <input class="form-input" id="f-name" name="name" maxlength="60" autocomplete="off" required placeholder="Their name" value="${state.name}" aria-describedby="err-name">
             <span class="field-error" id="err-name"></span>
           </div>
           <div class="form-group">
@@ -138,7 +139,7 @@ export async function render(view, { query, ctx }) {
         </fieldset>
 
         <div class="button-group">
-          <a class="btn-link" href="/team">Cancel</a>
+          <a class="btn-link" href="${appUrl('/team')}">Cancel</a>
           <button type="button" class="btn btn-secondary" id="save-draft">Save draft</button>
           <button type="submit" class="btn btn-primary" id="hire-submit"></button>
         </div>
@@ -250,7 +251,7 @@ export async function render(view, { query, ctx }) {
     if (!file) return;
     if (file.size > 100 * 1024) return toast('Skill packs must be 100 KB or smaller', { error: true });
     try {
-      const skill = await api.post('/api/skills', parseSkillPack(await file.text(), file.name));
+      const skill = await api.post('/api/v1/skills', parseSkillPack(await file.text(), file.name));
       await ctx.refreshMeta();
       state.skills.add(skill.id);
       drawSkills();
@@ -263,9 +264,9 @@ export async function render(view, { query, ctx }) {
 
   view.querySelector('#save-draft').addEventListener('click', async () => {
     try {
-      const draft = await api.post('/api/drafts', { id: state.draftId ?? undefined, ...payload() });
+      const draft = await api.post('/api/v1/drafts', { id: state.draftId ?? undefined, ...payload() });
       state.draftId = draft.id;
-      history.replaceState(null, '', `/hire?draft=${draft.id}`);
+      history.replaceState(null, '', appUrl(`/hire?draft=${draft.id}`));
       toast('Draft saved. Bookmark this page to come back to it.');
     } catch (err) {
       toast(err.message, { error: true });
@@ -289,7 +290,7 @@ export async function render(view, { query, ctx }) {
     state.busy = true;
     submit.disabled = true;
     try {
-      const t = await api.post('/api/teammates', body);
+      const t = await api.post('/api/v1/teammates', body);
       toast(`Welcome to the team, ${t.name.split(' ')[0]}!`);
       ctx.refreshMeta();
       ctx.navigate(`/team/${t.id}`);

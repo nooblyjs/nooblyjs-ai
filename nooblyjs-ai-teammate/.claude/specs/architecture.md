@@ -6,6 +6,10 @@
 | Date    | 2026-10-01                              |
 | Related | [prd.md](prd.md), [roadmap.md](roadmap.md) |
 
+> **Superseded where it conflicts.** Teammates is now a library hosted by NooblyJS at `/teammates`:
+> no `server.js`, no standalone mode, no own port. The current architecture is
+> `.claude/steering/structure.md` (§0 first) and `.claude/steering/tech.md`.
+
 ---
 
 ## 1. Architectural principles
@@ -57,8 +61,7 @@
 ```
 nooblyjs-digital-teammate/
 ├── package.json
-├── .env.example                 # ANTHROPIC_API_KEY=, OPENAI_API_KEY=, SESSION_SECRET=, DATA_DIR=
-├── server.js                    # bootstraps app, loads config, starts listener
+├── index.js                     # register(): NooblyJS imports it (no server.js, no .env.example)
 ├── src/
 │   ├── app.js                   # express app factory (used by tests)
 │   ├── config.js                # env + data/config/settings.md merge
@@ -467,7 +470,7 @@ All JSON. Errors use `application/problem+json` (`type`, `title`, `status`, `det
 **Example call:**
 
 ```bash
-curl -X POST http://localhost:11202/api/v1/teammates/ada-architect/tasks \
+curl -X POST http://localhost:11001/teammates/api/v1/teammates/ada-architect/tasks \
   -H "Authorization: Bearer dtk_…" -H "Content-Type: application/json" \
   -d '{"input":"Propose an integration approach between Orders and Billing.","skill":"adr-authoring","project":"payments-platform"}'
 ```
@@ -504,8 +507,7 @@ Styling uses CSS custom properties in `tokens.css`, light and dark themes via `p
 
 | Env var | Default | Purpose |
 |---------|---------|---------|
-| `PORT` | `11202` | HTTP port. |
-| `DATA_DIR` | `./data` | Root of all state. Seeded from `./seed` on first run. |
+| (none) | | No `PORT`, `HOST` or `DATA_DIR`: NooblyJS listens and passes `dataDir` (`data/teammates/`). The variables below are read from NooblyJS's environment. |
 | `SESSION_SECRET` | generated | Signs the session cookie and CSRF tokens. |
 | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, … | optional | Provider credentials referenced by `providers.md`. |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`, for the log file and the console. |
@@ -516,7 +518,7 @@ Styling uses CSS custom properties in `tokens.css`, light and dark themes via `p
 ## 13. Testing strategy
 
 - **Unit:** store (atomic writes, locks, path safety), cost math, BM25, prompt builder (snapshot tests), skill selector.
-- **Integration:** `supertest` against `createApp({ dataDir: tmp, providers: mock })` covering hire → invoke → ledger → reflection → memory.
+- **Integration:** built-in `fetch` against `register()` on the stand-in host (mock provider) covering hire → invoke → ledger → reflection → memory.
 - **Contract:** recorded provider fixtures check the usage-mapping code for Anthropic and OpenAI.
 - **UI smoke:** optional Playwright tests of the hire wizard and playground.
 
@@ -564,14 +566,14 @@ The app runs on the nooblyjs-core service registry (`src/core`). The registry is
 
 | Concern | Before | Now |
 |---|---|---|
-| Logging | `console` | `createLogger()` (`src/core/logger.js`): core `logging:file` (`data/logs/app.YYYY-MM-DD.log`, rotated) plus console echo at `LOG_LEVEL`. Credential-like fields are redacted. A caller-supplied `log` (tests) replaces the console echo only. |
+| Logging | `console` | `createLogger()` (`src/services/core/logger.js`): core `logging:file` (`data/logs/app.YYYY-MM-DD.log`, rotated) plus console echo at `LOG_LEVEL`. Credential-like fields are redacted. A caller-supplied `log` (tests) replaces the console echo only. |
 | Document reads | YAML parsed on every `readDoc` | `FsStore` read-through cache on core `caching`, validated by mtime + size (hand edits are seen), invalidated on every write, LRU-bounded to 2,000 documents. Secret-bearing files (`system/*`, `config/webhooks.md`, `config/mcp-servers.md`) are not cached because `/services/caching/` can read cache values. |
-| Webhooks | Delivered inline, no retry | `JobQueue` (`src/core/job-queue.js`) on core `queueing`. `emit()` still resolves with the first attempt. Network errors, timeouts, 429 and 5xx retry after 10 s, 1 min, 5 min with a stable `X-Teammates-Delivery` id. Waiting retries are lost on restart (memory provider). |
+| Webhooks | Delivered inline, no retry | `JobQueue` (`src/services/core/job-queue.js`) on core `queueing`. `emit()` still resolves with the first attempt. Network errors, timeouts, 429 and 5xx retry after 10 s, 1 min, 5 min with a stable `X-Teammates-Delivery` id. Waiting retries are lost on restart (memory provider). |
 | Live events | `EventEmitter` | `EventBus` on core `notifying`, topic `teammates.events`. |
-| Schedule check | `setInterval` | Core `scheduling` interval task `teammates-schedules` (pause/resume/run-now on its dashboard). Core runs each beat as a worker-thread activity (`src/core/activities/schedule-tick.cjs`); the check itself runs in the main process in the task callback because it needs the repos and providers. Beats are not retried. Falls back to `setInterval` when no core scheduling is passed. |
-| Metrics | none | `Metrics` (`src/core/metrics.js`) on core `measuring`: `task.*`, `webhook.*`, `schedule.*`, `http.request_ms`. The memory provider is trimmed to the newest 1,000 measures per metric; lifetime totals are kept separately. |
+| Schedule check | `setInterval` | Core `scheduling` interval task `teammates-schedules` (pause/resume/run-now on its dashboard). Core runs each beat as a worker-thread activity (`src/services/core/activities/schedule-tick.cjs`); the check itself runs in the main process in the task callback because it needs the repos and providers. Beats are not retried. Falls back to `setInterval` when no core scheduling is passed. |
+| Metrics | none | `Metrics` (`src/services/core/metrics.js`) on core `measuring`: `task.*`, `webhook.*`, `schedule.*`, `http.request_ms`. The memory provider is trimmed to the newest 1,000 measures per metric; lifetime totals are kept separately. |
 | Ops view | none | `GET /api/admin/system` and **Admin → System**; core dashboards at `/services/`. |
-| Sign-in | Teammates users (`system/users.md`, scrypt), setup code, signed `tm_session` cookie | Core `authservice` (file provider, `data/core/auth/`) for the whole app, as in core's reference `app.js`. Core's `express-session` (`nooblyjs.sid`, path `/`, SameSite=Lax; `FileSessionStore` in `data/core/sessions.json` with hashed session ids so restarts keep people signed in, or core's Redis store when `SESSION_REDIS_URL`/`REDIS_URL` is set) and `passport` run on core's Express app and, via `coreSession()`, on `/api` and `/uploads`; `req.user` (core user) becomes `req.actor` with `roleFromCore()` (`admin`/`owner` → owner, `manager` → manager, else viewer). `/login` redirects to core's login page with `returnUrl`; core calls `GET /api/auth/check`. CSRF token = HMAC(secret, session id). Sign-out: `DELETE /api/session` (Passport logout, session destroy, core token revoked). First start creates `admin@localhost` (`DEFAULT_ADMIN_PASSWORD` or `INITIAL_ADMIN_PASSWORD.txt`, mode 0600, never logged). `prepareAuth()` adds the `owner`/`manager`/`viewer` roles to core. People and roles are managed on core's Authentication dashboard; `/services` itself needs core `admin`. API keys (`dtk_`) for calling teammates are unchanged. `system/users.md` is no longer read. |
+| Sign-in | Teammates users (`system/users.md`, scrypt), setup code, signed `tm_session` cookie | Core `authservice` (file provider, `data/core/auth/`) for the whole app, as in core's reference `app.js`. Core's `express-session` (`NooblyJS.sid`, path `/`, SameSite=Lax; `FileSessionStore` in `data/core/sessions.json` with hashed session ids so restarts keep people signed in, or core's Redis store when `SESSION_REDIS_URL`/`REDIS_URL` is set) and `passport` run on core's Express app and, via `coreSession()`, on `/api` and `/uploads`; `req.user` (core user) becomes `req.actor` with `roleFromCore()` (`admin`/`owner` → owner, `manager` → manager, else viewer). `/login` redirects to core's login page with `returnUrl`; core calls `GET /api/auth/check`. CSRF token = HMAC(secret, session id). Sign-out: `DELETE /api/session` (Passport logout, session destroy, core token revoked). First start creates `admin@localhost` (`DEFAULT_ADMIN_PASSWORD` or `INITIAL_ADMIN_PASSWORD.txt`, mode 0600, never logged). `prepareAuth()` adds the `owner`/`manager`/`viewer` roles to core. People and roles are managed on core's Authentication dashboard; `/services` itself needs core `admin`. API keys (`dtk_`) for calling teammates are unchanged. `system/users.md` is no longer read. |
 
 Not used: core `dataservice` and `filing` (the Markdown store is the database), `searching` (BM25 retrieval in `retrieval.js` is tuned and tested for passages and skills), `workflow` and `aiservice`.
 

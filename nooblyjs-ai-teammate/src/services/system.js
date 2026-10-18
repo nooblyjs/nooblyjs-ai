@@ -1,6 +1,5 @@
 // What the nooblyjs-core services are doing, for Admin → System: document cache, webhook queue, the schedule
 // check and metrics. Each service also has its own dashboard under /services/.
-import { CHECK_TASK } from './scheduler.js';
 
 export class SystemService {
   constructor({ core, store, webhooks, scheduler, invocation, providers }) {
@@ -16,9 +15,9 @@ export class SystemService {
     const s = this.scheduler;
     if (!s.intervalMs) return { mode: 'off' };
     if (!s.scheduling) return { mode: 'timer', intervalSeconds: Math.round(s.intervalMs / 1000) };
-    const task = this.core.hasScheduling() ? await this.core.scheduling().getSchedule(CHECK_TASK) : null;
+    const task = this.core.hasScheduling() ? await this.core.scheduling().getSchedule(s.taskName) : null;
     return {
-      mode: 'core', task: CHECK_TASK, intervalSeconds: Math.round(s.intervalMs / 1000), registered: Boolean(task),
+      mode: 'core', task: s.taskName, intervalSeconds: Math.round(s.intervalMs / 1000), registered: Boolean(task),
       enabled: task?.enabled ?? false, lastStartedAt: task?.lastStartedAt ?? null, lastFinishedAt: task?.lastFinishedAt ?? null, nextRun: task?.nextRun ?? null,
     };
   }

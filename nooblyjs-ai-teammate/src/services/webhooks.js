@@ -3,9 +3,9 @@
 // Deliveries go through core's queueing service. One that fails with a network error, a timeout, 429 or a 5xx is
 // retried after 10 s, 1 min and 5 min with the same body and X-Teammates-Delivery id, so receivers can de-duplicate.
 import crypto from 'node:crypto';
-import { HttpError, notFound } from '../util/errors.js';
-import { newId } from '../util/ids.js';
-import { JobQueue } from '../core/job-queue.js';
+import { HttpError, notFound } from '../utils/errors.js';
+import { newId } from '../utils/ids.js';
+import { JobQueue } from './core/job-queue.js';
 
 const FILE = ['config', 'webhooks.md'];
 const TIMEOUT_MS = 5000;
@@ -28,7 +28,8 @@ export const ALERT_EVENTS = ['budget.warning', 'budget.reached', 'cap.warning', 
 const visible = ({ secret, ...e }) => ({ ...e, hasSecret: Boolean(secret) });
 
 export class WebhookService {
-  constructor({ store, repos, fetch = globalThis.fetch, log = console, queue = null, metrics = null, retryDelaysMs = RETRY_DELAYS_MS }) {
+  constructor({ store, repos, fetch = globalThis.fetch, log = console, queue = null, metrics = null, retryDelaysMs = RETRY_DELAYS_MS, hostEvents = null }) {
+    this.hostEvents = hostEvents; // NooblyJS's event log (host.events): every event is a domain event there too
     this.store = store;
     this.repos = repos;
     this.fetch = fetch;
@@ -145,10 +146,15 @@ export class WebhookService {
   }
 
   /**
-   * Sends `event` to every enabled endpoint subscribed to it. Resolves with each endpoint's first attempt; failed
-   * deliveries are retried in the background. Never throws.
+   * Sends `event` to every enabled endpoint subscribed to it, and to the host's event log. Resolves with each
+   * endpoint's first attempt; failed deliveries are retried in the background. Never throws.
    */
   async emit(event, data) {
+    try {
+      this.hostEvents?.emit(event, data);
+    } catch (err) {
+      this.log?.warn?.(`[webhooks] the host did not take ${event}: ${err.message}`);
+    }
     const targets = (await this.endpoints()).filter((e) => e.enabled !== false && e.events?.includes(event));
     const at = new Date().toISOString();
     return Promise.all(targets.map((e) => {

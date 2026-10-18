@@ -1,5 +1,6 @@
 // Generated SVG faces (design brief §3) or uploaded images.
-import { html, raw } from './html.js';
+import { html, raw } from '/ui/js/html.js';
+import { appUrl } from './client.js';
 
 export const HAIR = {
   bob: 'M15 31 C15 18 22 12 32 12 C42 12 49 18 49 31 L49 40 L44 40 L44 26 C40 23 24 23 20 26 L20 40 L15 40 Z',
@@ -40,7 +41,7 @@ export function avatar(config = {}, size = 40) {
   const bg = safeColor(config.bg, '#ECE6E1');
   const style = `width:${size}px;height:${size}px;background:${bg}`;
   if (config.type === 'upload' && config.url) {
-    return html`<span class="avatar" style="${style}"><img src="${config.url}" alt="" loading="lazy"></span>`;
+    return html`<span class="avatar" style="${style}"><img src="${appUrl(config.url)}" alt="" loading="lazy"></span>`;
   }
   const cfg = { bg, deep: safeColor(config.deep, '#5E534D'), hair: config.hair };
   return html`<span class="avatar" style="${style}">${face(cfg, size >= 48)}</span>`;

@@ -9,62 +9,93 @@
 
 ## Run it
 
+Teammates runs two ways: **standalone** (`server.js`, on its own port) or **hosted** inside
+[NooblyJS AI](../nooblyjs-ai-host), which imports `index.js` and calls `register()`. Both run the same `register()`.
+It lives in the `nooblyjs-ai` monorepo next to `nooblyjs-ai-common`; `nooblyjs-core` is a separate repo next to the monorepo:
+
 ```bash
-git clone https://github.com/nooblyjs/nooblyjs-ai-common.git ../nooblyjs-ai-common   # shared model catalogue and pricing, linked as a file: dependency
-git clone https://github.com/nooblyjs/nooblyjs-core.git ../../nooblyjs-core          # service registry (logging, caching, queueing…), also a file: dependency
+git clone https://github.com/nooblyjs/nooblyjs-core.git ../../nooblyjs-core   # service registry (logging, caching, queueing…), sign-in, the UI kit
 npm install
-npm start            # http://127.0.0.1:11202
+npm start            # standalone: http://127.0.0.1:11202/teammates (see "Sign in and roles")
 npm test             # node:test suite (offline, mock provider)
 npm run smoke:live   # one real task each on Haiku, Sonnet and Opus (needs ANTHROPIC_API_KEY; costs a few cents)
 ```
 
-On first start, the app seeds `./data` with the eight teammates, skills, timesheets and invoices from the design mockups.
+**Standalone** (`npm start`), the app is at `/teammates` and core's service dashboards at `/services/`. People sign in
+with nooblyjs-core's authservice; on the first start it creates `admin@localhost`, and the log says where its
+password is (`DEFAULT_ADMIN_PASSWORD`, or a generated one in `data/core/auth/INITIAL_ADMIN_PASSWORD.txt`). Core
+roles become access roles: `owner`/`admin` → Owner, `manager` → Approver, `contributor` → Contributor, anything else
+→ Viewer. The frame and the UI kit come from nooblyjs-core (`src/shell`, `public/ui`), and changes are checked against
+the `noobly.csrf` cookie, as the host does. Settings are in `.env.example`. Data goes to `data/teammates/` (and core's
+to `data/core/`). The standalone host is `src/services/standalone-host.js`; the tests run on it too.
 
-Without Anthropic credentials, teammates run on an **offline mock provider**. To make them do real work, set an API key:
+**Hosted**, run NooblyJS AI: in `../nooblyjs-ai-host`, set `enabled: true` on the `nooblyjs-ai-teammate` entry in
+`data/config/hosted-apps.yaml`, then `npm start` there. Teammates is at `/teammates` on NooblyJS's address (port 11001 by
+default), and on first start it seeds `../nooblyjs-ai-host/data/teammates/` with the eight teammates, skills, timesheets and
+invoices from the design mockups.
 
-```bash
-cp .env.example .env   # then set ANTHROPIC_API_KEY=...
-```
+### How NooblyJS hosts it
+
+The contract is `../nooblyjs-ai-host/.claude/steering/structure.md` §2a; this repo's `.claude/steering/tech.md` restates it. NooblyJS calls
+`register(app, serverManager, { mountPath: '/teammates', dataDir, host })` with its Express 5 app, its initialised
+nooblyjs-core `serverManager` and what it shares (`host.express`, `host.auth`, `host.requireRole`, `host.audit`,
+`host.events`, `host.people`, …). `register()` mounts one router at the mount path (`/teammates/…` for the files and
+pages, `/teammates/api/v1/…` for the API), never listens, and returns the app's description for the NooblyJS rail and
+sidebar (`name`, `label`, `nav`, `status()`, `seed()`, `close()`).
+
+The tests (and `scripts/live-smoke.js`) run the app on a stand-in NooblyJS host, `test/fixtures/host.js`: an Express 5 app,
+an nooblyjs-core `serverManager` and the `host` object, with nooblyjs-core's sign-in. It is the only reason `express` is a
+devDependency here.
+
+The app serves no HTML page of its own: only the files in `public/`, the API, and NooblyJS's frame for every page URL.
+Its UI is a module (`public/js/module.js`) that the NooblyJS frame loads into its content area, next to the NooblyJS rail and
+sidebar. Run it by starting NooblyJS (`npm start` in `../nooblyjs-ai-host`) and opening `/teammates`.
+
+### Code layout
+
+`index.js` is the entry point and composition root. `src/` has exactly seven folders (details in
+`.claude/steering/structure.md` §4):
+
+| Folder | Holds |
+|---|---|
+| `config/` | Fixed settings (mount path, CSP, public folder) and the seed data |
+| `controllers/` | Request handlers, one file per resource |
+| `middleware/` | Auth and roles, security headers, static files, request metrics, the error shape |
+| `models/` | `FsStore` and one repo per entity, over the Markdown files |
+| `routes/` | Paths and role checks, wired to controllers; `routes/index.js` builds the one router |
+| `services/` | The rules (tasks, billing, approvals, webhooks, tools, schedules…), model providers and the nooblyjs-core adapters |
+| `utils/` | Small helpers (dates, ids, CSV, PDF, errors, rate limiting) |
+
+### Settings
+
+The process is NooblyJS's, so these are read from NooblyJS's environment (`../nooblyjs-ai-host/.env`). Without Anthropic credentials,
+teammates run on an **offline mock provider**.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `PORT` / `HOST` | `11202` / `127.0.0.1` | Where to listen |
-| `DATA_DIR` | `./data` | Root of the Markdown workspace |
 | `ANTHROPIC_API_KEY` | (none) | Enables real Claude calls |
 | `ANTHROPIC_AUTH_TOKEN` | (none) | A bearer token instead of an API key |
 | `ANTHROPIC_BASE_URL` | `https://api.anthropic.com` | Send Claude calls through a gateway |
 | `AI_PROVIDER` | (auto) | `mock` forces offline mode. `anthropic` insists on real calls and stops at startup without a key or token. |
-| `DEFAULT_ADMIN_PASSWORD` | (generated) | Password for `admin@localhost` when nooblyjs-core creates it on first start. Otherwise one is generated into `data/core/auth/INITIAL_ADMIN_PASSWORD.txt`. |
-| `SESSION_SECRET` | (generated) | Signs the session cookie and CSRF tokens. If unset, a secret is generated and kept in `data/system/session-secret.md`. |
-| `COOKIE_SECURE` | `false` | `true` adds `Secure` to the session cookie (use behind HTTPS). |
-| `LOGIN_RATE_LIMIT_MAX` | `10` | nooblyjs-core: sign-in attempts per IP per 15 minutes. An account is also locked for 15 minutes after 5 wrong passwords. |
-| `TRUST_PROXY` | (none) | Express `trust proxy` setting when running behind a reverse proxy. |
+| `SESSION_SECRET` | (generated) | Signs CSRF tokens. If unset, a secret is generated and kept in `data/teammates/system/session-secret.md`. |
 | `ALLOW_PRIVATE_FETCH` | `false` | `true` lets the `fetch_url` tool reach private and local addresses (for intranet pages). Off by default. |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`, for the log file and the console. `debug` adds one line per API request. |
 | `LOG_CONSOLE` | `all` | What the console shows: `all` (every log file line, nooblyjs-core's services included), `app` (only the app's own messages) or `none`. |
-| `LOG_DIR` | `$DATA_DIR/logs` | Where the daily log files go (`app.YYYY-MM-DD.log`, rotated at 10 MB, 5 kept). |
+| `LOG_DIR` | `<dataDir>/logs` | Where the daily log files go (`app.YYYY-MM-DD.log`, rotated at 10 MB, 5 kept). |
+
+The port, the data folder and the mount path aren't settings here: NooblyJS listens, and passes `mountPath` and `dataDir`.
 
 ## Sign in and roles
 
-Signing in is done by [nooblyjs-core](https://github.com/nooblyjs/nooblyjs-core)'s **authservice**. Opening the app signed out takes you to its login page (`/services/authservice/views/login.html`), which brings you back to the page you wanted once you have signed in. One session (the `nooblyjs.sid` cookie) covers the app and the `/services` dashboards.
+Signing in is NooblyJS's. A person's NooblyJS **access role** (Viewer, Contributor, Approver, Architect, Owner) decides what they can do: Owners are owners here, Approvers and Architects are managers, and everyone else is a viewer `[CONFIRM]`. The API asks the host (`host.requireRole`) for the NooblyJS permission behind each role: `read` (viewer), `approve` (manager), `set-budgets` (owner), and `hire-teammates` to hire.
 
-On the first start, core creates the account **`admin@localhost`** and the server says where its password is:
+| Teammates role | Can |
+|---|---|
+| **Owner** | Everything, including billing, settings, people and API keys |
+| **Manager** | Assign and approve work, edit teammates, their tools and schedules |
+| **Viewer** | Read-only |
 
-```
-Sign in at http://127.0.0.1:11202/login as admin@localhost (password in …/data/core/auth/INITIAL_ADMIN_PASSWORD.txt (generated on first start; …))
-```
-
-The password is `DEFAULT_ADMIN_PASSWORD` if you set it before the first start; otherwise a generated one is written to that file (readable only by you, never logged). Sign in, change it on your profile page (your name in the sidebar → **Change password**), then delete the file.
-
-People, passwords and roles are managed on core's **Authentication** dashboard (`/services/authservice/`, for core admins; **Admin → People → Manage people**). Their core roles decide what they can do here:
-
-| Core role | Teammates role | Can |
-|---|---|---|
-| `admin` or `owner` | **Owner** | Everything, including billing, settings, people and API keys. Only core `admin`s can open the `/services` dashboards. |
-| `manager` | **Manager** | Assign and approve work, edit teammates, their tools and schedules |
-| anything else (`user`, `guest`, `viewer`) | **Viewer** | Read-only |
-
-Role changes apply straight away. **Admin → People** lists everyone who can sign in and their role. Core's users and roles are kept in `data/core/auth/`. Sign-in sessions are kept in `data/core/sessions.json` (session ids hashed, readable only by the server's user), so restarting the server doesn't sign anyone out; with `SESSION_REDIS_URL` or `REDIS_URL` set they go to Redis instead.
+**Admin → People** lists everyone who can sign in and their role. (The tests' stand-in host signs people in with nooblyjs-core's authservice and maps core roles `owner` / `manager` / `viewer` to Owner / Approver / Viewer.)
 
 **Admin** (in the sidebar) is also where you create and revoke API keys and read the audit log (`data/system/audit/YYYY-MM.md`, which records sign-ins and sign-outs too).
 
@@ -74,17 +105,17 @@ Other systems call teammates with an **API key**. Create one under Admin: it is 
 
 ```bash
 # JSON response
-curl -s localhost:11202/api/teammates/ada-quill/tasks \
+curl -s localhost:11001/teammates/api/v1/teammates/ada-quill/tasks \
   -H "Authorization: Bearer dtk_…" -H 'Content-Type: application/json' \
   -d '{"task":"Summarise the three biggest risks in our Q4 competitor scan","costCentre":"Growth","project":"acme"}'
 
 # Streamed (Server-Sent Events: start, delta, memory, done | error)
-curl -N localhost:11202/api/teammates/ada-quill/tasks \
+curl -N localhost:11001/teammates/api/v1/teammates/ada-quill/tasks \
   -H "Authorization: Bearer dtk_…" -H 'Content-Type: application/json' -H 'Accept: text/event-stream' \
   -d '{"task":"Draft an opening line for Acme Corp"}'
 
 # Follow up on earlier work: pass the "thread" from the previous response
-curl -s localhost:11202/api/teammates/ada-quill/tasks \
+curl -s localhost:11001/teammates/api/v1/teammates/ada-quill/tasks \
   -H "Authorization: Bearer dtk_…" -H 'Content-Type: application/json' \
   -d '{"task":"Now cut it to three bullets","thread":"thr_…"}'
 ```
@@ -108,7 +139,7 @@ Each call goes through these steps:
 5. Write memory: a cheaper model records up to three things worth remembering. Over the memory cap, the oldest unpinned items are merged instead of deleted.
 6. Log the time as a **pending** timesheet entry. Hours are tokens ÷ `tokensPerHour`, rounded up to 6-minute increments, then multiplied by the teammate's rate. The work item records the caller, project, thread, skills, documents and memories used.
 
-**Approval thresholds.** Before a task runs it is estimated (prompt characters ÷ 4, plus `billing.estimateOutputTokens` of output, billed like real usage). If the estimate is over the teammate's approval threshold, an API-key call gets `202 Accepted` with `{ "status": "awaiting_approval", "workId": "wk_…", "estimate": … }` (streaming calls too). The task appears under **Billing → Tasks waiting for approval**; once the owner approves it, it runs in the background under that work id. Poll `GET /api/teammates/:id/tasks/:workId` with the same key for `awaiting_approval`, `declined`, `running` or `completed` (with the output). In the app, the owner sees the estimate and can approve and start straight away (`confirmCost`).
+**Approval thresholds.** Before a task runs it is estimated (prompt characters ÷ 4, plus `billing.estimateOutputTokens` of output, billed like real usage). If the estimate is over the teammate's approval threshold, an API-key call gets `202 Accepted` with `{ "status": "awaiting_approval", "workId": "wk_…", "estimate": … }` (streaming calls too). The task appears under **Billing → Tasks waiting for approval**; once the owner approves it, it runs in the background under that work id. Poll `GET /api/v1/teammates/:id/tasks/:workId` with the same key for `awaiting_approval`, `declined`, `running` or `completed` (with the output). In the app, the owner sees the estimate and can approve and start straight away (`confirmCost`).
 
 **Warnings.** When a teammate passes the warning share of their monthly cap (default 80%), or a weekly, monthly or quarterly budget does, you get one warning per period on screen, and again at 100%. Unapproved time counts towards budgets. Each warning is also sent to webhook endpoints subscribed to `cap.warning`, `cap.reached`, `budget.warning` or `budget.reached` (Settings → Webhooks), as `{ "event", "at", "data" }` signed with `X-Teammates-Signature: sha256=<HMAC of the body>`.
 
@@ -124,8 +155,10 @@ Calls without a valid key (or owner session) return `401`; a key used for anothe
 
 ## Data layout
 
+NooblyJS's `dataDir` for this app (`../nooblyjs-ai-host/data/teammates/`). People and sign-in sessions are NooblyJS's, not kept here.
+
 ```
-data/
+data/teammates/
 ├── config/settings.md          # owner, budgets, cost centres, billing conversion
 ├── config/models.md            # Haiku / Sonnet / Opus: model ids, base rates, cost breakdown, list prices
 ├── skills/<skill>.md           # shared skill library (front matter + instructions)
@@ -146,8 +179,6 @@ data/
 ├── drafts/<draft>.md           # saved hire drafts
 ├── system/                     # api-keys.md (key hashes), session-secret.md, audit/YYYY-MM.md, alerts.md
 ├── uploads/                    # uploaded avatar images (PNG/JPEG/WebP)
-├── core/auth/                  # nooblyjs-core sign-in: users.json (people, password hashes, roles), roles.json, INITIAL_ADMIN_PASSWORD.txt (first run)
-├── core/sessions.json          # sign-in sessions, kept across restarts
 └── logs/                       # app.YYYY-MM-DD.log (unless LOG_DIR is set; not workspace data, leave it out of git)
 ```
 
@@ -155,14 +186,14 @@ Writes are atomic (temp file, fsync, rename) and serialized per file, so the fol
 
 ## Infrastructure (nooblyjs-core)
 
-The app runs on the [nooblyjs-core](https://github.com/nooblyjs/nooblyjs-core) service registry ([`src/core`](src/core)):
+The app runs on the [nooblyjs-core](https://github.com/nooblyjs/nooblyjs-core) service registry ([`src/services/core`](src/services/core)):
 
 | Service | Used for |
 |---|---|
-| Logging (`file`) | Every log line, including core's own service messages, goes to `data/logs/app.YYYY-MM-DD.log`. The console shows the same lines (`LOG_CONSOLE=app` limits it to the app's own messages). Credentials in logged fields are redacted. |
+| Logging (`file`) | Every log line, including core's own service messages, goes to `data/teammates/logs/app.YYYY-MM-DD.log` (unless `LOG_DIR` is set). The console shows the same lines (`LOG_CONSOLE=app` limits it to the app's own messages). Credentials in logged fields are redacted. |
 | Caching (`memory`) | Parsed Markdown documents. A cached copy is used while the file's modification time and size are unchanged, so files you edit by hand are picked up on the next read. Files holding secrets (`system/`, `config/webhooks.md`, `config/mcp-servers.md`) are never cached. |
 | Queueing (`memory`) | Webhook deliveries and their retries. |
-| Notifying (`memory`) | Live events for open browser tabs (`/api/events`), on the `teammates.events` topic. |
+| Notifying (`memory`) | Live events for open browser tabs (`/api/v1/events`), on the `teammates.events` topic. |
 | Scheduling (`memory`) | The schedule check, every 30 seconds, as the `teammates-schedules` task. It can be paused, resumed or run on demand from its dashboard; while it is paused, schedules don't run. |
 | Measuring (`memory`) | Task counts, durations, tokens and amounts; webhook deliveries and retries; API request times. |
 
@@ -174,48 +205,48 @@ Core's memory providers keep their state in the server process, so the cache, qu
 
 ## API
 
-Everything except calling a teammate (and checking on a task you started) needs a signed-in session cookie (viewers can read; changes need a manager; billing administration, settings, webhooks, MCP servers and people need an owner), plus the `X-CSRF-Token` header (from `GET /api/session`) on changes. Sessions come from signing in on core's login page (or `POST /services/authservice/api/login` with `{ email, password }`).
+All paths below are under the app's mount path: `/api/v1/teammates` is `/teammates/api/v1/teammates` on the site. `GET /api/v1/health` is public. Everything else except calling a teammate (and checking on a task you started) needs a person signed in with NooblyJS (`host.auth`) (viewers can read; changes need a manager; billing administration, settings, webhooks, MCP servers and people need an owner), plus the `X-CSRF-Token` header (from `GET /api/v1/session`) on changes. Every write also goes past the host's audit (`host.audit`), and refusals are audited by the host. Sessions come from signing in to NooblyJS.
 
 | Method | Path | |
 |---|---|---|
-| GET / DELETE | `/api/session` | Who is signed in (`authenticated`, `user`, `csrf`, `links` to core's sign-in, profile and people pages) / sign out (`{ token? }`: core's bearer token, also revoked) |
-| GET | `/api/auth/check` | `{ authenticated }`, for core's login page |
-| GET | `/api/admin/users` | People who can sign in (core users) with their core roles and Teammates role |
-| GET / POST / DELETE | `/api/admin/keys[/:id]` | List / create `{ name, teammates: "*" \| [ids], rateLimit }` / revoke API keys |
-| GET | `/api/admin/audit` | Audit log (latest first) |
-| GET | `/api/admin/system` | nooblyjs-core status: document cache, webhook queue, schedule check, metrics |
-| GET | `/api/meta` | Owner, models, cost centres, skill library, projects in use, sidebar budget |
-| GET / POST | `/api/teammates/:id/knowledge` | Knowledge documents / add `{ title, content, project?, filename? }` (.md/.txt text) |
-| GET / PATCH / DELETE | `/api/teammates/:id/knowledge/:docId` | One document with its text / edit / delete |
-| PATCH | `/api/teammates/:id/memory/:memoryId` | Pin or unpin `{ pinned: true }` |
-| GET | `/api/team-memory` | Shared team memory, with who contributed each item |
-| PATCH / DELETE | `/api/team-memory/:memoryId` | Pin or delete a shared item |
-| GET / POST | `/api/teammates` | Roster with derived totals (active teammates only) / hire |
-| GET / PATCH | `/api/teammates/:id` | Profile view model / update config (status, model, rate, cap, memory mode…) |
-| POST | `/api/teammates/:id/tasks` | **Call the teammate** (JSON or SSE; `202` when waiting for approval) |
-| GET | `/api/teammates/:id/tasks/:workId` | Status and output of a task (API keys: only tasks they started) |
-| POST | `/api/teammates/:id/retire`, `/reinstate` | Retire (hidden from the roster, billing kept) or bring back |
-| POST | `/api/teammates/:id/persona/reset` | Reset the persona to the generated default |
-| PATCH | `/api/teammates/:id/skills/:skillId` | Change a skill level (`{ level: 1–3 }`) |
-| GET / PATCH | `/api/skills/:id` | Library skill and who uses it / edit its description and instructions |
-| GET | `/api/events` | Live updates (SSE): `teammate` status, `timesheet` entries, `alert` and `approval` |
-| GET | `/api/teammates/:id/work/:workId` | A logged work item |
-| POST / DELETE | `/api/teammates/:id/skills[/:skillId]` | Add or remove a skill |
-| GET / DELETE | `/api/teammates/:id/memory[/:memoryId]` | Review, delete or reset memory |
-| POST | `/api/teammates/:id/timesheet/:entryId/approve` | Approve a time entry |
-| GET | `/api/billing?period=week\|month\|quarter&offset=-1` | Billing view model |
-| GET | `/api/billing/export.csv` | Timesheet CSV for a period |
-| GET | `/api/billing/tokens?period&offset` | Token view: tokens, API cost, billed and margin by teammate, model and cost centre |
-| GET | `/api/alerts` | Caps and budgets currently over the warning share |
-| GET / POST | `/api/invoices/close-preview?month=YYYY-MM`, `/api/invoices` | What closing a month would do / close it `{ month, excludePending? }` |
-| GET / PATCH | `/api/invoices/:id` | Invoice with breakdowns / mark `{ status: "paid" \| "open" }` |
-| GET | `/api/invoices/:id/pdf`, `/api/invoices/:id/csv` | Invoice downloads |
-| GET / POST | `/api/approvals?status=pending`, `/api/approvals/:id/approve`, `/api/approvals/:id/decline` | Tasks over an approval threshold |
-| GET / PATCH | `/api/settings` | Budgets, cost centres, owner, time zone, billing conversion and the warning share |
-| GET / POST / PATCH / DELETE | `/api/webhooks[/:id]` | Webhook endpoints `{ name, url, events }` (secret returned once); `POST …/:id/test` |
-| GET | `/api/timeline?teammate&days` | Work timeline: tasks with callers, tools, handoffs and costs; waiting approvals; upcoming runs |
-| GET / POST / PATCH / DELETE | `/api/schedules[/:id]` | Scheduled tasks `{ teammateId, name, task, cadence: { days: [1–7], time: "HH:MM" }, project?, costCentre?, enabled? }`; `POST …/:id/run` runs one now |
-| GET | `/api/tools` | Tools a teammate can be allowed (built-ins and MCP servers) |
-| GET / POST / PATCH / DELETE | `/api/mcp-servers[/:id]` | MCP servers `{ id, name, url, authorization? }`; `POST …/:id/check` lists their tools |
-| GET / PATCH | `/api/models[/:id]` | Models: rate card and list prices (`{ reviewed: true }` records a price review) |
-| POST | `/api/skills`, `/api/drafts`, `/api/uploads` | Skill packs, hire drafts, avatar images |
+| GET / DELETE | `/api/v1/session` | Who is signed in (`authenticated`, `user`, `csrf`, `links` to core's sign-in, profile and people pages) / sign out (`{ token? }`: core's bearer token, also revoked) |
+| GET | `/api/auth/check` (site root, not under the mount path) | `{ authenticated }`: served by the host (NooblyJS, or the tests' stand-in), not this app |
+| GET | `/api/v1/admin/users` | People who can sign in (the host's `people`) with their access role and Teammates role |
+| GET / POST / DELETE | `/api/v1/admin/keys[/:id]` | List / create `{ name, teammates: "*" \| [ids], rateLimit }` / revoke API keys |
+| GET | `/api/v1/admin/audit` | Audit log (latest first) |
+| GET | `/api/v1/admin/system` | nooblyjs-core status: document cache, webhook queue, schedule check, metrics |
+| GET | `/api/v1/meta` | Owner, models, cost centres, skill library, projects in use, sidebar budget |
+| GET / POST | `/api/v1/teammates/:id/knowledge` | Knowledge documents / add `{ title, content, project?, filename? }` (.md/.txt text) |
+| GET / PATCH / DELETE | `/api/v1/teammates/:id/knowledge/:docId` | One document with its text / edit / delete |
+| PATCH | `/api/v1/teammates/:id/memory/:memoryId` | Pin or unpin `{ pinned: true }` |
+| GET | `/api/v1/team-memory` | Shared team memory, with who contributed each item |
+| PATCH / DELETE | `/api/v1/team-memory/:memoryId` | Pin or delete a shared item |
+| GET / POST | `/api/v1/teammates` | Roster with derived totals (active teammates only) / hire |
+| GET / PATCH | `/api/v1/teammates/:id` | Profile view model / update config (status, model, rate, cap, memory mode…) |
+| POST | `/api/v1/teammates/:id/tasks` | **Call the teammate** (JSON or SSE; `202` when waiting for approval) |
+| GET | `/api/v1/teammates/:id/tasks/:workId` | Status and output of a task (API keys: only tasks they started) |
+| POST | `/api/v1/teammates/:id/retire`, `/reinstate` | Retire (hidden from the roster, billing kept) or bring back |
+| POST | `/api/v1/teammates/:id/persona/reset` | Reset the persona to the generated default |
+| PATCH | `/api/v1/teammates/:id/skills/:skillId` | Change a skill level (`{ level: 1–3 }`) |
+| GET / PATCH | `/api/v1/skills/:id` | Library skill and who uses it / edit its description and instructions |
+| GET | `/api/v1/events` | Live updates (SSE): `teammate` status, `timesheet` entries, `alert` and `approval` |
+| GET | `/api/v1/teammates/:id/work/:workId` | A logged work item |
+| POST / DELETE | `/api/v1/teammates/:id/skills[/:skillId]` | Add or remove a skill |
+| GET / DELETE | `/api/v1/teammates/:id/memory[/:memoryId]` | Review, delete or reset memory |
+| POST | `/api/v1/teammates/:id/timesheet/:entryId/approve` | Approve a time entry |
+| GET | `/api/v1/billing?period=week\|month\|quarter&offset=-1` | Billing view model |
+| GET | `/api/v1/billing/export.csv` | Timesheet CSV for a period |
+| GET | `/api/v1/billing/tokens?period&offset` | Token view: tokens, API cost, billed and margin by teammate, model and cost centre |
+| GET | `/api/v1/alerts` | Caps and budgets currently over the warning share |
+| GET / POST | `/api/v1/invoices/close-preview?month=YYYY-MM`, `/api/v1/invoices` | What closing a month would do / close it `{ month, excludePending? }` |
+| GET / PATCH | `/api/v1/invoices/:id` | Invoice with breakdowns / mark `{ status: "paid" \| "open" }` |
+| GET | `/api/v1/invoices/:id/pdf`, `/api/v1/invoices/:id/csv` | Invoice downloads |
+| GET / POST | `/api/v1/approvals?status=pending`, `/api/v1/approvals/:id/approve`, `/api/v1/approvals/:id/decline` | Tasks over an approval threshold |
+| GET / PATCH | `/api/v1/settings` | Budgets, cost centres, owner, time zone, billing conversion and the warning share |
+| GET / POST / PATCH / DELETE | `/api/v1/webhooks[/:id]` | Webhook endpoints `{ name, url, events }` (secret returned once); `POST …/:id/test` |
+| GET | `/api/v1/timeline?teammate&days` | Work timeline: tasks with callers, tools, handoffs and costs; waiting approvals; upcoming runs |
+| GET / POST / PATCH / DELETE | `/api/v1/schedules[/:id]` | Scheduled tasks `{ teammateId, name, task, cadence: { days: [1–7], time: "HH:MM" }, project?, costCentre?, enabled? }`; `POST …/:id/run` runs one now |
+| GET | `/api/v1/tools` | Tools a teammate can be allowed (built-ins and MCP servers) |
+| GET / POST / PATCH / DELETE | `/api/v1/mcp-servers[/:id]` | MCP servers `{ id, name, url, authorization? }`; `POST …/:id/check` lists their tools |
+| GET / PATCH | `/api/v1/models[/:id]` | Models: rate card and list prices (`{ reviewed: true }` records a price review) |
+| POST | `/api/v1/skills`, `/api/v1/drafts`, `/api/v1/uploads` | Skill packs, hire drafts, avatar images |

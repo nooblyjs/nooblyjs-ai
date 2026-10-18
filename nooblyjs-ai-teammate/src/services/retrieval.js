@@ -1,5 +1,5 @@
 // Lexical retrieval (BM25) for knowledge passages and skill selection. No embeddings, no extra model calls.
-import { badRequest } from '../util/errors.js';
+import { badRequest } from '../utils/errors.js';
 
 // Passages scoring below this share of the best match are dropped (e.g. ones that only match the document title).
 const RELATIVE_CUTOFF = 0.35;

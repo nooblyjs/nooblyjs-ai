@@ -1,5 +1,5 @@
-import { html, fragment } from './html.js';
-import { icons } from './icons.js';
+import { html } from '/ui/js/html.js';
+import { icon } from '/ui/js/icons.js';
 
 const STATUS = {
   task: 'On a task',
@@ -7,6 +7,14 @@ const STATUS = {
   paused: 'Paused',
   off: 'Off shift',
 };
+/** Render markup into a fresh element and return it. */
+export function fragment(markup, tag = 'div', className = '') {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  el.innerHTML = String(markup);
+  return el;
+}
+
 export const statusLabel = (s) => STATUS[s] ?? s;
 
 export const statusPill = (status, label = statusLabel(status)) =>
@@ -19,8 +27,24 @@ export const meter = (pct, { label = '' } = {}) => {
 
 export const LEVELS = { 1: 'Learning', 2: 'Proficient', 3: 'Expert' };
 
+/**
+ * Toasts and dialogs live outside the page's view, in one element at the end of <body> that carries
+ * data-module="teammates", so the app's scoped CSS still reaches them (noobly structure.md §2a).
+ */
+export function portal() {
+  let el = document.getElementById('teammates-portal');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'teammates-portal';
+    el.dataset.module = 'teammates';
+    el.innerHTML = '<div class="tm-root"><div class="toasts" id="teammates-toasts" aria-live="polite"></div></div>';
+    document.body.append(el);
+  }
+  return el.firstElementChild;
+}
+
 export function toast(message, { error = false } = {}) {
-  const host = document.getElementById('toasts');
+  const host = portal().querySelector('#teammates-toasts');
   const el = fragment(html`${message}`, 'div', `toast${error ? ' error' : ''}`);
   el.setAttribute('role', error ? 'alert' : 'status');
   host.append(el);
@@ -40,11 +64,11 @@ export function openDialog({ title, body, footer = '', setup, wide = false }) {
   dialog.innerHTML = String(html`
     <div class="modal-head">
       <h2 id="${titleId}">${title}</h2>
-      <button type="button" class="icon-btn" data-close aria-label="Close">${icons.close}</button>
+      <button type="button" class="icon-btn" data-close aria-label="Close">${icon('x')}</button>
     </div>
     <div class="modal-body">${body}</div>
     ${footer ? html`<div class="modal-foot">${footer}</div>` : ''}`);
-  document.body.append(dialog);
+  portal().append(dialog);
   const cleanup = setup?.(dialog);
   dialog.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]') || e.target === dialog) dialog.close('cancel');

@@ -1,11 +1,11 @@
 // Work timeline (/timeline): every task over time, grouped by day, with who asked (a person, an API key, a schedule
 // or another teammate), the tools used, handoffs to other teammates and what each side cost.
-import { api } from '../api.js';
-import { html } from '../html.js';
-import { icons } from '../icons.js';
+import { html } from '/ui/js/html.js';
+import { icon } from '/ui/js/icons.js';
 import { avatar } from '../avatar.js';
 import { money, hours1, plural } from '../format.js';
 import { showWorkItem } from '../work-dialog.js';
+import { api, appUrl, enter } from '../client.js';
 
 const DAYS = [7, 14, 30];
 const STATUS = { succeeded: 'Done', declined: 'Declined', failed: 'Failed', awaiting_approval: 'Waiting' };
@@ -23,7 +23,7 @@ const duration = (ms) => (!ms ? '' : ms < 60000 ? `${Math.max(1, Math.round(ms /
 
 function callerChip(i) {
   const c = i.caller;
-  if (i.schedule) return html`<span class="chip-caller chip-schedule">${icons.clock}${i.schedule.name}</span>`;
+  if (i.schedule) return html`<span class="chip-caller chip-schedule">${icon('clock')}${i.schedule.name}</span>`;
   if (!c) return '';
   if (c.type === 'teammate') return html`<span class="chip-caller">from ${c.name}</span>`;
   if (c.type === 'key') return html`<span class="chip-caller">API key “${c.name}”</span>`;
@@ -38,9 +38,10 @@ function itemRow(i) {
       <div class="tl-dot status-${i.status}" aria-hidden="true"></div>
       <div class="tl-body">
         <div class="tl-head">
-          <a class="tl-who" href="/team/${i.teammate.id}">${avatar(i.teammate.avatar, 28)}<span>${i.teammate.name}</span></a>
+          <a class="tl-who" href="${appUrl(`/team/${i.teammate.id}`)}">${avatar(i.teammate.avatar, 28)}<span>${i.teammate.name}</span></a>
           ${callerChip(i)}
           ${i.project ? html`<span class="project-chip">${i.project}</span>` : ''}
+          ${i.boardPostsRead ? html`<a class="chip-caller" href="${appUrl('/board')}">read ${i.boardPostsRead} board ${i.boardPostsRead === 1 ? 'post' : 'posts'}</a>` : ''}
           ${i.status !== 'succeeded' ? html`<span class="status-badge tl-status-${i.status}">${STATUS[i.status] ?? i.status}</span>` : ''}
         </div>
         <button type="button" class="tl-title" data-work="${i.workId}" data-teammate="${i.teammate.id}">${i.title || 'Untitled task'}</button>
@@ -59,14 +60,17 @@ function itemRow(i) {
     </li>`;
 }
 
-export async function render(view, { query, ctx }) {
+let leave = null;
+
+export async function render(frameView, { query, ctx: frame }) {
+  const { view, ctx } = await enter(frameView, frame, 'timeline');
   const state = {
     teammate: query.get('teammate') || '',
     days: DAYS.includes(Number(query.get('days'))) ? Number(query.get('days')) : 14,
   };
 
   const draw = async () => {
-    const t = await api.get(`/api/timeline?days=${state.days}${state.teammate ? `&teammate=${encodeURIComponent(state.teammate)}` : ''}`);
+    const t = await api.get(`/api/v1/timeline?days=${state.days}${state.teammate ? `&teammate=${encodeURIComponent(state.teammate)}` : ''}`);
     const url = new URL(location.href);
     state.teammate ? url.searchParams.set('teammate', state.teammate) : url.searchParams.delete('teammate');
     state.days === 14 ? url.searchParams.delete('days') : url.searchParams.set('days', state.days);
@@ -114,7 +118,7 @@ export async function render(view, { query, ctx }) {
         </section>
         <aside class="timeline-side">
           <section class="card" aria-labelledby="tl-wait">
-            <div class="card-head"><h2 class="card-title" id="tl-wait">Waiting for approval</h2>${t.waiting.length && ctx.can('manager') ? html`<a href="/billing">Review</a>` : ''}</div>
+            <div class="card-head"><h2 class="card-title" id="tl-wait">Waiting for approval</h2>${t.waiting.length && ctx.can('manager') ? html`<a href="${appUrl('/billing')}">Review</a>` : ''}</div>
             ${t.waiting.length
               ? html`<ul class="side-list">${t.waiting.map((w) => html`<li><strong>${w.teammate.name}</strong> ${w.kind === 'action' ? html`wants to use <em>${w.label}</em>` : html`· ${w.title}`}${w.estimate ? html` <span class="help">est. ${money(w.estimate.amount)}</span>` : ''}</li>`)}</ul>`
               : html`<p class="help">Nothing waiting.</p>`}
@@ -156,12 +160,16 @@ export async function render(view, { query, ctx }) {
   const offs = [ctx.on('work', refresh), ctx.on('approval', refresh), ctx.on('schedule', refresh)];
 
   await draw();
-  return {
-    cleanup: () => {
-      view.onclick = null;
-      view.onchange = null;
-      clearTimeout(timer);
-      offs.forEach((off) => off());
-    },
+  leave = () => {
+    view.onclick = null;
+    view.onchange = null;
+    clearTimeout(timer);
+    offs.forEach((off) => off());
   };
+}
+
+/** The frame calls this when the person leaves the page. */
+export function destroy() {
+  leave?.();
+  leave = null;
 }

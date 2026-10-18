@@ -3,8 +3,9 @@
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { createApp } from '../src/app.js';
-import { createProviders } from '../src/providers/index.js';
+import { register } from '../index.js';
+import { createProviders } from '../src/services/providers/index.js';
+import { createHost } from '../test/fixtures/host.js';
 
 const RUNS = [
   { teammate: 'otis-fern', tier: 'haiku', task: 'In two sentences: what is the safest way to deduplicate a CRM export with fuzzy company names?' },
@@ -23,7 +24,12 @@ const providers = createProviders({ mode });
 console.log(`Provider: ${providers.describe()}${providers.describe() === 'mock' ? ' (dry run, no API calls)' : ''}`);
 
 const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'teammates-live-'));
-const { invocation, repos } = await createApp({ dataDir, providers, log: { info() {}, warn: console.warn, error: console.error } });
+// The app runs on the stand-in NooblyJS host (never listening), with core's people and logs in their own folder.
+const host = await createHost({ dataDir: path.join(dataDir, '.host'), consoleMode: 'none' });
+const { invocation, repos } = (await register(host.app, host.serverManager, {
+  host: host.hostFor({ dataDir }), dataDir, providers,
+  log: { info() {}, warn: console.warn, error: console.error },
+})).internals;
 let failed = 0;
 
 for (const run of RUNS) {

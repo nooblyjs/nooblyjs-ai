@@ -13,7 +13,7 @@ Each phase is a set of small, separately reviewable items. For every phase:
 1. **You choose** the next phase, or individual items within it.
 2. **Decisions first.** Every item marked 🔶 needs your answer before the build starts. I'll propose a default for each one.
 3. **I build** the items. Each one comes with tests (`npm test`) and fresh screenshots in `.temp/screenshots/`.
-4. **You review** in the running app (`npm start`), and we tick the boxes here.
+4. **You review** in the running app (NooblyJS: `npm start` in `../nooblyjs-ai-host`, then `/teammates`), and we tick the boxes here.
 
 Legend: ✅ done · ⬜ to do · 🔶 decision needed
 

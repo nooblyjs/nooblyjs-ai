@@ -6,13 +6,16 @@
 // The check is a task on core's scheduling service ("teammates-schedules"), so its beats can be watched, paused,
 // resumed and run on demand from /services/scheduling/. Without core scheduling a plain timer is used.
 import { fileURLToPath } from 'node:url';
-import { HttpError, notFound } from '../util/errors.js';
-import { newId } from '../util/ids.js';
+import { HttpError, notFound } from '../utils/errors.js';
+import { newId } from '../utils/ids.js';
 import { normalizeProject } from './retrieval.js';
 
 const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 export const CHECK_TASK = 'teammates-schedules';
-const CHECK_ACTIVITY = fileURLToPath(new URL('../core/activities/schedule-tick.cjs', import.meta.url));
+// Core scheduling is one service per process (it ignores instance names) and knows tasks by name, so a second app in
+// the same process (the tests mount several) gets its own name.
+export const checkTaskName = (instanceName = 'teammates') => (instanceName === 'teammates' ? CHECK_TASK : `${CHECK_TASK}-${instanceName}`);
+const CHECK_ACTIVITY = fileURLToPath(new URL('./core/activities/schedule-tick.cjs', import.meta.url));
 export const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; // ISO order: 1 = Monday … 7 = Sunday
 
 // ---------- Time zone arithmetic (no dependencies: Intl does the work) ----------
@@ -59,7 +62,8 @@ export function describeCadence({ days, time }) {
 }
 
 export class SchedulerService {
-  constructor({ repos, invocation, events = null, webhooks = null, clock = () => Date.now(), log = console, intervalMs = 30000, scheduling = null, metrics = null }) {
+  constructor({ repos, invocation, events = null, webhooks = null, clock = () => Date.now(), log = console, intervalMs = 30000, scheduling = null, metrics = null, taskName = CHECK_TASK }) {
+    this.taskName = taskName;
     this.repos = repos;
     this.scheduling = scheduling; // () => core scheduling service
     this.metrics = metrics;
@@ -71,6 +75,12 @@ export class SchedulerService {
     this.log = log;
     this.intervalMs = intervalMs;
     this.timer = null;
+    this.alsoChecks = []; // other work that runs on the same check (the Team board's automatic posts)
+  }
+
+  /** Runs `fn` on every check too, after the schedules. A failure is logged and never stops the schedules. */
+  alsoRun(fn) {
+    this.alsoChecks.push(fn);
   }
 
   start() {
@@ -83,7 +93,7 @@ export class SchedulerService {
     this.registered = true;
     const seconds = Math.max(1, Math.round(this.intervalMs / 1000));
     // The first beat runs straight away, so schedules missed while the server was down run soon after a restart.
-    this.scheduling().start(CHECK_TASK, CHECK_ACTIVITY, { app: 'teammates' }, seconds, (status, data) => {
+    this.scheduling().start(this.taskName, CHECK_ACTIVITY, { app: 'teammates' }, seconds, (status, data) => {
       if (!this.registered) return; // a beat that finished after stop()
       if (status !== 'completed') this.log.warn?.(`[schedule] scheduler beat reported ${status}: ${typeof data === 'string' ? data : JSON.stringify(data)}`);
       this.check(); // schedules still run if the worker beat itself failed
@@ -99,7 +109,7 @@ export class SchedulerService {
     this.timer = null;
     if (this.registered) {
       this.registered = false;
-      Promise.resolve(this.scheduling().stop(CHECK_TASK)).catch(() => {});
+      Promise.resolve(this.scheduling().stop(this.taskName)).catch(() => {});
     }
   }
 
@@ -109,6 +119,11 @@ export class SchedulerService {
     this.ticking = true;
     try {
       await this.tick();
+    } catch (err) {
+      this.log.error?.(`[schedule] ${err.message}`);
+    }
+    try {
+      for (const fn of this.alsoChecks) await fn();
     } catch (err) {
       this.log.error?.(`[schedule] ${err.message}`);
     } finally {

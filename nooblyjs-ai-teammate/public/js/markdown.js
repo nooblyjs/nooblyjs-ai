@@ -77,7 +77,7 @@ export function renderMarkdown(source = '') {
       const rows = [];
       while (i < lines.length && lines[i].includes('|') && lines[i].trim()) rows.push(splitRow(lines[i++]));
       html.push(
-        `<div class="md-table"><table><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join('')}</tr></thead><tbody>${rows
+        `<div class="md-table" tabindex="0" role="region" aria-label="Table"><table><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join('')}</tr></thead><tbody>${rows
           .map((r) => `<tr>${head.map((_, ci) => `<td>${inline(r[ci] ?? '')}</td>`).join('')}</tr>`)
           .join('')}</tbody></table></div>`,
       );

@@ -1,21 +1,24 @@
 {
-  "name": "nooblyjs-digital-teammate",
+  "name": "nooblyjs-ai-teammate",
   "version": "0.1.0",
-  "description": "Procure, configure and pay for AI digital teammates. Express + vanilla JS, Markdown on the file system.",
+  "description": "Procure, configure and pay for AI digital teammates. A NooblyJS AI hosted app that also runs standalone (Express 5 + vanilla JS, Markdown on the file system).",
   "type": "module",
-  "main": "server.js",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
   "engines": {
-    "node": ">=22.9"
+    "node": ">=22.12"
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.js",
     "run": "npm start",
-    "test": "node --test test/*.test.js",
-    "coverage": "node --test --experimental-test-coverage test/*.test.js",
-    "build": "node -e \"console.log('No build step: plain JavaScript')\"",
-    "clean": "node -e \"for (const d of ['node_modules','coverage','dist']) require('fs').rmSync(d, { recursive: true, force: true })\"",
     "dev": "node --env-file-if-exists=.env --watch server.js",
-    "smoke:live": "node --env-file-if-exists=.env scripts/live-smoke.js"
+    "test": "node --test \"test/**/*.test.js\"",
+    "coverage": "node --test --experimental-test-coverage \"test/**/*.test.js\"",
+    "clean": "node -e \"for (const d of ['node_modules','coverage','dist']) require('fs').rmSync(d, { recursive: true, force: true })\"",
+    "smoke:live": "node --env-file-if-exists=.env scripts/live-smoke.js",
+    "build": "node -e \"console.log('No build step: plain JavaScript')\""
   },
   "license": "MIT",
   "dependencies": {

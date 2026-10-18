@@ -52,7 +52,7 @@ export function createSimulator({ store, events, people, sessions, clock = Date 
     const meeting = await meetingOr404(id);
     const said = String(text ?? '').trim().slice(0, 4000);
     if (!said && !value) throw new HttpError(400, 'bad_request', 'Write a message first.');
-    const mentionsBot = /(^|[^\w@])@noobly\b/i.test(said);
+    const mentionsBot = /(^|[^\w@])@noobly(?:js)?\b/i.test(said);
     return {
       type: 'message',
       id: newId('act'),
@@ -62,7 +62,7 @@ export function createSimulator({ store, events, people, sessions, clock = Date 
       conversation: { id: meeting.id, name: meeting.title, conversationType: 'groupChat' },
       from: { id: `29:${person.id}`, name: person.name, aadObjectId: person.id },
       recipient: { ...BOT },
-      ...(value ? { value } : { text: mentionsBot ? said.replace(/@noobly\b/i, `<at>${BOT.name}</at>`) : said }),
+      ...(value ? { value } : { text: mentionsBot ? said.replace(/@noobly(?:js)?\b/i, `<at>${BOT.name}</at>`) : said }),
       entities: mentionsBot ? [{ type: 'mention', mentioned: { ...BOT }, text: `<at>${BOT.name}</at>` }] : [],
     };
   }

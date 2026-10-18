@@ -1,9 +1,9 @@
 // Admin (/admin): who can sign in and their roles (managed in nooblyjs-core), API keys for calling teammates, system status and the audit log.
-import { api, ApiError } from '../api.js';
-import { html } from '../html.js';
-import { icons } from '../icons.js';
+import { html } from '/ui/js/html.js';
+import { icon } from '/ui/js/icons.js';
 import { count } from '../format.js';
 import { openDialog, confirmDialog, toast } from '../ui.js';
+import { api, ApiError, appUrl, enter } from '../client.js';
 
 const when = (iso) => (iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Never');
 
@@ -26,16 +26,16 @@ const ACTIONS = {
 
 const ROLE_LABEL = { owner: 'Owner', manager: 'Manager', viewer: 'Viewer' };
 
-/** People who can sign in (nooblyjs-core users) and the Teammates role their core roles give them. */
+/** People who can sign in (the host's) and the Teammates role their access role gives them. */
 function usersTable(users, me) {
   if (!users.length) return html`<p class="help">Nobody can sign in yet.</p>`;
-  return html`<div class="table-wrap"><table class="table">
-    <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Teammates role</th><th scope="col">Core roles</th><th scope="col">Last sign-in</th></tr></thead>
+  return html`<div class="table-wrap" tabindex="0" role="region" aria-label="Table"><table class="table">
+    <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Teammates role</th><th scope="col">Access role</th><th scope="col">Last sign-in</th></tr></thead>
     <tbody>${users.map((u) => html`<tr>
       <td><strong>${u.name}</strong>${u.email === me ? html` <span class="help">(you)</span>` : ''}${u.active ? '' : html` <span class="status-badge status-revoked">Inactive</span>`}</td>
       <td><code>${u.email}</code></td>
       <td>${ROLE_LABEL[u.role]}</td>
-      <td>${u.coreRoles.join(', ') || '—'}</td>
+      <td>${u.accessRole ?? '—'}</td>
       <td>${when(u.lastLogin)}</td>
     </tr>`)}</tbody>
   </table></div>`;
@@ -43,7 +43,7 @@ function usersTable(users, me) {
 
 function keysTable(keys, names) {
   if (!keys.length) return html`<p class="muted">No API keys yet. Create one to let another system call a teammate.</p>`;
-  return html`<div class="table-wrap"><table class="table">
+  return html`<div class="table-wrap" tabindex="0" role="region" aria-label="Table"><table class="table">
     <thead><tr><th scope="col">Name</th><th scope="col">Key</th><th scope="col">Can call</th><th scope="col">Limit</th><th scope="col">Last used</th><th scope="col">Calls</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
     <tbody>${keys.map((k) => html`<tr>
       <td><strong>${k.name}</strong><div class="help">Created ${when(k.createdAt)}</div></td>
@@ -60,7 +60,7 @@ function keysTable(keys, names) {
 
 function auditTable(entries) {
   if (!entries.length) return html`<p class="muted">Nothing recorded yet.</p>`;
-  return html`<div class="table-wrap"><table class="table">
+  return html`<div class="table-wrap" tabindex="0" role="region" aria-label="Table"><table class="table">
     <thead><tr><th scope="col">When</th><th scope="col">Who</th><th scope="col">What</th><th scope="col">Target</th><th scope="col">Detail</th></tr></thead>
     <tbody>${entries.map((e) => html`<tr>
       <td style="white-space:nowrap">${when(e.ts)}</td><td>${e.actor}</td><td>${ACTIONS[e.action] ?? e.action}</td><td>${e.target}</td>
@@ -88,11 +88,11 @@ async function createKey(teammates) {
           </div>
           <span class="field-error" id="err-teammates"></span>
         </fieldset>
-        <p class="help">The key can only call teammates (<code>POST /api/teammates/:id/tasks</code>). It cannot read billing or memory, or change anything.</p>
+        <p class="help">The key can only call teammates (<code>POST ${appUrl('/api/v1/teammates/:id/tasks')}</code>). It cannot read billing or memory, or change anything.</p>
       </form>
       <div id="key-created" hidden>
         <p><strong>Copy this key now.</strong> It is shown once and only a hash is stored, so it can't be shown again.</p>
-        <div class="key-reveal"><input class="form-input code-input" id="key-value" readonly aria-label="New API key"><button type="button" class="btn btn-secondary" id="key-copy">${icons.copy}Copy</button></div>
+        <div class="key-reveal"><input class="form-input code-input" id="key-value" readonly aria-label="New API key"><button type="button" class="btn btn-secondary" id="key-copy">${icon('copy')}Copy</button></div>
       </div>`,
     footer: html`<button type="button" class="btn btn-secondary" data-close id="key-cancel">Cancel</button><button type="submit" form="key-form" class="btn btn-primary" id="key-submit">Create key</button>`,
     setup(dialog) {
@@ -121,7 +121,7 @@ async function createKey(teammates) {
         if (!f.name.value.trim()) return (dialog.querySelector('#err-name').textContent = 'Give the key a name');
         if (some && !chosen.length) return (dialog.querySelector('#err-teammates').textContent = 'Choose at least one teammate');
         try {
-          const { key } = await api.post('/api/admin/keys', { name: f.name.value, rateLimit: Number(f.rateLimit.value), teammates: some ? chosen : '*' });
+          const { key } = await api.post('/api/v1/admin/keys', { name: f.name.value, rateLimit: Number(f.rateLimit.value), teammates: some ? chosen : '*' });
           form.hidden = true;
           dialog.querySelector('#key-created').hidden = false;
           dialog.querySelector('#key-value').value = key;
@@ -167,13 +167,16 @@ function systemCard(sys) {
   </div>`;
 }
 
-export async function render(view, { ctx }) {
+let leave = null;
+
+export async function render(frameView, { ctx: frame }) {
+  const { view, ctx } = await enter(frameView, frame, 'admin');
   const draw = async () => {
     const [{ keys }, { entries }, { teammates }, { users }, sys] = await Promise.all([
-      api.get('/api/admin/keys'), api.get('/api/admin/audit?limit=60'), api.get('/api/teammates'), api.get('/api/admin/users'), api.get('/api/admin/system').catch(() => null),
+      api.get('/api/v1/admin/keys'), api.get('/api/v1/admin/audit?limit=60'), api.get('/api/v1/teammates'), api.get('/api/v1/admin/users'), api.get('/api/v1/admin/system').catch(() => null),
     ]);
     const names = new Map(teammates.map((t) => [t.id, t.name]));
-    const example = teammates[0]?.id ?? 'ada-quill';
+    const example = teammates[0]?.id ?? 'your-teammate';
     view.innerHTML = String(html`
       <div class="header">
         <div>
@@ -189,14 +192,14 @@ export async function render(view, { ctx }) {
         </section>
 
         <section class="card" aria-labelledby="keys-h">
-          <div class="card-head"><h2 class="card-title" id="keys-h">API keys</h2><button type="button" class="btn btn-primary" data-action="create-key">${icons.plus}Create key</button></div>
+          <div class="card-head"><h2 class="card-title" id="keys-h">API keys</h2><button type="button" class="btn btn-primary" data-action="create-key">${icon('plus')}Create key</button></div>
           ${keysTable(keys, names)}
         </section>
 
         <section class="card" aria-labelledby="call-h">
           <h2 class="card-title" id="call-h">Calling a teammate</h2>
           <p class="help">Send the key as a bearer token. Add <code>"stream": true</code> for server-sent events, <code>"thread"</code> to follow up on earlier work, and <code>"project"</code> to keep work for different clients apart.</p>
-          <pre class="code-block">curl -X POST ${location.origin}/api/teammates/${example}/tasks \\
+          <pre class="code-block">curl -X POST ${location.origin}${appUrl(`/api/v1/teammates/${example}/tasks`)} \\
   -H "Authorization: Bearer dtk_…" -H "Content-Type: application/json" \\
   -d '{"task": "Summarise the support themes from this week", "project": "acme"}'</pre>
         </section>
@@ -219,13 +222,13 @@ export async function render(view, { ctx }) {
     if (!btn) return;
     try {
       if (btn.dataset.action === 'create-key') {
-        const { teammates } = await api.get('/api/teammates');
+        const { teammates } = await api.get('/api/v1/teammates');
         await createKey(teammates);
         await draw();
       } else if (btn.dataset.revoke) {
         const ok = await confirmDialog({ title: `Revoke “${btn.dataset.name}”?`, message: 'Anything using this key stops working straight away. This cannot be undone.', confirmLabel: 'Revoke key' });
         if (!ok) return;
-        await api.del(`/api/admin/keys/${btn.dataset.revoke}`);
+        await api.del(`/api/v1/admin/keys/${btn.dataset.revoke}`);
         toast('Key revoked');
         await draw();
       }
@@ -235,9 +238,13 @@ export async function render(view, { ctx }) {
   };
 
   await draw();
-  return {
-    cleanup: () => {
-      view.onclick = null;
-    },
+  leave = () => {
+    view.onclick = null;
   };
+}
+
+/** The frame calls this when the person leaves the page. */
+export function destroy() {
+  leave?.();
+  leave = null;
 }
