@@ -1,0 +1,28 @@
+# Where work sits (the Portfolios page and the Product board). Sample data for the PRD-031 story: change it on the
+# Portfolios page, where a portfolio, a value stream or a product is a label you type.
+# - A strategic theme is an aspiration of the whole company; a portfolio works towards any number of them.
+# - A portfolio has none or many value streams. Each portfolio and value stream has a document
+#   (portfolios/<id>.md, value-streams/<id>.md) made from its template (templates/, Settings).
+# - A product sits in one portfolio, and may sit in one of its value streams. A signal, an idea and a spec
+#   each sit in one product.
+themes:
+  - { name: Solve the every day }
+  - { name: Leverage AI }
+portfolios:
+  - { id: pfl_digital, name: Digital, themes: [Solve the every day, Leverage AI] }
+  - { id: pfl_buying, name: Buying }
+  - { id: pfl_banking, name: Banking }
+valueStreams:
+  - { id: vs_digitalcommerce, name: Digital Commerce, portfolio: Digital }
+  - { id: vs_mediaadvertising, name: Media and Advertising, portfolio: Digital }
+  - { id: vs_rewards, name: Rewards, portfolio: Digital }
+  - { id: vs_datamonetisation, name: Data Monetisation, portfolio: Digital }
+products:
+  - { name: Registration, portfolio: Digital, valueStream: Digital Commerce }
+  - { name: Products, portfolio: Digital, valueStream: Digital Commerce }
+  - { name: Merchandising, portfolio: Digital, valueStream: Digital Commerce }
+  - { name: Payments, portfolio: Digital, valueStream: Digital Commerce }
+  - { name: Checkout, portfolio: Digital, valueStream: Digital Commerce }
+  - { name: Delivery, portfolio: Digital, valueStream: Digital Commerce }
+  - { name: Search, portfolio: Digital, valueStream: Digital Commerce }
+  - { name: Rewards, portfolio: Digital, valueStream: Rewards }

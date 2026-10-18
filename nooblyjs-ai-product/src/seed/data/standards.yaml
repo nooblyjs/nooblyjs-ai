@@ -1,0 +1,4 @@
+# The rules the architecture standards check uses (D6). Read-only through the API in Phase 5; editing moves to
+# Platform and governance (NooblyJS Phase 9). Sample values from the PRD-031 seed story.
+approvedStack: [Node 22, Java 21, React, Redis, Kafka, Postgres]
+customerDataRegions: [af-south-1]

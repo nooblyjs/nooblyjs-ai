@@ -1,0 +1,6 @@
+# The accessibility checks every UI design runs (D6, WCAG 2.2 AA). Read-only through the API in Phase 5.
+checks:
+  - { key: contrast, label: Text contrast 4.5:1 or better }
+  - { key: targets, label: Touch targets 44 px }
+  - { key: not-colour-alone, label: Full slots not shown by colour alone }
+  - { key: screen-reader-labels, label: Every control has a screen-reader label }

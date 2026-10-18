@@ -1,0 +1,222 @@
+/* The Product Factory's own styles. Every selector is scoped to the frame's content area for this app
+   ([data-module="product"]), and the kit's tokens are used throughout, so the pages look like the rest of NooblyJS. */
+
+/* The hidden attribute always wins over a display rule below (forms and the draft box are shown on demand). */
+[data-module="product"] [hidden] { display: none !important; }
+[data-module="product"] .pf-stack { display: flex; flex-direction: column; gap: var(--gap-grid); }
+[data-module="product"] .pf-panels { margin-top: var(--gap-grid); }
+[data-module="product"] .muted { color: var(--text-muted); }
+
+/* Tabs and filter chips */
+[data-module="product"] .pf-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border); margin: 8px 0 16px; }
+[data-module="product"] .pf-tab { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; font: inherit; font-size: var(--text-small); color: var(--text-muted); cursor: pointer; min-height: var(--control-min); }
+[data-module="product"] .pf-tab[aria-selected="true"] { color: var(--navy-900); border-bottom-color: var(--navy-900); font-weight: 600; }
+[data-module="product"] .pf-tab:focus-visible { outline: var(--focus-ring); }
+[data-module="product"] .pf-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+[data-module="product"] .pf-chip { display: inline-flex; align-items: center; gap: 6px; min-height: var(--control-min); padding: 0 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-full); color: var(--text); text-decoration: none; font-size: var(--text-small); background: var(--surface-card); }
+[data-module="product"] .pf-chip--on { background: var(--navy-900); border-color: var(--navy-900); color: var(--text-on-navy); }
+[data-module="product"] .pf-chip__count { font-size: var(--text-caption); opacity: 0.8; }
+
+/* Kanban: always the five columns of the mockup side by side; when the content area is narrower than that, the
+   board scrolls sideways inside its own region instead of wrapping a column onto a second row. */
+[data-module="product"] .pf-kanban-scroll { overflow-x: auto; padding-bottom: 4px; }
+[data-module="product"] .pf-kanban-scroll:focus-visible { outline: var(--focus-ring); }
+[data-module="product"] .pf-kanban { grid-template-columns: repeat(5, minmax(170px, 1fr)); min-width: calc(5 * 170px + 4 * 12px); }
+[data-module="product"] .pf-kanban .rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+[data-module="product"] .pf-kanban .kanban__card { min-width: 0; }
+[data-module="product"] .pf-kanban .kanban__card .btn { align-self: stretch; white-space: normal; text-align: center; }
+[data-module="product"] .pf-kanban .pill { align-self: flex-start; max-width: 100%; white-space: normal; }
+[data-module="product"] .pf-progress { display: block; height: 6px; background: var(--track); border-radius: var(--radius-full); overflow: hidden; }
+[data-module="product"] .pf-progress > span { display: block; height: 6px; background: var(--blue-600); border-radius: var(--radius-full); transition: width 0.3s ease; }
+
+/* Top signals: labelled bars */
+[data-module="product"] .pf-bars { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+[data-module="product"] .pf-bars li { display: grid; grid-template-columns: minmax(0, 11rem) 1fr auto; align-items: center; gap: 10px; font-size: var(--text-small); }
+[data-module="product"] .pf-bars__track { height: 8px; background: var(--track); border-radius: var(--radius-full); overflow: hidden; }
+[data-module="product"] .pf-bars__track > span { display: block; height: 8px; background: var(--navy-900); border-radius: var(--radius-full); }
+[data-module="product"] .pf-bars__value { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 600; }
+
+/* Roadmap: one row per item, one bar per stage span across the quarter */
+[data-module="product"] .pf-roadmap { display: flex; flex-direction: column; gap: 10px; }
+[data-module="product"] .pf-roadmap__months { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; margin-left: 13rem; margin-right: 8rem; font-size: var(--text-caption); color: var(--text-subtle); }
+[data-module="product"] .pf-roadmap--compact .pf-roadmap__months { margin-left: 5rem; margin-right: 0; }
+[data-module="product"] .pf-roadmap__rows { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+[data-module="product"] .pf-roadmap__row { display: grid; grid-template-columns: 13rem 1fr 8rem; align-items: center; gap: 0; font-size: var(--text-small); }
+[data-module="product"] .pf-roadmap--compact .pf-roadmap__row { grid-template-columns: 5rem 1fr; }
+[data-module="product"] .pf-roadmap__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px; }
+[data-module="product"] .pf-roadmap__track { position: relative; height: 14px; background: var(--surface-inset); border-radius: var(--radius-full); }
+[data-module="product"] .pf-roadmap__now { padding-left: 10px; color: var(--text-muted); font-size: var(--text-caption); }
+[data-module="product"] .pf-roadmap__track .pf-span { position: absolute; top: 2px; height: 10px; border-radius: var(--radius-full); }
+[data-module="product"] .pf-span { display: inline-block; width: 14px; height: 10px; border-radius: var(--radius-full); background: var(--text-subtle); }
+[data-module="product"] .pf-span--product { background: var(--navy-900); }
+[data-module="product"] .pf-span--architecture { background: var(--blue-600); }
+[data-module="product"] .pf-span--ux { background: var(--success-700); }
+[data-module="product"] .pf-span--ui { background: var(--warning-600); }
+[data-module="product"] .pf-span--build { background: var(--text-subtle); }
+[data-module="product"] .pf-span--current { outline: 2px solid var(--navy-900); outline-offset: 1px; }
+[data-module="product"] .pf-legend { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 16px; font-size: var(--text-caption); color: var(--text-muted); }
+[data-module="product"] .pf-legend li { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Forms and messages */
+[data-module="product"] .pf-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: var(--gap-grid); }
+[data-module="product"] .pf-form label { display: flex; flex-direction: column; gap: 6px; font-size: var(--text-small); color: var(--text); font-weight: 500; }
+[data-module="product"] .pf-form :is(input, select, textarea) { font: inherit; font-weight: 400; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-row); background: var(--surface-card); color: var(--text); min-height: var(--control-min); }
+[data-module="product"] .pf-form :is(input, select, textarea):focus-visible { outline: var(--focus-ring); }
+[data-module="product"] .pf-form--inline { margin: 12px 0 0; width: 100%; }
+[data-module="product"] .pf-message { margin: 0 0 12px; font-size: var(--text-small); min-height: 1px; }
+[data-module="product"] .pf-message:empty { margin: 0; }
+[data-module="product"] .pf-message--success { color: var(--success-700); }
+[data-module="product"] .pf-message--warning { color: var(--warning-700); }
+[data-module="product"] .pf-message--error { color: var(--danger-700); }
+
+/* Spec detail: body and side rail */
+[data-module="product"] .pf-pills { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 16px; }
+[data-module="product"] .pf-cost { font-size: var(--text-caption); color: var(--text-muted); }
+[data-module="product"] .pf-draft { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; margin-bottom: 16px; background: var(--blue-50); border: 1px solid var(--blue-100); border-radius: var(--radius-row); font-size: var(--text-small); color: var(--blue-700); }
+/* Body and rail side by side when there is room for both (the body at least 440px), stacked otherwise. Wrapping
+   follows the content area's own width, which the chat panel and the sidebar change, not the viewport's. */
+[data-module="product"] .pf-columns { display: flex; flex-wrap: wrap; gap: var(--gap-grid); align-items: flex-start; }
+[data-module="product"] .pf-columns > .pf-body { flex: 999 1 440px; min-width: 0; }
+[data-module="product"] .pf-columns > .pf-rail { flex: 1 1 280px; min-width: 0; }
+[data-module="product"] .pf-rail { display: flex; flex-direction: column; gap: var(--gap-grid); }
+[data-module="product"] .pf-body { display: flex; flex-direction: column; gap: 28px; }
+[data-module="product"] .pf-section { display: flex; flex-direction: column; gap: 10px; }
+[data-module="product"] .pf-section__title { font-size: var(--text-card-title); color: var(--navy-900); }
+[data-module="product"] .pf-section p { margin: 0; color: var(--text-body); line-height: 1.6; max-width: 72ch; }
+[data-module="product"] .pf-pre { white-space: pre-line; }
+[data-module="product"] .pf-list, [data-module="product"] .pf-criteria { margin: 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 8px; line-height: 1.6; }
+[data-module="product"] .pf-criteria strong { color: var(--navy-900); }
+[data-module="product"] .pf-decision { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; max-width: 520px; }
+[data-module="product"] .pf-tracker { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+[data-module="product"] .pf-tracker__step { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: var(--text-small); color: var(--text-subtle); }
+[data-module="product"] .pf-tracker__dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--border-strong); flex: none; }
+[data-module="product"] .pf-tracker__step--done { color: var(--text-muted); }
+[data-module="product"] .pf-tracker__step--done .pf-tracker__dot { background: var(--success-700); border-color: var(--success-700); }
+[data-module="product"] .pf-tracker__step--current { color: var(--navy-900); font-weight: 600; }
+[data-module="product"] .pf-tracker__step--current .pf-tracker__dot { background: var(--blue-600); border-color: var(--blue-600); }
+[data-module="product"] .pf-links { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+[data-module="product"] .pf-links li { display: flex; flex-direction: column; gap: 2px; }
+[data-module="product"] .pf-links__title { font-size: var(--text-small); color: var(--text); font-weight: 500; }
+[data-module="product"] .pf-links__meta { font-size: var(--text-caption); color: var(--text-subtle); }
+[data-module="product"] .pf-links .pf-reviewer { flex-direction: row; justify-content: space-between; align-items: center; gap: 8px; }
+[data-module="product"] .pf-reviewer > span:first-child { display: flex; flex-direction: column; gap: 2px; }
+
+@media (max-width: 960px) {
+  [data-module="product"] .pf-decision { justify-content: flex-start; }
+  [data-module="product"] .pf-roadmap__row { grid-template-columns: 6rem 1fr; }
+  [data-module="product"] .pf-roadmap__now { display: none; }
+  [data-module="product"] .pf-roadmap__months { margin-left: 6rem; margin-right: 0; }
+}
+
+/* Architecture: the container view in layers (callers first), its legend, decisions */
+[data-module="product"] .pf-diagram { display: flex; flex-direction: column; gap: 16px; }
+[data-module="product"] .pf-layers { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+[data-module="product"] .pf-layer + .pf-layer { padding-top: 14px; border-top: 1px dashed var(--border); }
+[data-module="product"] .pf-layer__nodes { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+[data-module="product"] .pf-node { display: flex; flex-direction: column; gap: 4px; flex: 1 1 160px; max-width: 260px; padding: 12px 14px; border-radius: var(--radius-row); border: 1px solid var(--border-strong); background: var(--surface-card); }
+[data-module="product"] .pf-node--new { border: 2px solid var(--blue-600); background: var(--blue-50); }
+[data-module="product"] .pf-node--external { border-style: dashed; background: var(--surface-inset); }
+[data-module="product"] .pf-node--database, [data-module="product"] .pf-node--queue { border-radius: 14px; }
+[data-module="product"] .pf-node__label { font-weight: 600; color: var(--navy-900); font-size: var(--text-small); }
+[data-module="product"] .pf-node__meta { font-size: var(--text-caption); color: var(--text-muted); }
+[data-module="product"] .pf-node__status { font-size: var(--text-caption); color: var(--text-subtle); }
+[data-module="product"] .pf-node--new .pf-node__status { color: var(--blue-700); font-weight: 600; }
+[data-module="product"] .pf-node-key { display: inline-block; width: 14px; height: 10px; border-radius: 3px; border: 1px solid var(--border-strong); background: var(--surface-card); }
+[data-module="product"] .pf-node-key--new { border: 2px solid var(--blue-600); background: var(--blue-50); }
+[data-module="product"] .pf-node-key--external { border-style: dashed; background: var(--surface-inset); }
+[data-module="product"] .pf-edges { list-style: none; padding: 8px 0 0; margin: 0; display: flex; flex-direction: column; gap: 6px; font-size: var(--text-small); }
+[data-module="product"] .pf-edge__label { color: var(--text-muted); font-size: var(--text-caption); }
+[data-module="product"] .pf-details summary { cursor: pointer; font-size: var(--text-small); color: var(--navy-900); min-height: var(--control-min); display: flex; align-items: center; }
+[data-module="product"] .pf-provenance { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; font-size: var(--text-caption); color: var(--text-muted); }
+[data-module="product"] .pf-code textarea { font-family: var(--font-mono); font-size: var(--text-caption); line-height: 1.5; }
+[data-module="product"] .pf-adrs { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+[data-module="product"] .pf-adr { display: flex; flex-direction: column; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid var(--divider); }
+[data-module="product"] .pf-adr:last-child { border-bottom: 0; padding-bottom: 0; }
+[data-module="product"] .pf-adr__head { display: flex; align-items: center; gap: 8px; }
+[data-module="product"] .pf-adr__id { font-size: var(--text-caption); font-weight: 600; color: var(--text-subtle); }
+[data-module="product"] .pf-adr__title { font-size: var(--text-small); font-weight: 600; color: var(--text); }
+[data-module="product"] .pf-adr__needs { font-size: var(--text-caption); color: var(--warning-700); }
+[data-module="product"] .pf-adr p { margin: 0; font-size: var(--text-small); color: var(--text-body); line-height: 1.5; }
+
+/* UX: journey grid, flow paths, research and questions */
+[data-module="product"] .pf-journey th[scope="row"] { color: var(--navy-900); font-weight: 600; white-space: nowrap; }
+[data-module="product"] .pf-journey td { min-width: 9rem; vertical-align: top; font-size: var(--text-small); }
+[data-module="product"] .pf-journey__pain { color: var(--danger-700); }
+[data-module="product"] .pf-journey__opportunity { color: var(--blue-700); }
+[data-module="product"] .pf-flow { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+[data-module="product"] .pf-flow__path { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+[data-module="product"] .pf-flow__node { padding: 8px 12px; border-radius: var(--radius-row); border: 1px solid var(--border-strong); background: var(--surface-card); font-size: var(--text-small); color: var(--text); }
+[data-module="product"] .pf-flow__node--decision { border: 2px solid var(--warning-600); background: var(--warning-100); font-weight: 600; border-radius: 18px; }
+[data-module="product"] .pf-flow__arrow { display: inline-flex; flex-direction: column; align-items: center; color: var(--text-subtle); font-size: var(--text-caption); }
+[data-module="product"] .pf-flow__branch { font-weight: 600; color: var(--warning-700); }
+[data-module="product"] .pf-study { display: flex; flex-direction: column; gap: 6px; }
+[data-module="product"] .pf-study__kind { font-size: var(--text-caption); color: var(--text-subtle); text-transform: uppercase; letter-spacing: var(--tracking-eyebrow); }
+[data-module="product"] .pf-study__headline { font-size: 28px; font-weight: 600; color: var(--navy-900); line-height: 1.1; }
+[data-module="product"] .pf-study__finding { margin: 0; font-size: var(--text-small); color: var(--text-body); }
+[data-module="product"] .pf-questions { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--gap-grid); }
+[data-module="product"] .pf-question { display: flex; flex-direction: column; gap: 8px; }
+[data-module="product"] .pf-question__text { font-size: var(--text-card-title); color: var(--navy-900); font-weight: 600; }
+
+/* UI design: screens in device frames, design system, handoff */
+[data-module="product"] .pf-gallery { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr)); }
+[data-module="product"] .pf-screen { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; min-width: 0; }
+[data-module="product"] .pf-phone { display: flex; flex-direction: column; gap: 6px; width: 100%; aspect-ratio: 9 / 16; padding: 22px 14px 14px; border: 8px solid var(--navy-900); border-radius: 26px; background: var(--surface-card); overflow: hidden; }
+[data-module="product"] .pf-phone--web, [data-module="product"] .pf-phone--store-console { aspect-ratio: 4 / 3; border-width: 6px; border-radius: 12px; }
+[data-module="product"] .pf-phone__line { font-size: 12px; color: var(--text-muted); padding: 6px 8px; border-radius: 8px; background: var(--surface-inset); overflow-wrap: anywhere; }
+[data-module="product"] .pf-phone__line--title { background: none; padding: 0; font-size: 14px; font-weight: 600; color: var(--navy-900); }
+[data-module="product"] .pf-screen__title { font-size: var(--text-small); font-weight: 600; color: var(--text); }
+[data-module="product"] .pf-ds { display: flex; flex-direction: column; gap: 6px; }
+[data-module="product"] .pf-handoff__title { margin: 0 0 10px; font-weight: 600; color: var(--navy-900); }
+
+/* The board's idea cards: Score it / Draft a spec, and the RICE form. */
+[data-module="product"] .pf-card-actions { display: flex; flex-direction: column; gap: 8px; }
+/* Fields in a row line up: each label on one line, its box under it, and any hint under the box. */
+[data-module="product"] .pf-form__row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: start; }
+[data-module="product"] .pf-hint { font-size: var(--text-eyebrow); font-weight: 400; color: var(--text-muted); }
+[data-module="product"] .pf-rice-score { margin: 0; font-weight: 600; color: var(--navy-900); }
+
+/* Portfolios and products: labels that are pressed to choose, or typed and added (pages/portfolios.js) */
+[data-module="product"] .pf-chips__divider { width: 1px; align-self: stretch; background: var(--divider); margin: 0 4px; }
+[data-module="product"] .pf-chips--sub { margin-top: -8px; align-items: center; }
+[data-module="product"] .pf-chips__label { font-size: var(--text-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-right: 4px; }
+[data-module="product"] .pf-labels { border: 0; margin: 0; padding: 0; min-width: 0; }
+[data-module="product"] .pf-labels legend { padding: 0; margin-bottom: 6px; font-size: var(--text-small); font-weight: 500; color: var(--text); }
+[data-module="product"] .pf-labels__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+[data-module="product"] .pf-labels > .actions { margin-top: 16px; }
+[data-module="product"] button.pf-label { cursor: pointer; font: inherit; font-size: var(--text-small); }
+[data-module="product"] button.pf-label:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+[data-module="product"] .pf-label-add { display: inline-flex; gap: 6px; align-items: center; flex: 1 1 220px; max-width: 340px; }
+[data-module="product"] .pf-label-add input { flex: 1 1 auto; min-width: 0; font: inherit; font-size: var(--text-small); padding: 0 12px; min-height: var(--control-min); border: 1px dashed var(--border-strong); border-radius: var(--radius-full); background: var(--surface-card); color: var(--text); }
+/* An "add" box on its own row (the Portfolios page): as wide as the label row allows, never stretched tall. */
+[data-module="product"] .pf-adder { display: flex; }
+[data-module="product"] .pf-adder .pf-label-add { flex: 0 1 380px; max-width: 100%; }
+[data-module="product"] .pf-label-add input:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+[data-module="product"] .pf-portfolios { margin-bottom: var(--gap-grid); gap: 14px; }
+[data-module="product"] .pf-portfolio { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--divider); }
+[data-module="product"] .pf-portfolio__name { margin: 0; font-size: var(--text-small); font-weight: 600; color: var(--navy-900); }
+[data-module="product"] .pf-edit { margin: 4px 0 0; padding: 16px; border: 1px solid var(--border-strong); border-radius: var(--radius-tile); background: var(--surface-inset); }
+
+/* Where a product is built (NooblyJS Phase 11): its repositories and Jira project, under its name */
+[data-module="product"] .pf-label__where { font-size: var(--text-caption); color: var(--text-muted); font-weight: 400; }
+[data-module="product"] .pf-label__where::before { content: "· "; }
+[data-module="product"] .pf-chip--on .pf-label__where { color: inherit; }
+
+/* Architecture · Repositories tab (NooblyJS Phase 11): the item's repositories, and a search to add more */
+[data-module="product"] .pf-repos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+[data-module="product"] .pf-repo { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--divider); }
+[data-module="product"] .pf-repo:first-child { border-top: 0; }
+[data-module="product"] .pf-repo__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+[data-module="product"] .pf-repo__name { font-weight: 500; color: var(--navy-900); }
+[data-module="product"] .pf-search { display: flex; flex-direction: column; gap: 6px; font-size: var(--text-small); font-weight: 500; max-width: 520px; }
+[data-module="product"] .pf-search input { font: inherit; font-weight: 400; min-height: var(--control-min); padding: 0 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-full); background: var(--surface-card); color: var(--text); }
+[data-module="product"] .pf-search input:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* Architecture · Knowledge tab: linked files and folders with a note on what each is for */
+[data-module="product"] .pf-know__said { font-size: var(--text-small); color: var(--text); }
+[data-module="product"] .pf-know__note { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+[data-module="product"] .pf-know__note label { display: flex; flex-direction: column; gap: 6px; font-size: var(--text-small); font-weight: 500; }
+[data-module="product"] .pf-know__note input { font: inherit; font-weight: 400; min-height: var(--control-min); padding: 0 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-tile, 12px); }
+[data-module="product"] .pf-know__fields { display: flex; flex-wrap: wrap; gap: 16px; }
+[data-module="product"] .pf-know__fields .pf-search { flex: 1 1 280px; }
+[data-module="product"] .pf-know__group { margin: 12px 0 0; font-size: var(--text-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+[data-module="product"] .pf-know .actions { flex-wrap: nowrap; }

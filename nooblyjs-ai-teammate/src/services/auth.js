@@ -37,7 +37,7 @@ export const PERMISSION_FOR_ROLE = { viewer: 'read', manager: 'approve', owner: 
 
 /**
  * The Teammates role for a NooblyJS access role (Viewer, Contributor, Approver, Architect, Owner). Owners own; Approvers
- * and Architects manage (give work, approve timesheets); Contributors and Viewers look. [CONFIRM] (NOOBLY.md)
+ * and Architects manage (give work, approve timesheets); Contributors and Viewers look. [CONFIRM] (nooblyjs-ai.md)
  */
 export function roleFromAccess(accessRole = '') {
   const role = String(accessRole).toLowerCase();

@@ -1,0 +1,41 @@
+# Items across the quarter with the span each stage takes. Sample data from the PRD-031 seed story.
+quarter: 2026-Q4
+from: 2026-10-01
+to: 2026-12-31
+items:
+  - id: PRD-025
+    spans:
+      - { stage: product, from: 2026-09-07, to: 2026-09-30 }
+      - { stage: architecture, from: 2026-10-01, to: 2026-10-23 }
+      - { stage: ux, from: 2026-10-26, to: 2026-11-13 }
+      - { stage: ui, from: 2026-11-16, to: 2026-12-04 }
+      - { stage: build, from: 2026-12-07, to: 2026-12-23 }
+  - id: PRD-027
+    spans:
+      - { stage: product, from: 2026-09-14, to: 2026-10-07 }
+      - { stage: architecture, from: 2026-10-08, to: 2026-10-30 }
+      - { stage: ux, from: 2026-11-02, to: 2026-11-20 }
+      - { stage: ui, from: 2026-11-23, to: 2026-12-11 }
+  - id: PRD-029
+    spans:
+      - { stage: product, from: 2026-09-21, to: 2026-10-16 }
+      - { stage: architecture, from: 2026-10-19, to: 2026-11-06 }
+      - { stage: ui, from: 2026-11-09, to: 2026-11-27 }
+      - { stage: build, from: 2026-11-30, to: 2026-12-18 }
+  - id: PRD-031
+    spans:
+      - { stage: product, from: 2026-10-01, to: 2026-10-16 }
+      - { stage: architecture, from: 2026-10-19, to: 2026-11-06 }
+      - { stage: ux, from: 2026-11-09, to: 2026-11-20 }
+      - { stage: ui, from: 2026-11-23, to: 2026-12-04 }
+      - { stage: build, from: 2026-12-07, to: 2026-12-23 }
+  - id: PRD-032
+    spans:
+      - { stage: product, from: 2026-10-05, to: 2026-10-23 }
+      - { stage: architecture, from: 2026-10-26, to: 2026-11-06 }
+      - { stage: build, from: 2026-11-09, to: 2026-11-27 }
+  - id: PRD-030
+    spans:
+      - { stage: product, from: 2026-10-12, to: 2026-11-06 }
+      - { stage: architecture, from: 2026-11-09, to: 2026-11-27 }
+      - { stage: ux, from: 2026-11-30, to: 2026-12-18 }

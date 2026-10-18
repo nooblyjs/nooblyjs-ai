@@ -1,0 +1,6 @@
+# The building blocks infrastructure code may use. A design that names anything else fails a policy check.
+blueprints:
+  - { name: node-service, version: 3, approved: true, summary: "A container app with autoscaling, an identity and standard alarms" }
+  - { name: node-service, version: 2, approved: false, summary: "Retired: no zone redundancy" }
+  - { name: redis, version: 2, approved: true, summary: "A managed Redis cache, encrypted, optionally zone-redundant" }
+  - { name: scheduled-job, version: 1, approved: true, summary: "A job on a timer, with the same identity model" }

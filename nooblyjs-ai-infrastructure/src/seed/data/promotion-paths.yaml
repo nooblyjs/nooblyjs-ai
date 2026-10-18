@@ -1,0 +1,7 @@
+# The path a build takes, per product. `service` is the one whose version each tile shows.
+products:
+  slots:
+    label: slots
+    service: api
+    environments: { dev: dev-slots, test: test-slots, staging: staging, production: prod }
+    release: { name: Slots 1.0, approvers: 2 }

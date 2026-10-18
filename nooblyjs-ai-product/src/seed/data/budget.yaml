@@ -1,0 +1,3 @@
+# The Product Factory's monthly agent budget, for development. When the platform shares its budgets
+# (NooblyJS Phase 9), that one is used instead. Sample figure from the PRD-031 seed story.
+monthlyUsd: 1500

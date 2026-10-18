@@ -1,0 +1,27 @@
+---
+at: 2026-09-30T15:10:00.000Z
+itemId: PRD-025
+kind: handoff
+from: product
+to: architecture
+by: thabo-n
+note: Spec approved by Lerato M. and Thabo N.
+sampleData: true
+---
+at: 2026-10-03T10:00:00.000Z
+itemId: PRD-029
+kind: sent-back
+from: product
+to: product
+by: lerato-m
+reason: Add the keyboard-only acceptance criteria
+sampleData: true
+---
+at: 2026-10-07T11:05:00.000Z
+itemId: PRD-027
+kind: handoff
+from: product
+to: architecture
+by: stevie
+note: Spec approved by Lerato M. and Stevie
+sampleData: true

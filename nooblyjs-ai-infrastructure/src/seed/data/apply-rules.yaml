@@ -1,0 +1,15 @@
+# Who may apply a design to each kind of environment (product.md §1).
+#   automatic  applies the latest design version once its policy checks pass, with no approval
+#   approval   a person with the permission below approves that version for that kind
+#   release    never from here: Production only changes through a release
+kinds:
+  preview: automatic
+  dev: automatic
+  test: approval
+  staging: approval
+  production: release
+approval:
+  role: Platform owner
+  permission: change-repo-access   # [CONFIRM] which access role is the platform owner
+release:
+  approvers: 2

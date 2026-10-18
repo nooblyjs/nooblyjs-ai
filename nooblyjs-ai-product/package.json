@@ -1,0 +1,37 @@
+{
+  "name": "nooblyjs-ai-product",
+  "version": "0.1.0",
+  "description": "The Product Factory engine: a NooblyJS hosted app (API only, at /product/api/v1) that owns the product artefacts and the drafting agents that produce them.",
+  "homepage": "https://bitbucket.org/acme/nooblyjs-ai-product#readme",
+  "bugs": {
+    "url": "https://bitbucket.org/acme/nooblyjs-ai-product/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/acme/nooblyjs-ai-product.git"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "test": "node --test --test-timeout=20000 \"test/**/*.test.js\"",
+    "seed": "node --env-file-if-exists=.env server.js --seed"
+  },
+  "dependencies": {
+    "nooblyjs-ai-common": "file:../nooblyjs-ai-common",
+    "nooblyjs-ai-harness": "file:../nooblyjs-ai-harness",
+    "nooblyjs-core": "file:../../nooblyjs-core",
+    "js-yaml": "^4.3.2"
+  },
+  "devDependencies": {
+    "express": "^5.2.1"
+  }
+}

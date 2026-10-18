@@ -38,7 +38,8 @@ export const RULES = [
   [/\.kiro\//g, '.claude/'],
   [/\.kiro\b/g, '.claude'],
   // The harness's project memory file (like CLAUDE.md).
-  [/\bengx\.md\b/g, 'NOOBLY.md'],
+  // Only as a file name (`engx.md`, ../engx.md, 'engx.md'): in code, `engx.md` can be a property of a variable.
+  [/(?<=[`/@'"(])engx\.md\b/g, 'NOOBLY.md'],
   // Environment variables.
   [/\bEngX_API_KEYS\b/g, 'NOOBLYJS_API_KEYS'],
   [/\bENGX_/g, 'NOOBLY_'],

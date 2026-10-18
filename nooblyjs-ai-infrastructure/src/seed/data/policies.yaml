@@ -1,0 +1,11 @@
+# Checked on every design version and before every apply. `blocks` refuses an approval; `warns` is shown in words.
+policies:
+  - { id: in-region, label: Customer data stays in-region, severity: blocks, enabled: true }
+  - { id: encrypted, label: Encrypted at rest and in transit, severity: blocks, enabled: true }
+  - { id: approved-blueprints, label: Only approved blueprints used, severity: blocks, enabled: true }
+  - { id: fits-budget, label: Fits the Delivery squad budget, failLabel: Over the Delivery squad budget, severity: blocks, enabled: true }
+  - id: default-tier
+    label: Cache tier within the default
+    severity: warns
+    enabled: true
+    cacheGb: { preview: 1, dev: 1, test: 0.5, staging: 1, production: 2 }

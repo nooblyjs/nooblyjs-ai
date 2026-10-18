@@ -1,0 +1,155 @@
+/* Infrastructure's own styles: only what the shared UI kit doesn't cover. Every selector is scoped to the frame's
+   content area for this app ([data-module="infrastructure"]), and only the kit's tokens are used, so the pages
+   look like the rest of NooblyJS. Values come from the mockups in .claude/steering/ui/. */
+
+/* The hidden attribute always wins over a display rule below (forms are shown on demand). */
+[data-module="infrastructure"] [hidden] { display: none !important; }
+
+/* ---- Small pieces ---- */
+[data-module="infrastructure"] .inf-mono { font-family: var(--font-mono); font-weight: 500; }
+[data-module="infrastructure"] .inf-muted { color: var(--text-subtle); font-size: var(--text-small); }
+[data-module="infrastructure"] .inf-note { color: var(--text-subtle); font-size: var(--text-eyebrow); line-height: 1.5; }
+[data-module="infrastructure"] .inf-sub { display: block; font-size: var(--text-eyebrow); color: var(--text-subtle); margin-top: 2px; }
+[data-module="infrastructure"] .inf-stack { display: flex; flex-direction: column; gap: var(--gap-grid); }
+[data-module="infrastructure"] .inf-env { color: var(--navy-900); }
+[data-module="infrastructure"] .inf-title { font-size: 44px; line-height: 1.08; }
+[data-module="infrastructure"] .inf-why { margin-top: -20px; }
+
+/* Tones: the words carry the meaning, the colour repeats it. */
+[data-module="infrastructure"] .inf-tone--neutral { color: var(--text-muted); }
+[data-module="infrastructure"] .inf-tone--info { color: var(--blue-700); }
+[data-module="infrastructure"] .inf-tone--success { color: var(--success-700); }
+[data-module="infrastructure"] .inf-tone--warning { color: var(--warning-700); }
+[data-module="infrastructure"] .inf-tone--danger { color: var(--danger-700); }
+
+/* The aria-live line that says what an action did */
+[data-module="infrastructure"] .inf-message { padding: 12px 16px; border-radius: var(--radius-row); font-size: var(--text-small); background: var(--blue-50); color: var(--blue-700); }
+[data-module="infrastructure"] .inf-message:empty { display: none; }
+[data-module="infrastructure"] .inf-message--success { background: var(--success-100); color: var(--success-700); }
+[data-module="infrastructure"] .inf-message--error { background: var(--danger-100); color: var(--danger-700); }
+
+/* Breadcrumb and the line of pills under a title */
+[data-module="infrastructure"] .inf-crumbs { display: flex; flex-wrap: wrap; gap: 8px; font-size: var(--text-small); color: var(--text-subtle); margin-bottom: -16px; }
+[data-module="infrastructure"] .inf-crumbs [aria-current] { color: var(--navy-900); }
+[data-module="infrastructure"] .inf-meta { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: var(--text-caption); }
+[data-module="infrastructure"] .page-head + .inf-meta { margin-top: -20px; }
+
+/* A native progress bar with its words: "Provisioning · 70%" */
+[data-module="infrastructure"] .inf-progress { display: flex; flex-direction: column; gap: 4px; min-width: 7rem; }
+[data-module="infrastructure"] .inf-progress progress { appearance: none; width: 100%; height: 5px; border: 0; border-radius: var(--radius-full); background: var(--track); overflow: hidden; }
+[data-module="infrastructure"] .inf-progress progress::-webkit-progress-bar { background: var(--track); border-radius: var(--radius-full); }
+[data-module="infrastructure"] .inf-progress progress::-webkit-progress-value { background: var(--blue-600); border-radius: var(--radius-full); }
+[data-module="infrastructure"] .inf-progress progress::-moz-progress-bar { background: var(--blue-600); border-radius: var(--radius-full); }
+
+/* ---- Two columns that stack on a narrow screen (the mockups' 3 : 2 split) ---- */
+[data-module="infrastructure"] .inf-split { display: flex; flex-wrap: wrap; gap: var(--gap-grid); align-items: flex-start; }
+[data-module="infrastructure"] .inf-split__main { flex: 2 1 600px; min-width: 0; }
+[data-module="infrastructure"] .inf-split__side { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: var(--gap-grid); }
+
+/* ---- Promotion path ---- */
+[data-module="infrastructure"] .inf-path { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 10px; }
+[data-module="infrastructure"] .inf-tile { display: flex; flex-direction: column; gap: 8px; height: 100%; padding: 16px; border-radius: var(--radius-tile); background: var(--surface-inset); border: 2px solid transparent; text-decoration: none; color: var(--text); }
+[data-module="infrastructure"] a.inf-tile:hover { border-color: var(--navy-900); background: var(--surface-card); }
+[data-module="infrastructure"] .inf-tile__kind { font-size: var(--text-eyebrow); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); }
+[data-module="infrastructure"] .inf-tile__value { font-size: 18px; font-weight: 600; color: var(--navy-900); }
+[data-module="infrastructure"] .inf-tile__line { font-size: var(--text-caption); }
+[data-module="infrastructure"] .inf-tile--production { background: var(--navy-900); }
+[data-module="infrastructure"] .inf-tile--production .inf-tile__kind { color: var(--text-on-navy-muted); }
+[data-module="infrastructure"] .inf-tile--production .inf-tile__value { color: var(--text-on-navy); }
+[data-module="infrastructure"] .inf-tile--production .inf-tile__line { color: var(--text-on-navy-muted); }
+[data-module="infrastructure"] a.inf-tile--production:hover { background: var(--navy-800); border-color: var(--navy-800); }
+
+/* ---- Needs attention (drift) ---- */
+[data-module="infrastructure"] .inf-attention { border: 2px solid var(--warning-600); gap: 10px; }
+[data-module="infrastructure"] .inf-attention .pill { align-self: flex-start; }
+[data-module="infrastructure"] .inf-attention__text { font-size: 16px; font-weight: 600; color: var(--navy-900); line-height: 1.4; }
+
+/* ---- The infrastructure agent ---- */
+[data-module="infrastructure"] .inf-agent { background: var(--navy-900); border-color: var(--navy-900); color: var(--text-on-navy); gap: 10px; }
+[data-module="infrastructure"] .inf-agent__head { display: flex; align-items: center; gap: 12px; }
+[data-module="infrastructure"] .inf-agent__name { font-size: var(--text-body); font-weight: 600; }
+[data-module="infrastructure"] .inf-agent__work { font-size: var(--text-caption); color: var(--text-on-navy-muted); }
+[data-module="infrastructure"] .inf-agent__about { font-size: var(--text-small); color: var(--text-on-navy-muted); line-height: 1.5; }
+
+/* ---- Design: built from ---- */
+[data-module="infrastructure"] .inf-built { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+[data-module="infrastructure"] .inf-chip { display: inline-flex; align-items: center; min-height: var(--control-min); padding: 0 14px; border-radius: var(--radius-full); background: var(--surface-card); border: 1px solid var(--border); color: var(--navy-900); font-size: var(--text-caption); text-decoration: none; }
+[data-module="infrastructure"] a.inf-chip:hover { border-color: var(--navy-900); }
+[data-module="infrastructure"] .inf-chip--plain { background: var(--track); border-color: transparent; color: var(--text-nav); }
+
+/* ---- Design: resources by layer ---- */
+[data-module="infrastructure"] .inf-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 14px; font-size: var(--text-eyebrow); color: var(--text-muted); }
+[data-module="infrastructure"] .inf-legend li { display: inline-flex; align-items: center; gap: 6px; }
+[data-module="infrastructure"] .inf-swatch { width: 12px; height: 12px; border-radius: 3px; }
+[data-module="infrastructure"] .inf-swatch--new { background: var(--navy-900); }
+[data-module="infrastructure"] .inf-swatch--changed { border: 2px solid var(--blue-600); }
+[data-module="infrastructure"] .inf-swatch--existing { border: 1px solid var(--text-subtle); }
+[data-module="infrastructure"] .inf-layers { margin: 0; display: grid; grid-template-columns: 110px 1fr; gap: 12px; }
+[data-module="infrastructure"] .inf-layers dt { font-size: var(--text-eyebrow); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); padding-top: 14px; }
+[data-module="infrastructure"] .inf-layers dd { margin: 0; min-width: 0; }
+[data-module="infrastructure"] .inf-resources { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 10px; }
+[data-module="infrastructure"] .inf-resource { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; border-radius: var(--radius-row); border: 1px solid var(--text-subtle); }
+[data-module="infrastructure"] .inf-resource__name { font-size: var(--text-small); font-weight: 600; color: var(--navy-900); }
+[data-module="infrastructure"] .inf-resource__detail { font-size: var(--text-eyebrow); color: var(--text-subtle); }
+[data-module="infrastructure"] .inf-resource--changed { border: 2px solid var(--blue-600); padding: 11px 13px; }
+[data-module="infrastructure"] .inf-resource--new { background: var(--navy-900); border-color: var(--navy-900); }
+[data-module="infrastructure"] .inf-resource--new .inf-resource__name { color: var(--text-on-navy); }
+[data-module="infrastructure"] .inf-resource--new .inf-resource__detail { color: var(--text-on-navy-muted); }
+
+/* ---- Design: the generated code ---- */
+[data-module="infrastructure"] .inf-code { background: var(--navy-900); border-color: var(--navy-900); gap: 12px; }
+[data-module="infrastructure"] .inf-code .card__title { font-size: 16px; color: var(--text-on-navy); }
+[data-module="infrastructure"] .inf-code .card__meta { color: var(--text-on-navy-muted); }
+[data-module="infrastructure"] .inf-code pre { margin: 0; overflow-x: auto; font-family: var(--font-mono); font-size: var(--text-caption); line-height: 1.6; color: var(--text-on-navy); white-space: pre; }
+[data-module="infrastructure"] .inf-code pre:focus-visible { outline: 3px solid var(--text-on-navy); outline-offset: 4px; }
+
+/* ---- Design: plan, cost, checks, approvals (the side cards use the mockup's smaller title) ---- */
+[data-module="infrastructure"] .inf-split__side .card { padding: 22px; gap: 12px; }
+[data-module="infrastructure"] .inf-split__side .card__title { font-size: 16px; }
+[data-module="infrastructure"] .inf-plan { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+[data-module="infrastructure"] .inf-plan__n { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: var(--radius-row); background: var(--surface-inset); text-align: center; font-size: var(--text-eyebrow); color: var(--text-subtle); }
+[data-module="infrastructure"] .inf-plan__n strong { font-size: 22px; font-weight: 600; color: var(--navy-900); }
+[data-module="infrastructure"] .inf-plan__n--add { background: var(--success-100); color: var(--success-700); }
+[data-module="infrastructure"] .inf-plan__n--add strong { color: var(--success-700); }
+[data-module="infrastructure"] .inf-plan__n--change { background: var(--blue-100); color: var(--blue-700); }
+[data-module="infrastructure"] .inf-plan__n--change strong { color: var(--blue-700); }
+[data-module="infrastructure"] .inf-costs { list-style: none; margin: 0; padding: 0; }
+[data-module="infrastructure"] .inf-costs li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--divider); font-size: var(--text-small); }
+[data-module="infrastructure"] .inf-costs__current { font-weight: 600; color: var(--navy-900); }
+[data-module="infrastructure"] .inf-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: var(--text-small); }
+[data-module="infrastructure"] .inf-checks li { display: flex; gap: 10px; align-items: center; }
+[data-module="infrastructure"] .inf-checks .inf-tone--success span { color: var(--text); }
+[data-module="infrastructure"] .inf-checks svg { flex: none; }
+[data-module="infrastructure"] .inf-approvals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: var(--text-small); }
+[data-module="infrastructure"] .inf-approvals li { display: flex; align-items: center; gap: 10px; }
+[data-module="infrastructure"] .inf-approvals__who { flex: 1; min-width: 0; }
+
+/* ---- Tests in an environment ---- */
+[data-module="infrastructure"] .inf-suites { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; font-size: var(--text-small); }
+[data-module="infrastructure"] .inf-suites > li { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 10px 0; border-top: 1px solid var(--divider); }
+[data-module="infrastructure"] .inf-suite__name { font-family: var(--font-mono); font-weight: 500; color: var(--navy-900); min-width: 5rem; }
+[data-module="infrastructure"] .inf-suite__failing { flex-basis: 100%; margin: 0; padding-left: 18px; color: var(--warning-700); }
+
+/* ---- Forms (New environment, Request changes) ---- */
+[data-module="infrastructure"] .inf-form { gap: 14px; }
+[data-module="infrastructure"] .inf-form__row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px; }
+[data-module="infrastructure"] .inf-form label { display: flex; flex-direction: column; gap: 6px; font-size: var(--text-caption); color: var(--text-muted); }
+[data-module="infrastructure"] .inf-form input,
+[data-module="infrastructure"] .inf-form select,
+[data-module="infrastructure"] .inf-form textarea { min-height: var(--control-min); padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-row); background: var(--surface-card); font-size: var(--text-small); color: var(--text); }
+[data-module="infrastructure"] .inf-form textarea { resize: vertical; }
+
+@media (max-width: 640px) {
+  [data-module="infrastructure"] .inf-title { font-size: 32px; }
+  [data-module="infrastructure"] .inf-layers { grid-template-columns: 1fr; gap: 6px; }
+  [data-module="infrastructure"] .inf-layers dt { padding-top: 8px; }
+}
+
+/* Run detail: the log and the facts beside it */
+[data-module="infrastructure"] .inf-log { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow: auto; }
+[data-module="infrastructure"] .inf-log li { display: grid; grid-template-columns: max-content 1fr; gap: 14px; padding: 8px 0; border-top: 1px solid var(--divider); font-size: var(--text-small); }
+[data-module="infrastructure"] .inf-log li:first-child { border-top: 0; }
+[data-module="infrastructure"] .inf-log:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+[data-module="infrastructure"] .inf-facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; font-size: var(--text-small); }
+[data-module="infrastructure"] .inf-facts dt { color: var(--text-muted); }
+[data-module="infrastructure"] .inf-facts dd { margin: 0; overflow-wrap: anywhere; }

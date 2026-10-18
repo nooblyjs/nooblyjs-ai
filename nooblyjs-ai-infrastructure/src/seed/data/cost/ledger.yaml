@@ -1,0 +1,8 @@
+---
+{ at: "{{month-start}}", kind: staging, usd: 1230, note: month to date }
+---
+{ at: "{{month-start}}", kind: test, usd: 540, note: month to date }
+---
+{ at: "{{month-start}}", kind: dev, usd: 270, note: month to date }
+---
+{ at: "{{month-start}}", kind: preview, usd: 100, note: month to date }
