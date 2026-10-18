@@ -1,0 +1,3 @@
+# path-substring:regex pairs the check.sh gate ignores (with a reason each).
+scripts/migrate/:.*
+.claude/steering/migration-plan.md:.*
