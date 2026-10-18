@@ -20,7 +20,7 @@ A **harness** runs *one* agent, in *one* conversation, with a human at the keybo
 The product has the same two equal goals as the harness:
 
 1. **Learning**: understand how industry-leading agentic software factories work by building one from first principles.
-2. **Utility**: by the end of the roadmap, the factory can take real issues in the `nooblyjs-*` repos (including its own and the harness) and produce PRs a human is happy to merge.
+2. **Utility**: by the end of the roadmap, the factory can take real issues in the `NooblyJS-*` repos (including its own and the harness) and produce PRs a human is happy to merge.
 
 ## 2. Problem statement
 
@@ -294,7 +294,7 @@ The factory is the harness's most demanding client. These are the capabilities i
 
 | Metric | Target (end of M5) |
 |---|---|
-| Factory bench resolve rate (≥ 20 cases from `nooblyjs-*` history, 3 repeats) | ≥ 60% |
+| Factory bench resolve rate (≥ 20 cases from `NooblyJS-*` history, 3 repeats) | ≥ 60% |
 | First-pass deterministic gate rate | ≥ 50% |
 | PRs merged without human code edits (real use, 4 weeks) | ≥ 50% |
 | Median cost per merged PR | ≤ $3 |

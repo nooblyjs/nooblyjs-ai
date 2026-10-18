@@ -4,7 +4,7 @@
 
 ---
 
-## Part 1: notifications (`src/notify/`)
+## Part 1: notifications (`src/services/notify/`)
 
 ### What's worth a ping
 
@@ -73,7 +73,7 @@ Draft PR: …/prs/issue-1.md
 
 Every ping says **what to do next** (`factory inbox …`, `factory logs …`).
 
-## Part 2: chatops (`src/forge/github/commands.js`)
+## Part 2: chatops (`src/services/forge/github/commands.js`)
 
 Comment on a GitHub issue or PR:
 
@@ -108,13 +108,13 @@ Which run does a comment mean? The newest run for that issue's item, or whose PR
 
 | File | What it does |
 |---|---|
-| `src/notify/messages.js` | event → notification (or nothing); formats for slack, discord, json |
-| `src/notify/notifier.js` | follow the log from a cursor; filters; batches; retries |
-| `src/commands/notify.js` | `factory notify test \| once` |
-| `src/scheduler/scheduler.js` | `budget.exceeded`, once a day per budget |
-| `src/forge/github/commands.js` | `parseCommand`, `parseComment`, `handleComment` |
-| `src/server/webhooks.js` | `issue_comment` → commands; replies posted once per delivery |
-| `src/commands/queue.js` | `serve` runs the notifier; the webhook server can reply |
+| `src/services/notify/messages.js` | event → notification (or nothing); formats for slack, discord, json |
+| `src/services/notify/notifier.js` | follow the log from a cursor; filters; batches; retries |
+| `src/controllers/cli/notify.js` | `factory notify test \| once` |
+| `src/services/scheduler/scheduler.js` | `budget.exceeded`, once a day per budget |
+| `src/services/forge/github/commands.js` | `parseCommand`, `parseComment`, `handleComment` |
+| `src/routes/webhooks.js` | `issue_comment` → commands; replies posted once per delivery |
+| `src/controllers/cli/queue.js` | `serve` runs the notifier; the webhook server can reply |
 
 ## What we learned
 

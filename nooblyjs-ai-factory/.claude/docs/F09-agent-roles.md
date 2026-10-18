@@ -100,8 +100,8 @@ What it **can't** show: whether the cheaper builder passes the gates as often. W
 | `src/roles/builtin/{triager,spec-writer,builder}.md` | The built-in roles (their prompts moved here from JavaScript) |
 | `src/roles/loader.js` | Load and layer roles; invariants; `render({{vars}})`; `agentOptionsFor` (role → harness options) |
 | `src/roles/prompts.js` | `rolePrompt`: steering → body → context → fenced issue |
-| `src/line/stations/common.js` | `agentFor(ctx, role, …)`: a role's agent, ready for `runStep` |
-| `src/line/executor.js` | Loads the run's roles once (built-in → repo at base → operator) |
+| `src/services/line/stations/common.js` | `agentFor(ctx, role, …)`: a role's agent, ready for `runStep` |
+| `src/services/line/executor.js` | Loads the run's roles once (built-in → repo at base → operator) |
 | `src/config/factory-config.js` | `models` (tiers) and `roles` (overrides) |
 
 ## Try it

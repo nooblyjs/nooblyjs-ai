@@ -45,7 +45,7 @@ export function commitFiles(dir, files, message = 'change') {
 
 /** Phase F11: a scripted reviewer that approves (for tests that run the default line to the end). */
 export async function approve(findings = []) {
-  const { createMockProvider } = await import('../src/harness.js');
+  const { createMockProvider } = await import('../src/services/harness.js');
   const verdict = findings.some((f) => f.severity === 'blocking') ? 'changes_requested' : 'approve';
   return createMockProvider([{ text: `\`\`\`json\n${JSON.stringify({ verdict, summary: 'Looks right.', findings })}\n\`\`\`` }]);
 }

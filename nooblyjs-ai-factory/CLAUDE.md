@@ -2,15 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-`factory` is an agentic software factory built on top of the `noobly` harness (`../nooblyjs-ai-harness`, linked as a `file:` dependency, so it must be checked out next to this repo). Shared AI building blocks (cost, tokens, frontmatter, SSE) come from `../nooblyjs-ai-common`, linked the same way. Issues go in; verified PRs come out. It's a learning project built one concept per phase (F00–F25). Each phase has a plain-language doc in `.claude/docs/` explaining what it adds and why. `.claude/docs/reference.md` lists every command, config key, repo file, env var, station, status, event and endpoint. The plan lives in `.claude/steering/` (PRD, Architecture, Roadmap). Architecture §20 and PRD §16 describe what was actually built.
+`factory` is an agentic software factory built on top of the `noobly` harness (`../nooblyjs-ai-harness`, linked as a `file:` dependency, so it must be checked out next to this repo). Shared AI building blocks (cost, tokens, frontmatter, SSE) come from `nooblyjs-ai-common` (`../nooblyjs-ai-common`, the AI module, linked the same way). Both are projects in the `nooblyjs-ai` monorepo. Issues go in; verified PRs come out. It's a learning project built one concept per phase (F00–F25). Each phase has a plain-language doc in `.claude/docs/` explaining what it adds and why. `.claude/docs/reference.md` lists every command, config key, repo file, env var, station, status, event and endpoint. The plan lives in `.claude/steering/` (PRD, Architecture, Roadmap). Architecture §20 and PRD §16 describe what was actually built.
+
+## Part of NooblyJS (read first)
+
+This repo is hosted by **NooblyJS** (`../nooblyjs-ai-host`) at `/factory`. Before changing how it starts, serves
+pages, signs people in, stores data, emits events or calls models, read
+`.claude/steering/nooblyjs-ai.md` (the shared rules, imported below: noobly owns them, and the full contract is `../nooblyjs-ai-host/.claude/steering/structure.md` §2a), `.claude/steering/tech.md` (this repo's values and how it differs) and
+`.claude/steering/structure.md` (this repo's layout as a hosted app). The source of truth is
+`../nooblyjs-ai-host/.claude/steering/structure.md` §2a. Where anything below conflicts with those, they win.
+
+@.claude/steering/nooblyjs-ai.md
 
 ## Commands
 
 ```bash
-npm install                                   # links ../nooblyjs-ai-harness and ../nooblyjs-ai-common
+npm install                                   # links ../nooblyjs-ai-harness and nooblyjs-ai-common (../nooblyjs-ai-common)
 npm test                                      # all tests: node --test "test/**/*.test.js" (offline)
-node --test test/line.test.js                 # one test file
-node --test --test-name-pattern="<regex>" test/line.test.js   # one test
+node --test test/services/line/line.test.js   # one test file
+node --test --test-name-pattern="<regex>" test/services/line/line.test.js   # one test
 npm run check:examples                        # run every documented example (examples/examples.txt) against a fresh demo repo
 node bin/factory.js --help                    # the CLI (also `npm start`)
 ```
@@ -30,21 +40,39 @@ One known flaky test: F05's multi-process database test fails about one full run
 
 ## Architecture
 
-- **The harness is the worker; the factory is the control plane.** Each agent step is a `noobly` session (in-process or subprocess driver, `src/exec/harness/`) running in its own git worktree with a per-step sandboxed harness home (`src/exec/workspace/`). The factory commits, pushes and decides. Agents never push and never see the factory's secrets (`src/security/agent-env.js`).
-- **The event log is the only source of truth** (`src/store/`). Every state change is appended as an event in SQLite (`$FACTORY_HOME/factory.db`, default `~/.factory`). Tables are projections derived from the log (`projections.js`), and `factory db rebuild` replays them. The dashboard, metrics, audit, notifications, retries and the learning loop all read from this log. Events can carry an idempotency `key`, and outside-world effects go through `performEffect` (`effects.js`).
-- **Lines are data** (`lines/*.json`): an ordered list of stations, each with a `kind`, an optional `when` condition (`src/line/conditions.js`) and `retries`. `src/line/engine.js` `decide(run, line)` is a pure function from the run's projected state to the next action. `executor.js` performs that action, records events, and asks again, so crash recovery just means calling `decide()` again. Station implementations live in `src/line/stations/`. In the engine's terms, a station that *throws* has failed and gets retried, while a station that returns a stop result (e.g. triage says the issue is unclear) is done.
-- **Stations build agents with `agentFor`** (`src/line/stations/common.js`), which applies roles (`src/roles/builtin/*.md`, overridable per repo and by the operator), model tiers, cost-aware routing (F22) and factory MCP tools (F16). Stations that change code run agents through `stepRunnerFor`, which lets them run on remote workers (F23). The core step is `src/exec/step-runner.js`: acquire workspace → cached setup → agent (with Stop hook) → gates → release.
-- **Deterministic checks decide.** The repo's gates (`.factory/config.json`), the scope guard, the test-tampering check (`src/review/tampering.js`) and the secret scan decide whether a PR is ready or draft. Model reviewers can add findings, but a model's verdict never passes a gate.
-- `src/cli.js` maps command names to `src/commands/*.js`. `src/forge/` is the PR target: a local forge under `$FACTORY_HOME/forge/` or GitHub. `src/server/` holds the HTTP API, dashboard, SSE, webhooks and the workers API.
+- **The harness is the worker; the factory is the control plane.** Each agent step is a `noobly` session (in-process or subprocess driver, `src/services/exec/harness/`) running in its own git worktree with a per-step sandboxed harness home (`src/services/exec/workspace/`). The factory commits, pushes and decides. Agents never push and never see the factory's secrets (`src/services/security/agent-env.js`).
+- **The event log is the only source of truth** (`src/models/store/`). Every state change is appended as an event to daily YAML streams (`$FACTORY_HOME/events/YYYY/MM/<day>.yaml`, default `~/.factory`; one event a line, `events/HEAD`, and a lock folder so several processes can append: `src/models/store/files.js`). There is no database. Tables are in-memory projections derived from the log (`projections.js`), rebuilt at start, and `factory db rebuild` replays them. Leases are in `leases.yaml` (`store.leases()`). The dashboard, metrics, audit, notifications, retries and the learning loop all read from this log. Events can carry an idempotency `key`, and outside-world effects go through `performEffect` (`effects.js`).
+- **Lines are data** (`lines/*.json`): an ordered list of stations, each with a `kind`, an optional `when` condition (`src/services/line/conditions.js`) and `retries`. `src/services/line/engine.js` `decide(run, line)` is a pure function from the run's projected state to the next action. `executor.js` performs that action, records events, and asks again, so crash recovery just means calling `decide()` again. Station implementations live in `src/services/line/stations/`. In the engine's terms, a station that *throws* has failed and gets retried, while a station that returns a stop result (e.g. triage says the issue is unclear) is done.
+- **Stations build agents with `agentFor`** (`src/services/line/stations/common.js`), which applies roles (`src/roles/builtin/*.md`, overridable per repo and by the operator), model tiers, cost-aware routing (F22) and factory MCP tools (F16). Stations that change code run agents through `stepRunnerFor`, which lets them run on remote workers (F23). The core step is `src/services/exec/step-runner.js`: acquire workspace → cached setup → agent (with Stop hook) → gates → release.
+- **Deterministic checks decide.** The repo's gates (`.factory/config.json`), the scope guard, the test-tampering check (`src/services/review/tampering.js`) and the secret scan decide whether a PR is ready or draft. Model reviewers can add findings, but a model's verdict never passes a gate.
+- **Hosted in NooblyJS (F26).** `register()` (`src/services/hosted.js`, exported from the root `index.js`) mounts the same API route table on the host's Express through `toExpressRouter` (`src/services/to-express.js`) at `/factory/api/v1`, behind the host's sign-in, permissions (`PERMISSIONS`: every write must name one) and audit. The pages are a UI module for NooblyJS's frame: `public/js/module.js`, `lib.js`, `parts.js`, `pages/`, and `public/css/factory.css` (every selector under `[data-module="factory"]`). `public/dashboard/` is still what `factory dashboard` serves. Hosted, the log lives in the `dataDir` NooblyJS passes (`../nooblyjs-ai-host/data/factory/`). **NooblyJS Phase 7:** hosted, the scheduler runs inside the NooblyJS process (`register()` starts it, `close()` stops it); `handoff.created` becomes issues and queued runs (`src/services/intake/handoff.js`, repositories from `repos.yaml`, `src/config/repos-map.js`); a run carries what it is for in NooblyJS (`request.noobly`) and its PR evidence shows the item's quality attributes against the repository's gates (`intake/attributes.js`: by gate name only, nothing from a row is run); `FACTORY_HOSTED=noobly` makes the merge station refuse; answering an escalation sends the run back to repair; `seed()` writes a demo repository and scripted agents (`intake/demo-repo.js`, `examples/noobly/`). The page head, pills, stat tiles and notices on the pages are the NooblyJS UI kit's components (`kit()` in `public/js/lib.js`).
+- `src/routes/cli.js` maps command names to `src/controllers/cli/*.js`. `src/services/forge/` is the PR target: a local forge under `$FACTORY_HOME/forge/` or GitHub. The HTTP side is split the same way: route tables in `src/routes/` (`api.js`, `workers.js`, `webhooks.js`, and `http.js`, the router), handlers in `src/controllers/`, token, body and static-file handling in `src/middleware/`. SSE is `src/services/sse.js`, and the dashboard page is `public/dashboard/`.
+
+### Layout
+
+`src/` holds only `config/ controllers/ middleware/ models/ roles/ routes/ services/ utils/`, the same folders as `nooblyjs-ai-teammate`. `test/` mirrors it (`test/services/line/fanout.test.js` tests `src/services/line/`). `test/structure.test.js` fails if a new top-level folder appears in either.
+
+| Folder | What goes there |
+| --- | --- |
+| `config/` | reading settings: the operator's `~/.factory/config.json`, the repo's `.factory/config.json`, harness settings |
+| `controllers/` | request handlers: the dashboard API, the worker API, GitHub webhooks, and `cli/` (one file per `factory` command) |
+| `middleware/` | what runs before a handler: tokens, size-capped bodies, static files |
+| `models/` | the event store (`store/`) and the data shapes read from it or from files: line, spec, issue, findings, inbox, workers |
+| `roles/` | the built-in roles and their loader |
+| `routes/` | route tables: which URL or command reaches which controller |
+| `services/` | everything else the factory does: the line, stations, exec, scheduler, forge, review, knowledge, MCP… |
+| `utils/` | small helpers with no factory knowledge: clock, ids, paths, log, glob, frontmatter |
+
+The library's exports are in the root `index.js` (`"main"`).
 
 ## Conventions
 
 - Node ≥ 24, ES modules, `// @ts-check` + JSDoc types.
 - **Core code uses Node built-ins only.** The harness is the only dependency. Adding a new dependency requires a line in Architecture §17.
-- **Import the harness only through `src/harness.js`**, and never copy harness code. Deep imports of harness internals are listed there.
+- **Import the harness only through `src/services/harness.js`**, and never copy harness code. Deep imports of harness internals are listed there.
 - Each file holds one concept and opens with a comment naming the phase that added it and explaining the idea in plain words. Keep modules under ~300 lines.
-- Anything that depends on time or randomness takes a `clock` (`src/util/clock.js`) so tests never wait.
-- A new event type needs a line in `describe()` (`src/commands/history.js`) and in the event list in `reference.md`.
+- Anything that depends on time or randomness takes a `clock` (`src/utils/clock.js`) so tests never wait.
+- A new event type needs a line in `describe()` (`src/controllers/cli/history.js`) and in the event list in `reference.md`.
 - Nothing is pushed without the secret scan. New secrets go in environment variables that config names, never in files.
 
 ## Tests

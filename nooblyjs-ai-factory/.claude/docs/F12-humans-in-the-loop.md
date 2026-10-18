@@ -15,7 +15,7 @@ A factory that asks about everything is a slow assistant. A factory that asks ab
 | **L2** gated | automatic | a person merges | bugs, chores in trusted repos |
 | **L3** autopilot | automatic | **the factory merges**, if green, no blocking findings, no protected paths | docs, dependency bumps |
 
-### Trust is the operator's to give (`src/humans/autonomy.js`)
+### Trust is the operator's to give (`src/services/humans/autonomy.js`)
 
 ```json
 { "autonomy": "L1", "repos": { "calc": { "autonomy": "L2" } } }      ← ~/.factory/config.json
@@ -23,7 +23,7 @@ A factory that asks about everything is a slow assistant. A factory that asks ab
 
 plus `factory run … --autonomy L2` (the operator again). An **issue** may only *lower* it, with a label like `autonomy:L0`: someone filing an issue, or a repo's own files, must never give the factory more freedom than the operator did. (It's the same shape as F09's role invariants: config can narrow, not widen.)
 
-## The approval station (`src/line/stations/approval.js`)
+## The approval station (`src/services/line/stations/approval.js`)
 
 ```
 triage → spec → APPROVE → build → verify → review → deliver → MERGE (L3 only)
@@ -59,7 +59,7 @@ Revise the spec to address the feedback. Keep what was right.
 
 The revised spec comes back to the same gate for approval. The PR ends up with both spec commits, so the history shows what changed and why.
 
-## The inbox (`src/humans/inbox.js`, `factory inbox`)
+## The inbox (`src/models/inbox.js`, `factory inbox`)
 
 One place for everything that waits for a person, as events plus a projection (who approved what, when, is kept forever):
 
@@ -77,7 +77,7 @@ When nobody is at the keyboard, the harness answers "ask" with **no** and tells 
 
 It doesn't pause the agent mid-session to ask. That would need the harness to resume a session after a person answers (harness track H34). What it does is make every refusal visible and one command away from being fixed.
 
-## L3: the factory merges (`src/line/stations/merge.js`)
+## L3: the factory merges (`src/services/line/stations/merge.js`)
 
 Only at L3, and only when **all** hold: the run was delivered (gates green, no blocking findings), the change touches **no protected path** (`.github/`, the factory's own config, roles and steering, harness settings, lockfiles), and merging is safe in the checkout (the base branch is checked out and clean). Otherwise it says why, and the PR waits for a person like at L2.
 
@@ -98,16 +98,16 @@ Only at L3, and only when **all** hold: the run was delivered (gates green, no b
 
 | File | What it does |
 |---|---|
-| `src/humans/autonomy.js` | L0–L3, the gate table, `autonomyFor` (operator gives, issue may only lower) |
-| `src/humans/inbox.js` | Open, answer, list; the `inbox` projection (migration 3) |
-| `src/line/stations/approval.js` | The plan gate: stop / auto / park; approved / rejected (rewind) |
-| `src/line/stations/merge.js` | The L3 merge, with protected paths |
-| `src/forge/local.js` | `merge` (only when safe), idempotent |
-| `src/line/executor.js` | Autonomy for the run and for `when`; **park**; **rewind** with feedback |
-| `src/line/stations/spec.js` | Revise from the rejected version, with the feedback |
-| `src/line/stations/common.js` | Policy gaps from the event stream |
-| `src/commands/inbox.js` | `inbox`, `approve`, `reject`, `answer`, with `--now` |
-| `src/exec/harness/script.js` | Per-attempt script replies (`"spec#2"`) |
+| `src/services/humans/autonomy.js` | L0–L3, the gate table, `autonomyFor` (operator gives, issue may only lower) |
+| `src/models/inbox.js` | Open, answer, list; the `inbox` projection (migration 3) |
+| `src/services/line/stations/approval.js` | The plan gate: stop / auto / park; approved / rejected (rewind) |
+| `src/services/line/stations/merge.js` | The L3 merge, with protected paths |
+| `src/services/forge/local.js` | `merge` (only when safe), idempotent |
+| `src/services/line/executor.js` | Autonomy for the run and for `when`; **park**; **rewind** with feedback |
+| `src/services/line/stations/spec.js` | Revise from the rejected version, with the feedback |
+| `src/services/line/stations/common.js` | Policy gaps from the event stream |
+| `src/controllers/cli/inbox.js` | `inbox`, `approve`, `reject`, `answer`, with `--now` |
+| `src/services/exec/harness/script.js` | Per-attempt script replies (`"spec#2"`) |
 
 ## Try it: the checkpoint
 

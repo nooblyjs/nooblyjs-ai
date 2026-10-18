@@ -4,7 +4,7 @@
 
 ---
 
-## Part 1: the scope guard (`src/exec/gates/scope-guard.js`)
+## Part 1: the scope guard (`src/services/exec/gates/scope-guard.js`)
 
 A spec's tasks declare their **Paths** (F08). That's a promise: "this task changes these files". F10 used it to plan waves, but nothing *checked* it. An agent that also tidied three other files, or edited the CI config, sailed through.
 
@@ -20,7 +20,7 @@ Without a spec (small items) nothing is declared, so only protected paths count.
 
 A repo can set `"scope": "warn"` to record violations without failing. F10's merge-conflict test does, because it is *about* two tasks touching an undeclared file: since F14 that broken promise is recorded in the evidence instead of silently merged.
 
-## Part 2: the evidence bundle (`src/evidence/bundle.js`)
+## Part 2: the evidence bundle (`src/services/evidence/bundle.js`)
 
 The PR body **is** the evidence (`evidence.md`), and the same facts are kept as data (`evidence.json`, a run artifact) for tools, the dashboard (F17) and metrics (F20):
 
@@ -83,13 +83,13 @@ All examples are updated, affected docs have a short "Since later phases" note, 
 
 | File | What it does |
 |---|---|
-| `src/exec/gates/scope-guard.js` | `checkScope`, `scopeGate`, the protected list (shared with F12's merge station) |
-| `src/line/stations/verify.js` | Scope first, then the gates, one verdict |
-| `src/exec/workspace/repo-config.js` | `"scope": "strict" \| "warn"` |
-| `src/store/projections.js` | `scope.granted` → `run.scopeGranted` (for F16) |
-| `src/evidence/bundle.js` | `buildEvidence` (md + json), `testLinks` |
-| `src/job/deliver.js`, `src/line/stations/deliver.js` | The PR body is the evidence; `evidence.json` artifact |
-| `src/line/stations/build.js` | A task that changed nothing is `no_changes` |
+| `src/services/exec/gates/scope-guard.js` | `checkScope`, `scopeGate`, the protected list (shared with F12's merge station) |
+| `src/services/line/stations/verify.js` | Scope first, then the gates, one verdict |
+| `src/config/repo-config.js` | `"scope": "strict" \| "warn"` |
+| `src/models/store/projections.js` | `scope.granted` → `run.scopeGranted` (for F16) |
+| `src/services/evidence/bundle.js` | `buildEvidence` (md + json), `testLinks` |
+| `src/services/job/deliver.js`, `src/services/line/stations/deliver.js` | The PR body is the evidence; `evidence.json` artifact |
+| `src/services/line/stations/build.js` | A task that changed nothing is `no_changes` |
 | `scripts/check-examples.sh`, `examples/examples.txt` | `npm run check:examples` |
 
 ## Try it

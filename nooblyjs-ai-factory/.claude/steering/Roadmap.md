@@ -51,15 +51,15 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 *Goal: one piece of work, one agent, one isolated workspace, one verified result. No queue, no daemon yet.*
 
 ## Phase F00 — Scaffold
-> ✅ **Done 2026-09-30**, see [.claude/docs/F00-project-setup.md](../docs/F00-project-setup.md). Deviation: harness imports go through one file, `src/harness.js`, which also lists the deep imports H31 should export.
+> ✅ **Done 2026-09-30**, see [.claude/docs/F00-project-setup.md](../docs/F00-project-setup.md). Deviation: harness imports go through one file, `src/services/harness.js`, which also lists the deep imports H31 should export.
 
 **Concept (K1):** A factory is a control plane around a worker. Set up the project so the worker (the harness) is a dependency, not a copy.
 
 **Build**
 - `package.json` (ESM, `"bin": { "factory": "bin/factory.js" }`, Node ≥ 24), `// @ts-check` + JSDoc, `npm test` → `node --test test/`.
 - Harness dependency: `"nooblyjs-learn-harness": "file:../nooblyjs-learn-harness"`; a smoke test imports `createSession`, `createMockProvider`, `EVENT`.
-- `src/util/`: `ids.js` (sortable ids), `clock.js` (injectable), `log.js` (`FACTORY_DEBUG=1` → `~/.factory/debug.log`), `paths.js`.
-- `bin/factory.js` + `src/cli.js` with `parseArgs`: `--help`, `--version`.
+- `src/utils/`: `ids.js` (sortable ids), `clock.js` (injectable), `log.js` (`FACTORY_DEBUG=1` → `~/.factory/debug.log`), `paths.js`.
+- `bin/factory.js` + `src/routes/cli.js` with `parseArgs`: `--help`, `--version`.
 - `.claude/docs/README.md` index + phase-doc template; a root `CLAUDE.md`/`NOOBLY.md` describing conventions for agents working on this repo.
 
 **Tests:** harness import smoke test; ids sort by time.
@@ -79,7 +79,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 - Where does cost come from, and how early can you know you're over budget?
 
 **Build**
-- `src/exec/harness/driver.js`: `HarnessDriver` interface + `StepResult` typedef (`outcome`, `text`, `usage`, `costUsd`, `turns`, `sessionId`, `events` count).
+- `src/services/exec/harness/driver.js`: `HarnessDriver` interface + `StepResult` typedef (`outcome`, `text`, `usage`, `costUsd`, `turns`, `sessionId`, `events` count).
 - `in-process.js`: `createSession({ cwd, model, permissionMode, allowedTools, disallowedTools, maxTurns, tools, provider })` → `session.stream()`.
 - `subprocess.js`: spawn `noobly -p --output-format stream-json …`, NDJSON line parser (split-safe), exit code → outcome.
 - `limits.js`: wall-clock timeout and a **USD watchdog** that sums `turn_end` cost and aborts over budget (until H32 does it inside the harness).
@@ -102,7 +102,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 - What should happen to a workspace when a run fails?
 
 **Build**
-- `src/exec/workspace/provider.js` interface; `worktree.js`: bare mirror in `~/.factory/repos/<slug>.git`, `git worktree add -b factory/ws/<name>-<rand>` from a pinned base SHA; `release({ keep })`.
+- `src/services/exec/workspace/provider.js` interface; `worktree.js`: bare mirror in `~/.factory/repos/<slug>.git`, `git worktree add -b factory/ws/<name>-<rand>` from a pinned base SHA; `release({ keep })`.
 - Harness settings written per workspace: sandbox on, writes limited to the workspace, network allowlist from repo config (default: package registries).
 - `setup-cache.js`: run the repo's `setup` command once per lockfile hash; reuse via copy-on-write/hard-link.
 - `factory workspace list|clean`.
@@ -119,7 +119,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K1, K13):** The smallest factory: an *asynchronous* job whose output is a reviewable branch, not a chat.
 
 **Build**
-- `src/forge/forge.js` interface; `local.js`: issues as `forge-local/<repo>/issues/*.md`, PRs as `prs/<branch>.md`.
+- `src/services/forge/forge.js` interface; `local.js`: issues as `forge-local/<repo>/issues/*.md`, PRs as `prs/<branch>.md`.
 - `factory run <issue.md> --repo <path>`: workspace → `builder` role (inline prompt for now) → agent commits → control plane writes `PR.md` (title, summary, diff stat, cost).
 - The agent may commit but never push; the control plane owns branches (Architecture §7).
 - Untrusted fencing of issue text (F-IN-5) from day one.
@@ -137,7 +137,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 
 **Build**
 - `.factory/config.json` in the target repo: `gates` (ordered name → command), `setup`, `timeoutMs`.
-- `src/exec/gates/runner.js`: fresh sandboxed shell in the workspace, fail fast, `GateResult` with a failure excerpt (head + tail, like harness Phase 26).
+- `src/services/exec/gates/runner.js`: fresh sandboxed shell in the workspace, fail fast, `GateResult` with a failure excerpt (head + tail, like harness Phase 26).
 - A harness `Stop` hook installed per step that runs the *fast* gates so the agent sees failures before it stops; the gate runner still re-runs everything independently.
 - `PR.md` shows a gate table; a failing gate marks the job `gate_failed`.
 
@@ -161,7 +161,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 - How do you rebuild state from zero, and why would you want to?
 
 **Build**
-- `src/store/db.js` (`node:sqlite`, WAL, migrations), `events.js` (`append`, `read`, `subscribe`, idempotency `key`), `projections.js` (pure reducers → tables), `artifacts.js` (content-addressed).
+- `src/models/store/db.js` (`node:sqlite`, WAL, migrations), `events.js` (`append`, `read`, `subscribe`, idempotency `key`), `projections.js` (pure reducers → tables), `artifacts.js` (content-addressed).
 - `effect.intended` / `effect.done` pattern for side effects, with reconciliation on start.
 - `factory db rebuild`, `factory events --run <id>`.
 - F03's job now writes events; `factory runs`, `factory logs <run>`.
@@ -178,7 +178,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K5):** A queue with limits. Priority, concurrency caps, leases with heartbeats, hierarchical budgets, a kill switch.
 
 **Build**
-- `src/scheduler/scheduler.js` (< 150 lines), `leases.js`, `budgets.js`, `kill-switch.js` (Architecture §9).
+- `src/services/scheduler/scheduler.js` (< 150 lines), `leases.js`, `budgets.js`, `kill-switch.js` (Architecture §9).
 - `factory serve` (scheduler + in-process worker pool, no HTTP yet); `factory submit`, `factory status`, `factory stop-all`, `factory resume-all`, `factory cancel <run>`.
 - Daily global spend cap from `~/.factory/config.json`.
 
@@ -194,7 +194,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K6):** A pipeline as data, and a pure `decide()` function that turns state into next steps.
 
 **Build**
-- `lines/default.json` + `src/line/line.js` (load/validate), `state-machine.js`, `engine.js` (`decide(runState, line, policy)`, pure).
+- `lines/default.json` + `src/models/line.js` (load/validate), `state-machine.js`, `engine.js` (`decide(runState, line, policy)`, pure).
 - Stations: `triage` (triager role, `triage.json`), `build`, `verify` (gates), `deliver` (PR). `when` conditions, `optional`, per-station retry policy.
 - `factory run retry <id> --from <station>`, `pause`, `resume`.
 
@@ -216,9 +216,9 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 
 **Build**
 - `spec-writer` and `planner` roles; `spec` and `plan` stations routed by triage size.
-- `src/specs/schema.js`: parse `requirements.md` (IDs `R1.2`, EARS criteria), `tasks.md` (IDs, `_Requirements: R1.2_`, declared `paths`, `dependsOn`); validation errors fed back to the spec-writer.
-- `src/specs/trace.js`: coverage matrix (every requirement has a task).
-- `src/knowledge/steering.js` + `factory init <repo>`: an agent drafts `.factory/steering/{product,tech,structure}.md` and `config.json` for a human to edit.
+- `src/models/spec.js`: parse `requirements.md` (IDs `R1.2`, EARS criteria), `tasks.md` (IDs, `_Requirements: R1.2_`, declared `paths`, `dependsOn`); validation errors fed back to the spec-writer.
+- `src/services/specs/trace.js`: coverage matrix (every requirement has a task).
+- `src/services/knowledge/steering.js` + `factory init <repo>`: an agent drafts `.factory/steering/{product,tech,structure}.md` and `config.json` for a human to edit.
 - Specs committed on the item branch under `.factory/specs/<item>/`.
 
 **Tests:** schema parsing and validation messages; uncovered requirement fails the station; small items skip spec.
@@ -250,7 +250,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K9):** Parallelism needs decomposition *and* integration. Declared paths avoid conflicts; the integrator resolves the rest; gates re-run after merge.
 
 **Build**
-- `src/line/fanout.js`: one build step per task, respecting `dependsOn`; scheduler skips tasks whose `paths` overlap a running task in the same run.
+- `src/services/line/fanout.js`: one build step per task, respecting `dependsOn`; scheduler skips tasks whose `paths` overlap a running task in the same run.
 - `factory/<item>/<task>` branches → `integrate` station (`integrator` role) merges into `factory/<item>/main` (not `factory/<item>`: git can't have a ref that is also a folder; see F02 doc); conflicts handled by the agent; full gates after.
 - `tasks > 1` condition; single-task runs skip integration.
 
@@ -289,7 +289,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Needs:** harness **H34** (resume by id; headless permission asks).
 
 **Build**
-- `src/humans/autonomy.js` (L0–L3 table, Architecture §13), `inbox.js`, `permission-bridge.js`.
+- `src/services/humans/autonomy.js` (L0–L3 table, Architecture §13), `inbox.js`, `permission-bridge.js`.
 - Spec gate and PR gate; `factory inbox`, `factory approve <id>`, `factory reject <id> --feedback "…"`, `factory answer <id> "…"`.
 - Parking: run releases its lease, keeps its workspace; answered → resumed.
 - Rejection feedback goes back to the producing role as a new attempt.
@@ -322,7 +322,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K10):** Make review fast: prove what changed, why, and that it's within bounds.
 
 **Build**
-- `src/exec/gates/scope-guard.js`: diff paths ⊆ declared; protected paths always fail; `request_scope` flow (inbox unless L3).
+- `src/services/exec/gates/scope-guard.js`: diff paths ⊆ declared; protected paths always fail; `request_scope` flow (inbox unless L3).
 - Evidence bundle (`evidence.md` + `evidence.json`, Architecture §12) generated at `deliver`; becomes the PR body.
 - Requirement → task → test coverage table from `specs/trace.js`.
 
@@ -341,7 +341,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K13):** Webhooks in, PRs/checks/comments out, credentials only in the control plane.
 
 **Build**
-- `src/forge/github/client.js` (REST via `fetch`, GitHub App installation tokens or fine-grained PAT, rate-limit handling), `webhooks.js` (HMAC verify), `checks.js`.
+- `src/services/forge/github/client.js` (REST via `fetch`, GitHub App installation tokens or fine-grained PAT, rate-limit handling), `webhooks.js` (HMAC verify), `checks.js`.
 - `node:http` webhook endpoint in `factory serve`; polling fallback for machines without a public URL.
 - Label `factory` → work item; PR opened as **draft** until gates and reviewer pass; check run `factory` with the gate summary; issue comments on status changes (idempotent).
 - PR review comments / failing CI → `fixer` (F-INT-4); merge → `run.merged`.
@@ -358,8 +358,8 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K14):** Give agents a narrow, factory-aware API instead of a bigger prompt.
 
 **Build**
-- `src/mcp/tools-server.js`: `read_spec`, `report_progress`, `ask_human`, `record_decision`, `submit_artifact`, `request_scope` (Architecture §11), scoped by a per-step token; configured into each step's harness MCP settings.
-- `src/mcp/factory-server.js` (`factory mcp --operator`): `submit_item`, `list_runs`, `get_run`, `answer_inbox`, for use from a `noobly` chat.
+- `src/services/mcp/tools-server.js`: `read_spec`, `report_progress`, `ask_human`, `record_decision`, `submit_artifact`, `request_scope` (Architecture §11), scoped by a per-step token; configured into each step's harness MCP settings.
+- `src/services/mcp/factory-server.js` (`factory mcp --operator`): `submit_item`, `list_runs`, `get_run`, `answer_inbox`, for use from a `noobly` chat.
 
 **Tests:** tools against a stub step; token for step A can't read step B; `ask_human` parks the run.
 
@@ -373,8 +373,8 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K16):** A factory you can't see is one you can't trust. Live state from the event log, no framework.
 
 **Build**
-- `src/server/http.js` (router, JSON API, bearer token, localhost bind), `sse.js` (events from `seq`).
-- `src/server/dashboard/`: line view, run view (live agent output, gates, findings, evidence, retry/stop buttons), inbox with answer forms, spend today.
+- `src/routes/http.js` (router, JSON API, bearer token, localhost bind), `sse.js` (events from `seq`).
+- `public/dashboard/`: line view, run view (live agent output, gates, findings, evidence, retry/stop buttons), inbox with answer forms, spend today.
 
 **Tests:** API handlers; SSE resumes from `Last-Event-ID`; auth required.
 
@@ -388,7 +388,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K12, K13):** Bring humans in only when needed, where they already are.
 
 **Build**
-- `src/notify/`: outgoing webhooks (Slack/Discord-compatible JSON) on `inbox.opened`, `run.delivered`, `run.escalated`, `budget.exceeded`; per-event filters; batching.
+- `src/services/notify/`: outgoing webhooks (Slack/Discord-compatible JSON) on `inbox.opened`, `run.delivered`, `run.escalated`, `budget.exceeded`; per-event filters; batching.
 - Comment commands on GitHub: `@factory run|fix|stop|explain` from allowed users, fixed grammar.
 
 **Tests:** filter and batching; command parser; disallowed user ignored with a polite reply.
@@ -408,8 +408,8 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Needs:** harness **H36** (eval suite v2) ideas and helpers.
 
 **Build**
-- `src/bench/`: cases (`repo.bundle`, `issue.md`, `hidden/`, `case.json`), runner (whole line, local forge, L3 autonomy, fixed budgets), repeats, scoring (hidden tests pass + no protected-path changes), `compare.js` (mean, spread, per-case flips).
-- A case miner: from closed `nooblyjs-*` issues/commits, propose cases for a human to curate. Target ≥ 20 cases.
+- `src/services/bench/`: cases (`repo.bundle`, `issue.md`, `hidden/`, `case.json`), runner (whole line, local forge, L3 autonomy, fixed budgets), repeats, scoring (hidden tests pass + no protected-path changes), `compare.js` (mean, spread, per-case flips).
+- A case miner: from closed `NooblyJS-*` issues/commits, propose cases for a human to curate. Target ≥ 20 cases.
 - `factory bench --label baseline --repeat 3`, `factory bench --compare a.json b.json`. Results in `bench/results/`.
 
 **Tests:** `--verify` mode (offline): each case's hidden tests fail on the starting snapshot and pass on the reference solution.
@@ -424,7 +424,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 **Concept (K16):** DORA-style flow metrics plus agent-specific ones tell you where the line is slow, expensive or untrusted.
 
 **Build**
-- `src/metrics/run-metrics.js`, `factory-metrics.js`: throughput, lead time (item → PR, → merge), time per station, first-pass gate rate, PR acceptance rate, **human-edit rate** (diff between factory branch and merged result), escalation rate, cost per merged PR.
+- `src/services/metrics/run-metrics.js`, `factory-metrics.js`: throughput, lead time (item → PR, → merge), time per station, first-pass gate rate, PR acceptance rate, **human-edit rate** (diff between factory branch and merged result), escalation rate, cost per merged PR.
 - `factory metrics --since 7d`; dashboard metrics page.
 
 **Tests:** metrics computed from synthetic event histories.
@@ -440,7 +440,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 
 **Build**
 - `retro` role and station (after close): compares agent diff vs merged diff, review comments, failures → `learning.recorded`.
-- `src/knowledge/learning.js`: cluster learnings; when a pattern recurs ≥ K times, open a factory item "update steering/roles" that produces a PR editing `.factory/steering/*.md` or a role, with a bench before/after attached.
+- `src/services/knowledge/learning.js`: cluster learnings; when a pattern recurs ≥ K times, open a factory item "update steering/roles" that produces a PR editing `.factory/steering/*.md` or a role, with a bench before/after attached.
 
 **Tests:** clustering on synthetic learnings; the generated PR only touches steering/role files.
 
@@ -500,7 +500,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 ---
 
 ## Phase F25 — Fleet campaigns
-> ✅ **Done 2026-09-30**, see [.claude/docs/F25-fleet-campaigns.md](../docs/F25-fleet-campaigns.md). Checkpoint on clones of the nooblyjs-* repos with a scripted agent (pins Node 24 in `.nvmrc`); the full upgrade needs a model.
+> ✅ **Done 2026-09-30**, see [.claude/docs/F25-fleet-campaigns.md](../docs/F25-fleet-campaigns.md). Checkpoint on clones of the NooblyJS-* repos with a scripted agent (pins Node 24 in `.nvmrc`); the full upgrade needs a model.
 
 **Concept (K20):** One change, many repos: templated items, rate-limited delivery, batch tracking.
 
@@ -510,7 +510,7 @@ From **F07 onward**, file at least one task of each phase as a work item *to the
 
 **Tests:** campaign fan-out; rate limit respected; per-repo failures don't stop others.
 
-**Checkpoint:** "Upgrade to Node 24 and fix any test failures" across all `nooblyjs-*` repos, one PR each.
+**Checkpoint:** "Upgrade to Node 24 and fix any test failures" across all `NooblyJS-*` repos, one PR each.
 
 ---
 
@@ -541,7 +541,7 @@ Everything is built and tested offline. These checkpoints need a model key, a re
 | F19 | the first bench baseline: resolve rate, cost per resolve, median time, with spread | a model (~$5–15 for 3 repeats) |
 | F20 | after a week of use: the slowest and most expensive station, and why | a week of real use |
 | F22 | `cheap-first` vs `static` on the bench: cost per resolve down, resolve rate within noise? | a model |
-| F25 | "Upgrade to Node 24 and fix any test failures" across the `nooblyjs-*` repos, for real | a model |
+| F25 | "Upgrade to Node 24 and fix any test failures" across the `NooblyJS-*` repos, for real | a model |
 
 Known issue: F05's multi-process database test fails about one full-suite run in four (see the F24 doc).
 

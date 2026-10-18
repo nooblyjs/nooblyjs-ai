@@ -21,7 +21,7 @@
 //   }
 import fs from 'node:fs';
 import path from 'node:path';
-import { factoryHome } from '../util/paths.js';
+import { factoryHome } from '../utils/paths.js';
 
 export const DEFAULTS = Object.freeze({
   maxConcurrent: 3,

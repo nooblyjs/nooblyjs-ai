@@ -43,7 +43,7 @@ A worktree only isolates *files*. What stops an agent's `cat ~/.ssh/id_rsa` is t
 
 ## The mirror
 
-Why not `git worktree add` straight from the operator's own repo? Because that would add branches and worktree records to *their* `.git`. Instead the factory keeps its own bare mirror (`src/exec/workspace/mirror.js`):
+Why not `git worktree add` straight from the operator's own repo? Because that would add branches and worktree records to *their* `.git`. Instead the factory keeps its own bare mirror (`src/services/exec/workspace/mirror.js`):
 
 ```bash
 git init --bare ~/.factory/repos/<slug>.git
@@ -129,7 +129,7 @@ Three details:
 - **Atomic:** the cache is built in a temp folder and *renamed* into place, with a `.complete` marker. A crash half-way never leaves a cache that looks finished.
 - **Never committed:** cached folders are added to the mirror's `info/exclude` (git's private `.gitignore`, shared by all worktrees). Even if the repo forgot to ignore `node_modules`, release won't commit it.
 
-Setup is the **repo's own code** (`npm ci` runs install scripts), so it runs in the harness sandbox too. `src/exec/sandbox.js` uses the harness's `createSandbox().spawn()`, the same policy the agent's Bash gets, with no second sandbox implementation.
+Setup is the **repo's own code** (`npm ci` runs install scripts), so it runs in the harness sandbox too. `src/services/exec/sandbox.js` uses the harness's `createSandbox().spawn()`, the same policy the agent's Bash gets, with no second sandbox implementation.
 
 ## No sandbox on this machine: what then?
 
@@ -180,16 +180,16 @@ Git stores refs as files (`refs/heads/factory/item1`), and a file can't also be 
 
 | File | What it does |
 |---|---|
-| `src/exec/workspace/git.js` | `git()` runner; `serially()` (in-process queue); `withRepoLock()` (cross-process lock, stale-lock recovery); commit identity |
-| `src/exec/workspace/mirror.js` | The bare mirror, fetch refspec, default branch, pinning a base, reading files at a commit |
-| `src/exec/workspace/repo-config.js` | `.factory/config.json`: `network`, `setup`; validation and warnings |
-| `src/exec/workspace/harness-settings.js` | Per-workspace harness settings and the harness home |
-| `src/exec/workspace/worktree.js` | `acquire` / `release` / `list` / `clean` |
-| `src/exec/workspace/provider.js` | The `WorkspaceProvider` interface (containers plug in here in F23) |
-| `src/exec/workspace/setup-cache.js` | Cached, single-flight, atomic setup |
-| `src/exec/sandbox.js` | Run a command in the harness sandbox; when running without one is acceptable |
-| `src/exec/step-runner.js` | One step: check isolation → acquire → setup → agent → release |
-| `src/commands/workspace.js` | `factory workspace create / list / release / clean` |
+| `src/services/exec/workspace/git.js` | `git()` runner; `serially()` (in-process queue); `withRepoLock()` (cross-process lock, stale-lock recovery); commit identity |
+| `src/services/exec/workspace/mirror.js` | The bare mirror, fetch refspec, default branch, pinning a base, reading files at a commit |
+| `src/config/repo-config.js` | `.factory/config.json`: `network`, `setup`; validation and warnings |
+| `src/config/harness-settings.js` | Per-workspace harness settings and the harness home |
+| `src/services/exec/workspace/worktree.js` | `acquire` / `release` / `list` / `clean` |
+| `src/services/exec/workspace/provider.js` | The `WorkspaceProvider` interface (containers plug in here in F23) |
+| `src/services/exec/workspace/setup-cache.js` | Cached, single-flight, atomic setup |
+| `src/services/exec/sandbox.js` | Run a command in the harness sandbox; when running without one is acceptable |
+| `src/services/exec/step-runner.js` | One step: check isolation → acquire → setup → agent → release |
+| `src/controllers/cli/workspace.js` | `factory workspace create / list / release / clean` |
 | `factory agent --repo …` | F01's command, now optionally in a fresh workspace |
 
 ## Try it

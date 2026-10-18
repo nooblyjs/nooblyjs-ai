@@ -1,0 +1,74 @@
+{
+  "_comment": "NooblyJS Phase 7 seed: the scripted agent for PRD-028's work item \"picker, nearby, basket\" on the demo web-storefront repository. The builder gets the distance limit wrong, so the test gate fails; the first fixer changes nothing, so the factory asks a person. With the person's answer the second fixer makes the limit inclusive and the gate passes. Sample data.",
+  "triage": [
+    {
+      "text": "I read the work item and the code.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"One small function for the nearby-stores list, with a test.\"\n}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "I'll look at the code that is there.",
+      "tools": [{ "name": "Read", "input": { "file_path": "format-slot.js" } }]
+    },
+    {
+      "text": "Adding the nearby-stores list for the picker: stores within a distance, nearest first.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "nearby.js",
+            "content": "/** Stores within `maxKm`, nearest first, for the picker's \"nearby stores\" list. */\nexport const nearbyStores = (stores, maxKm) => stores.filter((s) => s.km < maxKm).sort((a, b) => a.km - b.km);\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "And a test.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/nearby.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { nearbyStores } from '../nearby.js';\n\ntest('nearbyStores: within the limit, nearest first, and a store exactly at the limit counts', () => {\n  const stores = [{ id: 'c', km: 9 }, { id: 'b', km: 5 }, { id: 'a', km: 2 }];\n  assert.deepEqual(nearbyStores(stores, 5).map((s) => s.id), ['a', 'b']);\n});\n"
+          }
+        }
+      ]
+    },
+    { "text": "Added nearbyStores() in nearby.js with a test. All tests pass." },
+    { "text": "I'm confident it works. All tests pass." },
+    { "text": "All tests pass." },
+    { "text": "All tests pass." }
+  ],
+  "fix#1": [
+    {
+      "text": "Looking at the failure.",
+      "tools": [{ "name": "Read", "input": { "file_path": "nearby.js" } }]
+    },
+    { "text": "A store exactly 5 km away is not within 5 km, so I believe the code is correct as it is. The test may be wrong; a person should say which." }
+  ],
+  "fix#2": [
+    {
+      "text": "A person answered: the limit is inclusive. Reading the code again.",
+      "tools": [{ "name": "Read", "input": { "file_path": "nearby.js" } }]
+    },
+    {
+      "text": "Making the limit inclusive.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "nearby.js",
+            "content": "/** Stores within `maxKm` (a store exactly at the limit counts), nearest first, for the picker's \"nearby stores\" list. */\nexport const nearbyStores = (stores, maxKm) => stores.filter((s) => s.km <= maxKm).sort((a, b) => a.km - b.km);\n"
+          }
+        }
+      ]
+    },
+    { "text": "nearbyStores() used < for the distance limit; a person confirmed a store exactly at the limit counts, so it is <= now. The failing test covers it." },
+    { "text": "All tests pass." }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"The limit is inclusive now, as the person said, and the test covers it.\", \"findings\": []}\n```"
+    }
+  ]
+}

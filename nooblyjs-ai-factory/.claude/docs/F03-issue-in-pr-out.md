@@ -26,7 +26,7 @@ issue.md ──► file it in the forge ──► workspace (F02) ──► buil
 
 ## A forge, as a folder
 
-A **forge** is where issues and pull requests live: GitHub, GitLab, Gitea. The factory talks to one through a small interface (`src/forge/forge.js`), so the first implementation can be a **folder on disk**. That keeps it offline, free and deterministic in tests, and GitHub (F15) becomes just another implementation of the same interface.
+A **forge** is where issues and pull requests live: GitHub, GitLab, Gitea. The factory talks to one through a small interface (`src/services/forge/forge.js`), so the first implementation can be a **folder on disk**. That keeps it offline, free and deterministic in tests, and GitHub (F15) becomes just another implementation of the same interface.
 
 ```
 ~/.factory/forge/<repo-slug>/
@@ -59,7 +59,7 @@ Both are **idempotency** in disguise: doing it twice has the same effect as doin
 
 ## The PR is the product
 
-The reviewer should be able to decide from the PR page alone (`src/job/pr.js`):
+The reviewer should be able to decide from the PR page alone (`src/services/job/pr.js`):
 
 | Section | Answers |
 |---|---|
@@ -91,7 +91,7 @@ The defence is **layers**, and only some of them depend on the model behaving:
 
 | Layer | Where | Depends on the model? |
 |---|---|---|
-| 1. **Fence** the issue in `<untrusted source="local#1">…</untrusted>`; say once, *outside* the fence, that its contents are data, never instructions | `src/job/prompt.js` | yes: lowers the odds |
+| 1. **Fence** the issue in `<untrusted source="local#1">…</untrusted>`; say once, *outside* the fence, that its contents are data, never instructions | `src/services/job/prompt.js` | yes: lowers the odds |
 | 2. The text **can't close the fence**: `</untrusted` (in any spelling: `< / UNTRUSTED`) is escaped | `fenceUntrusted()` | no |
 | 3. Even if the model obeys, it **can't do the damage**: `git push` is denied by harness deny rules, the agent holds no credentials, the sandbox limits writes and network | F02 | no |
 | 4. A **human reviews** before anything is merged | the PR | no |
@@ -131,14 +131,14 @@ Look at what that second bug shows: **the agent's claim and reality disagreed, a
 
 | File | What it does |
 |---|---|
-| `src/forge/forge.js` | The `Forge` interface, `Issue` and `PullRequest` types |
-| `src/forge/local.js` | Issues and PRs as files; PR identity by head branch; `pushBranch` from the mirror |
-| `src/job/issue.js` | Issue files: frontmatter title/labels, or the first line |
-| `src/job/prompt.js` | `fenceUntrusted()` and the builder's prompt |
-| `src/job/pr.js` | The PR description |
-| `src/job/run-job.js` | The job: file → workspace → agent → release → push → PR |
-| `src/commands/run.js` | `factory run <issue.md> --repo <path>` |
-| `src/util/frontmatter.js` | Reading (the harness's parser) and writing frontmatter safely |
+| `src/services/forge/forge.js` | The `Forge` interface, `Issue` and `PullRequest` types |
+| `src/services/forge/local.js` | Issues and PRs as files; PR identity by head branch; `pushBranch` from the mirror |
+| `src/models/issue.js` | Issue files: frontmatter title/labels, or the first line |
+| `src/services/job/prompt.js` | `fenceUntrusted()` and the builder's prompt |
+| `src/services/job/pr.js` | The PR description |
+| `src/services/job/run-job.js` | The job: file → workspace → agent → release → push → PR |
+| `src/controllers/cli/run.js` | `factory run <issue.md> --repo <path>` |
+| `src/utils/frontmatter.js` | Reading (the harness's parser) and writing frontmatter safely |
 
 ## Try it
 

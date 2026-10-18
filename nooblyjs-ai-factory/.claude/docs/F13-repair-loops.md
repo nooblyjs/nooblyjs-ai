@@ -21,7 +21,7 @@ build → verify ✗ ──► repair: FIXER gets the failure, fixes on top of t
           └────── rewind to verify ◄─────────┘   (checks, review and security review run AGAIN)
 ```
 
-## The repair station (`src/line/stations/repair.js`)
+## The repair station (`src/services/line/stations/repair.js`)
 
 ```json
 { "id": "repair", "kind": "repair",
@@ -64,11 +64,11 @@ A rewind resets the stations after verify, including the repair station itself. 
 | File | What it does |
 |---|---|
 | `src/roles/builtin/fixer.md` | The fixer role |
-| `src/line/stations/repair.js` | Describe the failure, signature, limits, fixer, commit, rewind; escalation |
-| `src/line/stations/common.js` | `headOf(ctx)`: build + repairs |
-| `src/store/projections.js` | `run.repairs` (kept across rewinds, cleared by a new build) |
-| `src/line/stations/{verify,review,deliver,merge}.js` | Read the head, not the build alone |
-| `src/line/stations/deliver.js`, `src/job/deliver.js` | The Repairs section; escalations make the PR a draft |
+| `src/services/line/stations/repair.js` | Describe the failure, signature, limits, fixer, commit, rewind; escalation |
+| `src/services/line/stations/common.js` | `headOf(ctx)`: build + repairs |
+| `src/models/store/projections.js` | `run.repairs` (kept across rewinds, cleared by a new build) |
+| `src/services/line/stations/{verify,review,deliver,merge}.js` | Read the head, not the build alone |
+| `src/services/line/stations/deliver.js`, `src/services/job/deliver.js` | The Repairs section; escalations make the PR a draft |
 | `lines/default.json` | `repair` before `deliver` |
 
 ## Try it: the checkpoint

@@ -27,7 +27,7 @@ loop:
   pause          → run.paused
 ```
 
-## `decide()`: a pure function (`src/line/engine.js`)
+## `decide()`: a pure function (`src/services/line/engine.js`)
 
 ```
 decide(run, line) → { action: 'run', station } | { action: 'finish', status } | { action: 'pause' }
@@ -46,7 +46,7 @@ Station by station, in line order:
 | done | next station |
 | all done | finish with the last station's status |
 
-Because it's pure, **every behaviour of every line is a table test**: "these steps so far → this next action". `test/line.test.js` has the happy path, stops, `when`, retries, dead workers and pause, all without a database or a model.
+Because it's pure, **every behaviour of every line is a table test**: "these steps so far → this next action". `test/services/line/line.test.js` has the happy path, stops, `when`, retries, dead workers and pause, all without a database or a model.
 
 And "carry on after a crash" stops being a special case. A fresh executor asks `decide()` the same question and gets the same answer, because the answer depends only on the events.
 
@@ -59,18 +59,18 @@ And "carry on after a crash" stops being a special case. A fresh executor asks `
 
 Getting this distinction right is most of what a retry policy is.
 
-## `when`: config is never code (`src/line/conditions.js`)
+## `when`: config is never code (`src/services/line/conditions.js`)
 
 `"when": "triage.size != 'small' && tasks.count > 1"` looks like JavaScript. It must never *be* JavaScript: a line file that said `"when": "require('child_process')…"` must be a syntax error, not a program. So conditions have their own tiny language and parser (recursive descent, about 80 lines): comparisons, `&&`, `||`, `!`, parentheses, strings, numbers, and dotted paths into earlier stations' results. No `eval`, no `new Function`.
 
 - Conditions are compiled when the line is **loaded**. A typo fails at load time with its position, not halfway through a run.
 - A missing path is `undefined`. In a config language "missing" and "null" should mean the same, so `==` treats them as equal (the first version didn't, and `nothing.here == null` was false).
 
-## Loading a line (`src/line/line.js`)
+## Loading a line (`src/models/line.js`)
 
 Validation lists **every** problem at once (duplicate ids, unknown kinds, bad conditions), before any run starts. `factory submit` validates the line when you submit, not when `serve` picks the run up an hour later.
 
-## The stations (`src/line/stations/`)
+## The stations (`src/services/line/stations/`)
 
 A station is one function, `run(ctx) → result`. Its result is plain data; later stations and `when` conditions can read it, and `result.costUsd` feeds the budgets.
 
@@ -132,15 +132,15 @@ Pausing between stations, rather than mid-agent, is deliberate: nothing half-don
 | File | What it does |
 |---|---|
 | `lines/default.json`, `lines/quick.json` | Lines as data |
-| `src/line/conditions.js` | The `when` language: tokenizer + recursive-descent parser |
-| `src/line/line.js` | Load and validate a line |
-| `src/line/engine.js` | `decide()`: pure |
-| `src/line/executor.js` | The loop: decide → station → event → again; interruptions |
-| `src/line/stations/{triage,build,verify,deliver,common}.js` | The stations, and what they share (which model, budgets, JSON extraction) |
-| `src/job/run-job.js` | Now only creates, queues, starts and retries runs |
-| `src/forge/local.js` | Issue comments |
-| `src/store/projections.js` | Per-station tries and failures; rewind; pause |
-| `src/commands/*` | `--line`, `retry --from`, `pause`, `resume`; logs describe each station |
+| `src/services/line/conditions.js` | The `when` language: tokenizer + recursive-descent parser |
+| `src/models/line.js` | Load and validate a line |
+| `src/services/line/engine.js` | `decide()`: pure |
+| `src/services/line/executor.js` | The loop: decide → station → event → again; interruptions |
+| `src/services/line/stations/{triage,build,verify,deliver,common}.js` | The stations, and what they share (which model, budgets, JSON extraction) |
+| `src/services/job/run-job.js` | Now only creates, queues, starts and retries runs |
+| `src/services/forge/local.js` | Issue comments |
+| `src/models/store/projections.js` | Per-station tries and failures; rewind; pause |
+| `src/controllers/cli/*` | `--line`, `retry --from`, `pause`, `resume`; logs describe each station |
 
 ## Try it
 

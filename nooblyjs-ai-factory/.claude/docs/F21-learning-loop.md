@@ -19,13 +19,13 @@ factory learn --agent                  # let the retro role phrase each lesson a
 
 ---
 
-## 1. The retro (`src/knowledge/retro.js`)
+## 1. The retro (`src/services/knowledge/retro.js`)
 
 **It isn't a station on the line**, although the roadmap sketched one. The line ends at delivery, but the most useful feedback comes **after**: a person's review comments, a rejection, the edits they make before merging. A station would do its retrospective before anyone had spoken.
 
 So `factory learn` looks at runs that have **settled**: merged, or finished and left alone for `settleHours` (24 by default; `--now` skips the wait). It's **incremental**: `retro.done` remembers the last event it read for each run, so a review that arrives a week later is still learned from, exactly once.
 
-What it reads (`learningsFromRun` in `src/knowledge/learning.js`):
+What it reads (`learningsFromRun` in `src/services/knowledge/learning.js`):
 
 | Source | Event | Why |
 |---|---|---|
@@ -63,7 +63,7 @@ The tests show both its strength and its **limit**:
 - "Please use named exports, not default exports", "Default export again: this repo uses named exports" and "use a named export here, never export default" → **one group** ✓.
 - "Add a test for the empty list" and "Tests for empty input are missing" share too few words to meet directly. But single-link **chains**: "Missing a test for the empty list" is close to both, so all three end up together. Chaining is useful here, and it's also how single-link can over-merge. The retro role's consistent wording is the better fix.
 
-## 3. The proposal (`src/knowledge/propose.js`)
+## 3. The proposal (`src/services/knowledge/propose.js`)
 
 For each pattern seen in **≥ K runs** (`--min-runs`, default 3) and not proposed before:
 
@@ -85,7 +85,7 @@ A convention about *your* repo won't move a generic bench much. The bench answer
 
 *Give three PRs the same review comment; see a steering PR proposing the rule, with bench numbers.*
 
-It's a test (`test/learning.test.js`), end to end, offline:
+It's a test (`test/services/knowledge/learning.test.js`), end to end, offline:
 
 1. Three factory runs on one repo, each delivered.
 2. Each gets a "changes requested" review, in different words: *"Please use named exports, not default exports."*, *"Default export again: this repo uses named exports."*, *"We use named exports here, never export default."*
@@ -127,13 +127,13 @@ While running the full suite for this phase, F05's "several processes creating t
 
 | File | What it does |
 |---|---|
-| `src/knowledge/learning.js` | `tokens`, `similarity`, `clusterLearnings`, `learningsFromRun` |
-| `src/knowledge/retro.js` | `runRetros` (settled runs, incremental, optional retro role), `isSettled` |
-| `src/knowledge/propose.js` | `recurring`, `ruleFor`, `proposeRule` (the steering PR) |
+| `src/services/knowledge/learning.js` | `tokens`, `similarity`, `clusterLearnings`, `learningsFromRun` |
+| `src/services/knowledge/retro.js` | `runRetros` (settled runs, incremental, optional retro role), `isSettled` |
+| `src/services/knowledge/propose.js` | `recurring`, `ruleFor`, `proposeRule` (the steering PR) |
 | `src/roles/builtin/retro.md` | the retro role |
-| `src/commands/learn.js` | `factory learn`, `benchWith` |
-| `src/knowledge/steering.js` | `conventions.md` is now a steering file |
-| `src/bench/*` | `overlay`: extra files in each case's start |
+| `src/controllers/cli/learn.js` | `factory learn`, `benchWith` |
+| `src/services/knowledge/steering.js` | `conventions.md` is now a steering file |
+| `src/services/bench/*` | `overlay`: extra files in each case's start |
 
 ## What we learned
 

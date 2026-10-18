@@ -14,7 +14,7 @@ human (F12)                            →  do we want this?
 
 Gates only know what the tests test. The checkpoint shows the gap: the builder implements `divide` but "forgets" the division-by-zero criterion (R1.2), writes a test only for the happy path, and reports "tests for R1.1 and R1.2, all passing". The gate passes, honestly: the test that exists passes. Only something that reads the spec and the code can say "R1.2 isn't met, and nothing tests it".
 
-## Deterministic first: test tampering (`src/review/tampering.js`)
+## Deterministic first: test tampering (`src/services/review/tampering.js`)
 
 The cheapest way to make failing tests pass is to weaken them. Gates can't see it (the tests *do* pass now), and a tired reviewer might not either. A program can:
 
@@ -40,7 +40,7 @@ What it gets, in its prompt:
 
 What it's asked, in order: unmet acceptance criteria (read the **code**, not just the tests), bugs and edge cases, tests that don't test what they claim, changes nobody asked for. Not style preferences the repo doesn't have.
 
-## Structured findings (`src/review/findings.js`)
+## Structured findings (`src/models/findings.js`)
 
 ```json
 { "verdict": "changes_requested",
@@ -81,12 +81,12 @@ The `quick` line (build → verify → deliver) has no review, for work that's a
 
 | File | What it does |
 |---|---|
-| `src/review/tampering.js` | Deleted tests, removed assertions, new skips: blocking, deterministic |
-| `src/review/findings.js` | The review schema, `parseReview` (validation with named problems), `formatReview` (the PR section) |
+| `src/services/review/tampering.js` | Deleted tests, removed assertions, new skips: blocking, deterministic |
+| `src/models/findings.js` | The review schema, `parseReview` (validation with named problems), `formatReview` (the PR section) |
 | `src/roles/builtin/reviewer.md`, `security-reviewer.md` | The roles (read-only) |
-| `src/line/stations/review.js` | The station: sensitive files, tampering, context, validated answer |
-| `src/util/glob.js` | `**` / `*` / `?` path matching |
-| `src/job/deliver.js` | Blocking findings → draft PR, `changes_requested`; the Review section |
+| `src/services/line/stations/review.js` | The station: sensitive files, tampering, context, validated answer |
+| `src/utils/glob.js` | `**` / `*` / `?` path matching |
+| `src/services/job/deliver.js` | Blocking findings → draft PR, `changes_requested`; the Review section |
 | `lines/default.json` | `review`, and `security` when sensitive |
 
 ## Try it: the checkpoint

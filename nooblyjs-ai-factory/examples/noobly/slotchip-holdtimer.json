@@ -1,0 +1,60 @@
+{
+  "_comment": "NooblyJS Phase 7 seed: the scripted agent for PRD-028's work item \"SlotChip, HoldTimer\" on the demo web-storefront repository. It builds two small functions with tests, the gate passes, and the PR is ready. Sample data.",
+  "triage": [
+    {
+      "text": "I read the work item and the code.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"Two small functions in the style of format-slot.js, each with a test.\"\n}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "I'll look at how a slot is formatted today.",
+      "tools": [{ "name": "Read", "input": { "file_path": "format-slot.js" } }]
+    },
+    {
+      "text": "Adding the slot chip's label: the slot, and how many are left.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "slot-chip.js",
+            "content": "import { formatSlot } from './format-slot.js';\n\n/** What a slot chip says: slotChip({ start: '14:00', end: '15:00', left: 3 }) → '14:00–15:00 · 3 left'. */\nexport const slotChip = ({ start, end, left }) => `${formatSlot(start, end)} · ${left > 0 ? `${left} left` : 'full'}`;\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Adding the hold timer's screen-reader label.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "hold-timer.js",
+            "content": "const count = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;\n\n/** What a screen reader says for the basket's hold timer: holdTimerLabel(899) → 'Slot held for 14 minutes 59 seconds'. */\nexport const holdTimerLabel = (seconds) => `Slot held for ${count(Math.floor(seconds / 60), 'minute')} ${count(seconds % 60, 'second')}`;\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "And tests for both.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/slot-chip.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { slotChip } from '../slot-chip.js';\nimport { holdTimerLabel } from '../hold-timer.js';\n\ntest('slotChip says the slot and how many are left', () => {\n  assert.equal(slotChip({ start: '14:00', end: '15:00', left: 3 }), '14:00–15:00 · 3 left');\n  assert.equal(slotChip({ start: '14:00', end: '15:00', left: 0 }), '14:00–15:00 · full');\n});\n\ntest('holdTimerLabel reads the time left in words', () => {\n  assert.equal(holdTimerLabel(899), 'Slot held for 14 minutes 59 seconds');\n  assert.equal(holdTimerLabel(61), 'Slot held for 1 minute 1 second');\n});\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Added slotChip() in slot-chip.js and holdTimerLabel() in hold-timer.js, in the style of format-slot.js, with tests in test/slot-chip.test.js. The hold timer has a label a screen reader can say. The test suite passes."
+    },
+    { "text": "All tests pass." },
+    { "text": "All tests pass." }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Both functions are small, tested and in the repository's style.\", \"findings\": []}\n```"
+    }
+  ]
+}

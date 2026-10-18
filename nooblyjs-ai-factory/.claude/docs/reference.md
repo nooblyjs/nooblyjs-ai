@@ -188,6 +188,7 @@ The event log (`factory events`) is the source of truth. Types, by area:
 - **stations**: `step.started` `step.finished` `step.failed` `step.progress` · `workspace.acquired` · `agent.event` · `wave.started` `wave.integrated` `task.finished` · `repair.attempted` · `route.decided`
 - **the outside world**: `effect.intended` `effect.done` (pushes, PRs, statuses, merges) · `artifact.stored`
 - **people**: `inbox.opened` `inbox.answered` · `policy.gap` · `scope.granted` · `pr.changes_requested` · `decision.recorded`
+- **hosted in NooblyJS** (Phase 7): `intake.waiting` (a handed-over work item that started nothing, and why) · `merge.refused` (a hosted run never merges)
 - **safety**: `security.blocked` · `system.stop_all` `system.resume_all` · `budget.exceeded`
 - **fleet and learning**: `campaign.created` `campaign.item_submitted` `campaign.item_failed` · `learning.recorded` `retro.done` `learning.proposed` · `worker.registered` `worker.revoked`
 
@@ -198,6 +199,7 @@ All bind to `127.0.0.1` unless told otherwise.
 | Server | Port | Auth | Endpoints |
 |---|---|---|---|
 | dashboard (F17) | 11203 | token (the link's `#token=`) as `Authorization: Bearer` or `X-Factory-Token` (the dashboard's own; survives proxies like Cloud Shell's web preview); POSTs header-only | `GET /api/status` `/api/runs` `/api/runs/:id` `/api/inbox` `/api/metrics` `/api/campaigns` `/api/events` (SSE) · `POST /api/inbox/:id` `/api/runs/:id/{cancel,pause,resume,retry}` `/api/stop-all` `/api/resume-all` |
+| hosted in NooblyJS (F26) | NooblyJS's | the NooblyJS session; reads need the `read` permission, run actions `draft`, the inbox and the kill switch `approve`; every write is audited by the host | under `/factory/api/v1`: the dashboard's endpoints without the `/api` prefix (`GET /factory/api/v1/status`, `POST /factory/api/v1/runs/:id/retry`…), except `/events`. Errors are `{ "error": { "code", "message" } }`. `/factory/js/…` and `/factory/css/…` are the UI module; every other `/factory/…` URL is NooblyJS's frame page |
 | webhooks (F15, F18) | 8787 | HMAC signature | `POST /webhooks/github` (issues, pull_request, pull_request_review, issue_comment) |
 | workers (F23) | 8790 | enrollment token, then per-worker tokens | `POST /worker/register` `/worker/lease` `/worker/heartbeat` `/worker/events` `/worker/complete` `/worker/fail` |
 

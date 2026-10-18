@@ -73,7 +73,7 @@ oracle: 21 cases × 1 repeat(s) = 21 runs          null: 21 cases × 1 repeat(s)
 
 The oracle found a real rule on its first try: it scored `no_changes` because the harness's Write tool **refuses to overwrite a file the agent hasn't read**. The oracle has to read before it writes, like any agent. The null agent's runs end as `no_changes`, the rule F14 added.
 
-## Reading results honestly (`src/bench/compare.js`)
+## Reading results honestly (`src/services/bench/compare.js`)
 
 A model isn't deterministic, so one bench run is **one sample**.
 
@@ -113,11 +113,11 @@ Then record in this doc: resolve rate (mean and spread), cost per resolve and me
 | File | What it does |
 |---|---|
 | `bench/cases/` | 21 cases |
-| `src/bench/cases.js` | load cases, `materialise`, `runHidden`, `verifyCase` |
-| `src/bench/runner.js` | `runCase` (a fresh repo and home, the whole line, scored), `runBench`; oracle and null agents |
-| `src/bench/compare.js` | `summarise` (mean, spread, cost per resolve, median), `compare` (flips, noise) |
-| `src/bench/miner.js` | `mineCases`: propose cases from git history |
-| `src/commands/bench.js` | `factory bench …` |
+| `src/services/bench/cases.js` | load cases, `materialise`, `runHidden`, `verifyCase` |
+| `src/services/bench/runner.js` | `runCase` (a fresh repo and home, the whole line, scored), `runBench`; oracle and null agents |
+| `src/services/bench/compare.js` | `summarise` (mean, spread, cost per resolve, median), `compare` (flips, noise) |
+| `src/services/bench/miner.js` | `mineCases`: propose cases from git history |
+| `src/controllers/cli/bench.js` | `factory bench …` |
 
 ## What we learned
 

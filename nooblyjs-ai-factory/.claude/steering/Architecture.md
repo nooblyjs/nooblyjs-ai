@@ -218,7 +218,7 @@ CREATE TABLE events (
 - **Subscriptions**: in-process listeners (scheduler, SSE, notifier) get new events after commit; out-of-process readers poll by `seq`.
 - **WAL mode** so the dashboard can read while the scheduler writes.
 
-*(Built in F05 with three projection tables, `items`, `runs` (steps nested) and `effects`, each stored as `(id, data JSON, seq)`; see `src/store/`.)*
+*(Built in F05 with three projection tables, `items`, `runs` (steps nested) and `effects`, each stored as `(id, data JSON, seq)`; see `src/models/store/`.)*
 
 Event types (non-exhaustive): `item.created · item.triaged · item.rejected · run.started · spec.written · spec.approved · step.ready · step.leased · step.heartbeat · step.started · agent.event` (forwarded harness events, sampled/compacted) `· step.succeeded · step.failed · gate.passed · gate.failed · review.finding · inbox.opened · inbox.answered · effect.intended · effect.done · budget.exceeded · run.paused · run.cancelled · run.delivered · run.merged · run.closed · learning.recorded · system.stop_all`.
 
@@ -338,7 +338,7 @@ loop every tick (or on event):
     lease(step, worker, ttl=60s) → dispatch
 ```
 
-- *(Built in F06 at run granularity; see `src/scheduler/`. Leases are a mutable table, not events.)*
+- *(Built in F06 at run granularity; see `src/services/scheduler/`. Leases are a mutable table, not events.)*
 - **Leases** with heartbeats every 15 s; an expired lease emits `step.lease_expired` and the step becomes `ready` again with `attempt+1`. The runner checks it still holds the lease before any side effect.
 - **Budgets** are hierarchical: step ≤ run ≤ item ≤ repo/day ≤ global/day. Reservation on start (estimate), reconciliation on each `turn_end`. `budget.exceeded` interrupts the attempt (via its `AbortSignal`) and escalates.
 - **Kill switch:** `factory stop-all` appends `system.stop_all`; the scheduler aborts every attempt's `AbortSignal` (subprocess: SIGINT then SIGKILL after 5 s) and stops leasing. `factory resume-all` reverses it. Workspaces are kept.
@@ -462,7 +462,7 @@ interface Forge {
 
 ## 16. Bench and learning loop (F19, F21)
 
-**Bench case** (`test/bench/cases/<name>/`): `repo.bundle` (git bundle at the pre-fix commit) · `issue.md` · `hidden/` (acceptance tests copied in only at scoring time) · `case.json` (gates, expected touched paths, budget). Built from real history of the `nooblyjs-*` repos (a closed issue/commit pair → a case). Builds on the harness eval runner ideas (Phase 19/23: repeats, labels, compare).
+**Bench case** (`test/bench/cases/<name>/`): `repo.bundle` (git bundle at the pre-fix commit) · `issue.md` · `hidden/` (acceptance tests copied in only at scoring time) · `case.json` (gates, expected touched paths, budget). Built from real history of the `NooblyJS-*` repos (a closed issue/commit pair → a case). Builds on the harness eval runner ideas (Phase 19/23: repeats, labels, compare).
 
 **Learning loop:**
 
@@ -481,6 +481,7 @@ No learning is applied without a human-approved PR and a bench comparison.
 |---|---|
 | `nooblyjs-learn-harness` (local path / git dependency) | The agent runtime: the whole point |
 | *(nothing else in core)* | SQLite via `node:sqlite`, HTTP via `node:http`, tests via `node:test`, HTTP client via `fetch` |
+| `express` (dev only, F26) | The tests mount `register()` into a bare Express 5 app, as NooblyJS does. Hosted, the factory uses the **host's** express (`host.express`) and never imports its own |
 | Docker/Podman CLI (optional, F23) | Container workspaces; invoked as a subprocess, not a library |
 | `gh` CLI (optional) | Only as a convenience for manual setup; the factory uses the REST API itself |
 
@@ -519,7 +520,7 @@ The factory was built phase by phase from this document. Most of it held; where 
 
 | Section | Planned | Built | Why |
 |---|---|---|---|
-| §3 Layout | `src/exec/workspace/container.js` as a workspace provider | `src/exec/container.js`: a container runner for the **repo's commands** (setup, gates) | The agent inside a container needs the harness's container backend (H37). A container image counts as isolation only for the repo's commands, never for the agent's (`commandIsolation()` vs `sandboxStatus()`); conflating them would silently weaken the agent's isolation (F23) |
+| §3 Layout | `src/services/exec/workspace/container.js` as a workspace provider | `src/services/exec/container.js`: a container runner for the **repo's commands** (setup, gates) | The agent inside a container needs the harness's container backend (H37). A container image counts as isolation only for the repo's commands, never for the agent's (`commandIsolation()` vs `sandboxStatus()`); conflating them would silently weaken the agent's isolation (F23) |
 | §8 Remote workers | workers "pull jobs" with the same lease protocol, running the harness inside a per-step container | workers pull leased **agent steps** (build and repair only) over HTTP and run them in their own workspace; commits travel as **git bundles** both ways | The store's API is synchronous and local, so the line stays in the control plane and only the expensive step moves. Bundles carry commits only the control plane has (spec branches, fan-out waves) and keep it the only pusher. The container part waits for H37 (F23) |
 | §11 `ask_human` | the step resumes its session (H-13) with the answer | the run **parks**; the step **restarts** with the answer in its prompt | Session resume (H34) isn't in the harness yet; the events don't change when it is (F16) |
 | §15 Dashboard API | `/api/items`, `POST /api/items`, a token in `~/.factory/secrets.json` | runs, inbox, metrics, campaigns, actions on runs; **no submitting from the browser** (use the CLI or `factory mcp --operator`); a token in `~/.factory/dashboard-token`, carried in the link's `#fragment`; POSTs need it in the header | A page with a Stop-all button is an attack surface: the fragment never reaches servers or logs, and header-only POSTs keep a leaked query string from acting (F17) |

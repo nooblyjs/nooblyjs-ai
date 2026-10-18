@@ -17,12 +17,12 @@ GitHub ──webhook (signed)──▶ factory serve --webhooks ──▶ verify
 
 | File | What it does |
 |---|---|
-| `src/forge/github/client.js` | `fetch` + a token. Rate limits: wait for `x-ratelimit-reset` (or `retry-after`), up to `maxWaitMs`, then fail clearly. 5xx and network errors: back off 1s, 2s, 4s. 4xx: fail at once, with GitHub's message. |
-| `src/forge/github/forge.js` | The Forge interface on GitHub (below) |
-| `src/forge/github/webhooks.js` | `verifySignature` (HMAC-SHA256, constant time), `parseWebhook` (event → command), `handleWebhook` (command → events) |
-| `src/server/webhooks.js` | `POST /webhooks/github` on `127.0.0.1`, 1 MB cap, unsigned → 401 |
-| `src/forge/index.js` | `forgeFor(request)`: a run's request says which forge; `githubSettings()` from `config.json` |
-| `src/commands/github.js` | `factory github poll`: for when GitHub can't reach you |
+| `src/services/forge/github/client.js` | `fetch` + a token. Rate limits: wait for `x-ratelimit-reset` (or `retry-after`), up to `maxWaitMs`, then fail clearly. 5xx and network errors: back off 1s, 2s, 4s. 4xx: fail at once, with GitHub's message. |
+| `src/services/forge/github/forge.js` | The Forge interface on GitHub (below) |
+| `src/services/forge/github/webhooks.js` | `verifySignature` (HMAC-SHA256, constant time), `parseWebhook` (event → command), `handleWebhook` (command → events) |
+| `src/routes/webhooks.js` | `POST /webhooks/github` on `127.0.0.1`, 1 MB cap, unsigned → 401 |
+| `src/services/forge/index.js` | `forgeFor(request)`: a run's request says which forge; `githubSettings()` from `config.json` |
+| `src/controllers/cli/github.js` | `factory github poll`: for when GitHub can't reach you |
 
 ## The GitHub forge, method by method
 
@@ -126,7 +126,7 @@ What the fake can't tell us: GitHub's exact eventual consistency (a PR list that
 ## Try it (offline)
 
 ```bash
-node --test test/github.test.js
+node --test test/services/forge/github.test.js
 FACTORY_WEBHOOK_SECRET=x node bin/factory.js github webhook-test   # the settings serve would use
 ```
 

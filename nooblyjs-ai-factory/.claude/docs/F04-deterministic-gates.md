@@ -35,7 +35,7 @@ A **gate** is a command whose exit code is the verdict. The repo lists them in `
 
 The **order is the order they run in**, so put the cheapest first. (JavaScript objects keep the order keys were written in, as long as the keys aren't numbers.)
 
-## The gate runner (`src/exec/gates/runner.js`)
+## The gate runner (`src/services/exec/gates/runner.js`)
 
 ```
 agent stops ──► lint ✅ ──► test ❌ ──► e2e ⏭️ skipped
@@ -64,7 +64,7 @@ If the factory only checks at the end, a failing change means a failed job and (
 The harness already has the mechanism (harness Phase 12). A **Stop hook** runs when the model is about to end its turn. Exit code 2 means "not done": the hook's message goes to the model and the loop continues, at most 3 times. So every workspace with gates gets one:
 
 ```json
-"hooks": { "Stop": [{ "command": "node …/src/exec/gates/stop-hook.js …/workspaces/<id>/gates.json", "timeout": 70 }] }
+"hooks": { "Stop": [{ "command": "node …/src/services/exec/gates/stop-hook.js …/workspaces/<id>/gates.json", "timeout": 70 }] }
 ```
 
 What the agent sees when it tries to stop too early:
@@ -115,13 +115,13 @@ The agent's claim stays in the PR, as a quote, **right next to the fact**:
 
 | File | What it does |
 |---|---|
-| `src/exec/workspace/repo-config.js` | `gates` and `timeoutMs` in `.factory/config.json` |
-| `src/exec/gates/runner.js` | `runGates()` (ordered, fail fast, timeouts, fail closed) and `formatGates()` (the PR table) |
-| `src/exec/gates/excerpt.js` | Head + tail of long output |
-| `src/exec/gates/stop-hook.js` | The Stop hook script: fast gates → exit 2 with the failure |
-| `src/exec/workspace/harness-settings.js` | Installs the hook; writes `gates.json` outside the checkout |
-| `src/exec/step-runner.js` | Refuse early without a sandbox; gates after the agent; keep the checkout on failure |
-| `src/exec/sandbox.js` | `runCommand` now reports `timedOut` and duration |
+| `src/config/repo-config.js` | `gates` and `timeoutMs` in `.factory/config.json` |
+| `src/services/exec/gates/runner.js` | `runGates()` (ordered, fail fast, timeouts, fail closed) and `formatGates()` (the PR table) |
+| `src/services/exec/gates/excerpt.js` | Head + tail of long output |
+| `src/services/exec/gates/stop-hook.js` | The Stop hook script: fast gates → exit 2 with the failure |
+| `src/config/harness-settings.js` | Installs the hook; writes `gates.json` outside the checkout |
+| `src/services/exec/step-runner.js` | Refuse early without a sandbox; gates after the agent; keep the checkout on failure |
+| `src/services/exec/sandbox.js` | `runCommand` now reports `timedOut` and duration |
 | `examples/make-demo-repo.sh` | A tiny `calc` repo with a real `node --test` gate |
 
 ## Try it

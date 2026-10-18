@@ -27,10 +27,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { git } from '../exec/workspace/git.js';
-import { readFileAt } from '../exec/workspace/mirror.js';
-import { ALWAYS_DENY } from '../exec/workspace/harness-settings.js';
-import { parseFrontmatter } from '../util/frontmatter.js';
+import { git } from '../services/exec/workspace/git.js';
+import { readFileAt } from '../services/exec/workspace/mirror.js';
+import { ALWAYS_DENY } from '../config/harness-settings.js';
+import { parseFrontmatter } from '../utils/frontmatter.js';
 
 const BUILT_IN = fileURLToPath(new URL('./builtin/', import.meta.url));
 export const TIERS = ['fast', 'balanced', 'strong'];

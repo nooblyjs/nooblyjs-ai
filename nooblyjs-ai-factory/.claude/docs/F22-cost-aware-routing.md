@@ -12,7 +12,7 @@ factory metrics                                                  # cost and succ
 
 ---
 
-## Policies are data (`src/routing/policy.js`)
+## Policies are data (`src/services/routing/policy.js`)
 
 ```json
 "cheap-first": { "stations": {
@@ -111,11 +111,11 @@ Record the numbers here when you run it.
 
 | File | What it does |
 |---|---|
-| `src/routing/policy.js` | `POLICIES`, `signalsFor`, `routeTier`, `policyFor` |
-| `src/line/stations/common.js` | `routeModel`: every agent step asks the policy; `route.decided` |
-| `src/line/stations/triage.js`, `roles/builtin/triager.md` | the optional `confidence` |
-| `src/metrics/*` | cost and success per station and tier |
-| `src/commands/{run,queue,bench}.js`, `src/job/run-job.js`, `src/bench/runner.js` | `--routing` |
+| `src/services/routing/policy.js` | `POLICIES`, `signalsFor`, `routeTier`, `policyFor` |
+| `src/services/line/stations/common.js` | `routeModel`: every agent step asks the policy; `route.decided` |
+| `src/services/line/stations/triage.js`, `roles/builtin/triager.md` | the optional `confidence` |
+| `src/services/metrics/*` | cost and success per station and tier |
+| `src/controllers/cli/{run,queue,bench}.js`, `src/services/job/run-job.js`, `src/services/bench/runner.js` | `--routing` |
 
 ## What we learned
 

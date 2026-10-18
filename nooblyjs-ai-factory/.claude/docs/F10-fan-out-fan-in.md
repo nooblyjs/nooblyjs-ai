@@ -19,7 +19,7 @@ spec commit ─┬─ T1 (multiply.js) ─┐
              └─ T3 (power.js)   ──┘                          └─ T5 (shares a path)  ─┴─ merge ─► verify
 ```
 
-## Waves (`src/line/fanout.js`)
+## Waves (`src/services/line/fanout.js`)
 
 A pure function decides which tasks can start together:
 
@@ -41,7 +41,7 @@ ready  =  not done, not failed
 
 Waves rather than a rolling pool: a task can't start until everything it depends on is *merged*, and merging happens between waves. Simple and correct, at the cost of some idle time when one task in a wave is slow. A rolling scheduler would merge as each task finishes. That's a fine next step, but it's more moving parts to learn at once.
 
-## Fan-in: merging (`src/line/integrate.js`)
+## Fan-in: merging (`src/services/line/integrate.js`)
 
 After each wave, the **control plane** merges the task branches, one at a time, into an integration workspace:
 
@@ -74,11 +74,11 @@ An integrator that leaves markers fails the build. It's never delivered half-mer
 
 | File | What it does |
 |---|---|
-| `src/line/fanout.js` | `nextWave`, `planWaves`, `overlaps`: pure |
-| `src/line/integrate.js` | Merge a wave's branches; the integrator for conflicts; the marker check |
+| `src/services/line/fanout.js` | `nextWave`, `planWaves`, `overlaps`: pure |
+| `src/services/line/integrate.js` | Merge a wave's branches; the integrator for conflicts; the marker check |
 | `src/roles/builtin/integrator.md` | The integrator role |
-| `src/line/stations/build.js` | `buildWhole` / `buildTasks` (waves) / `buildOnce`; budget shares; per-task outcomes |
-| `src/commands/history.js` | `factory logs` shows waves, tasks and merges |
+| `src/services/line/stations/build.js` | `buildWhole` / `buildTasks` (waves) / `buildOnce`; budget shares; per-task outcomes |
+| `src/controllers/cli/history.js` | `factory logs` shows waves, tasks and merges |
 
 ## Try it: the checkpoint
 

@@ -48,7 +48,7 @@ The base may be commits **only the control plane has** (a spec branch from F08, 
 
 ### Leases, again
 
-It's F06's idea at a new scale (`src/remote/dispatcher.js`):
+It's F06's idea at a new scale (`src/services/remote/dispatcher.js`):
 - A worker **holds a step only while it heartbeats**. Streamed agent events count as signs of life too.
 - Silent for `leaseMs` → the step goes **back to the queue** for another worker (up to `maxAttempts`), then fails.
 - The old worker's next heartbeat hears **"lease lost"** and **aborts its agent**. It doesn't finish a step someone else now owns, and its late result is ignored.
@@ -73,7 +73,7 @@ Per-worker tokens (listed under F24 in the roadmap) are needed as soon as there 
 - **Factory MCP tools (F16)**: they talk to the control plane's store. A remote step runs without them; they'd need the worker API to proxy them.
 - **Transcripts**: they stay on the worker (no `harnessHome` comes back).
 
-## Part 2: containers (`src/exec/container.js`)
+## Part 2: containers (`src/services/exec/container.js`)
 
 The harness sandbox (bubblewrap) is one way to contain a repo's own code, and it isn't installed here. Containers are the other, and what most factories use. With an image configured, `runCommand` (the one place setup and gates run, F02/F04) uses:
 
@@ -121,15 +121,15 @@ The steps were shared between the two processes over HTTP, and all three runs we
 
 | File | What it does |
 |---|---|
-| `src/remote/dispatcher.js` | the step queue: leases, heartbeats, expiry, stop |
-| `src/remote/remote-step.js` | `remoteRunStep`: runStep's shape, run far away (bundles both ways) |
-| `src/remote/worker.js` | `createWorker`: lease → clone → runStep → stream → bundle → complete |
-| `src/server/workers-api.js` | the worker API; enrollment and per-worker tokens; revoke |
-| `src/server/http.js` | `authorize` (who is this token?) alongside the single dashboard token |
-| `src/exec/container.js` | `containerArgs`, `runInContainer`, `containerRuntime` |
-| `src/exec/sandbox.js` | a container fallback for the repo's commands; `commandIsolation()` |
-| `src/commands/worker.js` | `factory worker`, `list`, `revoke` |
-| `src/commands/queue.js` | `serve --workers` |
+| `src/services/remote/dispatcher.js` | the step queue: leases, heartbeats, expiry, stop |
+| `src/services/remote/remote-step.js` | `remoteRunStep`: runStep's shape, run far away (bundles both ways) |
+| `src/services/remote/worker.js` | `createWorker`: lease → clone → runStep → stream → bundle → complete |
+| `src/routes/workers.js` | the worker API; enrollment and per-worker tokens; revoke |
+| `src/routes/http.js` | `authorize` (who is this token?) alongside the single dashboard token |
+| `src/services/exec/container.js` | `containerArgs`, `runInContainer`, `containerRuntime` |
+| `src/services/exec/sandbox.js` | a container fallback for the repo's commands; `commandIsolation()` |
+| `src/controllers/cli/worker.js` | `factory worker`, `list`, `revoke` |
+| `src/controllers/cli/queue.js` | `serve --workers` |
 
 ## What we learned
 

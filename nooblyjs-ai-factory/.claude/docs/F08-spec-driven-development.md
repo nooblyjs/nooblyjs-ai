@@ -36,7 +36,7 @@ This is the approach of Amazon Kiro (requirements → design → tasks, and the 
 
 "It should subtract" is a wish. "WHEN subtract(a, b) is called with two numbers THE SYSTEM SHALL return a minus b" is a test waiting to be written. The **unwanted** form ("IF … THEN") is the one that catches the forgotten error cases, like division by zero in the checkpoint below.
 
-## The format (`src/specs/schema.js`)
+## The format (`src/models/spec.js`)
 
 ```markdown
 ## R2: Divide two numbers
@@ -64,7 +64,7 @@ T1 declares no Paths (the files it may change)
 
 (That's the harness's lesson "tool results are prompts" (harness Architecture principle 4), applied to a validator.)
 
-## Traceability (`src/specs/trace.js`)
+## Traceability (`src/services/specs/trace.js`)
 
 A matrix of which task implements which criterion. Two checks fall out of it for free: **uncovered** (a criterion nothing implements, so it silently won't get built) and **unknown** (a task citing a criterion that doesn't exist). `Requirements: R1` on a task means all of R1's criteria.
 
@@ -74,7 +74,7 @@ The same matrix goes **into the PR**, so a reviewer can go from each requirement
 |---|---|---|
 | R2.2 | IF divide(a, b) is called with b equal to 0 THEN THE SYSTEM SHALL throw a RangeError … | T2 |
 
-## The spec station (`src/line/stations/spec.js`)
+## The spec station (`src/services/line/stations/spec.js`)
 
 | Rule | How |
 |---|---|
@@ -91,7 +91,7 @@ The same matrix goes **into the PR**, so a reviewer can go from each requirement
 - **The PR's diff must start from the original base.** The builder's workspace starts at the spec commit, so its own `--stat` showed only the code. The PR now shows everything since the original base: spec **and** code.
 - **Gates still come from the original base** (the `configSha` from F07), so neither the spec-writer nor the builder can change which checks run.
 
-## Steering (`src/knowledge/steering.js`)
+## Steering (`src/services/knowledge/steering.js`)
 
 ```
 .factory/steering/product.md     what this is, for whom, what matters, what's out of scope
@@ -101,7 +101,7 @@ The same matrix goes **into the PR**, so a reviewer can go from each requirement
 
 Read from the **pinned base commit** (only committed, reviewed guidance counts), and put at the top of the spec-writer's and builder's prompts. Unlike issue text, steering comes from the repo's maintainers through reviewed commits, so it's presented as guidance, not fenced as untrusted. (That's also why the learning loop in F21 may only change steering through a PR a human approves.)
 
-## `factory init`: a first draft, as a PR (`src/knowledge/init.js`)
+## `factory init`: a first draft, as a PR (`src/services/knowledge/init.js`)
 
 A **deterministic** draft, from what's in the repo at a pinned commit: same input, same output, offline, free.
 
@@ -134,13 +134,13 @@ The spec critique the roadmap asks for (a *real model's* requirements for a feat
 
 | File | What it does |
 |---|---|
-| `src/specs/schema.js` | Parse requirements (EARS) and tasks; check a whole spec; specific problems |
-| `src/specs/trace.js` | Coverage matrix; uncovered/unknown; the PR table |
-| `src/line/stations/spec.js` | The spec station: scoped writer, check → fix, commit |
-| `src/exec/step-runner.js` | `check` / `fixPrompt` / `maxFixes`; `prompt` may be a function of the workspace |
-| `src/line/executor.js` | Build starts from the spec commit; the PR gets the coverage table |
-| `src/knowledge/steering.js` | Read steering at the base commit; the prompt section |
-| `src/knowledge/init.js`, `src/commands/init.js` | `factory init`: deterministic drafts (+ optional agent), delivered as a draft PR |
+| `src/models/spec.js` | Parse requirements (EARS) and tasks; check a whole spec; specific problems |
+| `src/services/specs/trace.js` | Coverage matrix; uncovered/unknown; the PR table |
+| `src/services/line/stations/spec.js` | The spec station: scoped writer, check → fix, commit |
+| `src/services/exec/step-runner.js` | `check` / `fixPrompt` / `maxFixes`; `prompt` may be a function of the workspace |
+| `src/services/line/executor.js` | Build starts from the spec commit; the PR gets the coverage table |
+| `src/services/knowledge/steering.js` | Read steering at the base commit; the prompt section |
+| `src/services/knowledge/init.js`, `src/controllers/cli/init.js` | `factory init`: deterministic drafts (+ optional agent), delivered as a draft PR |
 | `lines/default.json` | triage → **spec** (when not small) → build → verify → deliver |
 
 ## Try it
@@ -181,4 +181,4 @@ node bin/factory.js run <a feature issue> --repo /tmp/harness --model claude-son
 - **A fresh session knows nothing**, not even what it read. Resuming sessions (H34) matters for fix loops.
 - **Draft deterministically, leave the judgment to people, deliver as a PR.** That applies to steering files too.
 - **Not every stage earns its cost.** A plan station for small changes didn't.
-- How the commercial factories appear to do it: Kiro's spec mode produces `requirements.md` (EARS), `design.md` and `tasks.md`, with steering files in `.kiro/steering/`; GitHub Spec Kit has `/specify`, `/plan`, `/tasks`; Devin and Jules show a plan before coding. The common idea: **agree on the what before paying for the how.**
+- How the commercial factories appear to do it: Kiro's spec mode produces `requirements.md` (EARS), `design.md` and `tasks.md`, with steering files in `.claude/steering/`; GitHub Spec Kit has `/specify`, `/plan`, `/tasks`; Devin and Jules show a plan before coding. The common idea: **agree on the what before paying for the how.**

@@ -9,13 +9,12 @@ It's a learning project. Each of its 26 phases (F00–F25) adds one idea from th
 Every example has a scripted agent, so the whole line runs offline, for free:
 
 ```bash
-git clone https://github.com/nooblyjs/nooblyjs-ai-common.git && git clone https://github.com/nooblyjs/nooblyjs-ai-harness.git && git clone https://github.com/nooblyjs/nooblyjs-learn-factory.git   # side by side
-cd nooblyjs-learn-factory && npm install
+git clone https://github.com/nooblyjs/nooblyjs-core.git && git clone https://github.com/nooblyjs/nooblyjs-ai.git   # side by side: core next to the monorepo
+cd nooblyjs-ai/nooblyjs-ai-factory && npm install
 
 export FACTORY_HOME=/tmp/factory-demo
 examples/make-demo-repo.sh /tmp/calc                          # a tiny repo with tests
-node bin/factory.js run examples/issues/add-subtract.md --repo /tmp/calc \
-  --script examples/scripts/subtract-slow.json --autonomy L2 --allow-unsandboxed
+node bin/factory.js run examples/issues/add-subtract.md --repo /tmp/calc --script examples/scripts/subtract-slow.json --autonomy L2 --allow-unsandboxed
 cat $FACTORY_HOME/forge/*/prs/issue-1.md                      # the PR: its evidence, checks, review, cost
 node bin/factory.js logs <run>                                 # the run's whole story
 node bin/factory.js dashboard                                  # the same, in a browser
@@ -34,7 +33,7 @@ With a model: `export ANTHROPIC_API_KEY=…` and drop `--script`. On Linux, inst
    (asks)   (EARS)  (a person) (fan-out, (scope,   (tamper,  (fixer,  (secret    (L3,
                                workers) gates)    reviewer) loops)   scan, PR)  green)
    │
-   └─ every step is an EVENT in SQLite: the dashboard, metrics, audit, notifications,
+   └─ every step is an EVENT in the log (YAML files): the dashboard, metrics, audit, notifications,
       retries and the learning loop are all read from that one log
 ```
 
@@ -54,7 +53,7 @@ With a model: `export ANTHROPIC_API_KEY=…` and drop `--script`. On Linux, inst
 
 **All 26 phases (F00–F25) are built.** 235 tests pass offline (`npm test`), and `npm run check:examples` runs every example in the docs against a fresh repo.
 
-Verified here: everything offline with scripted agents, a real Docker run, real `noobly` subprocesses, two remote worker processes sharing a queue, and a campaign across clones of the `nooblyjs-*` repos.
+Verified here: everything offline with scripted agents, a real Docker run, real `noobly` subprocesses, two remote worker processes sharing a queue, and a campaign across clones of the `NooblyJS-*` repos.
 
 **Still to do with real models and real use** (there was no API key where this was built):
 - the bench baseline (F19);
@@ -67,12 +66,12 @@ The docs give the exact commands. One known flaky test (F05's multi-process data
 
 | Phase | Feature |
 |---|---|
-| F00 | Scaffold: the harness as a linked dependency, `src/harness.js`, ids, clock |
+| F00 | Scaffold: the harness as a linked dependency, `src/services/harness.js`, ids, clock |
 | F01 | **Driving the harness**: in-process and subprocess drivers, limits (timeout, USD budget, stop), `factory agent` |
 | F02 | **Isolated workspaces**: a mirror per repo, a worktree + branch per step, sandboxed settings via a per-step harness home, cached setup, `factory workspace`, `factory agent --repo` |
 | F03 | **Issue in, PR out**: `factory run issue.md --repo …` → a branch in your repo + a PR file (local forge); untrusted issue text fenced |
 | F04 | **Deterministic gates**: the repo's checks (`gates` in `.factory/config.json`) decide ready vs draft; a Stop hook shows the agent failures before it stops; `examples/make-demo-repo.sh` |
-| F05 | **Durable state**: every step is an event in SQLite (`~/.factory/factory.db`); crash-safe PRs and pushes; `factory runs`, `logs`, `events`, `db rebuild`, `run retry` |
+| F05 | **Durable state**: every step is an event in the log (daily YAML files under `~/.factory/events/`; SQLite until NooblyJS Phase 7); crash-safe PRs and pushes; `factory runs`, `logs`, `events`, `db rebuild`, `run retry` |
 | F06 | **Scheduler**: `factory submit` → `factory serve` runs the queue (priority, fairness, `maxConcurrent`, daily budgets, leases); `status`, `stop-all`, `resume-all`, `cancel`; operator settings in `~/.factory/config.json` |
 | F07 | **Lines**: stations as data (`lines/default.json`: triage → build → verify → deliver); a vague issue stops at triage with questions on it; verify runs on a clean checkout; `run retry --from`, `pause`, `resume` |
 | F08 | **Specs**: medium/large items get `.factory/specs/<item>/{requirements,design,tasks}.md` (EARS, checked, traced) before the builder starts from them; steering files in every prompt; `factory init <repo>` drafts steering + config as a PR |
@@ -93,6 +92,7 @@ The docs give the exact commands. One known flaky test (F05's multi-process data
 | F23 | **Workers and containers**: `factory serve --workers` + `factory worker --server … --enroll …` run build and repair steps on other machines; `FACTORY_CONTAINER_IMAGE` runs setup and gates in Docker/Podman |
 | F24 | **Security**: nothing is pushed with a secret or risky change in any commit (held for a person); agents never see the factory's secrets; `factory audit export\|verify`; a red-team suite |
 | F25 | **Campaigns**: `factory campaign create --spec … --repos …` opens one PR per repo (rate-limited per repo per day) and tracks them together; `schedules` in config run recurring campaigns |
+| F26 | **Hosted in NooblyJS**: `register()` (root `index.js`) mounts the dashboard at `/factory` inside [NooblyJS](../nooblyjs-ai-host), behind its sign-in, permissions and audit log; the pages are a UI module in NooblyJS's frame |
 
 ## Working on it
 
@@ -101,4 +101,4 @@ npm test                  # offline: no network, no API key
 npm run check:examples    # every documented example still works
 ```
 
-Conventions (Node ≥ 24, ES modules, `// @ts-check`, one concept per file, the harness imported only through `src/harness.js`, a clock for anything time-based) are in [CLAUDE.md](CLAUDE.md).
+Conventions (Node ≥ 24, ES modules, `// @ts-check`, one concept per file, the harness imported only through `src/services/harness.js`, a clock for anything time-based) are in [CLAUDE.md](CLAUDE.md).

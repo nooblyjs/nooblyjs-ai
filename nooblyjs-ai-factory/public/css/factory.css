@@ -1,0 +1,622 @@
+/*
+ * The factory's pages inside the NooblyJS frame (Phase F26). Every selector starts with [data-module="factory"], because
+ * all NooblyJS apps share one document; a test checks it (test/module.test.js). The pages draw into one root element,
+ * .fx-root, so nothing here reaches the frame's own notices.
+ *
+ * It began as public/dashboard/styles.css + dashboard.css, scoped once with nooblyjs-core/scripts/scope-css.js (the old
+ * page's sidebar, header and unused classes dropped). Three parts: the kit's class names we also use are reverted,
+ * then the dashboard's rules, then its colour and type tokens pointed at the kit's (/ui/css/tokens.css).
+ */
+
+/* The kit's component classes are global. Inside our pages these names are OUR components: start them clean. */
+[data-module="factory"] :where(.fx-root) :is(.avatar, .btn, .card, .chip, .eyebrow, .meter, .table-wrap) { all: revert; margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Factory Design System - Custom Styles */
+
+/* Design Tokens */
+[data-module="factory"] .fx-root {
+    /* Colors */
+    --bg: #F1F2F2;
+    --surface: #FFFFFF;
+    --surface-sunken: #F7F7F8;
+    --chip: #F1F2F2;
+    --ink: #12284B;
+    --ink-2: #3B435F;
+    --muted: #60627A;
+    --on-ink: #FFFFFF;
+    --on-ink-muted: #BABAC5;
+    --accent: #12284B;
+    --accent-link: #12284B;
+    --accent-soft: #D7D7DD;
+    --accent-tint: #F1F2F2;
+    --accent-light: #A09FAF;
+    --teal: #2F5F9E;
+    --teal-soft: #DDE8F6;
+    --teal-text: #1F4A8A;
+    --teal-ink: #1F4A8A;
+    --neutral-soft: #E6E7E8;
+    --neutral-text: #60627A;
+    --neutral-ink: #60627A;
+    --neutral-dot: #A09FAF;
+    --warn-soft: #FBEFC4;
+    --warn-ink: #6B4E00;
+    --warn-dot: #8A6500;
+    --warn-border: #E4B85C;
+    --danger: #B42335;
+    --danger-soft: #FADDE2;
+    --danger-ink: #8A1F35;
+    --danger-wash: #F8DCE0;
+    --tier-light: #A09FAF;
+    --tier-balanced: #60627A;
+    --tier-premium: #12284B;
+
+    /* Avatar Colors */
+    --avatar-peach-bg: #FFD7C2;
+    --avatar-peach-deep: #7A2E14;
+    --avatar-mint-bg: #CDE7E4;
+    --avatar-mint-deep: #1E5E63;
+    --avatar-lilac-bg: #E5DAF5;
+    --avatar-lilac-deep: #4B2E83;
+    --avatar-butter-bg: #FBE6A6;
+    --avatar-butter-deep: #6B4E00;
+    --avatar-rose-bg: #F6CFD8;
+    --avatar-rose-deep: #8A2440;
+    --avatar-sky-bg: #D6E4FA;
+    --avatar-sky-deep: #1F4A8A;
+    --avatar-sage-bg: #DCE8C8;
+    --avatar-sage-deep: #3D5A1E;
+    --avatar-sand-bg: #EED9C4;
+    --avatar-sand-deep: #6A3F1F;
+
+    /* Typography */
+    --font-display: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
+    --font-body: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
+    --display: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
+    --body: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
+    --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+
+    /* Spacing */
+    --spacing-xs: 8px;
+    --spacing-sm: 12px;
+    --spacing-md: 16px;
+    --spacing-lg: 20px;
+    --spacing-xl: 24px;
+    --spacing-2xl: 26px;
+    --spacing-3xl: 40px;
+    --spacing-4xl: 48px;
+
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+
+    /* Shadows */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 24px -14px rgba(18, 40, 75, 0.35);
+    --shadow: 0 10px 24px -14px rgba(18, 40, 75, 0.35);
+}
+
+/* Reset & Base Styles */
+[data-module="factory"] .fx-root * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+[data-module="factory"] .fx-root {
+    scroll-behavior: smooth;
+}
+
+[data-module="factory"] .fx-root {
+    font-family: var(--font-body);
+    background-color: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+    overflow-x: hidden;
+}
+
+/* Typography */
+[data-module="factory"] .fx-root h1,
+[data-module="factory"] .fx-root h2,
+[data-module="factory"] .fx-root h3,
+[data-module="factory"] .fx-root h4,
+[data-module="factory"] .fx-root h5,
+[data-module="factory"] .fx-root h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+[data-module="factory"] .fx-root h1 {
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+[data-module="factory"] .fx-root h2 {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+[data-module="factory"] .fx-root h3 {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+[data-module="factory"] .fx-root .fx-lead {
+    font-size: 17px;
+    color: var(--ink-2);
+    line-height: 1.5;
+}
+
+/* Links */
+[data-module="factory"] .fx-root a {
+    color: var(--accent-link);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+[data-module="factory"] .fx-root a:hover {
+    color: #3B435F;
+}
+
+/* Buttons */
+[data-module="factory"] .fx-root .btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 15px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Cards */
+[data-module="factory"] .fx-root .card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-2xl);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+[data-module="factory"] .fx-root .card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+/* Forms */
+
+/* Badges & Pills */
+[data-module="factory"] .fx-root .badge {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+/* Status Pills */
+
+/* Status Dot */
+
+/* Skill Chips */
+[data-module="factory"] .fx-root .chip {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--chip);
+    color: var(--ink);
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 6px;
+}
+
+/* Alerts */
+[data-module="factory"] .fx-root .alert {
+    padding: 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid;
+    font-size: 15px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+/* Tables */
+
+/* Progress Bars */
+
+/* Focus Styles */
+[data-module="factory"] .fx-root :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+[data-module="factory"] .fx-root button:focus-visible,
+[data-module="factory"] .fx-root a:focus-visible,
+[data-module="factory"] .fx-root input:focus-visible,
+[data-module="factory"] .fx-root select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Modal Overrides */
+
+/* Dropdown Overrides */
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+    [data-module="factory"] .fx-root h1 {
+        font-size: 32px;
+    }
+
+    [data-module="factory"] .fx-root h2 {
+        font-size: 18px;
+    }
+
+    [data-module="factory"] .fx-root {
+        font-size: 14px;
+    }
+
+}
+
+/* Overflow Hidden for Cards */
+[data-module="factory"] .fx-root .card {
+    overflow: hidden;
+}
+
+/* Dashboard-specific styles extending the centralized design system (styles.css: tokens, type, base components) */
+
+/* ---- base: what styles.css leaves to Bootstrap's reboot, which the dashboard doesn't load ---- */
+[data-module="factory"] .fx-root * { box-sizing: border-box; }
+[data-module="factory"] .fx-root { -webkit-text-size-adjust: 100%; color-scheme: light; }
+[data-module="factory"] .fx-root { margin: 0; }
+[data-module="factory"] .fx-root h1,
+[data-module="factory"] .fx-root h2,
+[data-module="factory"] .fx-root h3,
+[data-module="factory"] .fx-root p { margin: 0; }
+[data-module="factory"] .fx-root svg.i { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- shell (sized like the teammates app: 232px rail, 14px nav, small logo) ----------------- */
+
+/* ---- page header ---------------------------------------------------------------------------- */
+
+[data-module="factory"] .fx-root .crumbs { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+[data-module="factory"] .fx-root .crumbs a { font-weight: 500; color: var(--accent-link); }
+[data-module="factory"] .fx-root .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 32px 0 12px; }
+[data-module="factory"] .fx-root .section-head a { font-weight: 600; font-size: 13px; color: var(--accent-link); }
+[data-module="factory"] .fx-root .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); }
+[data-module="factory"] .fx-root .note { margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+/* ---- buttons, inputs (extended) ------------------------------------------------------------ */
+[data-module="factory"] .fx-root button,
+[data-module="factory"] .fx-root .btn { box-shadow: none; font: 600 14px/1 var(--body); display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 16px; border-radius: var(--radius-md); border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink); cursor: pointer; white-space: nowrap; transition: filter .12s; }
+[data-module="factory"] .fx-root button:hover,
+[data-module="factory"] .fx-root .btn:hover { filter: brightness(.96); color: var(--ink); }
+[data-module="factory"] .fx-root button:disabled { opacity: .55; cursor: progress; }
+[data-module="factory"] .fx-root .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+[data-module="factory"] .fx-root .primary:hover { filter: brightness(.92); color: #fff; }
+[data-module="factory"] .fx-root .danger-outline { border-color: var(--danger); color: var(--danger); background: var(--surface); }
+[data-module="factory"] .fx-root .danger-outline:hover { color: var(--danger); }
+[data-module="factory"] .fx-root .ghost { border-color: transparent; background: transparent; }
+[data-module="factory"] .fx-root .ghost.danger { color: var(--danger); }
+[data-module="factory"] .fx-root .small { min-height: 32px; padding: 0 12px; font-size: 12px; border-radius: var(--radius-sm); }
+[data-module="factory"] .fx-root .icon-btn { min-width: 40px; padding: 0; }
+[data-module="factory"] .fx-root .full { width: 100%; }
+[data-module="factory"] .fx-root input,
+[data-module="factory"] .fx-root select,
+[data-module="factory"] .fx-root textarea { font: 400 14px/1.4 var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); min-height: 40px; padding: 10px 14px; }
+[data-module="factory"] .fx-root input:focus,
+[data-module="factory"] .fx-root select:focus,
+[data-module="factory"] .fx-root textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-tint); outline: none; }
+[data-module="factory"] .fx-root select { padding-right: 36px; font-weight: 500; }
+[data-module="factory"] .fx-root textarea { width: 100%; min-height: 84px; resize: vertical; }
+[data-module="factory"] .fx-root .search { position: relative; width: min(280px, 100%); }
+[data-module="factory"] .fx-root .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+[data-module="factory"] .fx-root .search input { width: 100%; padding-left: 36px; }
+
+/* ---- pills, chips, badges ------------------------------------------------------------------ */
+
+[data-module="factory"] .fx-root .chip { display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: default; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--chip); color: var(--ink); font-size: 12px; font-weight: 500; white-space: nowrap; }
+[data-module="factory"] .fx-root .chip .dot { width: 8px; height: 8px; border-radius: 2px; }
+[data-module="factory"] .fx-root .who { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 500; }
+[data-module="factory"] .fx-root .avatar { display: inline-block; flex: none; border-radius: 50%; overflow: hidden; }
+[data-module="factory"] .fx-root .avatar svg { display: block; width: 100%; height: 100%; }
+[data-module="factory"] .fx-root .fail-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; border-radius: 999px; background: var(--danger-soft); color: var(--danger-ink); font-weight: 600; font-size: 12px; }
+
+/* ---- cards, tables, meters ------------------------------------------------------------------ */
+[data-module="factory"] .fx-root .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--spacing-xl); box-shadow: none; transition: none; }
+[data-module="factory"] .fx-root .card:hover { box-shadow: none; transform: none; }
+[data-module="factory"] .fx-root .card > h2 { margin-bottom: var(--spacing-md); font-size: 18px; }
+[data-module="factory"] .fx-root .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: var(--spacing-md); flex-wrap: wrap; }
+[data-module="factory"] .fx-root .card-head h2 { font-size: 18px; }
+[data-module="factory"] .fx-root .card-head a { color: var(--accent-link); font-size: 13px; font-weight: 600; }
+[data-module="factory"] .fx-root .stack { display: grid; gap: var(--spacing-lg); }
+[data-module="factory"] .fx-root .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: var(--spacing-lg); margin-top: var(--spacing-lg); align-items: start; }
+
+[data-module="factory"] .fx-root .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow-x: auto; max-width: 100%; position: relative; }
+[data-module="factory"] .fx-root .table-wrap table { min-width: 680px; }
+[data-module="factory"] .fx-root td.id,
+[data-module="factory"] .fx-root td.r { white-space: nowrap; }
+[data-module="factory"] .fx-root table { width: 100%; border-collapse: collapse; font-size: 14px; }
+[data-module="factory"] .fx-root th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--surface-sunken); padding: 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+[data-module="factory"] .fx-root td { padding: 12px; border-bottom: 1px solid var(--divider); vertical-align: middle; }
+[data-module="factory"] .fx-root tbody tr:hover { background: var(--bg); }
+[data-module="factory"] .fx-root tr:last-child td { border-bottom: 0; }
+[data-module="factory"] .fx-root th:first-child,
+[data-module="factory"] .fx-root td:first-child { padding-left: 20px; }
+[data-module="factory"] .fx-root th:last-child,
+[data-module="factory"] .fx-root td:last-child { padding-right: 20px; }
+[data-module="factory"] .fx-root .r { text-align: right; }
+[data-module="factory"] .fx-root td.title { font-weight: 600; }
+[data-module="factory"] .fx-root td.id a,
+[data-module="factory"] .fx-root .runid { font-family: var(--mono); font-weight: 600; color: var(--accent-link); }
+[data-module="factory"] .fx-root .meter { height: 8px; border-radius: 999px; background: var(--divider); overflow: hidden; }
+[data-module="factory"] .fx-root .meter > i { display: block; height: 100%; min-width: 4px; border-radius: 999px; background: var(--accent); }
+[data-module="factory"] .fx-root .empty-row td { text-align: center; color: var(--muted); padding: 32px; }
+[data-module="factory"] .fx-root .empty-row:hover { background: none; }
+
+/* ---- filter pills, segmented control ------------------------------------------------------- */
+[data-module="factory"] .fx-root .toolbar { display: flex; justify-content: space-between; gap: 12px 16px; align-items: center; flex-wrap: wrap; margin-bottom: var(--spacing-lg); }
+[data-module="factory"] .fx-root .filters,
+[data-module="factory"] .fx-root .segmented { display: flex; gap: 8px; flex-wrap: wrap; }
+[data-module="factory"] .fx-root .filters button,
+[data-module="factory"] .fx-root .segmented button { border-radius: 999px; font-weight: 700; font-size: 13px; min-height: 0; padding: 8px 14px; }
+[data-module="factory"] .fx-root .filters button span { font-weight: 500; color: var(--muted); margin-left: 4px; }
+[data-module="factory"] .fx-root .filters button[aria-pressed="true"],
+[data-module="factory"] .fx-root .segmented button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+[data-module="factory"] .fx-root .filters button[aria-pressed="true"] span { color: var(--on-ink-muted); }
+
+/* ---- the line ------------------------------------------------------------------------------- */
+[data-module="factory"] .fx-root .board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; align-items: stretch; }
+[data-module="factory"] .fx-root .station { flex: 0 0 300px; min-height: 420px; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+[data-module="factory"] .fx-root .station.parked-here { background: var(--surface); }
+[data-module="factory"] .fx-root .station-head { display: flex; justify-content: space-between; align-items: center; }
+[data-module="factory"] .fx-root .station-head .eyebrow { color: var(--ink); }
+[data-module="factory"] .fx-root .tally { display: inline-grid; place-items: center; min-width: 26px; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--neutral-soft); color: var(--ink-2); font-size: 12px; font-weight: 600; }
+[data-module="factory"] .fx-root .station.folded { flex: 0 0 56px; padding: 20px 0; align-items: center; background: transparent; border-style: dashed; border-color: var(--border-strong); gap: 12px; }
+[data-module="factory"] .fx-root .station.folded .eyebrow { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 12px; color: var(--ink-2); }
+[data-module="factory"] .fx-root .station.folded .n { font-size: 13px; color: var(--muted); }
+[data-module="factory"] .fx-root .job { display: grid; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; color: var(--ink); transition: transform .2s, box-shadow .2s; }
+[data-module="factory"] .fx-root a.job:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); color: var(--ink); }
+[data-module="factory"] .fx-root .job.needs { border-color: var(--warn-border); }
+[data-module="factory"] .fx-root .job.running { box-shadow: var(--shadow); }
+[data-module="factory"] .fx-root .job-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+[data-module="factory"] .fx-root .job-top .mono { font-size: 12px; color: var(--muted); }
+[data-module="factory"] .fx-root .job .t { font-size: 15px; font-weight: 700; line-height: 1.35; }
+[data-module="factory"] .fx-root .job .why { font-size: 13px; color: var(--ink-2); }
+[data-module="factory"] .fx-root .job .tail { font: 12px/1.4 var(--mono); background: var(--chip); color: var(--ink-2); padding: 8px 12px; border-radius: var(--radius-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-module="factory"] .fx-root .job .foot { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink-2); padding-top: 8px; border-top: 1px solid var(--divider); }
+[data-module="factory"] .fx-root .job .foot span { display: inline-flex; align-items: center; gap: 6px; }
+[data-module="factory"] .fx-root .job .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---- run detail ----------------------------------------------------------------------------- */
+[data-module="factory"] .fx-root .title-row { display: flex; align-items: center; gap: 14px 18px; flex-wrap: wrap; }
+[data-module="factory"] .fx-root .meta { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); font-size: 14px; }
+[data-module="factory"] .fx-root .meta b { color: var(--ink); font-weight: 600; }
+[data-module="factory"] .fx-root .meta > span + span::before { content: '·'; margin-right: 12px; }
+[data-module="factory"] .fx-root .run-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 24px 0 20px; }
+[data-module="factory"] .fx-root .run-actions label { font-size: 13px; color: var(--muted); }
+[data-module="factory"] .fx-root .stepper { display: grid; grid-template-columns: repeat(var(--n), minmax(84px, 1fr)); overflow-x: auto; padding: 24px 16px 20px; }
+[data-module="factory"] .fx-root .stepper li { list-style: none; display: grid; justify-items: center; gap: 4px; text-align: center; position: relative; }
+[data-module="factory"] .fx-root .stepper li::before { content: ''; position: absolute; top: 15px; left: calc(-50% + 20px); right: calc(50% + 20px); height: 2px; background: var(--divider); }
+[data-module="factory"] .fx-root .stepper li:first-child::before { display: none; }
+[data-module="factory"] .fx-root .stepper li.done::before,
+[data-module="factory"] .fx-root .stepper li.failed::before,
+[data-module="factory"] .fx-root .stepper li.running::before { background: var(--teal); }
+[data-module="factory"] .fx-root .stepper ol { display: contents; }
+[data-module="factory"] .fx-root .node { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--border-strong); background: var(--surface); color: #fff; margin-bottom: 8px; }
+[data-module="factory"] .fx-root .node svg.i { width: 16px; height: 16px; stroke-width: 2.4; }
+[data-module="factory"] .fx-root .done .node { background: var(--teal); border-color: var(--teal); }
+[data-module="factory"] .fx-root .failed .node { background: var(--danger); border-color: var(--danger); }
+[data-module="factory"] .fx-root .running .node { border-color: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft); }
+[data-module="factory"] .fx-root .running .node::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+[data-module="factory"] .fx-root .skipped .node { border-style: dashed; }
+[data-module="factory"] .fx-root .stepper .name { font-weight: 600; font-size: 14px; }
+[data-module="factory"] .fx-root .stepper .pending .name,
+[data-module="factory"] .fx-root .stepper .skipped .name { color: var(--muted); font-weight: 500; }
+[data-module="factory"] .fx-root .stepper .sub { font-size: 12px; color: var(--muted); }
+[data-module="factory"] .fx-root .alert { border: 0; font-size: 14px; display: grid; grid-template-columns: auto 1fr auto; gap: 6px 14px; align-items: start; background: var(--danger-wash); border-radius: var(--radius-lg); padding: 18px 22px; margin-top: var(--spacing-lg); color: var(--danger-ink); }
+[data-module="factory"] .fx-root .alert svg.i { width: 20px; height: 20px; margin-top: 2px; }
+[data-module="factory"] .fx-root .alert strong { display: block; font-size: 15px; margin-bottom: 4px; }
+[data-module="factory"] .fx-root .alert p { color: var(--ink-2); }
+[data-module="factory"] .fx-root .alert .body { white-space: pre-wrap; overflow-wrap: anywhere; }
+[data-module="factory"] .fx-root .alert.warn { background: var(--warn-soft); color: var(--warn-ink); }
+[data-module="factory"] .fx-root .story { list-style: none; margin: 0; padding: 0; position: relative; }
+[data-module="factory"] .fx-root .story li { display: grid; grid-template-columns: 14px 80px 1fr auto; gap: 4px 12px; padding: 12px 0; border-bottom: 1px solid var(--divider); position: relative; }
+[data-module="factory"] .fx-root .story li:first-child { padding-top: 0; }
+[data-module="factory"] .fx-root .story li:last-child { padding-bottom: 0; border-bottom: 0; }
+[data-module="factory"] .fx-root .story li::before { display: none; }
+[data-module="factory"] .fx-root .story .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--teal); margin-top: 7px; position: relative; }
+[data-module="factory"] .fx-root .story .failed .dot,
+[data-module="factory"] .fx-root .story li.failed .dot { background: var(--danger); }
+[data-module="factory"] .fx-root .story li.running .dot { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+[data-module="factory"] .fx-root .story time { font-size: 12px; line-height: 2; color: var(--muted); font-variant-numeric: tabular-nums; }
+[data-module="factory"] .fx-root .story .what { display: grid; gap: 4px; min-width: 0; }
+[data-module="factory"] .fx-root .story .what b { font-size: 15px; font-weight: 600; }
+[data-module="factory"] .fx-root .story .what p { font-size: 13px; color: var(--ink-2); overflow-wrap: anywhere; }
+[data-module="factory"] .fx-root .story .nums { text-align: right; font-size: 14px; color: var(--ink-2); display: grid; gap: 4px; align-content: start; }
+[data-module="factory"] .fx-root .story .nums .muted { font-size: 12px; }
+[data-module="factory"] .fx-root .terminal { background: var(--ink); color: var(--on-ink); border-radius: var(--radius-md); padding: 14px 16px; font: 13px/1.6 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 560px; overflow-y: auto; }
+[data-module="factory"] .fx-root .terminal .tag { color: var(--accent-light); }
+[data-module="factory"] .fx-root .terminal .err { color: #F7A8B6; }
+[data-module="factory"] .fx-root .terminal .dim { color: var(--on-ink-muted); }
+[data-module="factory"] .fx-root .check,
+[data-module="factory"] .fx-root .artifact { display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 16px; font-size: 14px; }
+[data-module="factory"] .fx-root .check + .check,
+[data-module="factory"] .fx-root .artifact + .artifact { margin-top: 10px; }
+[data-module="factory"] .fx-root .check .grow,
+[data-module="factory"] .fx-root .artifact .grow { flex: 1; min-width: 0; }
+[data-module="factory"] .fx-root .check .ok { color: var(--teal); }
+[data-module="factory"] .fx-root .check .bad { color: var(--danger); }
+[data-module="factory"] .fx-root .artifact .name { font-family: var(--mono); overflow-wrap: anywhere; }
+[data-module="factory"] .fx-root .artifact .sub { font: 12px var(--mono); color: var(--muted); }
+[data-module="factory"] .fx-root details.evidence summary { cursor: pointer; font: 700 18px var(--display); letter-spacing: -.01em; min-height: 40px; display: flex; align-items: center; }
+[data-module="factory"] .fx-root details.evidence pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.6 var(--mono); color: var(--ink-2); margin: 12px 0 0; }
+
+/* ---- inbox ---------------------------------------------------------------------------------- */
+[data-module="factory"] .fx-root .entries { display: grid; gap: var(--spacing-lg); max-width: 1060px; }
+[data-module="factory"] .fx-root .entry { display: grid; gap: 12px; }
+[data-module="factory"] .fx-root .entry .top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+[data-module="factory"] .fx-root .entry .top .waiting { margin-left: auto; font-size: 12px; color: var(--muted); }
+[data-module="factory"] .fx-root .card.entry > h2 { font-size: 20px; margin: 0; }
+[data-module="factory"] .fx-root .entry .fx-lead { font-size: 15px; color: var(--ink-2); }
+[data-module="factory"] .fx-root .sunken { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; font-size: 14px; }
+[data-module="factory"] .fx-root .sunken .eyebrow { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+[data-module="factory"] .fx-root .sunken .body { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2); max-height: 320px; overflow-y: auto; }
+[data-module="factory"] .fx-root .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 12px; padding-top: 12px; border-top: 1px dashed var(--divider); }
+[data-module="factory"] .fx-root .facts dt { font-size: 12px; color: var(--muted); font-weight: 600; }
+[data-module="factory"] .fx-root .facts dd { margin: 4px 0 0; font-size: 14px; font-weight: 700; }
+[data-module="factory"] .fx-root .entry .btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+[data-module="factory"] .fx-root .entry .options { display: flex; gap: 8px; flex-wrap: wrap; }
+[data-module="factory"] .fx-root .all-clear { display: flex; align-items: center; gap: 12px; color: var(--ink-2); margin-top: 24px; font-size: 15px; }
+
+/* ---- metrics (tiles follow the teammates summary cards: small caps label, big number) ----- */
+[data-module="factory"] .fx-root .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: var(--spacing-lg); }
+
+[data-module="factory"] .fx-root .callouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: var(--spacing-lg); margin: 24px 0; }
+[data-module="factory"] .fx-root .callout { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--spacing-xl); }
+[data-module="factory"] .fx-root .callout .badge { padding: 0; font-size: inherit; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }
+[data-module="factory"] .fx-root .callout .badge.danger { background: var(--danger-soft); color: var(--danger); }
+[data-module="factory"] .fx-root .callout .l { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+[data-module="factory"] .fx-root .callout .v { font: 700 20px/1.25 var(--display); letter-spacing: -.01em; }
+[data-module="factory"] .fx-root .bar-cell { width: 34%; min-width: 160px; }
+[data-module="factory"] .fx-root .bar-cell .meter { height: 8px; }
+
+/* ---- campaigns ------------------------------------------------------------------------------ */
+[data-module="factory"] .fx-root .hero-empty { text-align: center; padding: 48px 24px; max-width: 1060px; margin: 0 auto; }
+[data-module="factory"] .fx-root .hero-empty .rings { position: relative; width: 80px; height: 52px; margin: 0 auto 16px; }
+[data-module="factory"] .fx-root .hero-empty .rings i { position: absolute; top: 0; width: 52px; height: 52px; border-radius: 50%; }
+[data-module="factory"] .fx-root .hero-empty .rings i:first-child { left: 0; background: var(--accent-soft); }
+[data-module="factory"] .fx-root .hero-empty .rings i:nth-child(2) { right: 0; background: var(--teal-soft); opacity: .9; }
+[data-module="factory"] .fx-root .hero-empty .rings svg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 22px; height: 22px; color: var(--ink); }
+[data-module="factory"] .fx-root .hero-empty h2 { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+[data-module="factory"] .fx-root .hero-empty p { max-width: 520px; margin: 10px auto 22px; color: var(--ink-2); font-size: 15px; }
+[data-module="factory"] .fx-root .hero-empty .btns { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+[data-module="factory"] .fx-root .cli { text-align: left; max-width: 620px; margin: 32px auto 0; padding-top: 24px; border-top: 1px dashed var(--border-strong); }
+[data-module="factory"] .fx-root .cli .label { font-size: 13px; color: var(--ink-2); font-weight: 600; margin-bottom: 8px; }
+[data-module="factory"] .fx-root .code { display: flex; align-items: center; gap: 12px; background: var(--ink); color: var(--on-ink); border-radius: var(--radius-md); padding: 6px 6px 6px 16px; font: 13px/1.6 var(--mono); }
+[data-module="factory"] .fx-root .code code { flex: 1; overflow-x: auto; white-space: nowrap; padding: 10px 0; }
+[data-module="factory"] .fx-root .code button { background: transparent; border-color: transparent; color: var(--on-ink); }
+[data-module="factory"] .fx-root .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: var(--spacing-lg); max-width: 1060px; margin: 24px auto 0; }
+[data-module="factory"] .fx-root .how .card { padding: var(--spacing-xl); }
+[data-module="factory"] .fx-root .how .card svg.i { width: 18px; height: 18px; color: var(--accent); margin-bottom: 14px; }
+[data-module="factory"] .fx-root .how .card:last-child svg.i { color: var(--teal); }
+[data-module="factory"] .fx-root .how h3 { font-size: 16px; margin-bottom: 6px; font-family: var(--body); font-weight: 700; letter-spacing: 0; }
+[data-module="factory"] .fx-root .how p { font-size: 13px; color: var(--ink-2); }
+[data-module="factory"] .fx-root .campaign .counts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---- dialog --------------------------------------------------------------------------------- */
+[data-module="factory"] .fx-root dialog { border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 22px 26px 24px; max-width: min(640px, calc(100vw - 32px)); width: 100%; color: var(--ink); background: var(--surface); box-shadow: 0 30px 60px -20px rgba(36, 28, 26, .45); }
+[data-module="factory"] .fx-root dialog::backdrop { background: rgba(36, 28, 26, .45); }
+[data-module="factory"] .fx-root dialog h2 { font-size: 20px; margin-bottom: 10px; }
+[data-module="factory"] .fx-root dialog p { color: var(--ink-2); margin-bottom: 16px; }
+[data-module="factory"] .fx-root dialog .btns { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+[data-module="factory"] .fx-root .error-card { color: var(--danger-ink); }
+
+/* ---- utility classes ---------------------------------------------------------------------- */
+[data-module="factory"] .fx-root .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[data-module="factory"] .fx-root .muted { color: var(--muted); }
+[data-module="factory"] .fx-root .mono { font-family: var(--mono); }
+[data-module="factory"] .fx-root .num { font-variant-numeric: tabular-nums; }
+
+/* ---- small screens -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+
+  [data-module="factory"] .fx-root h1 { font-size: 34px; }
+  [data-module="factory"] .fx-root .search { width: 100%; }
+  [data-module="factory"] .fx-root .alert { grid-template-columns: auto 1fr; }
+  [data-module="factory"] .fx-root .alert > button { grid-column: 2; justify-self: start; }
+  [data-module="factory"] .fx-root .story li { grid-template-columns: 14px 1fr auto; }
+  [data-module="factory"] .fx-root .story time { grid-column: 2 / -1; grid-row: 1; }
+  [data-module="factory"] .fx-root .story .what { grid-column: 2; }
+  [data-module="factory"] .fx-root .story .nums { grid-column: 3; grid-row: 2; }
+  [data-module="factory"] .fx-root .card { padding: 20px; }
+  [data-module="factory"] .fx-root th:first-child,
+[data-module="factory"] .fx-root td:first-child { padding-left: 16px; }
+  [data-module="factory"] .fx-root th:last-child,
+[data-module="factory"] .fx-root td:last-child { padding-right: 16px; }
+  [data-module="factory"] .fx-root .hero-empty { padding: 40px 16px; }
+  [data-module="factory"] .fx-root .hero-empty h2 { font-size: 26px; }
+
+  [data-module="factory"] .fx-root .station { min-height: 260px; flex-basis: 280px; }
+}
+@media (prefers-reduced-motion: reduce) { [data-module="factory"] .fx-root * { transition: none !important; } }
+
+/* ---- NooblyJS tokens: the dashboard's names, the kit's values -------------------------------------------------- */
+[data-module="factory"] .fx-root {
+  --bg: var(--surface-page);
+  --surface: var(--surface-card);
+  --surface-sunken: var(--surface-inset);
+  --chip: var(--surface-inset);
+  --ink: var(--navy-900);
+  --ink-2: var(--text-muted);
+  --muted: var(--text-subtle);
+  --on-ink: var(--text-on-navy);
+  --on-ink-muted: var(--text-on-navy-muted);
+  --accent: var(--navy-900);
+  --accent-link: var(--blue-700);
+  --accent-soft: var(--blue-100);
+  --accent-tint: var(--blue-50);
+  --accent-light: var(--text-on-navy-muted);
+  --teal: var(--success-700);
+  --teal-soft: var(--success-100);
+  --teal-text: var(--success-700);
+  --teal-ink: var(--success-700);
+  --neutral-soft: var(--track);
+  --neutral-text: var(--text-subtle);
+  --neutral-ink: var(--text-subtle);
+  --neutral-dot: var(--text-subtle);
+  --warn-soft: var(--warning-100);
+  --warn-ink: var(--warning-700);
+  --warn-dot: var(--warning-600);
+  --warn-border: var(--warning-600);
+  --danger: var(--danger-700);
+  --danger-soft: var(--danger-100);
+  --danger-ink: var(--danger-700);
+  --danger-wash: var(--danger-100);
+  --tier-light: var(--border-strong);
+  --tier-balanced: var(--text-subtle);
+  --tier-premium: var(--navy-900);
+  --font-display: var(--font-ui);
+  --font-body: var(--font-ui);
+  --display: var(--font-ui);
+  --body: var(--font-ui);
+  --mono: var(--font-mono);
+}
+
+[data-module="factory"] .fx-root :focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+/* The reset above takes a dialog's own centring away. */
+[data-module="factory"] .fx-root dialog { margin: auto; }
+/* Scroll boxes a keyboard can reach show their focus inside the box. */
+[data-module="factory"] .fx-root .table-wrap:focus-visible, [data-module="factory"] .fx-root .board:focus-visible { outline-offset: -3px; }
+[data-module="factory"] .fx-root .fx-note { color: var(--ink-2); font-size: 13px; }
+/* NooblyJS's control size: everything a finger presses is at least 44px tall (the dashboard's were 32–40px). */
+[data-module="factory"] .fx-root button, [data-module="factory"] .fx-root .btn, [data-module="factory"] .fx-root .small, [data-module="factory"] .fx-root .filters button, [data-module="factory"] .fx-root .segmented button, [data-module="factory"] .fx-root input, [data-module="factory"] .fx-root select { min-height: var(--control-min); }
+[data-module="factory"] .fx-root .icon-btn { min-width: var(--control-min); }
+
+/* NooblyJS Phase 7: the page head, pills, number tiles and notices are the UI kit's own components.
+   Only where they sit is decided here. */
+[data-module="factory"] .fx-root .fx-head { margin-bottom: 24px; }
+/* Our reset (.fx-root *) takes the padding off everything, the kit's components included: give it back. */
+[data-module="factory"] .fx-root .fx-pill { padding: 4px 10px; }
+[data-module="factory"] .fx-root .fx-pill.fx-pill-big { font-size: 13px; padding: 5px 12px; }
+[data-module="factory"] .fx-root .fx-tile { padding: 20px; }

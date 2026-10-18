@@ -36,7 +36,7 @@
 
 ## What F24 added
 
-### 1. The secret and risky-change scan (`src/security/secret-scan.js`)
+### 1. The secret and risky-change scan (`src/services/security/secret-scan.js`)
 
 Every **commit** about to be pushed is scanned, not just the net diff. A secret added in one commit and "removed" in the next is still in the history, and pushing the branch publishes it.
 
@@ -50,7 +50,7 @@ A finding **parks the run before the push** (the deliver station), with a `secur
 
 It deliberately doesn't go to the fixer: no later commit can take back a secret in history.
 
-### 2. The agent's environment (`src/security/agent-env.js`): a real hole, found and closed
+### 2. The agent's environment (`src/services/security/agent-env.js`): a real hole, found and closed
 
 The harness removes its **own** model keys from what the agent's commands see. It knows nothing about the **factory's** secrets: `GITHUB_TOKEN` (F15), `FACTORY_WEBHOOK_SECRET`, `FACTORY_WORKER_ENROLL_TOKEN` (F23), `FACTORY_DASHBOARD_TOKEN` (F17), `SLACK_WEBHOOK_URL` (F18). Before F24 **none were removed**. An agent allowed any command, running under `factory serve` with a token set, could have read them with `env`. This shell even had one (`CLAUDE_CODE_MESSAGING_TOKEN`), which would have reached any agent run from it.
 
@@ -107,11 +107,11 @@ F05's multi-process "same new database" test has failed **twice** in full-suite 
 
 | File | What it does |
 |---|---|
-| `src/security/secret-scan.js` | `scanLines`, `addedLines`, `scanCommits` |
-| `src/security/agent-env.js` | `agentEnv`, `secretsInEnv`, `inProcessEnvProblem` |
-| `src/security/audit.js`, `src/commands/audit.js` | the chained export, `verify` |
-| `src/line/stations/deliver.js` | the security hold before the push |
-| `src/exec/harness/subprocess.js`, `in-process.js` | scrubbed env; the refusal |
+| `src/services/security/secret-scan.js` | `scanLines`, `addedLines`, `scanCommits` |
+| `src/services/security/agent-env.js` | `agentEnv`, `secretsInEnv`, `inProcessEnvProblem` |
+| `src/services/security/audit.js`, `src/controllers/cli/audit.js` | the chained export, `verify` |
+| `src/services/line/stations/deliver.js` | the security hold before the push |
+| `src/services/exec/harness/subprocess.js`, `in-process.js` | scrubbed env; the refusal |
 | `test/redteam.test.js` | the red-team suite |
 
 ## What we learned

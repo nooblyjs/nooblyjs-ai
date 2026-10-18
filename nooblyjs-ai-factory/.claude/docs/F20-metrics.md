@@ -30,11 +30,11 @@ DORA's four keys (deployment frequency, lead time, change-failure rate, time to 
 
 | File | What it does |
 |---|---|
-| `src/metrics/run-metrics.js` | `runMetrics(events)`: **one run's** numbers. A pure function: events in, numbers out |
-| `src/metrics/factory-metrics.js` | `factoryMetrics(events, { since })`: every run in the period, aggregated; display-ready `kpis`; the text report |
-| `src/metrics/merges.js` | `detectMerges(store)`: notices local merges and measures human edits |
-| `src/commands/metrics.js` | `factory metrics` |
-| `src/server/api.js` | `GET /api/metrics` for the dashboard page |
+| `src/services/metrics/run-metrics.js` | `runMetrics(events)`: **one run's** numbers. A pure function: events in, numbers out |
+| `src/services/metrics/factory-metrics.js` | `factoryMetrics(events, { since })`: every run in the period, aggregated; display-ready `kpis`; the text report |
+| `src/services/metrics/merges.js` | `detectMerges(store)`: notices local merges and measures human edits |
+| `src/controllers/cli/metrics.js` | `factory metrics` |
+| `src/routes/api.js` | `GET /api/metrics` for the dashboard page |
 
 **Pure functions of the log.** No store, no git, no clock inside the maths. That's why the tests can feed it synthetic histories ("queued at 09:00, build 10 minutes, verify fails, one repair…") and check every number, and why a rebuilt log gives the same answers. Metrics are just one more projection of the event log (F05), computed on demand rather than stored.
 

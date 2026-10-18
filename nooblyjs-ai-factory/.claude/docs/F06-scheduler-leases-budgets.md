@@ -15,7 +15,7 @@ factory stop-all ───────┘     event log + lease table (the only 
 
 Every piece of shared state lives in the store. `submit`, `status`, `cancel` and `stop-all` are separate processes that append events; `serve` reads them. Nothing talks to `serve` directly, so it can be killed and restarted at any moment and pick up exactly where the log says things are.
 
-## The tick (`src/scheduler/scheduler.js`, ~110 lines)
+## The tick (`src/services/scheduler/scheduler.js`, ~110 lines)
 
 ```
 every tickMs:
@@ -124,16 +124,16 @@ The test now makes six processes **create** a fresh database at the same moment.
 | File | What it does |
 |---|---|
 | `src/config/factory-config.js` | `~/.factory/config.json` with defaults; per-repo limits |
-| `src/scheduler/pick.js` | Pure: priority, fairness, slots, budgets → start / wait (with reasons) |
-| `src/scheduler/budgets.js` | Spend today, reservations, `canStart`, a run's budget |
-| `src/scheduler/leases.js` | Acquire, renew, hold-check, release |
-| `src/scheduler/worker.js` | `holdRun`: heartbeat, stop reasons, `guard()` before side effects |
-| `src/scheduler/kill-switch.js` | stop-all, resume-all, cancel |
-| `src/scheduler/scheduler.js` | The tick: recover, requeue, stop, pick, lease, start |
-| `src/store/db.js` | Migration 2: `leases`, `system`; the two race fixes |
-| `src/store/recovery.js` | Now also: expired leases |
-| `src/job/run-job.js` | `submitJob`; every execution holds a lease; interruptions recorded as such |
-| `src/commands/queue.js` | `submit`, `serve`, `status`, `stop-all`, `resume-all`, `cancel` |
+| `src/services/scheduler/pick.js` | Pure: priority, fairness, slots, budgets → start / wait (with reasons) |
+| `src/services/scheduler/budgets.js` | Spend today, reservations, `canStart`, a run's budget |
+| `src/services/scheduler/leases.js` | Acquire, renew, hold-check, release |
+| `src/services/scheduler/worker.js` | `holdRun`: heartbeat, stop reasons, `guard()` before side effects |
+| `src/services/scheduler/kill-switch.js` | stop-all, resume-all, cancel |
+| `src/services/scheduler/scheduler.js` | The tick: recover, requeue, stop, pick, lease, start |
+| `src/models/store/db.js` | Migration 2: `leases`, `system`; the two race fixes |
+| `src/models/store/recovery.js` | Now also: expired leases |
+| `src/services/job/run-job.js` | `submitJob`; every execution holds a lease; interruptions recorded as such |
+| `src/controllers/cli/queue.js` | `submit`, `serve`, `status`, `stop-all`, `resume-all`, `cancel` |
 
 ## Try it: the checkpoint
 

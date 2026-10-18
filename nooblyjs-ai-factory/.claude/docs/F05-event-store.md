@@ -34,7 +34,7 @@ A factory runs unattended for hours, on many things at once, so **crashes are no
 | The old value is gone. "What happened?" has no answer | The whole history is there: `factory logs` is just reading it |
 | A bug that wrote a wrong value has corrupted data | A bug in a reducer: fix it, **rebuild** the tables from the log |
 
-## The store (`src/store/`)
+## The store (`src/models/store/`)
 
 **One SQLite file** (`~/.factory/factory.db`) through `node:sqlite`, which is built into Node 24, so there's no dependency:
 
@@ -81,13 +81,13 @@ The rebuilt tables are identical to the old ones.
 
 That's how you fix a projection bug, or add a new projection to old history, without losing anything. A test runs a full job, snapshots the tables, rebuilds, and compares.
 
-The reducers are also tested **as tables** (`test/store.test.js`): a list of events in, the expected row out. There's no database and no mocks, because a pure function needs neither.
+The reducers are also tested **as tables** (`test/models/store.test.js`): a list of events in, the expected row out. There's no database and no mocks, because a pure function needs neither.
 
 ## Side effects: the hard part
 
 Appending events is atomic. **The outside world isn't.** Pushing a branch or writing a PR happens outside the database, so a crash can land *between* "did it" and "wrote down that I did it". Retry naively and you get two PRs.
 
-The pattern (`src/store/effects.js`): **write down the intention first, then act, then write down the result.**
+The pattern (`src/models/store/effects.js`): **write down the intention first, then act, then write down the result.**
 
 ```
 effect.intended {key}  ──►  perform()  ──►  effect.done {key, result}
@@ -107,7 +107,7 @@ The test `CRASH DURING DELIVERY` does it for real: a forge that writes the PR an
 
 ## Runs as a sequence of steps
 
-The job (`src/job/run-job.js`) now reads its own history to decide what's left to do:
+The job (`src/services/job/run-job.js`) now reads its own history to decide what's left to do:
 
 ```
 item.created ─► run.started ─► build ─────────────────► deliver ──────────────────► run.finished
@@ -151,17 +151,17 @@ Two `factory run` commands at once are two processes writing one SQLite file. WA
 
 | File | What it does |
 |---|---|
-| `src/store/db.js` | SQLite: WAL, busy timeout, migrations, `transaction()` |
-| `src/store/events.js` | The log: `append` (with keys), `read`, `subscribe`, `transaction`, `get`/`list`, `rebuild` |
-| `src/store/projections.js` | Pure reducers: `items`, `runs`, `effects`; apply and rebuild |
-| `src/store/effects.js` | `performEffect()`: intended → done, reconciled after a crash |
-| `src/store/recovery.js` | Dead pid → `run.interrupted` |
-| `src/store/artifacts.js` | Content-addressed files |
-| `src/job/run-job.js` | `startJob` / `executeRun` / `retryRun`: a run as recorded steps |
-| `src/job/deliver.js` | Push and PR as idempotent effects |
-| `src/job/record.js` | The agent's events, coalesced into the log |
-| `src/exec/harness/script.js` | Scripted models, now with `delayMs` (slow enough to kill) |
-| `src/commands/history.js` | `factory runs`, `logs`, `events`, `db rebuild` |
+| `src/models/store/db.js` | SQLite: WAL, busy timeout, migrations, `transaction()` |
+| `src/models/store/events.js` | The log: `append` (with keys), `read`, `subscribe`, `transaction`, `get`/`list`, `rebuild` |
+| `src/models/store/projections.js` | Pure reducers: `items`, `runs`, `effects`; apply and rebuild |
+| `src/models/store/effects.js` | `performEffect()`: intended → done, reconciled after a crash |
+| `src/models/store/recovery.js` | Dead pid → `run.interrupted` |
+| `src/models/store/artifacts.js` | Content-addressed files |
+| `src/services/job/run-job.js` | `startJob` / `executeRun` / `retryRun`: a run as recorded steps |
+| `src/services/job/deliver.js` | Push and PR as idempotent effects |
+| `src/services/job/record.js` | The agent's events, coalesced into the log |
+| `src/services/exec/harness/script.js` | Scripted models, now with `delayMs` (slow enough to kill) |
+| `src/controllers/cli/history.js` | `factory runs`, `logs`, `events`, `db rebuild` |
 | `factory run retry <run>` | Carry on after a crash |
 
 ## Try it: the checkpoint

@@ -10,7 +10,7 @@ factory campaign status                         # done / open / failed, per repo
 
 ---
 
-## What a campaign is (`src/campaign/campaign.js`)
+## What a campaign is (`src/services/campaign/campaign.js`)
 
 ```
 campaign.created { campaignId, name, title, repos }
@@ -30,7 +30,7 @@ Four things make it more than "submit the same issue N times":
 | **A rate limit** | At most **N campaign PRs per repo per day** (`campaigns.maxPrsPerRepoPerDay`). A fleet change must not bury one team's reviewers under five campaign PRs on a Monday. It's enforced by the scheduler (`pickRuns`), with the reason visible in `factory status`: *campaign limit: 1 per repo per day (repo-a); tomorrow*. Non-campaign work isn't held back. |
 | **Batch tracking** | `factory campaign status` and the dashboard's Campaigns page: per repo ✅ done / ⌛ open / ❌ failed, the PR, the cost. |
 
-## Scheduled items (`src/campaign/schedule.js`)
+## Scheduled items (`src/services/campaign/schedule.js`)
 
 Recurring work on a clock (`~/.factory/config.json`):
 
@@ -56,7 +56,7 @@ Every Monday at 09:00 UTC, a campaign from `deps.md` across those repos.
 
 That last test found a bug. With a repo listed twice, `campaign status` found the *first* run both times and counted it twice. Repos are now de-duplicated when the campaign is created. The rate-limit test then became the realistic case: **two campaigns, one repo, one day**.
 
-## Checkpoint: "Upgrade to Node 24" across the `nooblyjs-*` repos, one PR each
+## Checkpoint: "Upgrade to Node 24" across the `NooblyJS-*` repos, one PR each
 
 On **clones** of the two real repositories (the originals untouched, nothing pushed), plus a deliberately missing third, with a scripted agent that pins Node 24 in `.nvmrc`. The full upgrade (engines, fixing failing tests) needs a model.
 
@@ -81,12 +81,12 @@ With a model: `factory campaign create --spec examples/campaigns/node24.md --rep
 
 | File | What it does |
 |---|---|
-| `src/campaign/campaign.js` | `createCampaign`, `campaignStatus`, `campaignStartsToday` |
-| `src/campaign/schedule.js` | `parseCron`, `cronMatches`, `runSchedules` |
-| `src/scheduler/pick.js`, `scheduler.js` | the per-repo, per-day campaign limit |
-| `src/commands/campaign.js` | `factory campaign create \| status \| list` |
-| `src/commands/queue.js` | `serve` runs schedules |
-| `src/server/api.js`, `dashboard/` | `/api/campaigns` and the Campaigns page |
+| `src/services/campaign/campaign.js` | `createCampaign`, `campaignStatus`, `campaignStartsToday` |
+| `src/services/campaign/schedule.js` | `parseCron`, `cronMatches`, `runSchedules` |
+| `src/services/scheduler/pick.js`, `scheduler.js` | the per-repo, per-day campaign limit |
+| `src/controllers/cli/campaign.js` | `factory campaign create \| status \| list` |
+| `src/controllers/cli/queue.js` | `serve` runs schedules |
+| `src/routes/api.js`, `dashboard/` | `/api/campaigns` and the Campaigns page |
 | `examples/campaigns/node24.md`, `examples/scripts/pin-node24.json` | the checkpoint |
 
 ## What we learned

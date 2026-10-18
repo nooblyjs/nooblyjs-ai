@@ -40,7 +40,7 @@ The single most important field is **`outcome`**, because the factory's next dec
 
 ## Two drivers, one interface
 
-| | **in-process** (`src/exec/harness/in-process.js`) | **subprocess** (`src/exec/harness/subprocess.js`) |
+| | **in-process** (`src/services/exec/harness/in-process.js`) | **subprocess** (`src/services/exec/harness/subprocess.js`) |
 |---|---|---|
 | How | `createSession()` + `session.stream()` from the harness library (harness Phase 17) | `noobly -p --output-format stream-json … -- "<prompt>"` |
 | Start-up | ~0 ms | ~1 s (Node + tsx + loading the harness) |
@@ -117,12 +117,12 @@ It also checks one more thing: with `harnessHome` set, the harness writes its tr
 
 | File | What it does |
 |---|---|
-| `src/exec/harness/driver.js` | `AgentRun`, `Limits`, `StepResult` types; `createDriver(name)`; `outcomeOf()` |
-| `src/exec/harness/in-process.js` | The harness as a library |
-| `src/exec/harness/subprocess.js` | The harness as a process: arguments, NDJSON, SIGINT → SIGKILL, result → StepResult |
-| `src/exec/harness/ndjson.js` | Chunk-safe JSON-lines parser |
-| `src/exec/harness/limits.js` | Caller stop, timeout, and the budget watchdog |
-| `src/commands/agent.js` | `factory agent`: run one agent by hand |
+| `src/services/exec/harness/driver.js` | `AgentRun`, `Limits`, `StepResult` types; `createDriver(name)`; `outcomeOf()` |
+| `src/services/exec/harness/in-process.js` | The harness as a library |
+| `src/services/exec/harness/subprocess.js` | The harness as a process: arguments, NDJSON, SIGINT → SIGKILL, result → StepResult |
+| `src/services/exec/harness/ndjson.js` | Chunk-safe JSON-lines parser |
+| `src/services/exec/harness/limits.js` | Caller stop, timeout, and the budget watchdog |
+| `src/controllers/cli/agent.js` | `factory agent`: run one agent by hand |
 | `test/fixtures/fake-noobly.js` + `noobly-echo-read.ndjson` | A fake harness replaying a recorded real run |
 
 ## Try it

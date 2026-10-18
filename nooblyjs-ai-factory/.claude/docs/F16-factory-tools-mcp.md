@@ -8,7 +8,7 @@ F16 gives each agent step six tools, and gives a *person* four more for their ow
 
 ---
 
-## The step tools (`src/mcp/step-tools.js`)
+## The step tools (`src/services/mcp/step-tools.js`)
 
 | Tool | What it does | Becomes |
 |---|---|---|
@@ -39,7 +39,7 @@ The agent can't pause *itself* (a session is a running process). So the tool tel
 
 Architecture §11 imagined *resuming the same session* (harness H-13). This version restarts the step, which throws away the work done before the question. That's fine for a question asked early, and wasteful for one asked late. Resuming is the upgrade; the doc and the events don't change when it comes.
 
-## Two ways in, one set of tools (`src/mcp/wire.js`)
+## Two ways in, one set of tools (`src/services/mcp/wire.js`)
 
 | Driver | How the agent gets the tools |
 |---|---|
@@ -50,7 +50,7 @@ Both use the same names, `mcp__factory__read_spec` and so on, so prompts and per
 
 Checked with the real harness: with a step's `mcp.json` as the user layer, `noobly -p "/mcp"` shows `factory (user): connected, 6 tool(s)`.
 
-### The MCP server (`src/mcp/server.js`)
+### The MCP server (`src/services/mcp/server.js`)
 
 This is the other half of the harness's MCP client (harness phase 14): JSON-RPC 2.0, one message per line, on stdio.
 
@@ -65,7 +65,7 @@ A tool that fails returns `isError: true`: the model reads it and adapts. A prot
 
 `readOnlyHint` matters: the harness only skips the permission question for tools that *promise* to be read-only. `read_spec`, `list_runs` and `get_run` do.
 
-## Per-step tokens (`src/mcp/tokens.js`)
+## Per-step tokens (`src/services/mcp/tokens.js`)
 
 ```
 token = HMAC-SHA256(~/.factory/secret, "<runId>/<step>")
@@ -108,21 +108,21 @@ There's no token here: it runs as you, in your own chat, like the CLI does.
 
 | File | What it does |
 |---|---|
-| `src/mcp/step-tools.js` | The six step tools: name, schema, `handle(ctx, input)` |
-| `src/mcp/operator-tools.js` | The four operator tools |
-| `src/mcp/server.js` | `serveMcp`: MCP over stdio |
-| `src/mcp/tokens.js` | The factory secret; per-step HMAC tokens |
-| `src/mcp/wire.js` | `factoryToolsFor`: harness tools + `mcp.json` for one step |
-| `src/commands/mcp.js` | `factory mcp --step …` / `--operator` |
-| `src/exec/step-runner.js`, `src/exec/harness/in-process.js` | Pass the tools (and the allow rule) to the driver |
-| `src/line/stations/common.js` | Each agent is told its step; earlier answers go into its prompt |
-| `src/line/executor.js` | An open `ask:<station>` question after a station → park |
-| `src/humans/inbox.js` | Approving a `scope` entry → `scope.granted`; an answer needs text |
+| `src/services/mcp/step-tools.js` | The six step tools: name, schema, `handle(ctx, input)` |
+| `src/services/mcp/operator-tools.js` | The four operator tools |
+| `src/services/mcp/server.js` | `serveMcp`: MCP over stdio |
+| `src/services/mcp/tokens.js` | The factory secret; per-step HMAC tokens |
+| `src/services/mcp/wire.js` | `factoryToolsFor`: harness tools + `mcp.json` for one step |
+| `src/controllers/cli/mcp.js` | `factory mcp --step …` / `--operator` |
+| `src/services/exec/step-runner.js`, `src/services/exec/harness/in-process.js` | Pass the tools (and the allow rule) to the driver |
+| `src/services/line/stations/common.js` | Each agent is told its step; earlier answers go into its prompt |
+| `src/services/line/executor.js` | An open `ask:<station>` question after a station → park |
+| `src/models/inbox.js` | Approving a `scope` entry → `scope.granted`; an answer needs text |
 
 ## Try it
 
 ```bash
-node --test test/mcp.test.js
+node --test test/services/mcp/mcp.test.js
 factory mcp --operator            # then type: {"jsonrpc":"2.0","id":1,"method":"tools/list"}
 factory inbox                     # a parked run's question shows here: factory answer <id> "…"
 ```

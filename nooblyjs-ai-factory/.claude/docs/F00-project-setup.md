@@ -27,7 +27,7 @@ So Rule 1 of this project: **the factory never contains a second agent loop.** E
 ```
 nooblyjs-learn-factory/
 ├── bin/
-│   └── factory.js            ← the command you run. One line: import src/cli.js
+│   └── factory.js            ← the command you run. One line: import src/routes/cli.js
 ├── src/
 │   ├── cli.js                ← `factory <command>`: a table of commands, --help, --version
 │   ├── index.js              ← the library entry (grows each phase)
@@ -68,9 +68,9 @@ So a change in the harness is visible to the factory immediately, with no publis
 
 ### No `tsx` this time
 
-The harness needs `tsx` because its UI is JSX. The factory has no terminal UI (its UI will be a web page in F17), so it runs on plain Node. Importing the harness *library* still works under plain Node, because `src/index.js` of the harness never loads the Ink UI. That was worth checking before building on it (it's the first test in `test/harness-smoke.test.js`).
+The harness needs `tsx` because its UI is JSX. The factory has no terminal UI (its UI will be a web page in F17), so it runs on plain Node. Importing the harness *library* still works under plain Node, because `src/index.js` of the harness never loads the Ink UI. That was worth checking before building on it (it's the first test in `test/services/harness.test.js`).
 
-## 3. `src/harness.js`: one door to the harness
+## 3. `src/services/harness.js`: one door to the harness
 
 Every import of noobly goes through this one file:
 
@@ -126,14 +126,14 @@ npm test
 
 | File | What it proves |
 |---|---|
-| `test/harness-smoke.test.js` | The harness library loads under plain Node and runs a scripted session (mock provider); the `noobly` binary is found |
-| `test/ids.test.js` | Ids sort by time as plain strings; same-millisecond ids differ; slugs are safe |
+| `test/services/harness.test.js` | The harness library loads under plain Node and runs a scripted session (mock provider); the `noobly` binary is found |
+| `test/utils/ids.test.js` | Ids sort by time as plain strings; same-millisecond ids differ; slugs are safe |
 
 Same rule as the harness: **every test is offline.** The mock provider replays scripted replies, so the factory can be tested end to end without an API key.
 
 ## 7. Agent instructions for this repo
 
-`NOOBLY.md` tells any agent working on this repo (noobly reads `NOOBLY.md`; Claude Code reads `CLAUDE.md`, which just says `@NOOBLY.md`) the house rules: built-ins only, import the harness through `src/harness.js`, offline tests, one concept per file. From F07 on, the factory itself will work on this repo, so these instructions will matter.
+`NOOBLY.md` tells any agent working on this repo (noobly reads `NOOBLY.md`; Claude Code reads `CLAUDE.md`, which just says `@NOOBLY.md`) the house rules: built-ins only, import the harness through `src/services/harness.js`, offline tests, one concept per file. From F07 on, the factory itself will work on this repo, so these instructions will matter.
 
 ## Try it
 

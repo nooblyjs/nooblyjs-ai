@@ -31,11 +31,11 @@ browser ──GET /api/…  (Bearer token)──▶ api.js ──▶ projections
 
 | File | What it does |
 |---|---|
-| `src/server/http.js` | A router (`/api/runs/:id`), JSON in and out, the token check, static files |
-| `src/server/sse.js` | Server-sent events from the log, by `seq` |
-| `src/server/api.js` | The endpoints, built from the **same functions the CLI uses** (`pickRuns`, `openEntries`, `cancelRun`, `describe`…), so page and terminal can't disagree |
-| `src/server/dashboard/` | `index.html`, `style.css`, `app.js`: one page, plain modules, hash routes |
-| `src/commands/dashboard.js` | `factory dashboard`, the token, `startDashboard()` (also used by `serve --dashboard`) |
+| `src/routes/http.js` | A router (`/api/runs/:id`), JSON in and out, the token check, static files |
+| `src/services/sse.js` | Server-sent events from the log, by `seq` |
+| `src/routes/api.js` | The endpoints, built from the **same functions the CLI uses** (`pickRuns`, `openEntries`, `cancelRun`, `describe`…), so page and terminal can't disagree |
+| `public/dashboard/` | `index.html`, `style.css`, `app.js`: one page, plain modules, hash routes |
+| `src/controllers/cli/dashboard.js` | `factory dashboard`, the token, `startDashboard()` (also used by `serve --dashboard`) |
 
 ### Live: SSE from the log
 
