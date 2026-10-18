@@ -9,13 +9,13 @@ here="$(cd "$(dirname "$0")" && pwd)"
 allow="$here/allow.txt"
 status=0
 for dir in "$@"; do
-  hits=$(grep -rniE 'engx|shoprite|checkers|usave|work-repositories' "$dir" \
-    --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.temp --exclude=package-lock.json \
-    --binary-files=without-match 2>/dev/null || true)
+  # The Checkers brand is matched case-sensitively: "checkers" is also an ordinary word (the harness's feedback checkers).
+  opts=(-rn --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.temp --exclude=package-lock.json --binary-files=without-match)
+  hits=$( { grep "${opts[@]}" -iE 'engx|shoprite|usave|sixty60|work-repositories' "$dir"; grep "${opts[@]}" -E '\bCheckers\b' "$dir"; } 2>/dev/null | sort -u || true)
   if [ -f "$allow" ] && [ -n "$hits" ]; then
     while IFS=: read -r p re; do
       [ -z "$p" ] || [ "${p:0:1}" = "#" ] && continue
-      hits=$(printf '%s\n' "$hits" | grep -vE "^[^:]*${p}:[0-9]+:.*${re}" || true)
+      hits=$(printf '%s\n' "$hits" | grep -vE "^[^:]*${p}[^:]*:[0-9]+:.*${re}" || true)
     done < "$allow"
   fi
   secrets=$(find "$dir" -path '*/node_modules' -prune -o \( -name '.env' -o -name '*.key' -o -name '*.pem' -o -name '*.pfx' -o -name 'sessions.json' \) -print 2>/dev/null)

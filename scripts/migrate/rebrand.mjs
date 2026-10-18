@@ -22,8 +22,8 @@ export const RULES = [
   [/\b(?:engx|EngX)-learn-(harness|factory)\b/g, 'nooblyjs-learn-$1'],
   [/\b(?:engx|EngX)-core\b/g, 'nooblyjs-core'],
   [/\bengx-workflows\b/g, 'nooblyjs-ai-workflows'],
-  [/\.\.\/engx(?![\w-])/g, '../nooblyjs-ai-host'],
-  [/\.\.\\engx(?![\w-])/g, '..\\nooblyjs-ai-host'],
+  [/\.\.\/engx(?![\w.-])/g, '../nooblyjs-ai-host'],
+  [/\.\.\\engx(?![\w.-])/g, '..\\nooblyjs-ai-host'],
   [/bitbucket\.org\/shopritelabs\//g, 'github.com/nooblyjs/'],
   [/\bEngX\/(?=[\w-])/g, 'nooblyjs/'],
   [/shopritelabs__/g, 'nooblyjs__'],
@@ -53,7 +53,9 @@ export const RULES = [
   [/engx/g, 'noobly'],
 ];
 
-const COMPANY = /shoprite|checkers|usave|shopritex|petshop science|work-repositories/gi;
+// Case-insensitive names, plus the Checkers brand with its capital ("checkers" is also an ordinary word).
+const COMPANY = /shoprite|usave|sixty60|work-repositories|\bCheckers\b/g;
+const COMPANY_CI = /shoprite|usave|sixty60|work-repositories/i;
 const BINARY = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|otf|eot|pdf|zip|gz|tgz|mp4|mp3|wasm|node|sqlite|db|docx|xlsx|pptx)$/i;
 
 export function rebrandText(text) {
@@ -91,7 +93,7 @@ function main() {
     const after = rebrandText(before);
     if (after !== before) { changed++; if (!dry) fs.writeFileSync(file, after); }
     after.split('\n').forEach((line, i) => {
-      if (COMPANY.test(line)) company.push(`${path.relative(root, file)}:${i + 1}: ${line.trim().slice(0, 140)}`);
+      if (COMPANY.test(line) || COMPANY_CI.test(line)) company.push(`${path.relative(root, file)}:${i + 1}: ${line.trim().slice(0, 140)}`);
       COMPANY.lastIndex = 0;
     });
   }
