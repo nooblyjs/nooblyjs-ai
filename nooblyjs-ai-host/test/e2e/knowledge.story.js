@@ -68,7 +68,7 @@ test('step 1 and 5: Sources shows the imported sample, its document counts and w
   await expect(table).toContainText('Sample wiki export');
   await expect(table).toContainText('Imported');
   await expect(table).toContainText('18 documents');
-  await expect(table).toContainText('Enterprise Space: 13 · Acme Retail Space: 5');
+  await expect(table).toContainText('Acme Space: 5 · Enterprise Space: 13');
   await expect(table).toContainText('3 values redacted: 1 email address, 1 phone number, 1 ID number');
   await expectNoAxeViolations(stevie, '[data-region="body"]', 'Wiki · Sources');
   await table.getByRole('button', { name: 'Import Sample wiki export again' }).click();
@@ -104,7 +104,7 @@ test('step 2: "How is slot capacity calculated?" is answered with 3 citations; A
 
   await lerato.goto('/product/specs/PRD-031');
   await expect(content(lerato).locator('h1')).toBeVisible();
-  await expect(content(lerato)).toContainText('Runbook · Acme Retail Space');
+  await expect(content(lerato)).toContainText('Runbook · Acme Space');
 });
 
 test('step 3: This is wrong puts the documents on Needs review and marks them on the spec; an Approver reviews one', async () => {

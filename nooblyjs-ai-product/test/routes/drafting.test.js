@@ -188,7 +188,7 @@ test('with Teammates running, the draft is the teammate\'s task, with its real c
 test('a draft keeps the documents Knowledge gave it as its sources, and they go on the spec as Linked knowledge', async () => {
   const asked = [];
   const docs = [
-    { id: 'acme-space.runbooks.slot-capacity-model', title: 'Slot capacity model', kind: 'runbook', detail: 'Acme Retail Space', space: 'Acme Retail Space', path: 'Runbooks/Slot capacity model.md', href: '/wiki/#/Acme Retail%20Space/Runbooks/Slot%20capacity%20model.md', passage: 'Capacity per slot is pickers on shift…' },
+    { id: 'acme-space.runbooks.slot-capacity-model', title: 'Slot capacity model', kind: 'runbook', detail: 'Acme Space', space: 'Acme Space', path: 'Runbooks/Slot capacity model.md', href: '/wiki/#/Acme%20Space/Runbooks/Slot%20capacity%20model.md', passage: 'Capacity per slot is pickers on shift…' },
     { id: 'acme-space.policies.evening-headroom', title: 'Store ops policy · evening headroom', kind: 'policy', href: 'https://elsewhere.example/x' },
     { id: 'not a valid id', title: 'Dropped' },
     { id: 'acme-space.runbooks.slot-capacity-model', title: 'Listed twice' },
@@ -207,7 +207,7 @@ test('a draft keeps the documents Knowledge gave it as its sources, and they go 
     assert.equal(d.status, 'done');
     // Two well-formed documents: an unknown kind becomes "doc", an outside link is not kept, the rest are dropped.
     assert.deepEqual(d.sources, [
-      { id: 'acme-space.runbooks.slot-capacity-model', title: 'Slot capacity model', kind: 'runbook', detail: 'Acme Retail Space', href: '/wiki/#/Acme Retail%20Space/Runbooks/Slot%20capacity%20model.md' },
+      { id: 'acme-space.runbooks.slot-capacity-model', title: 'Slot capacity model', kind: 'runbook', detail: 'Acme Space', href: '/wiki/#/Acme%20Space/Runbooks/Slot%20capacity%20model.md' },
       { id: 'acme-space.policies.evening-headroom', title: 'Store ops policy · evening headroom', kind: 'doc' },
     ]);
     assert.match(d.text, / · from 2 Knowledge sources$/);

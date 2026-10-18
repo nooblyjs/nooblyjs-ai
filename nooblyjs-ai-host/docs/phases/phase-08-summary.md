@@ -19,7 +19,7 @@ It added the missing pieces to the wiki. The roadmap and steering docs now say `
 
 | Area | What |
 | --- | --- |
-| Import with redaction | An export folder (one folder per space) becomes wiki spaces. Before a file is stored, email addresses, phone numbers and South African ID numbers are replaced with `[REDACTED …]`. The seed imports a bundled sample: an Enterprise Space (the process model, one standard) and a Acme Retail Space (a runbook, a code note, a policy, an ADR, a customer-insight page) |
+| Import with redaction | An export folder (one folder per space) becomes wiki spaces. Before a file is stored, email addresses, phone numbers and South African ID numbers are replaced with `[REDACTED …]`. The seed imports a bundled sample: an Enterprise Space (the process model, one standard) and a Acme Space (a runbook, a code note, a policy, an ADR, a customer-insight page) |
 | Sources screen | `/wiki/datasources/sources`: each import, its state, when and by whom, documents per space, what was redacted. An Owner can import again |
 | Cited answers, offline | The wiki's AI panel used to fail with no AI agent configured. It now answers from the top three sources' own sentences, cited `[1] [2] [3]`, and says no model wrote it. With an agent configured, the model's answer is unchanged. Every answer with sources is kept with an id |
 | Answer actions | Under an answer: **Add to item** (its sources become Linked knowledge on the item's spec), **Save as page**, **This is wrong** |
@@ -36,7 +36,7 @@ Run on 2026-10-10 through the real apps (`test/knowledge.test.js`) and in a real
 
 | Step | Result |
 | --- | --- |
-| 1. Import the sample wiki export. Sources shows the sync status and document counts | PASS: "Imported", 18 documents (Enterprise Space 13, Acme Retail Space 5). It is a one-off import, not a sync: there is no schedule |
+| 1. Import the sample wiki export. Sources shows the sync status and document counts | PASS: "Imported", 18 documents (Enterprise Space 13, Acme Space 5). It is a one-off import, not a sync: there is no schedule |
 | 2. Ask "How is slot capacity calculated?". An answer with 3 citations. Add to PRD-031 | PASS, with the passages answer (no model). The three sources are linked on PRD-031's spec. **Not run with a real model** |
 | 3. This is wrong: recorded, and the document gets a review flag | PASS: three documents flagged, on Needs review and on the spec; Lerato clears one |
 | 4. Enterprise Space → L0: three bands from the imported files; Supply drills down; Used across NooblyJS lists PRD-031 and ADR-014 | PASS. The process names and codes are sample data (`[PLACEHOLDER …]` codes) |

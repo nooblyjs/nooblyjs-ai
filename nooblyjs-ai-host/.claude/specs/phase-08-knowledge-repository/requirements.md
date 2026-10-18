@@ -67,7 +67,7 @@ Answered by Stevie on 2026-10-10 unless marked.
 3. Each import SHALL be recorded as a **source**: its name, where it came from, when it last ran, its state in
    words, how many documents it wrote per space, and how many values it redacted.
 4. Importing the same folder again SHALL update the same source and spaces, not duplicate them.
-5. The seed SHALL import the bundled sample export, so a fresh NooblyJS has an Enterprise Space and a Acme Retail Space.
+5. The seed SHALL import the bundled sample export, so a fresh NooblyJS has an Enterprise Space and a Acme Space.
 6. An import SHALL be refused for anyone but an Owner, and is audited.
 
 ### R2 — Sources screen

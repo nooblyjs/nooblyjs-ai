@@ -1,7 +1,7 @@
 {
   "name": "nooblyjs-ai",
   "version": "1.0.0",
-  "description": "This is the container for all the ai solutions",
+  "description": "NooblyJS AI: the host and its hosted apps (Product, Factory, Infrastructure, Teammates, Knowledge), the agent harness, the AI module and the desktop app, in one repository",
   "homepage": "https://github.com/nooblyjs/nooblyjs-ai#readme",
   "bugs": {
     "url": "https://github.com/nooblyjs/nooblyjs-ai/issues"
@@ -13,16 +13,27 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "start": "node scripts/each.js start --parallel --only desktop,teammate",
+    "start": "npm start --prefix nooblyjs-ai-host",
     "run": "npm start",
     "test": "node scripts/each.js test",
     "coverage": "node scripts/each.js coverage",
     "build": "node scripts/each.js build",
     "clean": "node scripts/each.js clean",
     "install": "node scripts/each.js install",
+    "seed": "npm run seed --prefix nooblyjs-ai-host",
+    "steering:sync": "npm run steering:sync --prefix nooblyjs-ai-host",
+    "start:host": "npm start --prefix nooblyjs-ai-host",
     "start:desktop": "npm start --prefix nooblyjs-ai-desktop",
     "start:teammate": "npm start --prefix nooblyjs-ai-teammate",
+    "start:product": "npm start --prefix nooblyjs-ai-product",
+    "start:infrastructure": "npm start --prefix nooblyjs-ai-infrastructure",
+    "start:knowledge": "npm start --prefix nooblyjs-ai-knowledge",
+    "start:factory": "npm start --prefix nooblyjs-ai-factory",
     "start:harness": "npm start --prefix nooblyjs-ai-harness",
-    "start:factory": "npm start --prefix nooblyjs-ai-factory"
+    "test:e2e": "npm run test:e2e --prefix nooblyjs-ai-host",
+    "migrate:check": "scripts/migrate/check.sh nooblyjs-ai-*"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

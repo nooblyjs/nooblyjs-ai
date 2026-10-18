@@ -4,10 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Migration status (2026-10-18)
 
-This host came over from the EngX workspace (`.claude/steering/migration-plan.md` in the monorepo root). Its hosted
-apps are switched off in `src/seed/data/config/hosted-apps.yaml` until each one is migrated (plan phases M5–M9), so
-the tests that drive Teammates, Product, Factory, Infrastructure or Knowledge fail until then. The sample organisation
-is the fictional **Acme Retail** (repositories `acme/<repo>`).
+This host came over from the EngX workspace (`.claude/steering/migration-plan.md` in the monorepo root), and so did
+its five hosted apps, all enabled in `src/seed/data/config/hosted-apps.yaml`. The sample organisation is the
+fictional **Acme Retail** (repositories `acme/<repo>`, the wiki's `Acme Space`).
 
 ## Current state
 

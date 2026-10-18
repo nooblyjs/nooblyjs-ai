@@ -1,6 +1,6 @@
 # Migration plan: EngX (`/home/stephen/Code`) → nooblyjs-ai
 
-> Status: **draft for review** · written 2026-10-18 · owner: Stephen
+> Status: **M0–M10 done; M11 (sign-off) is yours** · written and carried out 2026-10-18 · owner: Stephen · see §10 for what was done
 >
 > Goal: every feature in the eight EngX repos under `/home/stephen/Code` lives in this monorepo
 > (`/home/stephen/Code - private/nooblyjs-ai`) under the nooblyjs name, with no EngX/ShopriteX branding,
@@ -186,7 +186,7 @@ Business-specific seed story ("PRD-031 Same-day delivery slots") and org config 
 | bin `engx` | `noobly` (already in target) |
 | `ENGX_*` env vars | `NOOBLY_*` |
 | `engx.sid`, `engx.csrf` | `noobly.sid`, `noobly.csrf` |
-| CSS `engx-*` classes, `data-engx-*` | `nb-*` (one prefix; choose once) |
+| CSS `engx-*` classes, `data-engx-*` | `noobly-*` |
 | event / service names containing `engx` (e.g. `request.engx`, `FACTORY_HOSTED=engx`) | `noobly` |
 | "EngX" in UI copy and docs | "NooblyJS AI" |
 | ShopriteX, Shoprite, Checkers, shopritelabs, company people/teams | removed or `[PLACEHOLDER]` / neutral sample company |
@@ -402,6 +402,49 @@ M0 prep ─► M1 core ─► M2 common ─► M3 harness ─► M4 host (a→g)
 
 M5 should land before M7 (product drafting and host chat call `runTask`). M6–M9 can otherwise run in any order.
 Rough total: 4–6 weeks of focused work, dominated by M4 and M9.
+
+---
+
+## 10. What was done (2026-10-18)
+
+Decisions as confirmed: D0 yes (Stephen owns the code), D1 `nooblyjs-ai-host`, D2 core's additions into
+`../nooblyjs-core`, D6 integrations ported and off by default; the rest as recommended.
+
+| Phase | Where | Result |
+| --- | --- | --- |
+| M0 | `scripts/migrate/` | Node 24.22 via nvm (system Node 22 stays the default). EngX `.kiro` recovered from the Trash into `.temp/migration/engx-kiro` (gitignored). Baseline in `.temp/migration/baseline/`. Tooling: `import.sh`, `rebrand.mjs` (rules learned from files that exist on both sides; validated against them), `merge-hunks.mjs`, `check.sh` + `allow.txt`, `exclude*.txt`, `match.py` |
+| M1 | `../nooblyjs-core`, branch `migrate/engx-core` | UI kit and frame, `createShell`, FsStore, the Express 5 route shim (core's working, searching and workflow routes failed to mount on Express 5 before it), safe post-login redirect. 2228 tests pass |
+| M2 | `nooblyjs-ai-common` | Bedrock, Vertex AI, Azure providers, model discovery. 135 of 135; typed for `npm run check` |
+| M3 | `nooblyjs-ai-harness` | Already in sync (only EngX's colour theme differed, not taken). Steering added |
+| M4 | `nooblyjs-ai-host` | The whole host, its design docs in `.claude/`. Boots, seeds, signs in |
+| M5 | `nooblyjs-ai-teammate` | EngX's version plus standalone mode (`server.js` on `src/services/standalone-host.js`, nooblyjs-core sign-in, the frame, the host's CSRF). 140 of 140 |
+| M6 | `nooblyjs-ai-factory` | EngX's version (layered layout, YAML event log, hosting, intake, Bitbucket). 362 pass, 4 fail — all 4 fail in EngX too (it had 8) |
+| M7 | `nooblyjs-ai-product` | 160 of 160 (EngX: 158; its 2 failures were probably CRLF) |
+| M8 | `nooblyjs-ai-infrastructure` | 46 of 46 |
+| M9 | `nooblyjs-ai-knowledge` | 34 of 34; legacy Jest 1753 of 1765, the same 5 suites failing as in EngX. UI regenerated with `port:ui` |
+| M10 | root | `scripts/each.js` covers all nine projects in dependency order; root scripts and README. Host suite with all five apps: 296 of 300; the 4 failures (two Factory story steps, two Teams steps) fail in EngX too. The host boots on an empty data folder, seeds, and every app's pages and API answer for a signed-in person |
+
+**Company content.** The sample organisation is the fictional **Acme Retail** (`acme/<repo>`, the wiki's `Acme Space`);
+`check.sh` finds no EngX or company names in any project. Not migrated, kept only in the gitignored
+`.temp/migration/`: the mockup briefs (host, product, infrastructure), the company CI guide, the company documents
+in knowledge's document-processing test examples, every screenshot of real company content in knowledge, a
+solution-design test image naming colleagues, a solution-design data file with the company's real org chart, and knowledge's map of real people (now an empty template). Internal
+figures (repository and project counts) in the phase-11 spec were replaced with a neutral sentence.
+
+**Rename slips found and fixed on the way** (rules now in `rebrand.mjs`): `engx.md` as a JS property (the factory's
+PR evidence), `@EngX` mentions in the Teams simulator, the wiki space's name versus its id, the AI module's old path
+inside core, Bitbucket fixture URLs, `a`/`an` before NooblyJS.
+
+**Still open**
+
+- The host's e2e suite (Playwright + axe, ~15 min) has not been run here.
+- Knowledge still calls the Anthropic SDKs directly (M9b), and its watchers have no stop.
+- The UI kit's colours are EngX's navy palette; restyling it onto the NooblyJS design brief is separate work.
+- Licences are mixed: `UNLICENSED` (host, product, infrastructure), MIT (common, teammate), ISC (knowledge), none (harness, factory, desktop). Pick one before publishing.
+- `nooblyjs-core`'s branch `migrate/engx-core` is not merged or pushed; nothing has been pushed anywhere.
+- npm 11 holds back install scripts for 7 knowledge dependencies (banners and optional native builds); nothing has
+  needed them so far.
+- Optional: host the desktop app (M12).
 
 ---
 

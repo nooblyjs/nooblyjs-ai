@@ -53,6 +53,10 @@
     "js-yaml": "^4.3.2",
     "nodemon": "^3.1.14",
     "nooblyjs-ai-common": "file:../nooblyjs-ai-common",
+    "nooblyjs-ai-factory": "file:../nooblyjs-ai-factory",
+    "nooblyjs-ai-infrastructure": "file:../nooblyjs-ai-infrastructure",
+    "nooblyjs-ai-knowledge": "file:../nooblyjs-ai-knowledge",
+    "nooblyjs-ai-product": "file:../nooblyjs-ai-product",
     "nooblyjs-ai-teammate": "file:../nooblyjs-ai-teammate",
     "nooblyjs-core": "file:../../nooblyjs-core",
     "passport": "^0.7.0"

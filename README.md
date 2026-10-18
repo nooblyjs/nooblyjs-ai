@@ -1,1 +1,35 @@
 # nooblyjs-ai
+
+**NooblyJS AI** in one repository: an engineering-lifecycle platform (idea → spec → architecture → design → build →
+ship, where AI agents draft and people decide), the agent harness it runs on, and a desktop app for any LLM.
+
+| Project | What it is |
+| --- | --- |
+| [`nooblyjs-ai-host`](nooblyjs-ai-host) | The host: one process and one frame for every app. Home, the lifecycle engine, onboarding and people, team chat, Platform and governance, Metrics, Microsoft Entra and Teams, Jira and Bitbucket (integrations off until configured) |
+| [`nooblyjs-ai-product`](nooblyjs-ai-product) | Product Factory: signals, ideas, specs, architecture, UX and UI, drafting agents (hosted at `/product`) |
+| [`nooblyjs-ai-factory`](nooblyjs-ai-factory) | Software Factory: issues in, verified PRs out (hosted at `/factory`, and the `factory` CLI) |
+| [`nooblyjs-ai-infrastructure`](nooblyjs-ai-infrastructure) | Infrastructure: designs, environments, provisioning runs, drift, cloud cost (hosted at `/infrastructure`) |
+| [`nooblyjs-ai-teammate`](nooblyjs-ai-teammate) | Digital Teammates: hire, configure, budget and bill named AI agents (hosted at `/teammates`, or standalone) |
+| [`nooblyjs-ai-knowledge`](nooblyjs-ai-knowledge) | The knowledge repository: wiki, datasources, AI answers with citations, MCP (hosted at `/wiki`) |
+| [`nooblyjs-ai-harness`](nooblyjs-ai-harness) | `noobly`, the agent runtime and AI coding CLI every agent runs in |
+| [`nooblyjs-ai-common`](nooblyjs-ai-common) | The AI module: one way to call every model provider (incl. Bedrock, Vertex AI, Azure), the model catalogue, cost |
+| [`nooblyjs-ai-desktop`](nooblyjs-ai-desktop) | Projects, documents and chat for any LLM (standalone) |
+
+## Run it
+
+Needs **Node 24** and [`nooblyjs-core`](https://github.com/nooblyjs/nooblyjs-core) checked out next to this repo:
+
+```bash
+git clone https://github.com/nooblyjs/nooblyjs-core.git
+git clone https://github.com/nooblyjs/nooblyjs-ai.git
+cd nooblyjs-ai
+npm install            # installs every project, in dependency order (scripts/each.js)
+npm run seed           # the host's sample story (the fictional Acme Retail)
+npm start              # the host, with every app on the rail: http://127.0.0.1:11001
+npm test               # every project's tests, offline
+npm run start:teammate # one app on its own (also :desktop, :product, :infrastructure, :knowledge, :factory, :harness)
+```
+
+The shared rules every project follows are in `nooblyjs-ai-host/docs/steering/nooblyjs-ai-shared-rules.md`, copied
+into each project's `.claude/steering/nooblyjs-ai.md` by `npm run steering:sync`. How this repository came together
+from the EngX workspace is in [`.claude/steering/migration-plan.md`](.claude/steering/migration-plan.md).

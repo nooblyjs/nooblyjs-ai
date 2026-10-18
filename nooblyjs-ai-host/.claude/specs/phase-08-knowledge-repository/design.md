@@ -18,7 +18,7 @@ nooblyjs-ai-knowledge
     processModel.js      pure: the process-model block ⇄ data; a space's pages → the model (L0 bands, children, parents)
     service.js           what other NooblyJS apps call: contextFor · search · flagged · status
     access.js            who may do what: the host's permissions when hosted, the wiki's admin role standalone
-    sample-export/       the PRD-031 sample: export.json, "Enterprise Space/…", "Acme Retail Space/…"
+    sample-export/       the PRD-031 sample: export.json, "Enterprise Space/…", "Acme Space/…"
   src/wiki/routes/knowledgeRoutes.js   the routes below
   src/wiki/routes/aiChatRoutes.js      /ai/chat/search answers with no model too, and keeps every answer
   src/hosted/platform.cjs · index.mjs  hands the modules the host; returns services; seed() imports the sample

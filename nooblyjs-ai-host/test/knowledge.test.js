@@ -53,7 +53,7 @@ test('step 1: the sample wiki export is imported; Sources shows its state and do
   assert.equal(body.sources.length, 1);
   const [source] = body.sources;
   assert.deepEqual([source.name, source.state, source.documents, source.by], ['Sample wiki export', 'Imported', 18, 'system']);
-  assert.deepEqual(source.spaces.map((s) => [s.name, s.documents]), [['Enterprise Space', 13], ['Acme Retail Space', 5]]);
+  assert.deepEqual(source.spaces.map((s) => [s.name, s.documents]), [['Acme Space', 5], ['Enterprise Space', 13]]);
   assert.equal(body.canImport, true);
   assert.equal((await lerato.json(`${K}/sources`)).body.canImport, false, 'importing is an Owner\'s');
   // Importing again is refused for anyone else and audited; an Owner's import is audited too.
@@ -107,7 +107,7 @@ test('step 2: "How is slot capacity calculated?" gets an answer with 3 citations
   assert.ok(ids.includes('acme-space.runbooks.slot-capacity-model'));
   assert.equal(ids.length, before.length + result.added);
   const link = after.knowledge.find((k) => k.id === 'acme-space.runbooks.slot-capacity-model');
-  assert.deepEqual([link.title, link.kindLabel, link.text, link.flagged], ['Slot capacity model', 'Runbook', 'Runbook · Acme Retail Space', null]);
+  assert.deepEqual([link.title, link.kindLabel, link.text, link.flagged], ['Slot capacity model', 'Runbook', 'Runbook · Acme Space', null]);
   assert.equal((await (await post(lerato, `${K}/answers/${answer.answerId}/link`, { itemId: 'PRD-031' })).json()).added, 0);
   await eventually(async () => assert.ok((await today(env.store, 'audit')).some((r) => r.action === 'knowledge.answer_linked' && r.actor === 'lerato-m' && r.itemId === 'PRD-031')));
 });
