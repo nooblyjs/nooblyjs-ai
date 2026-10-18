@@ -8,7 +8,7 @@
  *
  *   | Name | Source | Repository | Folder | Branch | Status |
  *   | --- | --- | --- | --- | --- | --- |
- *   | **digital-technologies-core** | Bitbucket | https://[user]:[token]@.../core.git | Digital Technologies\Knowledge Repository | main |  |
+ *   | **nooblyjs-core** | Bitbucket | https://[user]:[token]@.../core.git | Digital Platforms\Knowledge Repository | main |  |
  *
  * `Branch` is OPTIONAL — both for a row (an empty cell falls back to the
  * workflow's default branch) and for the table as a whole (a five-column table
@@ -27,7 +27,7 @@
  * the table by its header row, parses each data row into a record, and rebuilds
  * only the rows whose `Status` value changed.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 2.0.0
  * @since 2026-06-08
  */

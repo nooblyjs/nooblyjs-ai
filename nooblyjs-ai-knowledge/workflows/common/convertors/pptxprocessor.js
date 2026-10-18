@@ -2,7 +2,7 @@
  * @fileoverview PPTX to Markdown converter (delegating shim).
  *
  * Single source of truth: re-exports the application's PPTX converter from the
- * sibling `digital-technologies-knowledge` repo
+ * sibling `nooblyjs-ai-knowledge` repo
  * (`backend/src/shared/processors/pptxprocessor`). Its `convertToMarkdown(src,
  * outputMdPath)` signature is preserved (the convert-document step passes the
  * output path for presentations).
@@ -12,7 +12,7 @@
  * wrap the require in try/catch) degrade PPTX to "unsupported", exactly as the
  * previous local copy did.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 2.0.0
  */
 

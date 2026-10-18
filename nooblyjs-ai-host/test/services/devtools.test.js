@@ -202,7 +202,7 @@ test('Jira and Bitbucket say "not configured" without a credential, and call not
 // ---------- Bitbucket ----------
 
 const bbRepo = (slug, project = 'DT') => ({
-  slug, project: { key: project, name: 'Digital Technologies' }, mainbranch: { name: 'main' }, language: 'javascript', description: '', is_private: true,
+  slug, project: { key: project, name: 'Digital Platforms' }, mainbranch: { name: 'main' }, language: 'javascript', description: '', is_private: true,
   updated_on: '2026-10-09T10:00:00.000000+00:00',
 });
 const bbCommit = { hash: 'abc123def456', date: '2026-10-09T09:00:00+00:00', message: 'Steering updates\n\nlonger text', author: { raw: 'Sample Dev <dev@example.com>' } };
@@ -235,7 +235,7 @@ test('Bitbucket: repositories of a project (every page), one repository, its bra
   assert.equal((await bitbucket.repositories({ project: 'DT" OR 1=1' })).reason, 'not-found');
 
   assert.deepEqual((await bitbucket.repository('nooblyjs-ai-harness')).repository, {
-    name: 'ws/nooblyjs-ai-harness', slug: 'nooblyjs-ai-harness', project: { key: 'DT', name: 'Digital Technologies' }, branch: 'main', language: 'javascript',
+    name: 'ws/nooblyjs-ai-harness', slug: 'nooblyjs-ai-harness', project: { key: 'DT', name: 'Digital Platforms' }, branch: 'main', language: 'javascript',
     description: '', private: true, updated: '2026-10-09T10:00:00.000Z', url: 'https://bitbucket.org/ws/nooblyjs-ai-harness',
   });
   const commit = { hash: 'abc123def456', at: '2026-10-09T09:00:00.000Z', message: 'Steering updates', author: 'Sample Dev' };

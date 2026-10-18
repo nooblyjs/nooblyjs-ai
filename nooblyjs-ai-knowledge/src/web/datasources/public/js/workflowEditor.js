@@ -1553,7 +1553,7 @@ async function createNewStep(workflowId) {
 
 'use strict';
 
-const serviceRegistry = require('digital-technologies-core');
+const serviceRegistry = require('nooblyjs-core');
 
 async function run(data) {
   // Get logger from service registry

@@ -1,13 +1,13 @@
 /**
  * @fileoverview Manual test harness for the infrastructure-design
- * infrastructureContent step. Boots digital-technologies-core and runs
+ * infrastructureContent step. Boots nooblyjs-core and runs
  * steps/infrastructureContent.js to build the wiki content from the cached
  * infrastructure data.
  *
  * NOTE: run the data step first so the cache is warm. The `filter` is a
  * placeholder — the service does not filter yet.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

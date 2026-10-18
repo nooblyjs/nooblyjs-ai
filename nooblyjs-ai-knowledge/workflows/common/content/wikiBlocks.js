@@ -22,7 +22,7 @@
  * annotation re-anchoring mirrors backend/src/wiki/components/annotationBlocks.js
  * in the main app — keep the two in sync if the anchoring rules change.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 2026-05-30
  */

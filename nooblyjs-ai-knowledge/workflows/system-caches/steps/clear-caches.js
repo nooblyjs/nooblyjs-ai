@@ -16,7 +16,7 @@
  *   - cacheKeyPrefixes {string[]} key prefixes to delete (default ['wiki:'])
  *   - clearAllCacheKeys {boolean} when true, deletes every cache key (overrides prefixes)
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

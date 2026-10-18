@@ -23,7 +23,7 @@ const readDocument = require('./tools/readDocument');
 const TOOLS = [searchKnowledge, readDocument];
 
 const SERVER_INFO = {
-  name: 'digital-technologies-knowledge',
+  name: 'nooblyjs-ai-knowledge',
   version: '1.0.0'
 };
 

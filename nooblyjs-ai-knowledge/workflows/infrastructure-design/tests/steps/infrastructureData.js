@@ -1,10 +1,10 @@
 /**
  * @fileoverview Manual test harness for the infrastructure-design
- * infrastructureData step. Boots digital-technologies-core and runs
+ * infrastructureData step. Boots nooblyjs-core and runs
  * steps/infrastructureData.js to retrieve and cache the infrastructure model
  * JSON + graphics from ARIS.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

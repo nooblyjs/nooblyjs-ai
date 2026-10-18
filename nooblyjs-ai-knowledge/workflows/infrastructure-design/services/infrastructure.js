@@ -8,7 +8,7 @@
  * object inspection, markdown helpers) is inherited from
  * common/architecture/models/architectureModel.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

@@ -8,7 +8,7 @@
  * Kept as pure functions (no `this`) so they can be used directly or exposed as
  * thin instance methods on {@link ArchitectureModel}.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

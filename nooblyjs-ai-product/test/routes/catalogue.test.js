@@ -148,7 +148,7 @@ test('where a product is built (NooblyJS Phase 11): its repositories from Platfo
   const devtools = { config: async () => ({ jira: { projects: ['DTE'] }, bitbucket: { projects: [], repositories: [] } }) };
   const t = await startApp({ services: { platform, devtools } });
   try {
-    await t.post(`${API}/catalogue/products`, { as: 'priya-s', body: { name: 'NooblyJS Harness', portfolio: 'Digital Technologies' } });
+    await t.post(`${API}/catalogue/products`, { as: 'priya-s', body: { name: 'NooblyJS Harness', portfolio: 'Digital Platforms' } });
     const url = `${API}/catalogue/products/${encodeURIComponent('NooblyJS Harness')}/tools`;
     assert.equal((await t.put(url, { as: 'naledi-k', body: { jiraProject: 'DTE' } })).status, 403, 'a Viewer may not');
     assert.equal((await t.put(url, { as: 'priya-s', body: { repositories: ['acme/nope'] } })).status, 422);
@@ -159,7 +159,7 @@ test('where a product is built (NooblyJS Phase 11): its repositories from Platfo
     // A short name is stored by its full name; a repeat is kept once.
     const set = await t.put(url, { as: 'priya-s', body: { repositories: ['nooblyjs-ai-harness', 'acme/nooblyjs-ai-harness'], jiraProject: 'dte' } });
     assert.deepEqual([set.status, set.json.repositories, set.json.jiraProject, set.json.changed], [200, ['acme/nooblyjs-ai-harness'], 'DTE', true]);
-    const product = set.json.catalogue.portfolios.find((p) => p.name === 'Digital Technologies').products[0];
+    const product = set.json.catalogue.portfolios.find((p) => p.name === 'Digital Platforms').products[0];
     assert.deepEqual([product.repositories, product.jiraProject], [['acme/nooblyjs-ai-harness'], 'DTE']);
     assert.ok(t.eventLog.some((e) => e.type === 'catalogue.product_tools_changed' && e.payload.summary === 'set where NooblyJS Harness is built: nooblyjs-ai-harness · Jira DTE'));
 

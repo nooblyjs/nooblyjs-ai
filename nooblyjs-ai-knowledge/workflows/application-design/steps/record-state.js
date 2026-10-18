@@ -7,7 +7,7 @@
  * pointing at a commit whose documentation actually completed. A failed run
  * leaves the marker untouched, so its commits are retried next time.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

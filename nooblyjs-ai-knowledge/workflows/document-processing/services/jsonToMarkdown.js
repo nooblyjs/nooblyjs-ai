@@ -4,7 +4,7 @@
  * as clean markdown with proper table formatting, heading hierarchy,
  * and list structure.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

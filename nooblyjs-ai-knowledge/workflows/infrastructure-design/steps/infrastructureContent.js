@@ -3,7 +3,7 @@
  * retrieved/cached data. Mirrors
  * business-processes/steps/businessProcessesContent.js.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 0.1.0
  */
 

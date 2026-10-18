@@ -159,7 +159,7 @@ async function migrateDashboards(idToEmail, summary) {
         return;
     }
     const dashDirs = siblings
-        .filter(d => d.isDirectory() && d.name.startsWith('digital-technologies-content-'))
+        .filter(d => d.isDirectory() && d.name.startsWith('digital-platforms-content-'))
         .map(d => path.join(workspaceRoot, d.name, '.dashboards'));
 
     const prefixes = [...new Set(Object.values(idToEmail).map(e => userStore.userDir(e)))];

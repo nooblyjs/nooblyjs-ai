@@ -3780,7 +3780,7 @@ body {
 
 /* ============================
    Unified Service Dashboard Styles
-   From digital-technologies-core
+   From nooblyjs-core
    ============================ */
 
 /* Hero section */
@@ -4305,7 +4305,7 @@ body {
   }
 }/* Extracted styles from service views */
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/aiservice/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/aiservice/views/index.html */
 
         :root {
             --custom-primary: var(--kr-teal-500, #12284b);
@@ -4717,7 +4717,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/authservice/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/authservice/views/index.html */
 
         /* Tab Navigation Styles - Consistent across all services */
         .nav-tabs .nav-link {
@@ -4732,7 +4732,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/caching/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/caching/views/index.html */
 
         /* Tab Navigation Styles - Consistent across all services */
         .nav-tabs .nav-link {
@@ -4747,7 +4747,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/dataservice/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/dataservice/views/index.html */
 
         .status-dot {
             width: 8px;
@@ -5322,7 +5322,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/fetching/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/fetching/views/index.html */
 
         /* Tab Navigation Styles - Consistent across all services */
         .nav-tabs .nav-link {
@@ -5337,7 +5337,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/filing/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/filing/views/index.html */
 
         /* Tab Navigation Styles */
         .nav-tabs .nav-link {
@@ -6372,7 +6372,7 @@ body {
             }
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/logging/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/logging/views/index.html */
 
         /* Tab Navigation Styles - Consistent across all services */
         .nav-tabs .nav-link {
@@ -6398,7 +6398,7 @@ body {
             max-width: none;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/measuring/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/measuring/views/index.html */
 
                         .metrics-ui-container {
                             display: flex;
@@ -6649,7 +6649,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/notifying/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/notifying/views/index.html */
 
                         .notification-container {
                             display: flex;
@@ -7169,7 +7169,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/queueing/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/queueing/views/index.html */
 
         /* Tab Navigation Styles - Consistent across all services */
         .nav-tabs .nav-link {
@@ -7184,7 +7184,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/requesting/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/requesting/views/index.html */
 
         :root {
             --custom-primary: var(--kr-teal-500, #12284b);
@@ -7928,7 +7928,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/scheduling/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/scheduling/views/index.html */
 
 
                         .schedule-ui-container {
@@ -8331,7 +8331,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/searching/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/searching/views/index.html */
 
         /* Tab Navigation Styles - Consistent across all services */
         .nav-tabs .nav-link {
@@ -8346,7 +8346,7 @@ body {
             flex-shrink: 0;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/workflow/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/workflow/views/index.html */
 
         /* Tab Navigation Styles - Consistent across all services */
         .nav-tabs .nav-link {
@@ -8634,7 +8634,7 @@ body {
             background: #555;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/working/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/working/views/index.html */
 
         /* Tab Navigation Styles - Consistent across all services */
         .nav-tabs .nav-link {

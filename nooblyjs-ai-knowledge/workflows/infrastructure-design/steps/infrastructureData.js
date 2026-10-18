@@ -3,7 +3,7 @@
  * JSON + graphics) ready for the content build. Mirrors
  * business-processes/steps/businessProcessesData.js.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 0.1.0
  */
 

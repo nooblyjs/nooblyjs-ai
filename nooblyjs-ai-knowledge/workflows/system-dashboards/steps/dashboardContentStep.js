@@ -6,7 +6,7 @@
  * (the content step was run on its own) it re-walks the content folder first so
  * the step is safe to run standalone.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @lastupdated 2026-06-08
  */

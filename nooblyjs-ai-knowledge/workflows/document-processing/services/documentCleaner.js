@@ -5,7 +5,7 @@
  * chunks so large files stay within the model's token budget, and embedded
  * base64 images are extracted before cleaning and restored afterwards.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 3.0.0
  */
 

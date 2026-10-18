@@ -8,7 +8,7 @@
  * retries with exponential backoff, so a single slow document or a flaky model
  * never wedges the whole bottom-up sweep.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

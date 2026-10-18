@@ -1,9 +1,9 @@
 /**
  * @fileoverview Manual test harness for the infrastructure-design authToken step.
- * Boots digital-technologies-core and runs steps/authToken.js so the ARIS auth
+ * Boots nooblyjs-core and runs steps/authToken.js so the ARIS auth
  * token can be retrieved (and cached) in isolation.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 0.1.0
  */
 

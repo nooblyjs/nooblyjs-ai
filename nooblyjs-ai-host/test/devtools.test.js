@@ -12,7 +12,7 @@ const GRANTED = ['read:repository:bitbucket', 'read:pullrequest:bitbucket'];
 
 const calls = [];
 const state = { harnessCommit: 'First commit', harnessExists: true, issueStatus: 'In Progress' };
-const repo = (slug, project = { key: 'DT', name: 'Digital Technologies' }) => ({
+const repo = (slug, project = { key: 'DT', name: 'Digital Platforms' }) => ({
   slug, project, mainbranch: { name: 'main' }, language: 'javascript', description: `The ${slug} repository`, is_private: true, updated_on: '2026-10-09T10:00:00+00:00',
 });
 const issue = (key, over = {}) => ({

@@ -3152,7 +3152,7 @@ kbd,
   }
 }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/aiservice/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/aiservice/views/index.html */
 
         .sidebar {
             background-color: #fff;
@@ -3961,13 +3961,13 @@ kbd,
             }
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/measuring/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/measuring/views/index.html */
 
                         .metrics-right-panel.open {
                             transform: translateX(0);
                         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/notifying/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/notifying/views/index.html */
 
                         .notification-container {
                             display: flex;
@@ -4339,7 +4339,7 @@ kbd,
                             border-color: var(--kr-teal-600, var(--accent));
                         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/requesting/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/requesting/views/index.html */
 
         .sidebar {
             background-color: white;

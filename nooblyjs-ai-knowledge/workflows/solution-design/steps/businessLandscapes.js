@@ -3,7 +3,7 @@
  * This worker retrieves a landscape inventory's data and creates the landscape content pages.
  * The landscape to process (Application vs Reference) is selected per-workflow via
  * the workflow's defaultInput (data.landscape), so a single step serves both.
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @lastupdated 2026-05-31
  */

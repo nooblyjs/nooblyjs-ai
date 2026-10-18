@@ -75,7 +75,7 @@ app covers what people use `[CONFIRM retirement date]`.
 | `AIService` | `nooblyjs-ai-common`, routed by work type (`knowledge-answer`, `knowledge-ingest`, `knowledge-summarise`) |
 | Datasources workflows (pipelines, schedules) | **Sources** with sync status. Connectors and indexers run as **workers** queued with `serverManager.queue()` and report through `/knowledge/internal/v1/…` |
 | Jest (`tests/`) | `node:test` in `test/` for the hosted code. Jest stays for legacy until it's retired |
-| `digital-technologies-core` in `CLAUDE.md` and docs | `nooblyjs-core` |
+| `nooblyjs-core` in `CLAUDE.md` and docs | `nooblyjs-core` |
 | Teams app proxy, VS Code and Chrome extensions, the wiki sync daemon | Not part of the hosted app. They stay with legacy `[CONFIRM]` |
 
 **Must-haves the legacy app doesn't have:** PII redaction **before** a document is written

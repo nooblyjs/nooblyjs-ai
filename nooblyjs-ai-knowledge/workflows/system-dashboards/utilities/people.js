@@ -2,7 +2,7 @@
  * @fileoverview Helpers for turning a person's full name into the values the
  * dashboards need: the dashboard file name and the greeting first name.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 2026-06-08
  */

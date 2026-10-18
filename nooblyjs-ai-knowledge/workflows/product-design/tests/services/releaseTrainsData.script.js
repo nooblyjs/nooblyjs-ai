@@ -17,7 +17,7 @@
  *   node product-design/tests/services/releaseTrainsData.script.js
  *   node .../releaseTrainsData.script.js --write   # ALSO build the full Product tree (writes files!)
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

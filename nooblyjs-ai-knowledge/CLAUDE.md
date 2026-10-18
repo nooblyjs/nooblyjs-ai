@@ -150,7 +150,7 @@ Tests: `npm test` (`node:test`, `test/*.test.mjs`; Express 5 is the `express5` a
 ```
 app.js (port 9101)
   ├── Express + Socket.IO + Passport Auth
-  ├── Service Registry (digital-technologies-core)
+  ├── Service Registry (nooblyjs-core)
   ├── Datasources Module (src/datasources/)
   │   ├── SpaceManager, WorkflowManager, WorkflowExecutor, WorkflowScheduler, WorkflowBridge
   │   └── Routes: /api/spaces/*, /api/workflows/*, /api/connections/*, /api/settings/*, /api/agents/*
@@ -160,7 +160,7 @@ app.js (port 9101)
 ```
 
 **Key points:**
-- Shared services from `digital-technologies-core`: Cache, Queue, Workflow, Scheduling, Filing, Search, Auth, AI, Logger
+- Shared services from `nooblyjs-core`: Cache, Queue, Workflow, Scheduling, Filing, Search, Auth, AI, Logger
 - File-based storage in `./.application/` (JSON) — no database required
 - FileWatcher (Chokidar, 300ms debounce) → EventBus → Socket.IO broadcast
 - Each module initializes via `src/{datasources,wiki}/initialize.js`; `src/initialize.js` wires both onto the app that the root `app.js` creates
@@ -205,9 +205,9 @@ workflow lists in the UI but cannot be scheduled. Wherever this file says "the s
 `noobly-app-wiki-workflows`, read `workflows/`: the lockstep rules below still hold, between two folders of one repo.
 - A step reaches this app's code by relative path: `require('../../../src/shared/…')` from
   `workflows/<group>/steps|services|utilities/` (one more `../` under `tests/`). The copies that came across still
-  said `../../../digital-technologies-knowledge/backend/src/…`, which resolves to nothing here.
+  said `../../../nooblyjs-ai-knowledge/backend/src/…`, which resolves to nothing here.
 - Bare dependencies resolve from the root `node_modules`, so the registry is `require('nooblyjs-core')`
-  (`digital-technologies-core` is the old name and is not installed). There is no `workflows/package.json`.
+  (`nooblyjs-core` is the old name and is not installed). There is no `workflows/package.json`.
 - A step's fallback for the app's files is `<repo root>/.application` (`../../../.application`), the standalone
   default; hosted, the platform passes `appBaseDir` and that fallback is not what is used.
 
@@ -484,7 +484,7 @@ socket.on('document-updated', (doc) => { pendingUpdates.push(doc); debouncedUpda
 
 **Port in use:** `npm run kill` or `PORT=3000 npm start`.
 
-**Module init fails:** Check `./.application/` exists, `digital-technologies-core` installed at sibling path, file permissions, logs at `./.application/logs/application.log`.
+**Module init fails:** Check `./.application/` exists, `nooblyjs-core` installed at sibling path, file permissions, logs at `./.application/logs/application.log`.
 
 ## Security Notes
 

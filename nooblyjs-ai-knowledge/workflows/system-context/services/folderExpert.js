@@ -16,7 +16,7 @@
  * Every prompt is wrapped in a timeout + retry, because the core AI providers
  * expose no client-side timeout of their own and a local model can stall.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

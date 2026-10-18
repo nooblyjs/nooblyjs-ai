@@ -37,7 +37,7 @@ disk.
 
 | Risk | Why it is open | Proposed |
 | --- | --- | --- |
-| The legacy standalone wiki (`digital-technologies-knowledge`, and `nooblyjs-ai-knowledge`'s `app.js` on 9101) trusts an email as identity | Outside NooblyJS, and that project is read-only for this work | Switch that endpoint off, or verify the identity, wherever the standalone wiki still runs |
+| The legacy standalone wiki (`nooblyjs-ai-knowledge`, and `nooblyjs-ai-knowledge`'s `app.js` on 9101) trusts an email as identity | Outside NooblyJS, and that project is read-only for this work | Switch that endpoint off, or verify the identity, wherever the standalone wiki still runs |
 | A backup holds people's names, the audit log and the sign-in store (password hashes when local sign-in is used) | By design: it must restore sign-in | Keep `BACKUP_DIR` as protected as `data/`; encrypt it at rest where it is stored `[CONFIRM where]` |
 | `style-src` allows `'unsafe-inline'` | The hosted wiki's legacy pages use inline styles | Remove when those pages are ported |
 | Request bodies up to 10 MB | Uploads in Teammates and the wiki | Lower per route once the largest real upload is known |

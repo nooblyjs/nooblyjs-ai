@@ -33,7 +33,7 @@
  * space's on-disk baseDir (the worker shares the disk) so the generated sidecars
  * are not themselves re-indexed as documents.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

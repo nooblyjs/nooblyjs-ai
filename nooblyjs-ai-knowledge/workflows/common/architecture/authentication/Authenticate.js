@@ -3,7 +3,7 @@
  * @method authenticate : Authenticate agains the ARIS system by using the username and password and returning a token
  * @method isAuthenticated : Determine if a token is still valid
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

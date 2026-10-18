@@ -201,7 +201,7 @@ For frontend development, you can run separate dev servers that proxy to the bac
 ### Prerequisites
 
 - **Node.js** 16+ and npm
-- **digital-technologies-core** installed as a sibling directory (provides service registry)
+- **nooblyjs-core** installed as a sibling directory (provides service registry)
 
 ### Installation
 
@@ -209,18 +209,18 @@ For frontend development, you can run separate dev servers that proxy to the bac
 ```bash
 # Create parent directory with both repos
 cd parent-directory
-git clone <repo>/digital-technologies-core
-git clone <repo>/digital-technologies-knowledge
+git clone <repo>/nooblyjs-core
+git clone <repo>/nooblyjs-ai-knowledge
 
 # Expected structure:
 # parent-directory/
-# ├── digital-technologies-core/
-# └── digital-technologies-knowledge/
+# ├── nooblyjs-core/
+# └── nooblyjs-ai-knowledge/
 ```
 
 2. **Install backend dependencies**:
 ```bash
-cd digital-technologies-knowledge/backend
+cd nooblyjs-ai-knowledge/backend
 npm install
 ```
 
@@ -440,7 +440,7 @@ All modules:
 ## 📁 Directory Structure
 
 ```
-digital-technologies-knowledge/
+nooblyjs-ai-knowledge/
 │
 ├── backend/                          ✨ UNIFIED BACKEND
 │   ├── app.js                       (Unified backend - port 9101)
@@ -519,7 +519,7 @@ Legacy (can be archived):
 - **Socket.IO** - Real-time WebSocket communication
 - **Passport.js** - Authentication framework
 - **Chokidar** - File system monitoring
-- **digital-technologies-core** - Service registry and abstraction
+- **nooblyjs-core** - Service registry and abstraction
 
 ### Frontend
 - **Vanilla JavaScript** - Core application logic
@@ -727,11 +727,11 @@ NODE_ENV=production npm start
 
 ### Docker Deployment
 ```bash
-docker build -t digital-technologies-knowledge:2.0 .
+docker build -t nooblyjs-ai-knowledge:2.0 .
 docker run -p 9101:9101 \
   -e SESSION_SECRET=<secure-secret> \
   -e NODE_ENV=production \
-  digital-technologies-knowledge:2.0
+  nooblyjs-ai-knowledge:2.0
 ```
 
 ### Environment Setup
@@ -917,7 +917,7 @@ PORT=3000 npm start
 
 #### Module Fails to Initialize
 - Check `./.application/` directory exists
-- Verify `digital-technologies-core` is installed
+- Verify `nooblyjs-core` is installed
 - Review logs in `./.application/logs/`
 - Check terminal output for error messages
 - See [CLAUDE.md - Debugging Tips](CLAUDE.md#debugging-tips) for detailed diagnostics

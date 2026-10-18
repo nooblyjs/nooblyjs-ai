@@ -119,7 +119,7 @@
    * Provides FIFO queue operations with support for multiple providers
    * (memory, api, redis, etc).
    * 
-   * @author digital-technologies-core
+   * @author nooblyjs-core
    * @version 2.0.0
    */
 

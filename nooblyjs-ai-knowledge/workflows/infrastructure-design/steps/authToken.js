@@ -4,7 +4,7 @@
  * projects; the shared credentials + auth logic lives in
  * common/architecture/authentication/authenticateStep.js.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 0.1.0
  */
 

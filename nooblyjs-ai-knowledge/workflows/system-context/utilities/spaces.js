@@ -10,7 +10,7 @@
  * the absolute baseDir it must write `.context` sidecars into, plus the numeric
  * id and name the wiki API endpoints expect.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 
@@ -24,7 +24,7 @@ const path = require('node:path');
  * and `configuration/settings/` live).
  *
  * Priority: explicit argument -> APP_BASE_DIR env -> the conventional sibling
- * `<repos-parent>/.application` (this repo sits beside digital-technologies-knowledge
+ * `<repos-parent>/.application` (this repo sits beside nooblyjs-ai-knowledge
  * under a common parent, and `.application` is a sibling of both).
  *
  * @param {string} [explicit] - Caller-supplied override.
@@ -33,9 +33,9 @@ const path = require('node:path');
 function resolveAppBaseDir(explicit) {
   const dir = explicit
     || process.env.APP_BASE_DIR
-    // utilities/ -> build-context/ -> workflows-repo/ -> repos parent (e.g. C:\work-dt)
+    // utilities/ -> build-context/ -> workflows-repo/ -> repos parent (e.g. C:\work)
     || path.resolve(__dirname, '../../..', '.application');
-  // The .env APP_BASE_DIR is stored with escaped separators (C:\\work-dt\\.application);
+  // The .env APP_BASE_DIR is stored with escaped separators (C:\\work\\.application);
   // normalise so doubled separators collapse to a clean OS path.
   return path.normalize(dir);
 }

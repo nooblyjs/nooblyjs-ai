@@ -10,7 +10,7 @@
  * list a requirement in the "## Requirements" table on its epic's home page.
  * Data-only.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

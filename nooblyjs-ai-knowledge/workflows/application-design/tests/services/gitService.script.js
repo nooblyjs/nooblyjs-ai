@@ -10,7 +10,7 @@
  * A token may be embedded in GIT_TEST_REPO_URL for private repos. Requires the
  * `git` CLI and network access to the chosen repository.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

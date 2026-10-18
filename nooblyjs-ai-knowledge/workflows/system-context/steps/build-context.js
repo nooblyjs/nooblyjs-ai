@@ -42,7 +42,7 @@
  * The AI agent is the one tagged "Folder Processing" in the Agents screen
  * (override per run with `agent`).
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

@@ -28,14 +28,14 @@ The noobly Wiki Platform is a unified, modular application that combines:
 - **Datasources Module**: Workflow automation and data transformation engine
 - **Wiki Module**: Knowledge management and collaborative documentation system
 
-Both modules run on a **single unified backend** (port 11000) powered by **digital-technologies-core**, with multiple frontend options including web, desktop (Electron), VS Code extension, Chrome extension, and Microsoft Teams integration.
+Both modules run on a **single unified backend** (port 11000) powered by **nooblyjs-core**, with multiple frontend options including web, desktop (Electron), VS Code extension, Chrome extension, and Microsoft Teams integration.
 
 ### Key Architectural Decisions
 
 1. **Unified Backend**: Single Node.js/Express server running both modules
 2. **Modular Architecture**: Completely decoupled datasources and wiki modules
 3. **Event-Driven Communication**: SharedEventEmitter for inter-module communication
-4. **Service-Oriented**: digital-technologies-core provides pluggable services
+4. **Service-Oriented**: nooblyjs-core provides pluggable services
 5. **Multi-Frontend Strategy**: Same backend serves web, desktop, extension, and Teams clients
 6. **Real-Time Capabilities**: Socket.IO for live collaboration and status updates
 7. **Multi-Provider Support**: Switch between in-memory and distributed storage providers
@@ -76,7 +76,7 @@ Both modules run on a **single unified backend** (port 11000) powered by **digit
                  │  └──────────┘  └──────────┘   │
                  │                                 │
                  │  ┌─────────────────────────┐   │
-                 │  │ digital-technologies-  │   │
+                 │  │ digital-platforms-  │   │
                  │  │        core             │   │
                  │  │                         │   │
                  │  │ Services (Workflow,    │   │
@@ -101,7 +101,7 @@ Both modules run on a **single unified backend** (port 11000) powered by **digit
 | **Client** | User interfaces | React, Vue, Vanilla JS, Electron, VS Code API | 3001-3002, Dev |
 | **API Gateway** | Request routing, auth | Express.js, Passport.js, CORS | 11000 |
 | **Application** | Business logic, routes | Node.js, Express | 11000 |
-| **Service** | Core functionality | digital-technologies-core | 11000 |
+| **Service** | Core functionality | nooblyjs-core | 11000 |
 | **Storage** | Data persistence | JSON files, Filesystem | Local/Network |
 
 ---
@@ -117,7 +117,7 @@ Both modules run on a **single unified backend** (port 11000) powered by **digit
 | **Real-Time** | Socket.IO | v4.8 | WebSocket communication |
 | **Authentication** | Passport.js | v0.7 | Authentication strategies |
 | **Session** | express-session | v1.17 | Session management |
-| **Service Core** | digital-technologies-core | Custom | Service registry pattern |
+| **Service Core** | nooblyjs-core | Custom | Service registry pattern |
 | **File Processing** | mammoth, xlsx, pptx-parser | Various | Document conversion |
 | **AI Integration** | @anthropic-ai/sdk, openai | Latest | LLM services |
 
@@ -221,8 +221,8 @@ app.js (Unified Backend)
 ### Service Registry Pattern
 
 ```javascript
-// Service initialization from digital-technologies-core
-const serviceRegistry = require('digital-technologies-core');
+// Service initialization from nooblyjs-core
+const serviceRegistry = require('nooblyjs-core');
 serviceRegistry.initialize(app, eventEmitter, {
   logDir: path.join(__dirname, './.application/logs'),
   dataDir: path.join(__dirname, './.application/data')
@@ -500,7 +500,7 @@ src/wiki/
            │             │
            ▼             ▼
      ┌─────────────────────────┐
-     │ digital-technologies-  │
+     │ digital-platforms-  │
      │        core             │
      │  (Shared Services)      │
      └─────────────────────────┘
@@ -607,7 +607,7 @@ configuration/                 # Workflow configs
 
 ## Service Integration
 
-### digital-technologies-core Services
+### nooblyjs-core Services
 
 | Service | Current Provider | Purpose | Used By |
 |---------|---|---|---|
@@ -817,7 +817,7 @@ Logs are written to `.application/logs/` with timestamps and severity levels:
 ## Appendix B: File Structure Summary
 
 ```
-digital-technologies-knowledge/
+nooblyjs-ai-knowledge/
 ├── backend/                    # Unified backend
 │   ├── app.js                 # Main entry point (port 11000)
 │   ├── app-datasources.js     # Legacy datasources only (port 11002)

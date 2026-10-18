@@ -11,7 +11,7 @@
  * The resulting records are cached to a JSON file so the content builder can run
  * as a separate step without re-walking the tree.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 2026-06-08
  */

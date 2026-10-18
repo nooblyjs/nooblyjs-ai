@@ -6,7 +6,7 @@
  * table on each Epic / Portfolio Epic / Feature home page (linked via the
  * RequirementEpics / RequirementPortfolioEpics / RequirementFeatures junctions).
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

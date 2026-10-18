@@ -1,6 +1,6 @@
 /**
  * @fileoverview Authentication Routes (Wrapper for AuthService APIs)
- * Delegates to digital-technologies-core authservice routes
+ * Delegates to nooblyjs-core authservice routes
  * The authservice provides all auth endpoints at /services/authservice/api/*
  *
  * @author noobly Team

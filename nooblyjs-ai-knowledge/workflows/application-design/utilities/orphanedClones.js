@@ -24,7 +24,7 @@
  * documents were actually read (see `documentsProcessed` in discover-repos), and
  * an empty read must never be mistaken for "nothing is listed any more".
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 2026-08-26
  */

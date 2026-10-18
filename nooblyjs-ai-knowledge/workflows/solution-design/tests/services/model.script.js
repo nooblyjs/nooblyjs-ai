@@ -1,7 +1,7 @@
 /**
  * @fileoverview Retrieve model test
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

@@ -36,7 +36,7 @@
  * See `.docs/Linked-Documents-for-Content-Jobs.md` in the knowledge repo for
  * the full guide, including which of the three ownership models to pick.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 2026-08-21
  */

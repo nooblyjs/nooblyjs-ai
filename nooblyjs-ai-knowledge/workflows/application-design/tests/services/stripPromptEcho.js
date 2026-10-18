@@ -11,7 +11,7 @@
  * briefs them separately, which is the real fix; this is the safety net, and what
  * it must NOT do matters as much as what it must.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @since 2026-08-26
  */
 

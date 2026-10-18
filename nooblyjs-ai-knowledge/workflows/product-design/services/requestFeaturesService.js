@@ -11,7 +11,7 @@
  * (not folders) so they do not carry a Continuous Exploration folder of their
  * own. Data-only.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

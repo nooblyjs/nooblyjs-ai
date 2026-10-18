@@ -2,7 +2,7 @@
  * @fileoverview PDF to Markdown converter (delegating shim).
  *
  * Single source of truth: re-exports the application's PDF converter from the
- * sibling `digital-technologies-knowledge` repo
+ * sibling `nooblyjs-ai-knowledge` repo
  * (`backend/src/shared/processors/pdfprocessor`). That copy is a *pure*
  * converter — it returns markdown and, unlike the old local copy, does NOT write
  * a stray sibling `.md` next to the source (the caller decides where to persist).
@@ -11,7 +11,7 @@
  * exact same converter. The cross-repo require mirrors the pattern already used
  * by clean-document.js (→ backend/src/shared/ai/expertResolver).
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 2.0.0
  */
 

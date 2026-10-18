@@ -4915,7 +4915,7 @@
   }
 }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/aiservice/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/aiservice/views/index.html */
 
         [data-module="wiki"] .sidebar {
             background-color: #fff;
@@ -5724,13 +5724,13 @@
             }
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/measuring/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/measuring/views/index.html */
 
                         [data-module="wiki"] .metrics-right-panel.open {
                             transform: translateX(0);
                         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/notifying/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/notifying/views/index.html */
 
                         [data-module="wiki"] .notification-container {
                             display: flex;
@@ -6102,7 +6102,7 @@
                             border-color: var(--kr-teal-600, var(--accent));
                         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/requesting/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/requesting/views/index.html */
 
         [data-module="wiki"] .sidebar {
             background-color: white;

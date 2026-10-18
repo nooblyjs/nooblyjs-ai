@@ -1128,7 +1128,7 @@
   }
 }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/aiservice/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/aiservice/views/index.html */
 
         [data-module="wiki"] .ds-root .sidebar {
             background-color: #fff;
@@ -1179,7 +1179,7 @@
             color: var(--muted);
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/dataservice/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/dataservice/views/index.html */
 
         [data-module="wiki"] .ds-root .status-dot.online {
             background-color: var(--custom-success);
@@ -1540,7 +1540,7 @@
             justify-content: center;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/measuring/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/measuring/views/index.html */
 
                         [data-module="wiki"] .ds-root .metrics-left-nav.resizable {
                             resize: horizontal;
@@ -1550,7 +1550,7 @@
                             transform: translateX(0);
                         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/notifying/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/notifying/views/index.html */
 
                         [data-module="wiki"] .ds-root .notification-left-nav.resizable {
                             resize: horizontal;
@@ -1572,7 +1572,7 @@
                             border-color: var(--kr-teal-600, var(--accent));
                         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/requesting/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/requesting/views/index.html */
 
         [data-module="wiki"] .ds-root .sidebar {
             background-color: white;
@@ -1753,7 +1753,7 @@
             overflow-x: auto;
         }
 
-/* From: /workspaces/codespaces-blank/digital-technologies-core/src/scheduling/views/index.html */
+/* From: /workspaces/codespaces-blank/nooblyjs-core/src/scheduling/views/index.html */
 
                         [data-module="wiki"] .ds-root .schedule-form {
                             background: white;

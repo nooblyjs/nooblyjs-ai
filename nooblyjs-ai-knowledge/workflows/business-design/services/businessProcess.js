@@ -1,7 +1,7 @@
 /**
  * @fileoverview Retrieve a business process from the entry model
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @date 2024-06-20
  */
 

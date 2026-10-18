@@ -6,7 +6,7 @@
  *
  * Run: node infrastructure-design/tests/services/infrastructuresData.script.js
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 0.1.0
  */
 

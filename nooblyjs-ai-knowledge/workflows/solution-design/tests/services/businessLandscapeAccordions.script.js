@@ -14,7 +14,7 @@
  *
  * Run:  node solution-design/tests/services/businessLandscapeAccordions.script.js
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

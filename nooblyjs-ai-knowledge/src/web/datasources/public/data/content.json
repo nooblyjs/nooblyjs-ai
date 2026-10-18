@@ -199,12 +199,12 @@
         {
           "title": "1. Installation",
           "description": "Install noobly Core using npm:",
-          "code": "npm install digital-technologies-core"
+          "code": "npm install nooblyjs-core"
         },
         {
           "title": "2. Initialize & Get Services",
           "description": "Create your Express app and initialize the service registry:",
-          "code": "const express = require('express');\nconst serviceRegistry = require('digital-technologies-core');\n\nconst app = express();\napp.use(express.json());\n\n// Initialize registry FIRST\nserviceRegistry.initialize(app);\n\n// Get services\nconst cache = serviceRegistry.cache('memory');\nconst logger = serviceRegistry.logger('file');"
+          "code": "const express = require('express');\nconst serviceRegistry = require('nooblyjs-core');\n\nconst app = express();\napp.use(express.json());\n\n// Initialize registry FIRST\nserviceRegistry.initialize(app);\n\n// Get services\nconst cache = serviceRegistry.cache('memory');\nconst logger = serviceRegistry.logger('file');"
         },
         {
           "title": "3. Use Services in Routes",
@@ -288,7 +288,7 @@
       "description": "Complete API documentation for all 15 services and core framework",
       "coreFramework": {
         "title": "Service Registry Core Methods",
-        "code": "const serviceRegistry = require('digital-technologies-core');\n\n// Initialize the service registry (REQUIRED - must be first)\nserviceRegistry.initialize(app, eventEmitter, options);\n\n// Get service instances by method name\nconst cache = serviceRegistry.cache(provider, options);\nconst logger = serviceRegistry.logger(provider, options);\nconst dataService = serviceRegistry.dataService(provider, options);\nconst auth = serviceRegistry.authservice(provider, options);\nconst queue = serviceRegistry.queue(provider, options);\nconst notify = serviceRegistry.notifying(provider, options);\n\n// All services auto-register Express routes at /services/{service}/api/*\n// Access service management UI at /services/ (requires authentication)"
+        "code": "const serviceRegistry = require('nooblyjs-core');\n\n// Initialize the service registry (REQUIRED - must be first)\nserviceRegistry.initialize(app, eventEmitter, options);\n\n// Get service instances by method name\nconst cache = serviceRegistry.cache(provider, options);\nconst logger = serviceRegistry.logger(provider, options);\nconst dataService = serviceRegistry.dataService(provider, options);\nconst auth = serviceRegistry.authservice(provider, options);\nconst queue = serviceRegistry.queue(provider, options);\nconst notify = serviceRegistry.notifying(provider, options);\n\n// All services auto-register Express routes at /services/{service}/api/*\n// Access service management UI at /services/ (requires authentication)"
       },
       "sections": [
         {

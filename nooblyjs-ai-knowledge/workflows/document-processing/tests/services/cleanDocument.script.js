@@ -9,7 +9,7 @@
  * registry — exactly as it does inside the running app. An agent tagged with
  * the "Document Processing" usage must exist in the Agents configuration.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 6.0.0
  */
 

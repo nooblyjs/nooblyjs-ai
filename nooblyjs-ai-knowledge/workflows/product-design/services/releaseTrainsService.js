@@ -32,7 +32,7 @@
  * run the Value Streams, Epics, Portfolio Epics, Features and all the mapping
  * *Retrieve* steps first.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

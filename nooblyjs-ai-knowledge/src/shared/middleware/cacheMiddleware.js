@@ -13,7 +13,7 @@
  * Creates a cache middleware wrapper for an async route handler
  * Intercepts requests, checks cache, and stores responses
  *
- * @param {Object} cacheService - Cache service instance from digital-technologies-core
+ * @param {Object} cacheService - Cache service instance from nooblyjs-core
  * @param {Function} handler - Express route handler to wrap
  * @param {Object} options - Configuration options
  * @param {string} options.keyPrefix - Prefix for cache keys (e.g., 'workflows')

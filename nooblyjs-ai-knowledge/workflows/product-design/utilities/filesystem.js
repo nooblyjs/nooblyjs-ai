@@ -3,7 +3,7 @@
  * Markdown writes go through common/content/wikiBlocks.js so they preserve
  * user-authored wiki blocks (annotations, comments, likes).
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

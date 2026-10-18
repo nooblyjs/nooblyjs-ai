@@ -4,7 +4,7 @@
  * source still exists are left untouched. No AI agent or network is needed:
  * pruning is a pure filesystem reconciliation of output against source.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

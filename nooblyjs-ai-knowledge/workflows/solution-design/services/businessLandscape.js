@@ -1,7 +1,7 @@
 /**
  * @fileoverview Retrieve a business solution roadmap object and process its view points
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.1.0
  * @since 1.0.0
  */

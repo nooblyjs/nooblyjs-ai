@@ -4,7 +4,7 @@
  * a structured JSON representation that preserves headings, paragraphs, lists,
  * and — critically — table structure (rows, columns, headers).
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

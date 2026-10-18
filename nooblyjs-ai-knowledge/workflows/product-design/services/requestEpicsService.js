@@ -9,7 +9,7 @@
  * Cached to `cache/requestepics.json` and consumed by releaseTrainsService to
  * place a request as a Continuous Exploration page beneath its epic. Data-only.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

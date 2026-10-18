@@ -10,7 +10,7 @@
  * here — they differ per project (design_solution_*, design_process_*,
  * design_infrastructure_*) and each step must set its own.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

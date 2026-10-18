@@ -5,7 +5,7 @@
  * An agent tagged with the "Code Processing" usage must exist in the
  * Agents configuration.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 2.0.0
  * @since 1.0.0
  */

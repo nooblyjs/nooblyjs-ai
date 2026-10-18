@@ -15,7 +15,7 @@
  * Parsing markdown -> objects (rather than hand-rolling regexes over the raw
  * text) keeps the extraction resilient to incidental whitespace and ordering.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 2026-06-08
  */

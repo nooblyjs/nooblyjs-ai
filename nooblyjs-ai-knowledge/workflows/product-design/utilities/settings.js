@@ -6,7 +6,7 @@
  * `process.env`; for standalone runs we also best-effort load the sibling
  * knowledge repo's `.env` (dotenv does not override variables already set).
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

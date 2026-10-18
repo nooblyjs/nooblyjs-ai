@@ -2,7 +2,7 @@
  * @fileoverview Retrieve a business solution roadmap object search result
  * This script retrieves a business solution roadmap object and retrieve the occurence models data
  * 
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

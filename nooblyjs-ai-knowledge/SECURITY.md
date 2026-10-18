@@ -78,6 +78,6 @@ that are still wired in. They are documented risks, not silent ones.
 ## Verification
 
 - Backend test suite after these changes: **1660 passing** (5 suites fail to
-  *load* only because the sibling `digital-technologies-core` /
+  *load* only because the sibling `nooblyjs-core` /
   `noobly-app-wiki-workflows` repos are not present in this
   environment — dependency resolution, not logic).

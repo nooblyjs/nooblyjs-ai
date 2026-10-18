@@ -10,7 +10,7 @@
  * with their model id + cache file, and add their filter/folder/content logic
  * on top.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

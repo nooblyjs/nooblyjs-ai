@@ -2,7 +2,7 @@
  * @fileoverview Prompt library access for workflow steps and services (delegating shim).
  *
  * Single source of truth: this re-exports the platform's prompt store from the
- * sibling `digital-technologies-knowledge` repo
+ * sibling `nooblyjs-ai-knowledge` repo
  * (`backend/src/shared/prompts/promptStore`). Prompts are authored in the
  * datasources app (AI → Prompts) and read back here by KEY:
  *
@@ -25,7 +25,7 @@
  * and the steps (e.g. `backend/src/shared/ai/expertResolver`). The knowledge repo
  * is expected as a sibling.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

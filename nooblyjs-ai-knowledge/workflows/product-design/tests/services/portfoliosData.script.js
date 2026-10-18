@@ -15,7 +15,7 @@
  * product_design_username + product_design_password), product_design_datafolder,
  * and product_design_contentfolder (for --write).
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

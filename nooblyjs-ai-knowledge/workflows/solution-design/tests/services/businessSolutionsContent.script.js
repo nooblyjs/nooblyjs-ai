@@ -2,7 +2,7 @@
  * @fileoverview Build Business Solutions Content
  * This script retrieves the Business Solutions data for a given filter and processes it to create content for the Business Solutions page.
  * 
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

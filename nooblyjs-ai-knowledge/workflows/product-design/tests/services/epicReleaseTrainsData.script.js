@@ -11,7 +11,7 @@
  * Run from the knowledge repo root:
  *   node product-design/tests/services/epicReleaseTrainsData.script.js
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

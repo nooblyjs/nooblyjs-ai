@@ -6,7 +6,7 @@
  * block and Status table into a record, and caches the records to JSON so the
  * content step can run independently.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @lastupdated 2026-06-08
  */

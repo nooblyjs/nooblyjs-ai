@@ -1,6 +1,6 @@
 /**
  * @fileoverview Workflow Bridge Service
- * Bridge service that wraps digital-technologies-core workflow and scheduling services
+ * Bridge service that wraps nooblyjs-core workflow and scheduling services
  * while maintaining API compatibility with the existing application.
  *
  * @author noobly Team
@@ -39,7 +39,7 @@ const GROUP_SEPARATOR = ' / ';
 // SCHEDULED workflows re-reads them off disk and must apply the identical rule.
 
 // Standard 5-field cron ranges. These mirror the core scheduler's parser
-// (digital-technologies-core/src/scheduling/providers/cronExpression.js) so the
+// (nooblyjs-core/src/scheduling/providers/cronExpression.js) so the
 // bridge rejects exactly what startCron() would reject — keep in sync with core.
 const CRON_FIELDS = [
   { name: 'minute',     min: 0, max: 59 },
@@ -129,7 +129,7 @@ class Mutex {
 /**
  * WorkflowBridge - Bridges core services with application API requirements
  * Provides workflow CRUD, execution, and scheduling functionality using
- * digital-technologies-core services while maintaining filesystem persistence.
+ * nooblyjs-core services while maintaining filesystem persistence.
  */
 class WorkflowBridge {
   /**

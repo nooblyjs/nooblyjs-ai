@@ -30,8 +30,7 @@
     "start:knowledge": "npm start --prefix nooblyjs-ai-knowledge",
     "start:factory": "npm start --prefix nooblyjs-ai-factory",
     "start:harness": "npm start --prefix nooblyjs-ai-harness",
-    "test:e2e": "npm run test:e2e --prefix nooblyjs-ai-host",
-    "migrate:check": "scripts/migrate/check.sh nooblyjs-ai-*"
+    "test:e2e": "npm run test:e2e --prefix nooblyjs-ai-host"
   },
   "engines": {
     "node": ">=24"

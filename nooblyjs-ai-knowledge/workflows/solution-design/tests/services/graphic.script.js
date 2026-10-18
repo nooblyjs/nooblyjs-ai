@@ -2,7 +2,7 @@
  * @fileoverview Model Graphic Tests
  * This file test the ARIS Graphic requests The following tests are performed
  * @method graphic.retrieve: Retrieve a graphic for a passed model
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

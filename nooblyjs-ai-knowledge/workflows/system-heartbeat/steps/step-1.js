@@ -10,7 +10,7 @@
 /**
  * @fileoverview This activity will review a code repository and create markdown foles
  *   
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

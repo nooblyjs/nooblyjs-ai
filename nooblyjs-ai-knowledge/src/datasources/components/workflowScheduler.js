@@ -1,7 +1,7 @@
 /**
  * WorkflowScheduler - Manages workflow schedules and scheduling
  * Stores schedules in /.application/workflow/workflows.schedules.json
- * Uses digital-technologies-core scheduler service for actual scheduling
+ * Uses nooblyjs-core scheduler service for actual scheduling
  */
 
 const fs = require('node:fs').promises;
@@ -12,7 +12,7 @@ class WorkflowScheduler {
   constructor(deps = {}) {
     this.workflowManager = deps.workflowManager;
     this.workflowExecutor = deps.workflowExecutor;
-    this.scheduler = deps.scheduler; // From digital-technologies-core
+    this.scheduler = deps.scheduler; // From nooblyjs-core
     this.logger = deps.logger;
     const appBaseDir = deps.appBaseDir || path.join(process.cwd(), '.application');
     this.schedulesFile = path.join(appBaseDir, 'workflow', 'workflows.schedules.json');

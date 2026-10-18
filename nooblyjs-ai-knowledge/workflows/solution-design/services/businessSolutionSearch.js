@@ -1,7 +1,7 @@
 /**
  * @fileoverview This file performs a search based on an object and gets all the instances of that object
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

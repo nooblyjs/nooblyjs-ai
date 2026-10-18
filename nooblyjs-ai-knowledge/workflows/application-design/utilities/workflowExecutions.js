@@ -16,7 +16,7 @@
  * worker already uses for the bridge, so this needs no new transport and no
  * backend change.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

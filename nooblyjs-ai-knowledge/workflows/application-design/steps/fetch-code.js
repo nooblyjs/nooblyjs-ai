@@ -3,7 +3,7 @@
  * repository, then work out which directories changed since the last commit
  * that was *successfully* documented, so only those are reprocessed.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

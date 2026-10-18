@@ -31,5 +31,5 @@ npm run start:teammate # one app on its own (also :desktop, :product, :infrastru
 ```
 
 The shared rules every project follows are in `nooblyjs-ai-host/docs/steering/nooblyjs-ai-shared-rules.md`, copied
-into each project's `.claude/steering/nooblyjs-ai.md` by `npm run steering:sync`. How this repository came together
-from the EngX workspace is in [`.claude/steering/migration-plan.md`](.claude/steering/migration-plan.md).
+into each project's `.claude/steering/nooblyjs-ai.md` by `npm run steering:sync`. How the projects were brought
+together into this repository is in [`.claude/steering/migration-plan.md`](.claude/steering/migration-plan.md).

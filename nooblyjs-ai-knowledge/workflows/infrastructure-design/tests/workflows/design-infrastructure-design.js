@@ -1,7 +1,7 @@
 /**
  * @fileoverview Run the full architecture infrastructure workflow
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 2.0.0
  */
 'use strict';

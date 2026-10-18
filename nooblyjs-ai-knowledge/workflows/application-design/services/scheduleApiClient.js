@@ -26,7 +26,7 @@
  *   GET  /api/schedules           -> list live schedules (with lastRun)
  *   POST /api/workflows/schedule  -> create a cron schedule for a named workflow
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 2026-06-08
  */

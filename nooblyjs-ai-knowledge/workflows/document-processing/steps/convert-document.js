@@ -7,7 +7,7 @@
  * powers the wiki drag-and-drop "Design: Convert File" workflow; followed by
  * clean-document.js it forms the full "Design: Process File" pipeline.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @lastupdated 2026-05-31
  */

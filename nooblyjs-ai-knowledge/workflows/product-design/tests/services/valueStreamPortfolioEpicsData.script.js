@@ -10,7 +10,7 @@
  * Run from the knowledge repo root:
  *   node product-design/tests/services/valueStreamPortfolioEpicsData.script.js
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

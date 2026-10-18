@@ -29,7 +29,7 @@
  * workflow's fetch-code step expands those from the backend `.env` at run time,
  * so no secret is ever written into the schedule file or the document.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 2.0.0
  * @since 2026-06-08
  */

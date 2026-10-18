@@ -8,7 +8,7 @@
  * which case the convert step has already written the markdown to
  * settings.outputDocument and we clean that file in place.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 4.0.0
  * @lastupdated 2026-06-07
  */
@@ -28,7 +28,7 @@ const { libraryFor } = require('../../common/prompts/prompts');
 /**
  * Mirror the main app's APP_BASE_DIR resolution. The worker inherits the
  * parent's env, so APP_BASE_DIR carries through; otherwise fall back to the
- * shared .application dir alongside the repos (…/work-dt/.application). Both the
+ * shared .application dir alongside the repos (…/work/.application). Both the
  * Agents file and the prompt library are resolved from here.
  * @returns {string} Absolute application base directory.
  */

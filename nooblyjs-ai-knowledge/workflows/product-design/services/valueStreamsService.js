@@ -12,7 +12,7 @@
  * ValueStreamEpics / ValueStreamPortfolioEpics junctions. This is a data-only
  * service; the tree itself is assembled by releaseTrainsService from these caches.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Migration status (2026-10-18)
 
-This host came over from the EngX workspace (`.claude/steering/migration-plan.md` in the monorepo root), and so did
-its five hosted apps, all enabled in `src/seed/data/config/hosted-apps.yaml`. The sample organisation is the
+This host and its five hosted apps were brought into this monorepo together (`.claude/steering/migration-plan.md`
+in the monorepo root), all enabled in `src/seed/data/config/hosted-apps.yaml`. The sample organisation is the
 fictional **Acme Retail** (repositories `acme/<repo>`, the wiki's `Acme Space`).
 
 ## Current state

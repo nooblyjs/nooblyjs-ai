@@ -10,7 +10,7 @@
  * exposes {@link RequestsService#buildRequestContent}, the per-request markdown
  * page builder reused by the release-train content build.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

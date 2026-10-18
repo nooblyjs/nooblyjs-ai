@@ -1,7 +1,7 @@
 /**
  * @fileoverview Process a code folder and create the readme files
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

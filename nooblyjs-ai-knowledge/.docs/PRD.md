@@ -302,7 +302,7 @@ A unified platform that:
 - [ ] REST API endpoints for custom integrations
 
 #### 4.2 Service Registry
-- [ ] `digital-technologies-core` dependency
+- [ ] `nooblyjs-core` dependency
 - [ ] Service abstraction layer for:
   - [ ] Authentication
   - [ ] File I/O
@@ -319,7 +319,7 @@ A unified platform that:
 ### 4.1 Unified Backend Architecture
 - **Single Entry Point**: `src/initialize.js` on port 11000 (unified backend)
 - **Two Modules**: Datasources + Wiki (independent but share infrastructure)
-- **Shared Services**: Service registry from `digital-technologies-core`
+- **Shared Services**: Service registry from `nooblyjs-core`
 - **Real-Time Communication**: Single Socket.IO instance for both modules
 - **Authentication**: Unified Passport-based authentication
 - **Legacy Support**: Legacy entry points available on ports 11002 (datasources) and 11003 (wiki)
@@ -472,7 +472,7 @@ A unified platform that:
 - [ ] HTTPS can be configured via reverse proxy
 
 ### Dependencies
-- [ ] `digital-technologies-core` package (sibling)
+- [ ] `nooblyjs-core` package (sibling)
 - [ ] Node.js v14+
 - [ ] Ollama (for AI features)
 
@@ -535,7 +535,7 @@ A unified platform that:
 |------|-----------|
 | Datasources Module | Workflow automation and data integration module |
 | Wiki Module | Knowledge management and document repository module |
-| Service Registry | Dependency injection container from digital-technologies-core |
+| Service Registry | Dependency injection container from nooblyjs-core |
 | EventBus | Pub/Sub system for real-time change notifications |
 | FileWatcher | Chokidar-based file system change detector |
 | Socket.IO | WebSocket library for real-time communication |

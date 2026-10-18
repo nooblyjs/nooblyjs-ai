@@ -12,7 +12,7 @@
  *   2. `?access_token=` query parameter — when `settings.token` is supplied.
  *   3. HTTP Basic auth — `settings.username`/`settings.password`.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

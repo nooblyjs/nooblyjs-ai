@@ -17,7 +17,7 @@
  *   - `sweepOrphans` REFUSES to act when no repository rows were read, which is
  *     what a mistyped configuration folder looks like.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @since 2026-08-26
  */
 

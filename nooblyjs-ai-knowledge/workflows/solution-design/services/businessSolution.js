@@ -1,7 +1,7 @@
 /**
  * @fileoverview Retrieve a business solution roadmap object and process its view points
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.1.0
  * @since 1.0.0
  */
@@ -22,7 +22,7 @@ const BusinessSolutionsSearchClass = require('./businessSolutionSearch.js');
  */
 const PORTFOLIO_BY_EXECUTIVE = {
     'Sandra Moumtzis': 'Enterprise Technologies',
-    'Debbie Cunningham': 'Digital Technologies',
+    'Debbie Cunningham': 'Digital Platforms',
     'Adrian Linde': 'Fintech Technologies',
     'Jacques De Waal': 'Digital Infrastructure',
     'Ferdie Voges': 'Shared Services',
@@ -334,7 +334,7 @@ const ROADMAP_REFRESH_WORKFLOW = 'Design Solution: Retrieve and Build Roadmap co
  * architecture modelling tool and generates the markdown content pages.
  *
  * Generated markdown targets the KR custom-block parser
- * (digital-technologies-core/src/views/js/markdown-parser.js): hero-banner,
+ * (nooblyjs-core/src/views/js/markdown-parser.js): hero-banner,
  * container, accordion and summary blocks plus standard tables. Custom-block
  * content is indented two spaces — enough to stay inside the block, but under
  * the four-space threshold that would make `marked` treat it as a code block.
@@ -835,7 +835,7 @@ class businessSolutionClass extends ArchitectureModel {
      * Build a `document` metadata block — a fence-only data block carrying the
      * solution's identifying properties (the roadmap id and the responsible
      * roles). The wiki markdown parser
-     * (digital-technologies-knowledge/public/js/markdown/markdown-parser.js)
+     * (nooblyjs-ai-knowledge/public/js/markdown/markdown-parser.js)
      * recognises ```document as editable key/value metadata: each `Key: value`
      * line becomes one property (the key is lower-cased when read back via
      * extractDocumentMeta). It is hidden from the reading view and consumed

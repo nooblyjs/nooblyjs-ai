@@ -1,7 +1,7 @@
 /**
  * @fileoverview Step: build a folder (with a .home.md detail page) per Agile
  * Release Train. Requires the Release Trains data step to have run first.
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

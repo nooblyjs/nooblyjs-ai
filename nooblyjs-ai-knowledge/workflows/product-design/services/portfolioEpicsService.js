@@ -4,7 +4,7 @@
  * Retrieves the PortfolioEpics collection and caches it to
  * `cache/portfolioepics.json`, where the release-train content build reads it.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

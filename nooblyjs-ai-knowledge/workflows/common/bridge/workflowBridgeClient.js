@@ -18,7 +18,7 @@
  * allowlisted bridge operation.
  *
  * Protocol — keep in lockstep with the server in the sibling
- * digital-technologies-knowledge repo
+ * nooblyjs-ai-knowledge repo
  * (`backend/src/datasources/lib/workflowBridgeServer.js`):
  *   request : `<appBaseDir>/workflow/.bridge/requests/<id>.json`
  *             `{ v:1, id, method, args, createdAt }`
@@ -27,7 +27,7 @@
  * Both are written atomically (temp + rename); the client deletes each response
  * once read and its own request on completion/timeout.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 
@@ -55,7 +55,7 @@ class WorkflowBridgeClient {
   constructor(options = {}) {
     const base = options.appBaseDir
       || process.env.APP_BASE_DIR
-      // common/bridge/ -> common/ -> workflows-repo/ -> repos parent (e.g. C:\work-dt)
+      // common/bridge/ -> common/ -> workflows-repo/ -> repos parent (e.g. C:\work)
       || path.resolve(__dirname, '../../..', '.application');
     // The .env APP_BASE_DIR is sometimes stored with escaped separators; normalise.
     this.appBaseDir = path.normalize(base);

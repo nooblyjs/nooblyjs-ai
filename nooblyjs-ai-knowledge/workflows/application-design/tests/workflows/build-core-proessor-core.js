@@ -22,7 +22,7 @@ serviceRegistry.initialize(app);
 // Data to pass to the processor
 // Data to pass to the processor
 const settings = {
-    sourceFolder : "C:\\work-dt\\.application\\spaces\\working\\engineering-code\\digital-technologies-core",
+    sourceFolder : "C:\\work\\.application\\spaces\\working\\engineering-code\\nooblyjs-core",
     markdownFolder :  "C:\\temp\\",
     apikey: process.env.AZURE_OPENAI_API_KEY,
     endpoint: process.env.AZURE_OPENAI_ENDPOINT,

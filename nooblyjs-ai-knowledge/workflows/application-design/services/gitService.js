@@ -25,7 +25,7 @@
  * @method readLastProcessedSha  - (static) Read the last processed commit SHA
  * @method writeLastProcessedSha - (static) Record the last processed commit SHA
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 'use strict';

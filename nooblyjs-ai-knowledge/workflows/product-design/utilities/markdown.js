@@ -6,7 +6,7 @@
  * Custom-block content is indented two spaces — inside the block, but under the
  * four-space threshold that `marked` would treat as a code block.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

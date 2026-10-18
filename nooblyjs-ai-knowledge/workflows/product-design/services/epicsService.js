@@ -7,7 +7,7 @@
  * from `cache/features.json`, so the Features *Retrieve* step should run first
  * for a fully-populated list).
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

@@ -5,7 +5,7 @@
  * business-design/businessProcesses.js. The "fetch one inventory model by id
  * and cache it" behaviour is inherited from common/architecture/models/inventory.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

@@ -6,7 +6,7 @@
  * shared helpers (HTML→text, field formatting). Mirrors the role of
  * design-solution/base/modelBase.js.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

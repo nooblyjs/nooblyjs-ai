@@ -11,7 +11,7 @@
  *   node product-design/tests/services/portfolioEpicsData.script.js
  *   node .../portfolioEpicsData.script.js --write   # ALSO write each project's .home.md (writes files!)
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

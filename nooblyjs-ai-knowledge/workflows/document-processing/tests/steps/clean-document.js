@@ -8,7 +8,7 @@
  * so the test must initialize that registry and run the step in this same
  * process — a worker thread would not share the registry.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 2.0.0
  */
 

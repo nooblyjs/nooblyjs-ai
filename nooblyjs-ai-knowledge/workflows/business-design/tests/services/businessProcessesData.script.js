@@ -2,7 +2,7 @@
  * @fileoverview Retrieve Business Processes Data
  * This script retrieves the Business Processes data for a given filter and processes it to create content for the Business Processes page.
  * 
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */
@@ -27,8 +27,8 @@ const settings = {
     "username": process.env.aris_username,
     "password": process.env.aris_password,
     "database": encodeURIComponent("Acme Architecture Modeling"),
-    "contentfolder": "C:\\work-dt\\knowledge-content\\enterprise\\Process",
-    "datafolder": "C:\\work-dt\\.application\\spaces\\working\\design-process"
+    "contentfolder": "C:\\work\\knowledge-content\\enterprise\\Process",
+    "datafolder": "C:\\work\\.application\\spaces\\working\\design-process"
 }
 
 // set our filter

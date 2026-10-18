@@ -9,10 +9,10 @@
  * warm, or leave useCache=false below to refetch from ARIS during the build.
  *
  * Run from infrastructure-design/tests/services so the relative folder paths
- * below resolve to C:/work-dt/.application/...:
+ * below resolve to C:/work/.application/...:
  *   node infrastructuresContent.script.js
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 0.1.0
  */
 
@@ -32,7 +32,7 @@ const InfrastructuresClass = require('../../services/infrastructures');
 
 // Load settings data. The folder paths are relative to the CWD you launch node
 // from; run this from infrastructure-design/tests/services so they resolve to
-// C:/work-dt/.application/spaces/working/design-infrastructure.
+// C:/work/.application/spaces/working/design-infrastructure.
 const settings = {
     "server": process.env.aris_server,
     "username": process.env.aris_username,

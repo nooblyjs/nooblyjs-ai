@@ -12,7 +12,7 @@
  * to it. There is no content of its own — the mapping is data the release train
  * pages consume.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

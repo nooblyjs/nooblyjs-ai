@@ -2,7 +2,7 @@
  * @fileoverview Perform Model Operations
  * This library is used to retrieve a model utilising the ARIS API's
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

@@ -14,7 +14,7 @@
  * parent Epic's `.home.md` page (built in epicsService) — there is a link to the
  * epic on every enabler feature, so they are grouped under it.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

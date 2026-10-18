@@ -3,7 +3,7 @@
  * Splits large markdown documents into manageable chunks for processing
  * while preserving structure and context.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

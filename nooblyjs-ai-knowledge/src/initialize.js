@@ -3,7 +3,7 @@
  * continuous exploration feature).
  *
  * This is NOT an entry point. The composition root (../app.js) creates the
- * Express app, HTTP server, Socket.IO, the digital-technologies-core service
+ * Express app, HTTP server, Socket.IO, the nooblyjs-core service
  * registry and the core services, then calls initialize(context) here to attach
  * the API modules and health endpoints onto the passed app. This module binds no
  * port and owns no server lifecycle.
@@ -24,7 +24,7 @@ const { startup } = require('./shared/startup/startupRunner');
  * @param {import('http').Server|import('https').Server} context.server
  * @param {import('socket.io').Server} context.io
  * @param {import('events').EventEmitter} context.eventEmitter
- * @param {object}  context.serviceRegistry        digital-technologies-core
+ * @param {object}  context.serviceRegistry        nooblyjs-core
  * @param {string}  context.appBaseDir
  * @param {object}  context.services               core services (see below)
  * @returns {Promise<void>}

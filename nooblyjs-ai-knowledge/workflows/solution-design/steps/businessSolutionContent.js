@@ -1,7 +1,7 @@
 /**
  * @fileoverview Retieve the Business Solutions Data
  * This worker retrieves the required data
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @lastupdated 2026-04-30
  */

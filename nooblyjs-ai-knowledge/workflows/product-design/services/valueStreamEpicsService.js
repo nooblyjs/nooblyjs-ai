@@ -9,7 +9,7 @@
  * Cached to `cache/valuestreamepics.json` and consumed by releaseTrainsService to
  * nest epics under their value stream. Data-only.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

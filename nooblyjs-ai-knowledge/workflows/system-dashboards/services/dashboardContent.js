@@ -22,7 +22,7 @@
  * same flat folder. Inside, solutions are grouped by Solutions Architect, each
  * group a Solution / Current / Future table.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.1.0
  * @since 2026-06-08
  */

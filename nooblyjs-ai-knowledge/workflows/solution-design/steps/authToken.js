@@ -2,7 +2,7 @@
  * @fileoverview Retrieve authentication token from ARIS system.
  * This worker is used to retrieve the auth token required for accessing ARIS APIs. And store it for caching purposes.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @lastupdated 2026-03-06
  */

@@ -2,7 +2,7 @@
  * @fileoverview Retrieve business solutions from the domain model
  * This class retrieves the business solutions from the domain model and creates content for the business solutions page
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */
@@ -137,7 +137,7 @@ class BusinessSolutionsClass extends Inventory {
                folder.portfolio = "Enterprise Technologies";
                break;
             case 'Debbie Cunningham':
-               folder.portfolio = "Digital Technologies";
+               folder.portfolio = "Digital Platforms";
                break;
             case 'Adrian Linde':
                folder.portfolio = "Fintech Technologies";

@@ -40,7 +40,7 @@ extension has host permission for NooblyJS, so Edge sends that session with the 
 in, the panel offers **Sign in to NooblyJS**, which opens NooblyJS's `/login` in a tab. With Entra single sign-on in an Edge
 work profile, that usually finishes without a prompt. Come back to the panel and it shows your name.
 
-The old Knowledge Repository extension (`digital-technologies-knowledge/applications/chrome/wiki`) did it
+The old Knowledge Repository extension (`nooblyjs-ai-knowledge/applications/chrome/wiki`) did it
 differently: it read the browser profile's email (`chrome.identity.getProfileUserInfo`) and sent it to
 `POST /api/auth/identity`, which issued a 24-hour token for that email. The server never verified the email: the
 domain check ran in the extension, so anyone who could reach the server could ask for a token as anyone. **NooblyJS does

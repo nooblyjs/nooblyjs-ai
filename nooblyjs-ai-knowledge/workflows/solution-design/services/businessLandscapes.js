@@ -2,7 +2,7 @@
  * @fileoverview Retrieve business solutions from the application landscape model
  * This class retrieves the business solutions from the application landscape model and creates content for the business solutions page
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

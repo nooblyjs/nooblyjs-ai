@@ -15,10 +15,10 @@
  *
  * Usage:
  *   node build-context.js                                   # default path below
- *   node build-context.js "C:/work-dt/knowledge-content/enterprise/Technology"
+ *   node build-context.js "C:/work/knowledge-content/enterprise/Technology"
  *   node build-context.js ../../../knowledge-content/enterprise force
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 3.0.0
  */
 
@@ -40,7 +40,7 @@ serviceRegistry.initialize(app);
 // The settings for testing.
 const settings = {
   path: process.argv[2] || 'C:\\work-content\\knowledge-repository-enterprise-process',     // disk mode: folder to walk
-  appBaseDir: 'C:/work-dt/.application',                                   // where settings-agents.json lives
+  appBaseDir: 'C:/work/.application',                                   // where settings-agents.json lives
   agent: '',                                                              // '' = the agent tagged "Folder Processing"
   force: false,     // regenerate existing sidecars
 };

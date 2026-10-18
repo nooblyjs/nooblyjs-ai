@@ -8,7 +8,7 @@
  * so the test must initialize that registry and run the step in this same
  * process — a worker thread would not share the registry.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 2.0.0
  */
 
@@ -35,8 +35,8 @@ const APP_BASE_DIR = process.env.APP_BASE_DIR
 // Input passed to the code-processor step. The step resolves its own AI agent
 // from the Agents registry (usage tag "Code Processing") — no provider here.
 const input = {
-    sourceFolder: 'C:\\work-dt\\.application\\spaces\\working\\engineering-code\\digital-technologies-core',
-    markdownFolder: 'C:\\work-dt\\digital-technologies-knowledge-content\\Technology\\Digital Technologies\\Knowledge Repository\\Engineering'
+    sourceFolder: 'C:\\work\\.application\\spaces\\working\\engineering-code\\nooblyjs-core',
+    markdownFolder: 'C:\\work\\nooblyjs-knowledge-content\\Technology\\Digital Platforms\\Knowledge Repository\\Engineering'
 };
 
 /**

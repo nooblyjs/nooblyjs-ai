@@ -9,7 +9,7 @@
  * one of its assignments — is of a given ARIS type. Domain classes extend this
  * and add their own traversal + content-building on top.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

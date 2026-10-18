@@ -12,7 +12,7 @@
  *   node product-design/tests/services/featuresData.script.js
  *   node .../featuresData.script.js --write   # ALSO write a page per feature (writes files!)
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

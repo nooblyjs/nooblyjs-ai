@@ -2,7 +2,7 @@
  * @fileoverview Git Repositories bootstrap.
  *
  * On startup this reads `<APP_BASE_DIR>/spaces/repositories.json` and, for every
- * enabled entry, registers a Git filing service in the digital-technologies-core
+ * enabled entry, registers a Git filing service in the nooblyjs-core
  * service registry (provider 'git', keyed filing:git:<instanceName>). Because the
  * filer is a first-class registry service it is monitored by the core services
  * module alongside every other service.
@@ -262,7 +262,7 @@ async function isCleanTarget(localPath) {
  * Register + start git filing services for every enabled repository.
  *
  * @param {object} context
- * @param {object} context.serviceRegistry - digital-technologies-core registry
+ * @param {object} context.serviceRegistry - nooblyjs-core registry
  * @param {string} context.appBaseDir      - resolved APP_BASE_DIR
  * @param {object} context.log             - structured logger
  * @param {import('events').EventEmitter} [context.eventEmitter]

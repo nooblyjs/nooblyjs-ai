@@ -2,7 +2,7 @@
  * @fileoverview Build Business Solutions Content
  * This script retrieves the Business Solutions data for a given filter and processes it to create content for the Business Solutions page.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */
@@ -29,8 +29,8 @@ const settings = {
     "username": process.env.aris_username,
     "password": process.env.aris_password,
     "database": encodeURIComponent("Acme Architecture Modeling"),
-    "contentfolder": "C:/work-dt/knowledge-content/enterprise/Solution",
-    "datafolder": "C:/work-dt/.application/spaces/working/design-solution"
+    "contentfolder": "C:/work/knowledge-content/enterprise/Solution",
+    "datafolder": "C:/work/.application/spaces/working/design-solution"
 }
 
 // Ignore cache for testing

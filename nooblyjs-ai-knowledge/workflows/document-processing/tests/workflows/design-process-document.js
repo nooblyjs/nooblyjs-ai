@@ -3,7 +3,7 @@
  * Converts the example DOCX to markdown, then runs the clean-document step
  * through the workflow engine.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.14
  * @since 1.0.0
  */

@@ -19,7 +19,7 @@
  * the folder path already tells a reader everything the old metadata table did.
  * Keep them in FEATURE_INCLUDE: dropping them would strand every feature.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

@@ -1,14 +1,14 @@
 [
   {
-    "name": "Refresh Digital Technologies",
-    "description": "Retrieve the Data for the Digital Technologies and create content",
+    "name": "Refresh Digital Platforms",
+    "description": "Retrieve the Data for the Digital Platforms and create content",
     "steps": [
       "steps/authToken.js",
       "steps/businessSolutionData.js",
       "steps/businessSolutionContent.js"
     ],
     "tags": [
-      "Digital Technologies"
+      "Digital Platforms"
     ],
     "defaultInput": {"filter": [{"Responsible Technology Executive": "Debbie Cunningham"}, {"Value Stream": "Move"}, {"Value Stream": "Data and Analytics"}, {"Value Stream": "Sell"}, {"Value Stream": "Finance"}, {"Value Stream": "Technology"}, {"Value Stream": "Plan"}, {"Value Stream": "Service"}, {"Value Stream": "Buy"}, {"Value Stream": "Artificial Intelligence"}], 
     "contentfolder": "../knowledge-content/enterprise/Solution Design", "useCache":true},

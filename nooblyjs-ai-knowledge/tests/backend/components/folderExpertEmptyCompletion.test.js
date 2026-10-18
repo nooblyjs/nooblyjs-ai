@@ -21,7 +21,7 @@
 'use strict';
 
 // Stub the core registry BEFORE folderExpert is loaded. Importing
-// digital-technologies-core constructs a SystemMonitoring singleton at module
+// nooblyjs-core constructs a SystemMonitoring singleton at module
 // scope, which starts a 1s interval plus a self-rescheduling setImmediate — open
 // handles that keep the whole jest run alive after the tests finish. The registry
 // is only reached from resolveInstance(), which these tests bypass by injecting

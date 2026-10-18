@@ -19,14 +19,14 @@
  *   change ensureFolderHome, this is the file that says whether you broke it.
  *
  * The platform side of the same contract (marker layout, deletion) is covered by
- * digital-technologies-knowledge/tests/backend/components/homeSeedMarker.test.js.
+ * nooblyjs-ai-knowledge/tests/backend/components/homeSeedMarker.test.js.
  *
  * Usage:
  *   node ensureFolderHome.script.js
  *
  * Exits non-zero on the first failure.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

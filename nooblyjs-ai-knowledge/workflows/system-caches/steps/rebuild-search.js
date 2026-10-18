@@ -12,7 +12,7 @@
  * workflow only reports success once the index is actually ready, and includes
  * the resulting index statistics in its output.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 

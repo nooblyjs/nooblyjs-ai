@@ -13,7 +13,7 @@
  *     cache entries, and a write only ever invalidates the one path the file
  *     watcher reported. The other served stale content indefinitely.
  *
- *  2. **The TTL argument is a lie.** `digital-technologies-core`'s cache exposes
+ *  2. **The TTL argument is a lie.** `nooblyjs-core`'s cache exposes
  *     `put(key, value)` — no expiry parameter — so the `1800` every call site
  *     passes is silently discarded. Nothing expires on its own; a poisoned entry
  *     survives until the exact key is deleted or the process restarts.

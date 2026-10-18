@@ -369,7 +369,7 @@ serviceRegistry.initialize(app, eventEmitter, {
 // lOGGING Provider - Console but add the structured logger
 // ============================================================================
 const coreLog = serviceRegistry.logger('console');
-const log = new StructuredLogger(coreLog, { serviceName: 'digital-technologies-knowledge' });
+const log = new StructuredLogger(coreLog, { serviceName: 'nooblyjs-ai-knowledge' });
 
 // Startup profiler — from here on every startup task is timed and reported.
 // Instrumentation only: it changes no ordering and no concurrency.

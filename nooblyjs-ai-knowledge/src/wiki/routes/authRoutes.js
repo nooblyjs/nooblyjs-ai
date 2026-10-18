@@ -1,7 +1,7 @@
 /**
  * @fileoverview Wiki Authentication Routes Bridge
  * Provides authentication endpoints for the Wiki application by bridging to the
- * digital-technologies-core authentication service. Handles user registration, login, logout,
+ * nooblyjs-core authentication service. Handles user registration, login, logout,
  * and session validation while maintaining wiki-specific behavior (wizard redirects, etc.)
  *
  * This module acts as an adapter layer between the frontend's expected `/api/auth/`
@@ -18,7 +18,7 @@ const { userDir: toUserDir } = require('../components/spacePermissions');
 
 /**
  * Configures and registers wiki authentication routes with the Express application.
- * Bridges frontend requests to the digital-technologies-core authentication service.
+ * Bridges frontend requests to the nooblyjs-core authentication service.
  *
  * @param {Object} options - Configuration options object
  * @param {Object} options.app - The Express application instance
@@ -47,7 +47,7 @@ module.exports = (options, eventEmitter, services) => {
   /**
    * POST /api/auth/register
    * Registers a new user account and creates a session.
-   * Delegates to digital-technologies-core auth service.
+   * Delegates to nooblyjs-core auth service.
    *
    * Request body:
    * - name: User's full name
@@ -156,7 +156,7 @@ module.exports = (options, eventEmitter, services) => {
   /**
    * POST /api/auth/login
    * Authenticates a user and creates a session.
-   * Delegates to digital-technologies-core auth service.
+   * Delegates to nooblyjs-core auth service.
    *
    * Request body:
    * - email: User's email address

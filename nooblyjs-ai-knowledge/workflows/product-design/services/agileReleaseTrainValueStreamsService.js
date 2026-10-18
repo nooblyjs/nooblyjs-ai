@@ -9,7 +9,7 @@
  * Cached to `cache/agilereleasetrainvaluestreams.json` and consumed by
  * releaseTrainsService to nest value streams under their release train. Data-only.
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  * @since 1.0.0
  */

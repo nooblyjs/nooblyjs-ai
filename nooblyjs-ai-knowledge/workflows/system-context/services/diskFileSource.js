@@ -14,7 +14,7 @@
  * The source interface (the only members ContextProcessor + the step call):
  * authenticate(), getFolderTree(), readDocument(spaceName, relPath).
  *
- * @author Digital Technologies Team
+ * @author NooblyJS Team
  * @version 1.0.0
  */
 
