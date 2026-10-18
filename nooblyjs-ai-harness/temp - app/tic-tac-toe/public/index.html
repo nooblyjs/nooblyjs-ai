@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEON//GRID — Tic-Tac-Toe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Share+Tech+Mono&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="city"></div>
+  <div class="floor"></div>
+  <div class="scanlines"></div>
+
+  <main>
+    <header>
+      <h1 class="glitch" data-text="NEON//GRID">NEON//GRID</h1>
+      <p class="subtitle">// HUMAN vs. <span class="pink">K4-T3 NEURAL CORE</span> //</p>
+    </header>
+
+    <section class="hud">
+      <div class="score you"><span>RUNNER [X]</span><strong id="score-x">0</strong></div>
+      <div class="score draw"><span>STALEMATE</span><strong id="score-draw">0</strong></div>
+      <div class="score ai"><span>AI [O]</span><strong id="score-o">0</strong></div>
+    </section>
+
+    <div id="status" class="status">&gt; JACK IN. YOUR MOVE, RUNNER_</div>
+
+    <div id="board" class="board" role="grid" aria-label="Tic-tac-toe board">
+      <!-- 9 cells are created by game.js -->
+    </div>
+
+    <section class="controls">
+      <label class="difficulty">
+        THREAT LEVEL
+        <select id="difficulty">
+          <option value="easy">LOW // SCRIPT KIDDIE</option>
+          <option value="normal" selected>MID // CORPO ICE</option>
+          <option value="impossible">MAX // ROGUE AI</option>
+        </select>
+      </label>
+      <button id="reset" class="btn">REBOOT GRID</button>
+    </section>
+
+    <pre id="log" class="log" aria-live="polite"></pre>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

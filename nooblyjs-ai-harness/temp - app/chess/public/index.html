@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111f25">
+  <title>Oblique — Isometric Chess</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="./"><span class="brand-mark">◇</span> OBLIQUE<span class="brand-sub">A DIFFERENT PERSPECTIVE ON CHESS</span></a>
+    <span class="local-badge"><i></i> LOCAL PLAY · NO SIGN-UP</span>
+  </header>
+  <main>
+    <section class="play-area" aria-label="Chess game">
+      <div class="section-heading"><span class="eyebrow">THE QUIET GAME. A NEW ANGLE.</span><h1>Make your next move.</h1><p>A little strategy. A different point of view.</p></div>
+      <div class="player-strip"><div class="avatar computer">◇</div><div><strong>Oblique engine</strong><span id="computer-label">Computer · black pieces</span></div><div id="thinking" class="player-tag">READY</div><div id="computer-captures" class="captures" aria-label="Pieces captured by computer"></div></div>
+      <div class="board-wrap">
+        <svg id="board" viewBox="0 0 960 650" role="group" aria-label="Isometric chessboard. Use arrow keys to navigate squares and Enter to select."></svg>
+        <div class="board-caption"><span>64 SQUARES. ENDLESS POSSIBILITIES.</span><button id="flip" class="text-button" type="button">↻ Rotate board</button></div>
+      </div>
+      <div class="player-strip human-strip"><div class="avatar human">♙</div><div><strong>You <span class="you-label">THE CHALLENGER</span></strong><span id="human-label">White pieces · you move first</span></div><div id="human-tag" class="player-tag active">YOUR TURN</div><div id="human-captures" class="captures" aria-label="Pieces captured by you"></div></div>
+      <p class="board-tip">Select a piece, then a highlighted square. <span>Arrow keys + Enter work too.</span></p>
+    </section>
+    <aside class="sidebar">
+      <section class="status-card"><div class="eyebrow"><span id="status-dot" class="status-dot"></span> AT THE BOARD</div><h2 id="status" aria-live="polite">Your move.</h2><p id="status-detail">You’re playing white. Open with a little ambition.</p><div class="turn-line"><span id="move-number">MOVE 01</span><span id="turn-color">WHITE TO PLAY</span></div></section>
+      <section class="settings panel"><h3>Set the pace</h3><label for="difficulty">Computer strength</label><select id="difficulty"><option value="easy">Casual — room to explore</option><option value="medium" selected>Thoughtful — a fair challenge</option><option value="hard">Focused — thinks further ahead</option></select><label for="side">Your pieces <span>applies to a new game</span></label><select id="side"><option value="w">Ivory · play as white</option><option value="b">Slate · play as black</option></select><div class="actions"><button id="new-game" class="primary" type="button">New game <span>↗</span></button><button id="undo" class="secondary" type="button" disabled>↶ Undo</button></div></section>
+      <section class="history panel"><div class="history-heading"><h3>The story so far</h3><button id="download" class="text-button" type="button" title="Download moves as a PGN file">↓ PGN</button></div><div class="history-columns"><span>#</span><span>IVORY</span><span>SLATE</span></div><div id="move-list" class="move-list" aria-label="Move history"><p class="empty-history">Every good game starts<br>with one small move.</p></div></section>
+      <div class="legend"><span><i class="legal-dot"></i> Available move</span><span><i class="last-dot"></i> Last move</span></div>
+    </aside>
+  </main>
+  <footer><span>OBLIQUE / CHESS IN PERSPECTIVE</span><span>Hand-drawn SVG pieces · Built for a slower moment.</span></footer>
+  <dialog id="promotion"><form method="dialog"><span class="eyebrow">A WELL-EARNED UPGRADE</span><h2>Choose your piece.</h2><p>Your pawn has reached the other side.</p><div id="promotion-options"></div></form></dialog>
+  <dialog id="restart"><span class="eyebrow">A FRESH PERSPECTIVE</span><h2>Start a new game?</h2><p>This will clear the current board and move history.</p><div class="actions"><button id="cancel-restart" class="secondary" type="button">Keep playing</button><button id="confirm-restart" class="primary" type="button">New game</button></div></dialog>
+  <noscript>This game needs JavaScript enabled to play against the computer.</noscript>
+</body>
+</html>

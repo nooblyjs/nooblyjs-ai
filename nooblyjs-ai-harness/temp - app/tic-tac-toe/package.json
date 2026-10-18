@@ -1,0 +1,14 @@
+{
+  "name": "neon-tic-tac-toe",
+  "version": "1.0.0",
+  "description": "Cyberpunk tic-tac-toe against a computer opponent",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
