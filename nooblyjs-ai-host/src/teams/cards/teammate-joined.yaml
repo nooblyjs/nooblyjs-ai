@@ -1,0 +1,9 @@
+# The confirmation after a teammate is added (mockup noobly-teams-bot-joins). Data: name, first, addedBy, team.
+type: AdaptiveCard
+$schema: http://adaptivecards.io/schemas/adaptive-card.json
+version: "1.5"
+body:
+  - { type: TextBlock, text: "**{name}** was added by {addedBy}. Mention **@{first}** to ask a question.", wrap: true }
+  - { type: TextBlock, text: "{first} sees messages from now on, not earlier ones. Time is billed to {team}.", isSubtle: true, size: Small, wrap: true, spacing: Small }
+actions:
+  - { type: Action.Submit, title: Choose someone else, data: { noobly: choose-someone-else } }

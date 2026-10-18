@@ -1,0 +1,67 @@
+{
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.30/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.30",
+    "version": "1.0.0",
+    "id": "${{TEAMS_APP_ID}}",
+    "developer": {
+        "name": "Acme Retail",
+        "websiteUrl": "${{NOOBLY_PUBLIC_URL}}",
+        "privacyUrl": "${{NOOBLY_PUBLIC_URL}}/privacy",
+        "termsOfUseUrl": "${{NOOBLY_PUBLIC_URL}}/terms"
+    },
+    "icons": {
+        "color": "color.png",
+        "outline": "outline.png"
+    },
+    "name": {
+        "short": "NooblyJS${{APP_NAME_SUFFIX}}",
+        "full": "NooblyJS: agent teammates in your chats and meetings"
+    },
+    "description": {
+        "short": "Bring NooblyJS agent teammates into your Teams chats and meetings.",
+        "full": "NooblyJS is an engineering lifecycle, from idea to merged code. Mention NooblyJS in a chat or meeting to add an agent teammate, such as Ada for product or Rhea for architecture. The teammate reads only what is posted after it joins, answers with the facts, their sources and what the answer cost, and can post the meeting's notes to an item when you ask. Its time is billed to the team the meeting belongs to. A teammate can't approve anything: approvals open in NooblyJS, where a person decides. Every message is kept in the item's Activity and the audit log."
+    },
+    "accentColor": "#14274E",
+    "supportsChannelFeatures": "tier1",
+    "bots": [
+        {
+            "botId": "${{BOT_ID}}",
+            "scopes": [
+                "personal",
+                "team",
+                "groupChat"
+            ],
+            "supportsFiles": false,
+            "isNotificationOnly": false,
+            "supportsTargetedMessages": false,
+            "commandLists": [
+                {
+                    "scopes": ["personal", "team", "groupChat"],
+                    "triggers": ["mention"],
+                    "commands": [
+                        {
+                            "title": "Add a teammate",
+                            "description": "Choose an NooblyJS agent teammate to add to this chat or meeting."
+                        },
+                        {
+                            "title": "Ask a teammate",
+                            "description": "Mention a teammate who has joined, e.g. @Ada, with a question about an item."
+                        },
+                        {
+                            "title": "Post meeting notes",
+                            "description": "Post this meeting's notes to an item, e.g. post meeting notes to PRD-031."
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "composeExtensions": [],
+    "configurableTabs": [],
+    "staticTabs": [],
+    "permissions": [
+        "identity",
+        "messageTeamMembers"
+    ],
+    "validDomains": []
+}

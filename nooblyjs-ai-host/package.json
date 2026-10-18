@@ -1,0 +1,64 @@
+{
+  "name": "nooblyjs-ai-host",
+  "version": "0.1.0",
+  "description": "NooblyJS AI, an engineering-lifecycle platform: the host app (idea → spec → architecture → design → build → ship, where AI agents draft and people decide).",
+  "homepage": "https://github.com/nooblyjs/nooblyjs-ai#readme",
+  "bugs": {
+    "url": "https://github.com/nooblyjs/nooblyjs-ai/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nooblyjs/nooblyjs-ai.git",
+    "directory": "nooblyjs-ai-host"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "app.js",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env app.js",
+    "dev": "nodemon --watch src --watch applications --watch test app.js",
+    "electron": "electron apps/electron/main.js",
+    "test:electron": "electron apps/electron/main.js --smoke",
+    "test:edge": "node apps/edge/scripts/smoke.mjs",
+    "pretest": "node -e \"process.getBuiltinModule('fs').mkdirSync('.temp/test-results',{recursive:true})\"",
+    "test": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=.temp/test-results/unit.txt --test-force-exit \"test/**/*.test.js\"",
+    "precoverage": "node -e \"process.getBuiltinModule('fs').mkdirSync('.temp/test-results',{recursive:true})\"",
+    "coverage": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=.temp/test-results/coverage.txt --experimental-test-coverage \"test/**/*.test.js\"",
+    "seed": "node --env-file-if-exists=.env scripts/seed.js",
+    "seed:blank": "node --env-file-if-exists=.env scripts/seed.js --blank",
+    "metrics:reconcile": "node --env-file-if-exists=.env scripts/metrics-reconcile.js",
+    "steering:sync": "node scripts/sync-steering.js",
+    "backup": "node --env-file-if-exists=.env scripts/backup.js",
+    "restore": "node --env-file-if-exists=.env scripts/restore.js",
+    "perf": "node scripts/perf.js",
+    "pretest:live": "node -e \"process.getBuiltinModule('fs').mkdirSync('.temp/test-results',{recursive:true})\"",
+    "test:live": "node --env-file-if-exists=.env --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=.temp/test-results/live.txt test/live/chat.live.js test/live/cloud.live.js",
+    "pretest:live:devtools": "node -e \"process.getBuiltinModule('fs').mkdirSync('.temp/test-results',{recursive:true})\"",
+    "test:live:devtools": "node --env-file-if-exists=.env --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=.temp/test-results/live-devtools.txt test/live/devtools.live.js",
+    "pretest:live:factory": "node -e \"process.getBuiltinModule('fs').mkdirSync('.temp/test-results',{recursive:true})\"",
+    "test:live:factory": "node --env-file-if-exists=.env --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=.temp/test-results/live-factory.txt test/live/factory.live.js",
+    "test:e2e": "playwright test -c test/e2e/playwright.config.js && playwright test -c test/e2e/playwright.story.config.js && playwright test -c test/e2e/playwright.factory.config.js && playwright test -c test/e2e/playwright.knowledge.config.js && playwright test -c test/e2e/playwright.platform.config.js && playwright test -c test/e2e/playwright.infrastructure.config.js",
+    "run": "npm start"
+  },
+  "dependencies": {
+    "compression": "^1.8.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^7.5.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.3.0",
+    "js-yaml": "^4.3.2",
+    "nodemon": "^3.1.14",
+    "nooblyjs-ai-common": "file:../nooblyjs-ai-common",
+    "nooblyjs-core": "file:../../nooblyjs-core",
+    "passport": "^0.7.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "1.63.0",
+    "electron": "^44.7.0"
+  }
+}

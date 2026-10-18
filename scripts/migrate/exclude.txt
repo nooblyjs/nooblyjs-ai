@@ -6,9 +6,10 @@ node_modules/
 temp/
 coverage/
 .nyc_output/
++ .env.example
 .env
 .env.*
-!.env.example
+
 certs/
 *.key
 *.crt

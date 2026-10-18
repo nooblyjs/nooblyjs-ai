@@ -1,0 +1,5 @@
+{
+  "type": "commonjs",
+  "private": true,
+  "description": "Marks electron/ as CommonJS: Electron loads its main script (main.js) before any ESM loader. NooblyJS itself is ES modules."
+}

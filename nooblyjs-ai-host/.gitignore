@@ -1,0 +1,6 @@
+# Runtime data and secrets never go in the repo (the seed writes data/ on first start).
+data/
+certs/
+.env
+.temp/
+node_modules/

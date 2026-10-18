@@ -17,18 +17,18 @@ const APPS = 'common|harness|factory|product|infrastructure|knowledge|desktop';
 /** Ordered: the specific names first, the bare word last. */
 export const RULES = [
   // Packages and repositories.
-  [/\b(?:engx|EngX)-ai-teammates?\b/g, 'nooblyjs-ai-teammate'],
-  [new RegExp(`\\b(?:engx|EngX)-ai-(${APPS})\\b`, 'g'), 'nooblyjs-ai-$1'],
-  [/\b(?:engx|EngX)-learn-(harness|factory)\b/g, 'nooblyjs-learn-$1'],
-  [/\b(?:engx|EngX)-core\b/g, 'nooblyjs-core'],
+  [/(?<![A-Za-z0-9])(?:engx|EngX)-ai-teammates?\b/g, 'nooblyjs-ai-teammate'],
+  [new RegExp(`(?<![A-Za-z0-9])(?:engx|EngX)-ai-(${APPS})\\b`, 'g'), 'nooblyjs-ai-$1'],
+  [/(?<![A-Za-z0-9])(?:engx|EngX)-learn-(harness|factory)\b/g, 'nooblyjs-learn-$1'],
+  [/(?<![A-Za-z0-9])(?:engx|EngX)-core\b/g, 'nooblyjs-core'],
   [/\bengx-workflows\b/g, 'nooblyjs-ai-workflows'],
   [/\.\.\/engx(?![\w.-])/g, '../nooblyjs-ai-host'],
   [/\.\.\\engx(?![\w.-])/g, '..\\nooblyjs-ai-host'],
-  [/bitbucket\.org\/shopritelabs\//g, 'github.com/nooblyjs/'],
+  [/bitbucket\.org\/shopritelabs\//g, 'bitbucket.org/acme/'],
   [/\bEngX\/(?=[\w-])/g, 'nooblyjs/'],
-  [/shopritelabs__/g, 'nooblyjs__'],
   [/C:\\work-repositories\\/g, '<workspace>/'],
   [/C:\/work-repositories\//g, '<workspace>/'],
+  [/\/c\/work-repositories\//g, '<workspace>/'],
   // Steering: Kiro's folders become Claude's; the shared-rules copy gets the suite's name.
   [/\.kiro\/steering\/engx\.md\b/g, '.claude/steering/nooblyjs-ai.md'],
   [/\bengx-shared-rules\b/g, 'nooblyjs-ai-shared-rules'],
@@ -51,6 +51,19 @@ export const RULES = [
   [/ENGX/g, 'NOOBLY'],
   [/Engx/g, 'Noobly'],
   [/engx/g, 'noobly'],
+  // The company becomes a fictional one: Acme Retail, its repositories acme/<repo>, its sites under acme.example.
+  [/ShopriteX's engineering([- ])lifecycle/g, 'an engineering$1lifecycle'],
+  [/@shoprite\.co\.za\b/g, '@acme.example'],
+  [/\bshoprite(?:x)?\.(atlassian\.net|tpondemand\.com)/g, 'acme.$1'],
+  [/\bshopritex\.example\b/g, 'acme.example'],
+  [/\b(?:shopritex|shopritelabs|shoprite-x)(?=[\\/_.:;'"`\s$-]|$)/gm, 'acme'],
+  [/\bShopriteX\b/g, 'Acme Retail'],
+  [/\bShoprite Checkers\b/g, 'Acme Retail'],
+  [/\bShoprite Group\b/g, 'Acme Retail Group'],
+  [/\bShoprite(?='s\b)/g, 'Acme'],
+  [/\bShoprite\b/g, 'Acme'],
+  [/\bSHOPRITE\b/g, 'ACME'],
+  [/\bSixty60\b/g, 'Acme Express'],
 ];
 
 // Case-insensitive names, plus the Checkers brand with its capital ("checkers" is also an ordinary word).

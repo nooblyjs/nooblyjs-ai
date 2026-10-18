@@ -1,0 +1,66 @@
+/* /dev/teams only (scoped to the dev module): the Teams simulator. The chat's chrome is a neutral stand-in for
+   Microsoft Teams; the cards (ac-*) are the NooblyJS bot's Adaptive Cards, drawn with the kit's tokens. */
+[data-module="dev"] .tsim { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--gap-grid); align-items: start; }
+[data-module="dev"] .tsim__list { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-panel); padding: 16px; }
+[data-module="dev"] .tsim__list-title { font-size: var(--text-eyebrow); font-weight: 600; letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--text-subtle); margin: 0 0 8px; }
+[data-module="dev"] .tsim__list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+[data-module="dev"] .tsim__chat-link { display: grid; gap: 2px; min-height: var(--control-min); padding: 10px 12px; border-radius: var(--radius-row); color: var(--text); text-decoration: none; }
+[data-module="dev"] .tsim__chat-link span { font-size: var(--text-caption); color: var(--text-subtle); }
+[data-module="dev"] .tsim__chat-link:hover { background: var(--surface-inset); }
+[data-module="dev"] .tsim__chat-link[aria-current="page"] { background: var(--blue-50); }
+
+[data-module="dev"] .tsim__chat { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-panel); display: grid; }
+[data-module="dev"] .tsim__head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--divider); }
+[data-module="dev"] .tsim__title { font-size: var(--text-card-title); font-weight: 600; color: var(--navy-900); margin: 0; }
+[data-module="dev"] .tsim__sub { font-size: var(--text-caption); color: var(--text-subtle); margin: 2px 0 0; }
+[data-module="dev"] .tsim__faces { list-style: none; display: flex; margin: 0; padding: 0; }
+[data-module="dev"] .tsim__faces li + li { margin-left: -6px; }
+[data-module="dev"] .tsim__faces .avatar { border: 2px solid var(--surface-card); }
+[data-module="dev"] .tsim__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; padding: 10px 20px; font-size: var(--text-caption); color: var(--text-subtle); background: var(--surface-inset); border-bottom: 1px solid var(--divider); }
+
+[data-module="dev"] .tsim__log { padding: 20px; min-height: 320px; max-height: 62vh; overflow-y: auto; }
+[data-module="dev"] .tsim__items { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; align-content: start; }
+[data-module="dev"] .tsim__log:focus-visible { outline: var(--focus-ring); outline-offset: -3px; }
+[data-module="dev"] .tsim__msg { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; }
+[data-module="dev"] .tsim__body { display: grid; gap: 6px; justify-items: start; }
+[data-module="dev"] .tsim__who { margin: 0; font-size: var(--text-caption); color: var(--text-subtle); }
+[data-module="dev"] .tsim__who strong { color: var(--text); font-weight: 600; }
+[data-module="dev"] .tsim__tag { font-size: var(--text-rail); font-weight: 600; padding: 1px 6px; border-radius: 4px; background: var(--surface-inset); color: var(--text-muted); border: 1px solid var(--border); }
+[data-module="dev"] .tsim__text { margin: 0; font-size: var(--text-body); color: var(--text); overflow-wrap: anywhere; }
+[data-module="dev"] .tsim__bot { border-radius: 10px; background: var(--navy-900); color: var(--text-on-navy); }
+[data-module="dev"] .tsim__line { display: flex; align-items: center; gap: 12px; font-size: var(--text-caption); color: var(--text-subtle); }
+[data-module="dev"] .tsim__line::before,
+[data-module="dev"] .tsim__line::after { content: ""; flex: 1; height: 1px; background: var(--divider); }
+
+[data-module="dev"] .tsim__status { margin: 0; padding: 0 20px 12px; font-size: var(--text-caption); color: var(--text-subtle); }
+[data-module="dev"] .tsim .flash { margin: 0 20px 12px; }
+[data-module="dev"] .tsim__composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; padding: 16px 20px; border-top: 1px solid var(--divider); }
+[data-module="dev"] .tsim__composer textarea { width: 100%; min-height: var(--control-height); padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-row); font: inherit; font-size: var(--text-body); color: var(--text); background: var(--surface-card); resize: vertical; }
+[data-module="dev"] .tsim__composer textarea:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+[data-module="dev"] .tsim__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0; padding: 0 20px 16px; font-size: var(--text-caption); color: var(--text-subtle); }
+
+/* The bot's Adaptive Cards */
+[data-module="dev"] .ac-card { display: grid; gap: 10px; width: min(100%, 520px); padding: 16px; background: var(--surface-card); border: 1px solid var(--border); border-left: 4px solid var(--navy-900); border-radius: var(--radius-row); }
+[data-module="dev"] .ac-text { margin: 0; font-size: var(--text-small); color: var(--text); overflow-wrap: anywhere; }
+[data-module="dev"] .ac-text--bold { font-weight: 600; }
+[data-module="dev"] .ac-text--subtle { color: var(--text-subtle); }
+[data-module="dev"] .ac-text--small { font-size: var(--text-caption); }
+[data-module="dev"] .ac-separator { padding-top: 10px; border-top: 1px solid var(--divider); }
+[data-module="dev"] .ac-columns { display: flex; align-items: center; gap: 12px; }
+[data-module="dev"] .ac-column { display: grid; gap: 2px; }
+[data-module="dev"] .ac-column--stretch { flex: 1; min-width: 0; }
+[data-module="dev"] .ac-container { display: grid; gap: 10px; }
+[data-module="dev"] .ac-container--emphasis { padding: 14px; background: var(--surface-inset); border-radius: var(--radius-row); }
+[data-module="dev"] .ac-facts { margin: 0; display: grid; gap: 6px; }
+[data-module="dev"] .ac-fact { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; font-size: var(--text-small); }
+[data-module="dev"] .ac-fact dt { color: var(--text-subtle); }
+[data-module="dev"] .ac-fact dd { margin: 0; color: var(--text); font-weight: 500; overflow-wrap: anywhere; }
+[data-module="dev"] .ac-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+@media (max-width: 860px) {
+  [data-module="dev"] .tsim { grid-template-columns: minmax(0, 1fr); }
+  [data-module="dev"] .tsim__head { flex-direction: column; align-items: flex-start; }
+  [data-module="dev"] .tsim__composer { grid-template-columns: minmax(0, 1fr); }
+  [data-module="dev"] .ac-columns { flex-wrap: wrap; }
+  [data-module="dev"] .ac-fact { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}

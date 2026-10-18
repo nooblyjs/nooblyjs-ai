@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NooblyJS</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script type="module" src="sidepanel.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <img src="../icons/icon-32.png" width="24" height="24" alt="">
+    <h1>NooblyJS</h1>
+    <span id="status" class="pill pill-muted" role="status">Checking NooblyJS…</span>
+  </header>
+
+  <p id="who" class="who" aria-live="polite">Checking who you are…</p>
+
+  <main>
+    <section class="card" aria-labelledby="page-title">
+      <h2 id="page-title">This page</h2>
+      <div id="page" aria-live="polite">
+        <p class="muted">Looking at the page you have open…</p>
+      </div>
+    </section>
+
+    <section class="card chat" aria-labelledby="chat-title">
+      <h2 id="chat-title">Ask a teammate</h2>
+      <ol id="messages" class="messages" aria-live="polite">
+        <li class="message message-system">
+          Agent chat comes with Phase 14. Then you'll ask an NooblyJS teammate about this issue, and it will draft
+          descriptions, acceptance criteria and comments for you to review. You'll put a draft into Jira yourself,
+          and you press Jira's Save.
+        </li>
+      </ol>
+      <form id="composer" class="composer">
+        <label for="ask" class="visually-hidden">Message</label>
+        <textarea id="ask" rows="2" placeholder="Mention a teammate, e.g. @Ada draft acceptance criteria" disabled></textarea>
+        <button type="submit" disabled>Send</button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <a id="open-noobly" href="#" target="_blank" rel="noopener">Open NooblyJS</a>
+    <a href="../options/options.html" target="_blank">Settings</a>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,110 @@
+/*
+ * Platform's own layout (Repositories, Containers, Settings, Environments, Secrets, Members, Audit log): only what the
+ * shared UI kit doesn't cover, from the noobly-platform-* mockups. Every selector is scoped to the Platform module
+ * (structure.md §2a). Tokens only.
+ */
+
+[data-module="platform"] .card--flush { padding: 0; gap: 0; overflow: hidden; }
+[data-module="platform"] .card--flush > .card__head { padding: 22px 26px 14px; flex-wrap: wrap; gap: 8px 16px; }
+[data-module="platform"] .card--flush > .card__pad { padding: 0 26px 22px; }
+[data-module="platform"] .card--flush .table th:first-child, [data-module="platform"] .card--flush .table td:first-child { padding-left: 26px; }
+[data-module="platform"] .card--flush .table th { background: var(--surface-inset); }
+[data-module="platform"] .split { display: grid; gap: var(--gap-grid); grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); align-items: start; }
+[data-module="platform"] .mono { font-family: var(--font-mono); font-size: var(--text-caption); overflow-wrap: anywhere; }
+[data-module="platform"] .muted { color: var(--text-muted); font-size: var(--text-small); }
+[data-module="platform"] .strong { font-weight: 600; color: var(--navy-900); }
+[data-module="platform"] .note { margin: 0; font-size: var(--text-small); color: var(--text-muted); }
+[data-module="platform"] .link-button { min-height: var(--control-min); padding: 0 6px; border: 0; background: transparent; color: var(--blue-700); font: inherit; font-size: var(--text-small); cursor: pointer; text-decoration: underline; }
+[data-module="platform"] .link-button:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* Messages and forms */
+[data-module="platform"] .flash { margin: 0; padding: 12px 16px; border-radius: var(--radius-row); font-size: var(--text-small); background: var(--success-100); color: var(--success-700); }
+[data-module="platform"] .flash--error { background: var(--danger-100); color: var(--danger-700); }
+[data-module="platform"] .form { display: flex; flex-direction: column; gap: 14px; }
+[data-module="platform"] .form--inline { flex-direction: row; flex-wrap: wrap; align-items: flex-end; }
+[data-module="platform"] .form--inline .field { flex: 1 1 180px; }
+[data-module="platform"] .field { display: flex; flex-direction: column; gap: 8px; font-size: var(--text-small); color: var(--text-muted); }
+[data-module="platform"] .field input, [data-module="platform"] .field select, [data-module="platform"] .field textarea, [data-module="platform"] .cell-input {
+  border: 1px solid var(--border-strong); border-radius: var(--radius-row); padding: 0 12px; min-height: var(--control-min);
+  font: inherit; font-size: var(--text-small); color: var(--text); background: var(--surface-card);
+}
+[data-module="platform"] .field textarea { padding: 10px 12px; resize: vertical; }
+[data-module="platform"] .cell-input { width: 100%; max-width: 220px; }
+[data-module="platform"] .cell-input--money { max-width: 120px; }
+[data-module="platform"] .field :focus-visible, [data-module="platform"] .cell-input:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+
+/* A switch: a real checkbox, with its state in words beside it */
+[data-module="platform"] .switch { display: inline-flex; align-items: center; gap: 10px; min-height: var(--control-min); font-size: var(--text-small); color: var(--text); cursor: pointer; }
+[data-module="platform"] .switch input { appearance: none; width: 40px; height: 24px; margin: 0; border-radius: var(--radius-full); background: var(--track); position: relative; cursor: pointer; flex: none; }
+[data-module="platform"] .switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-card); transition: transform 120ms ease; }
+[data-module="platform"] .switch input:checked { background: var(--navy-900); }
+[data-module="platform"] .switch input:checked::after { transform: translateX(16px); }
+[data-module="platform"] .switch input:disabled { opacity: 0.55; cursor: not-allowed; }
+[data-module="platform"] .switch input:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+[data-module="platform"] .switch__state { min-width: 2.5em; font-weight: 600; color: var(--navy-900); }
+
+/* Tiles (Containers) */
+[data-module="platform"] .tiles { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); }
+[data-module="platform"] .tile { display: flex; flex-direction: column; gap: 10px; padding: 22px; background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-card); }
+[data-module="platform"] .tile__label { font-size: var(--text-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+[data-module="platform"] .tile__value { font-size: 34px; font-weight: 600; color: var(--navy-900); line-height: 1; }
+[data-module="platform"] .tile__value small { font-size: 18px; font-weight: 500; color: var(--text-muted); }
+[data-module="platform"] .tile__note { font-size: var(--text-caption); color: var(--text-muted); }
+
+/* Pools */
+[data-module="platform"] .pools { list-style: none; margin: 0; padding: 0 26px 22px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
+[data-module="platform"] .pool { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-tile); }
+[data-module="platform"] .pool__head { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+[data-module="platform"] .pool__name { font-weight: 600; color: var(--navy-900); }
+
+/* Repositories: the table beside the detail panel */
+[data-module="platform"] .repos { display: grid; gap: var(--gap-grid); grid-template-columns: minmax(0, 1fr); align-items: start; }
+[data-module="platform"] .repos--detail { grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr); }
+[data-module="platform"] .repo-link { color: var(--navy-900); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+[data-module="platform"] .repo-link:hover, [data-module="platform"] .repo-link:focus-visible { text-decoration: underline; }
+[data-module="platform"] .repo-row--selected td { background: var(--blue-50); }
+[data-module="platform"] .repo-sub { display: block; font-size: var(--text-caption); color: var(--text-muted); }
+[data-module="platform"] .panel { display: grid; gap: 18px; }
+[data-module="platform"] .panel h3 { margin: 0; font-size: var(--text-small); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+[data-module="platform"] .defs { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; font-size: var(--text-small); }
+[data-module="platform"] .defs dt { color: var(--text-muted); }
+[data-module="platform"] .defs dd { margin: 0; }
+[data-module="platform"] .toggles { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+[data-module="platform"] .toggles li { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+[data-module="platform"] .secret-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+[data-module="platform"] .secret-list li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: var(--text-small); }
+
+/* Settings */
+[data-module="platform"] .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--divider); }
+[data-module="platform"] .tab { min-height: var(--control-min); padding: 0 16px; border: 0; border-bottom: 3px solid transparent; background: transparent; font: inherit; font-size: var(--text-small); color: var(--text-muted); cursor: pointer; }
+[data-module="platform"] .tab[aria-selected="true"] { color: var(--navy-900); font-weight: 600; border-bottom-color: var(--navy-900); }
+[data-module="platform"] .tab:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
+[data-module="platform"] .rules { list-style: none; margin: 0; padding: 0 26px 22px; display: grid; gap: 4px; }
+[data-module="platform"] .rule { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid var(--divider); flex-wrap: wrap; }
+[data-module="platform"] .rule:first-child { border-top: 0; }
+[data-module="platform"] .rule__text { display: grid; gap: 4px; flex: 1 1 260px; }
+[data-module="platform"] .rule__label { font-weight: 600; color: var(--navy-900); }
+[data-module="platform"] .budgets { display: grid; gap: 16px; padding: 0 26px 22px; }
+[data-module="platform"] .budget { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+[data-module="platform"] .budget .meter { grid-column: 1; }
+[data-module="platform"] .reason { display: grid; gap: 12px; padding: 18px; margin: 0 26px 22px; border: 1px solid var(--border-strong); border-radius: var(--radius-tile); background: var(--surface-inset); }
+[data-module="platform"] .savebar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* Logs */
+[data-module="platform"] .log { margin: 0; padding: 14px 18px; max-height: 260px; overflow: auto; border-radius: var(--radius-row); background: var(--surface-inset); font-family: var(--font-mono); font-size: var(--text-caption); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 1100px) {
+  [data-module="platform"] .repos--detail { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  [data-module="platform"] .card--flush > .card__head { padding: 18px 16px 12px; }
+  [data-module="platform"] .card--flush > .card__pad, [data-module="platform"] .pools, [data-module="platform"] .rules, [data-module="platform"] .budgets { padding-left: 16px; padding-right: 16px; }
+  [data-module="platform"] .reason { margin-left: 16px; margin-right: 16px; }
+  [data-module="platform"] .card--flush .table th:first-child, [data-module="platform"] .card--flush .table td:first-child { padding-left: 16px; }
+  [data-module="platform"] .budget { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Integrations: what NooblyJS reads from Bitbucket and Jira, and what its token cannot (Phase 11) */
+[data-module="platform"] .integration { display: flex; flex-direction: column; gap: 4px; font-size: var(--text-small); }
+[data-module="platform"] .integration__cannot { color: var(--warning-700); }
+[data-module="platform"] .integration__warning { color: var(--warning-700); font-weight: 500; }

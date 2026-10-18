@@ -1,0 +1,18 @@
+# An approval waiting for the reader (Phase 12): sent to a reviewer's personal chat with the NooblyJS app when an approval
+# is requested. Data: title, item, requestedBy, kind, url.
+#
+# The only action opens the approval in NooblyJS: an approval is decided there, by a person, never in Teams.
+type: AdaptiveCard
+$schema: http://adaptivecards.io/schemas/adaptive-card.json
+version: "1.5"
+body:
+  - { type: TextBlock, text: NooblyJS · Approval waiting for you, isSubtle: true, size: Small, wrap: true }
+  - { type: TextBlock, text: "{title}", weight: Bolder, size: Medium, wrap: true }
+  - type: FactSet
+    facts:
+      - { title: Item, value: "{item}" }
+      - { title: Asked by, value: "{requestedBy}" }
+      - { title: What, value: "{kind}" }
+  - { type: TextBlock, text: Decide it in NooblyJS. Nothing here approves or rejects it., isSubtle: true, size: Small, wrap: true }
+actions:
+  - { type: Action.OpenUrl, title: Open the approval, url: "{url}", style: positive }

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>NooblyJS settings</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script type="module" src="options.js"></script>
+</head>
+<body>
+  <form id="settings" class="options">
+    <label for="noobly-url">NooblyJS address</label>
+    <div class="row">
+      <input id="noobly-url" type="url" required placeholder="https://localhost:11001">
+      <button type="submit">Save</button>
+    </div>
+    <p class="muted">The extension talks only to this NooblyJS. An address other than localhost asks for your permission first.</p>
+    <p id="result" class="muted" role="status"></p>
+  </form>
+</body>
+</html>

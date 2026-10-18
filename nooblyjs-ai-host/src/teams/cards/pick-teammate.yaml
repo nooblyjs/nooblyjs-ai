@@ -1,0 +1,37 @@
+# "Which teammate would you like to add?" (mockup noobly-teams-bot-asks-who-to-add). Data: teammates[] with
+# id, initials, name, role, status, rate, canWork / cannotWork, and the footnote.
+type: AdaptiveCard
+$schema: http://adaptivecards.io/schemas/adaptive-card.json
+version: "1.5"
+body:
+  - { type: TextBlock, text: "Hi, I'm NooblyJS.", weight: Bolder, wrap: true }
+  - { type: TextBlock, text: "Which teammate would you like to add to this meeting?", wrap: true, spacing: None }
+  - $each: teammates
+    $do:
+      type: ColumnSet
+      separator: true
+      columns:
+        - type: Column
+          width: auto
+          verticalContentAlignment: Center
+          items:
+            - { type: TextBlock, id: "avatar-{id}", text: "{initials}", weight: Bolder }
+        - type: Column
+          width: stretch
+          items:
+            - { type: TextBlock, text: "{name}", weight: Bolder, wrap: true }
+            - { type: TextBlock, text: "{role} · {status} · {rate}", isSubtle: true, size: Small, spacing: None, wrap: true }
+        - type: Column
+          width: auto
+          verticalContentAlignment: Center
+          items:
+            - $if: canWork
+              type: ActionSet
+              actions:
+                - { type: Action.Submit, title: Add, data: { noobly: add, teammateId: "{id}" } }
+            - $if: cannotWork
+              type: TextBlock
+              text: "Can't join now"
+              isSubtle: true
+              size: Small
+  - { type: TextBlock, text: "{footnote}", isSubtle: true, size: Small, wrap: true, separator: true }
