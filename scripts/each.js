@@ -10,10 +10,10 @@ const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
-// In dependency order: common first (everything links it), the harness before the apps that run agents on it, the
-// hosted apps before the host that links them. nooblyjs-core is a separate repo next to the monorepo.
+// In dependency order: the harness before the apps that run agents on it, the hosted apps before the host that links
+// them. nooblyjs-core (with the AI module, nooblyjs-ai-common, in src/aiservice/common) is a separate repo next to the
+// monorepo.
 const PROJECTS = [
-  'nooblyjs-ai-common',
   'nooblyjs-ai-harness',
   'nooblyjs-ai-factory',
   'nooblyjs-ai-teammate',

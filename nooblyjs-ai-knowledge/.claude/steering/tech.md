@@ -82,6 +82,6 @@ app covers what people use `[CONFIRM retirement date]`.
 (governance), cited answers (every answer lists its sources), the "This is wrong" flag, Needs
 review, and the L0 → L1 → L2 process-model viewer from the mockups.
 
-**Dependencies for the hosted path:** `js-yaml` and `nooblyjs-ai-common` (`file:../nooblyjs-ai-common`)
+**Dependencies for the hosted path:** `js-yaml` and `nooblyjs-ai-common` (`file:../../nooblyjs-core/src/aiservice/common`)
 are added. `nooblyjs-core` is already there. Express comes from the host. Legacy dependencies stay
 until the legacy app is retired. Don't use them from `src/`.

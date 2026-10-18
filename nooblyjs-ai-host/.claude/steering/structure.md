@@ -16,9 +16,9 @@ The projects live side by side in the `nooblyjs-ai` monorepo, so `file:../<proje
 
 ```
 nooblyjs-core/                 shared services + FsStore + event bus + UI kit and shell     (library, its own repo)
+  src/aiservice/common/        the AI module (imported as nooblyjs-ai-common): providers (incl. Bedrock, Vertex, Azure), model catalogue, tokens, cost, SSE
 nooblyjs-ai/                   the monorepo
   nooblyjs-ai-host/            the NooblyJS app: shell, Home, Product Factory screens, Platform, chat, Teams bot
-  nooblyjs-ai-common/          the AI module: providers (incl. Bedrock, Vertex, Azure), model catalogue, tokens, cost, SSE
   nooblyjs-ai-harness/         agent runtime                                   (library + CLI)
   nooblyjs-ai-product/         Product Factory: screens, artefacts + drafting  (module, UI + API + workers)
   nooblyjs-ai-factory/         Software Factory                                (module + workers + CLI)

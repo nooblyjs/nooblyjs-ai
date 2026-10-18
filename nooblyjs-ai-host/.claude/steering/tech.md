@@ -27,7 +27,7 @@ inclusion: always
 **No build step.** `npm start` runs the source as written. Use JSDoc comments where types help.
 
 **Dependencies stay minimal.** The baseline is `express`, `js-yaml` and `nooblyjs-core`
-(an app that calls models also links the AI module, `file:../nooblyjs-ai-common`);
+(an app that calls models also links the AI module inside core, `file:../../nooblyjs-core/src/aiservice/common`);
 the NooblyJS packages are linked as `file:../<project>` dependencies, the way `nooblyjs-ai-teammate` does it. The host (`noobly/app.js`) also uses `helmet` (security headers),
 `compression`, `express-rate-limit` (API and sign-in limits), and `express-session` + `passport`
 (sessions and sign-in through nooblyjs-core's authservice, including Microsoft Entra ID). Adding any
@@ -495,7 +495,7 @@ address. Permissions are only `sidePanel` and `storage`, localhost, and any othe
 | --- | --- | --- |
 | `nooblyjs-ai-host` | The host (`server.js`), loads hosted apps | The suite's app list and `/api/v1/shell`, built-in app modules, onboarding + profiles, Home (incl. For you) + Product Factory + Platform pages, team chat, Teams bot endpoint + simulator, mounting child modules, SSO, roles, audit middleware, SSE |
 | `nooblyjs-core` | Library | Shared UI kit (`public/ui/`: frame, shell, router, components), `createShell()`, service registry (the `serverManager`), logging, caching, queueing, scheduling, notifying (Teams/Outlook), measuring, searching, auth, **FsStore**, event bus |
-| `nooblyjs-ai-common` | Library, its own project in the monorepo | Provider adapters (Anthropic, OpenAI-compatible, mock, Bedrock, Vertex AI, Azure), model discovery, model catalogue, tokens, cost, retry, SSE, front matter |
+| `nooblyjs-ai-common` | Library, inside nooblyjs-core (`src/aiservice/common`) | Provider adapters (Anthropic, OpenAI-compatible, mock, Bedrock, Vertex AI, Azure), model discovery, model catalogue, tokens, cost, retry, SSE, front matter |
 | `nooblyjs-ai-harness` | Library + CLI | Agent loop, tools, permissions, sandboxing, hooks, MCP, skills, memory |
 | `nooblyjs-ai-infrastructure` | Hosted app at `/infrastructure` (Phase 9a); its provisioning runs work one at a time in the NooblyJS process | Designs and their versions, apply rules by environment kind, policy checks, the provisioner interface (only `mock` today), runs with a log, drift and its sweep, the cloud cost ledger. Opens `infra-design` approvals in the lifecycle engine and carries their decisions out; asks Platform's cloud budget before a run |
 | `nooblyjs-ai-factory` | Hosted app at `/factory`; its scheduler runs in the NooblyJS process (separate workers later) | Line, stations, scheduler, gates (the repository's, matched to quality attributes by name), PR delivery, handoff intake, factory events |

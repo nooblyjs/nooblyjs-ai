@@ -11,7 +11,7 @@
 
 Teammates runs two ways: **standalone** (`server.js`, on its own port) or **hosted** inside
 [NooblyJS AI](../nooblyjs-ai-host), which imports `index.js` and calls `register()`. Both run the same `register()`.
-It lives in the `nooblyjs-ai` monorepo next to `nooblyjs-ai-common`; `nooblyjs-core` is a separate repo next to the monorepo:
+It lives in the `nooblyjs-ai` monorepo; `nooblyjs-core` (which also holds the AI module, `nooblyjs-ai-common`) is a separate repo next to the monorepo:
 
 ```bash
 git clone https://github.com/nooblyjs/nooblyjs-core.git ../../nooblyjs-core   # service registry (logging, caching, queueing…), sign-in, the UI kit

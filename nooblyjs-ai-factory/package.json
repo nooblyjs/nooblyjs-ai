@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "nooblyjs-ai-harness": "file:../nooblyjs-ai-harness",
-    "nooblyjs-ai-common": "file:../nooblyjs-ai-common"
+    "nooblyjs-ai-common": "file:../../nooblyjs-core/src/aiservice/common"
   },
   "devDependencies": {
     "express": "^5.2.1"

@@ -12,7 +12,7 @@ pages, signs people in, stores data, emits events or calls models, read
 `.claude/steering/structure.md` §0 (this repo's layout as a hosted app). The source of truth is
 `../nooblyjs-ai-host/.claude/steering/structure.md` §2a. Where anything below conflicts with those, they win.
 
-This project lives in the `nooblyjs-ai` monorepo: `nooblyjs-ai-common` is `file:../nooblyjs-ai-common`, and `nooblyjs-core` is a separate repo next to the monorepo (`file:../../nooblyjs-core`).
+This project lives in the `nooblyjs-ai` monorepo: `nooblyjs-core` is a separate repo next to the monorepo (`file:../../nooblyjs-core`), and the AI module `nooblyjs-ai-common` lives inside it (`file:../../nooblyjs-core/src/aiservice/common`).
 
 @.claude/steering/nooblyjs-ai.md
 

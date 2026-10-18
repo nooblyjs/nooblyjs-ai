@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-`factory` is an agentic software factory built on top of the `noobly` harness (`../nooblyjs-ai-harness`, linked as a `file:` dependency, so it must be checked out next to this repo). Shared AI building blocks (cost, tokens, frontmatter, SSE) come from `nooblyjs-ai-common` (`../nooblyjs-ai-common`, the AI module, linked the same way). Both are projects in the `nooblyjs-ai` monorepo. Issues go in; verified PRs come out. It's a learning project built one concept per phase (F00–F25). Each phase has a plain-language doc in `.claude/docs/` explaining what it adds and why. `.claude/docs/reference.md` lists every command, config key, repo file, env var, station, status, event and endpoint. The plan lives in `.claude/steering/` (PRD, Architecture, Roadmap). Architecture §20 and PRD §16 describe what was actually built.
+`factory` is an agentic software factory built on top of the `noobly` harness (`../nooblyjs-ai-harness`, linked as a `file:` dependency, so it must be checked out next to this repo). Shared AI building blocks (cost, tokens, frontmatter, SSE) come from the AI module `nooblyjs-ai-common`, which lives inside `nooblyjs-core` (`../../nooblyjs-core/src/aiservice/common`) and is linked the same way. Issues go in; verified PRs come out. It's a learning project built one concept per phase (F00–F25). Each phase has a plain-language doc in `.claude/docs/` explaining what it adds and why. `.claude/docs/reference.md` lists every command, config key, repo file, env var, station, status, event and endpoint. The plan lives in `.claude/steering/` (PRD, Architecture, Roadmap). Architecture §20 and PRD §16 describe what was actually built.
 
 ## Part of NooblyJS (read first)
 
@@ -17,7 +17,7 @@ pages, signs people in, stores data, emits events or calls models, read
 ## Commands
 
 ```bash
-npm install                                   # links ../nooblyjs-ai-harness and nooblyjs-ai-common (../nooblyjs-ai-common)
+npm install                                   # links ../nooblyjs-ai-harness and nooblyjs-ai-common (../../nooblyjs-core/src/aiservice/common)
 npm test                                      # all tests: node --test "test/**/*.test.js" (offline)
 node --test test/services/line/line.test.js   # one test file
 node --test --test-name-pattern="<regex>" test/services/line/line.test.js   # one test

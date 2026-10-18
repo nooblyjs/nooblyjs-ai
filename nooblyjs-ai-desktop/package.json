@@ -34,7 +34,7 @@
     "ejs": "^6.0.1",
     "express": "^5.2.1",
     "marked": "^18.0.12",
-    "nooblyjs-ai-common": "file:../nooblyjs-ai-common",
+    "nooblyjs-ai-common": "file:../../nooblyjs-core/src/aiservice/common",
     "nooblyjs-core": "file:../../nooblyjs-core"
   },
   "devDependencies": {

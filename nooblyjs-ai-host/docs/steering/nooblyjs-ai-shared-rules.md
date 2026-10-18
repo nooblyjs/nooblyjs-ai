@@ -38,8 +38,8 @@ default (`tech.md`). Work for this repo is planned as a phase in the nooblyjs-ai
 
 - **Stack.** Node.js 24 (minimum 22.12), ES modules, Express 5 (the host's `express`, Express 5 route syntax).
   Plain HTML, CSS and JS in the browser: no React, TypeScript, bundler, build step or CSS framework.
-  Dependencies: `js-yaml`, sibling projects as `file:../<project>` and `nooblyjs-core` as `file:../../nooblyjs-core`;
-  anything else needs a reason.
+  Dependencies: `js-yaml`, sibling projects as `file:../<project>`, `nooblyjs-core` as `file:../../nooblyjs-core` and
+  the AI module as `file:../../nooblyjs-core/src/aiservice/common`; anything else needs a reason.
 - **Storage is files.** Markdown with YAML front matter, `.yaml` config, append-only daily YAML streams, written only
   under this app's `dataDir` through `host.store` (FsStore). No SQLite, JSON databases, Mongo or Postgres.
 - **Hosted, an app** mounts once under its mount path, never listens on a port, never calls

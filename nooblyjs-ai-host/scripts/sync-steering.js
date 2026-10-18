@@ -8,8 +8,9 @@ import { fileURLToPath } from 'node:url';
 
 const NOOBLY = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const SOURCE = path.join(NOOBLY, 'docs', 'steering', 'nooblyjs-ai-shared-rules.md');
-// The projects next to this one in the nooblyjs-ai monorepo (nooblyjs-core is a general library outside it, so it gets no copy).
-export const REPOS = ['nooblyjs-ai-common', 'nooblyjs-ai-harness', 'nooblyjs-ai-product', 'nooblyjs-ai-factory', 'nooblyjs-ai-teammate',
+// The projects next to this one in the nooblyjs-ai monorepo (nooblyjs-core, with the AI module, is a general library
+// outside it, so it gets no copy).
+export const REPOS = ['nooblyjs-ai-harness', 'nooblyjs-ai-product', 'nooblyjs-ai-factory', 'nooblyjs-ai-teammate',
   'nooblyjs-ai-knowledge', 'nooblyjs-ai-infrastructure'];
 
 /** Each sibling repo that exists, with where its copy goes and whether that copy matches the source. */

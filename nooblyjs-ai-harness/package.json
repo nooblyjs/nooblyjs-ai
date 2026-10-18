@@ -28,7 +28,7 @@
     "eval": "node test/evals/run.js"
   },
   "dependencies": {
-    "nooblyjs-ai-common": "file:../nooblyjs-ai-common",
+    "nooblyjs-ai-common": "file:../../nooblyjs-core/src/aiservice/common",
     "ink": "^7.1.1",
     "ink-spinner": "^5.0.0",
     "ink-text-input": "^6.0.0",

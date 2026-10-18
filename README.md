@@ -12,12 +12,13 @@ ship, where AI agents draft and people decide), the agent harness it runs on, an
 | [`nooblyjs-ai-teammate`](nooblyjs-ai-teammate) | Digital Teammates: hire, configure, budget and bill named AI agents (hosted at `/teammates`, or standalone) |
 | [`nooblyjs-ai-knowledge`](nooblyjs-ai-knowledge) | The knowledge repository: wiki, datasources, AI answers with citations, MCP (hosted at `/wiki`) |
 | [`nooblyjs-ai-harness`](nooblyjs-ai-harness) | `noobly`, the agent runtime and AI coding CLI every agent runs in |
-| [`nooblyjs-ai-common`](nooblyjs-ai-common) | The AI module: one way to call every model provider (incl. Bedrock, Vertex AI, Azure), the model catalogue, cost |
 | [`nooblyjs-ai-desktop`](nooblyjs-ai-desktop) | Projects, documents and chat for any LLM (standalone) |
 
 ## Run it
 
-Needs **Node 24** and [`nooblyjs-core`](https://github.com/nooblyjs/nooblyjs-core) checked out next to this repo:
+Needs **Node 24** and [`nooblyjs-core`](https://github.com/nooblyjs/nooblyjs-core) checked out next to this repo. Core also
+holds the AI module every project calls models through: `nooblyjs-ai-common` (one way to call every model provider,
+including Bedrock, Vertex AI and Azure; the model catalogue; cost), at `nooblyjs-core/src/aiservice/common`:
 
 ```bash
 git clone https://github.com/nooblyjs/nooblyjs-core.git

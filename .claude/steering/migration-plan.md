@@ -424,6 +424,11 @@ Decisions as confirmed: D0 yes (Stephen owns the code), D1 `nooblyjs-ai-host`, D
 | M9 | `nooblyjs-ai-knowledge` | 34 of 34; legacy Jest 1753 of 1765, the same 5 suites failing as in the source platform. UI regenerated with `port:ui` |
 | M10 | root | `scripts/each.js` covers all nine projects in dependency order; root scripts and README. Host suite with all five apps: 296 of 300; the 4 failures (two Factory story steps, two Teams steps) fail in the source platform too. The host boots on an empty data folder, seeds, and every app's pages and API answer for a signed-in person |
 
+**The AI module moved into core (after M10).** At Stephen's request `nooblyjs-ai-common` now lives where it did in the
+source: `nooblyjs-core/src/aiservice/common` (a nested ESM package that keeps its name, so no import changed), with its
+tests in core's `tests/unit/aiservice/common`. Every project links it as `file:../../nooblyjs-core/src/aiservice/common`,
+and the `nooblyjs-ai-common` project is deleted. This reverses D2's split.
+
 **Names.** After the migration, every mention of the source platform, the original company and its division was
 removed from the codebase, together with the one-off tooling in `scripts/migrate/` (built from those names). The
 names are still in older commit messages.

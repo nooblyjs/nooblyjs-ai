@@ -26,7 +26,7 @@
     "seed": "node --env-file-if-exists=.env server.js --seed"
   },
   "dependencies": {
-    "nooblyjs-ai-common": "file:../nooblyjs-ai-common",
+    "nooblyjs-ai-common": "file:../../nooblyjs-core/src/aiservice/common",
     "nooblyjs-ai-harness": "file:../nooblyjs-ai-harness",
     "nooblyjs-core": "file:../../nooblyjs-core",
     "js-yaml": "^4.3.2"

@@ -112,7 +112,7 @@ initialises nooblyjs-core's `ServiceRegistry` (the **`serverManager`**) once, th
   Its own tests are in `test/lifecycle/`. The `../nooblyjs-ai-workflows` repo is retired.
 - `nooblyjs-ai-product` → `/product` (the Product Factory: its own screens as a UI module, like Teammates, and
   its API at `/product/api/v1`: artefacts and drafting agents).
-- `nooblyjs-core`, `nooblyjs-ai-common` (the AI module: model providers, cost) and
+- `nooblyjs-core` (with its AI module `src/aiservice/common`, imported as `nooblyjs-ai-common`: model providers, cost) and
   `nooblyjs-ai-harness` (agent runtime) are libraries.
 - `nooblyjs-ai-host` itself owns Home, the Product Factory screens, Platform, onboarding, team chat and the Teams bot endpoint.
 - **nooblyjs-ai-host owns everything shared** (`structure.md` §1a): the product, the lifecycle, governance, the hosted-app

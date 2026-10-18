@@ -13,7 +13,7 @@ database, no account, no React.
 ## Quick start
 
 ```bash
-git clone https://github.com/nooblyjs/nooblyjs-ai-common.git ../nooblyjs-ai-common   # shared model catalogue, linked as a file: dependency
+git clone https://github.com/nooblyjs/nooblyjs-core.git ../../nooblyjs-core   # nooblyjs-core, next to the monorepo: its src/aiservice/common is the AI module (nooblyjs-ai-common), linked as a file: dependency
 npm install
 cp .env.example .env     # add at least one API key
 npm start                # http://127.0.0.1:3000
@@ -51,7 +51,7 @@ more.
 `DEEPSEEK_BASE_URL`) move a provider's address if you route through a gateway.
 
 The app calls every provider over plain HTTP through
-[nooblyjs-ai-common](https://github.com/nooblyjs/nooblyjs-ai-common)'s provider layer — no vendor
+[nooblyjs-ai-common](https://github.com/nooblyjs/nooblyjs-core/tree/main/src/aiservice/common)'s provider layer — no vendor
 SDKs. Gemini is reached through its OpenAI-compatible endpoint.
 
 ## Your data
@@ -148,7 +148,7 @@ Switching provider mid-chat sends the existing conversation to the new model as-
 The models the app offers are listed in [`src/config/models.js`](src/config/models.js) — one
 line of model ids per provider. Add or remove ids there; no adapter change is needed. The facts
 about each model (label, context window, request quirks) come from the shared catalogue in
-[nooblyjs-ai-common](https://github.com/nooblyjs/nooblyjs-ai-common), so a new model is added there first.
+[nooblyjs-ai-common](https://github.com/nooblyjs/nooblyjs-core/tree/main/src/aiservice/common), so a new model is added there first.
 
 ## Adding a provider
 
