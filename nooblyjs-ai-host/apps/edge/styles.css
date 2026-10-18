@@ -1,29 +1,34 @@
-/* NooblyJS's tokens (nooblyjs-core/public/ui/css/tokens.css), restated here because an extension page can't load /ui/ */
+/* NooblyJS's theme (nooblyjs-core/public/ui/css/tokens.css, the shared Noobly styles.css), restated here because an
+   extension page can't load /ui/ */
 :root {
-  --navy: #14274E;
-  --accent: #2F6FE4;
-  --accent-soft: #E8F0FD;
-  --ink: #14274E;
-  --muted: #5A6478;
-  --line: #DDE3EE;
+  --navy: #241C1A;
+  --accent: #C2471F;
+  --accent-soft: #FCE3D6;
+  --link: #A63F1C;
+  --ink: #241C1A;
+  --muted: #6B605A;
+  --line: #E6DED8;
   --surface: #FFFFFF;
-  --page: #F5F7FB;
-  --ok: #1E7A46;
-  --ok-soft: #E3F4EA;
-  --danger: #B42318;
-  --danger-soft: #FDECEA;
+  --page: #F5F1EE;
+  --ok: #1C5A5F;
+  --ok-soft: #DDEFEC;
+  --danger: #B42335;
+  --danger-soft: #FADDE2;
   --radius: 14px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #E8ECF4;
-    --muted: #A3ADC2;
-    --line: #2B3650;
-    --surface: #18233D;
-    --page: #0F1830;
-    --accent-soft: #1F2F55;
-    --ok-soft: #173A2A;
+    --ink: #F5F1EE;
+    --muted: #CDBFB7;
+    --line: #4A3F3A;
+    --surface: #2E2523;
+    --page: #1B1513;
+    --accent-soft: #4A2A1E;
+    --link: #F2A27E;
+    --ok: #9FD6CF;
+    --ok-soft: #173A3C;
+    --danger: #F7A8B6;
     --danger-soft: #45201D;
     color-scheme: dark;
   }
@@ -32,17 +37,17 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  font: 14px/1.45 "Segoe UI", system-ui, sans-serif;
+  font: 14px/1.45 Figtree, "Segoe UI", system-ui, sans-serif;
   color: var(--ink);
   background: var(--page);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
-h1 { font-size: 16px; margin: 0; }
+h1 { font-family: "Bricolage Grotesque", Figtree, "Segoe UI", system-ui, sans-serif; font-size: 16px; margin: 0; }
 h2 { font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-a { color: var(--accent); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a { color: var(--link); }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
 
 .bar {
   display: flex; align-items: center; gap: 8px;

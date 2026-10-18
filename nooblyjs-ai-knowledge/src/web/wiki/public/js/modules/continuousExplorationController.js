@@ -129,7 +129,7 @@ export const continuousExplorationController = {
                 <div style="min-width: 0;">
                   <h1 style="font-weight: 700; margin: 0 0 4px; font-size: 24px;">${esc(project.name)}</h1>
                   ${project.spaceName
-                    ? `<div style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--kr-teal-700, #12284b); margin-bottom: 4px;">
+                    ? `<div style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--kr-teal-700, #A63F1C); margin-bottom: 4px;">
                          <i class="bi bi-collection"></i> ${esc(project.spaceName)}${project.path ? ` <span style="color: var(--kr-ink-400); font-weight: 500;">/ ${esc(project.path)}</span>` : ''}
                        </div>`
                     : ''}
@@ -481,7 +481,7 @@ export const continuousExplorationController = {
         if (!this.currentChat.length) {
             wrap.innerHTML = `
               <div style="text-align: center; color: var(--kr-ink-400); font-size: 12.5px; padding: 14px;">
-                <i class="bi bi-robot" style="font-size: 20px; color: var(--kr-teal-700, #12284b);"></i><br>
+                <i class="bi bi-robot" style="font-size: 20px; color: var(--kr-teal-700, #A63F1C);"></i><br>
                 Ask me to clarify a section, propose alternatives, or fill a gap in the generated documents.
               </div>`;
             return;

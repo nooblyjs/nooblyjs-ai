@@ -50,8 +50,8 @@
 /* Active toolbar button */
 .editor-toolbar button.active,
 .editor-toolbar a.active {
-    background-color: #12284b;
-    border-color: #12284b;
+    background-color: #C2471F;
+    border-color: #C2471F;
     color: #fff !important;
 }
 

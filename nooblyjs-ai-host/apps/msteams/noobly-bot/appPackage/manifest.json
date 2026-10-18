@@ -21,7 +21,7 @@
         "short": "Bring NooblyJS agent teammates into your Teams chats and meetings.",
         "full": "NooblyJS is an engineering lifecycle, from idea to merged code. Mention NooblyJS in a chat or meeting to add an agent teammate, such as Ada for product or Rhea for architecture. The teammate reads only what is posted after it joins, answers with the facts, their sources and what the answer cost, and can post the meeting's notes to an item when you ask. Its time is billed to the team the meeting belongs to. A teammate can't approve anything: approvals open in NooblyJS, where a person decides. Every message is kept in the item's Activity and the audit log."
     },
-    "accentColor": "#14274E",
+    "accentColor": "#241C1A",
     "supportsChannelFeatures": "tier1",
     "bots": [
         {

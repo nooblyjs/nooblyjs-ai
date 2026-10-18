@@ -170,7 +170,7 @@ test('Teammates loads into the frame: roster to profile and back with no reload,
   const card = page.locator('#noobly-content a.tmk-card').first();
   await expect(card).toBeVisible();
   // The roster is built from the kit's components, so it is in NooblyJS type.
-  expect(await page.locator('#noobly-content h1').evaluate((e) => getComputedStyle(e).fontFamily)).toMatch(/Lexend/);
+  expect(await page.locator('#noobly-content h1').evaluate((e) => getComputedStyle(e).fontFamily)).toMatch(/Bricolage Grotesque/);
   await card.click();
   await expect(page).toHaveURL(/\/teammates\/team\/[a-z0-9-]+$/);
   await expect(page.locator('#noobly-sidebar [data-nav="profiles"]')).toHaveAttribute('aria-current', 'page');

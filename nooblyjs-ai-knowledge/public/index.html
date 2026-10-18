@@ -9,23 +9,23 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist/swagger-ui.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/jpeg" href="favicon.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="./css/kr-base.css">
     <style>
         /* KR Modern theme tokens (mirrored from wiki.css for inline blocks) */
         :root {
-            --custom-primary: #12284b;        /* kr-teal-700 */
-            --custom-primary-dark: #0c1c36;   /* kr-teal-800 */
-            --custom-primary-soft: #f1f2f2;   /* kr-teal-50 */
-            --custom-primary-100: #d7d7dd;    /* kr-teal-100 */
-            --custom-secondary: #60627a;      /* kr-ink-500 */
+            --custom-primary: #C2471F;        /* kr-teal-700 */
+            --custom-primary-dark: #241C1A;   /* kr-teal-800 */
+            --custom-primary-soft: #F5F1EE;   /* kr-teal-50 */
+            --custom-primary-100: #FCE3D6;    /* kr-teal-100 */
+            --custom-secondary: #8F837C;      /* kr-ink-500 */
             --custom-warning: #c98019;        /* kr-warning */
-            --custom-bg: #f1f2f2;             /* kr-bg */
+            --custom-bg: #F5F1EE;             /* kr-bg */
             --custom-surface: #ffffff;
-            --custom-border: #e6e7e8;
-            --custom-ink: #12284b;
+            --custom-border: #ECE6E1;
+            --custom-ink: #241C1A;
         }
 
         html {
@@ -83,7 +83,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(18, 40, 75, 0.55);
+            background-color: rgba(194, 71, 31, 0.55);
             backdrop-filter: blur(2px);
             display: flex;
             align-items: center;
@@ -104,7 +104,7 @@
             height: 85vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 20px 60px rgba(18, 40, 75, 0.35);
+            box-shadow: 0 20px 60px rgba(60, 30, 20, 0.35);
             animation: slideUp 0.25s ease;
             overflow: hidden;
         }
@@ -176,7 +176,7 @@
         .document-modal-body h2 {
             font-size: 18px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #e6e7e8;
+            border-bottom: 1px solid #ECE6E1;
         }
         .document-modal-body h3 { font-size: 14px; }
         .document-modal-body h4 { font-size: 13px; color: var(--custom-primary); }
@@ -191,8 +191,8 @@
             font-size: 11px;
         }
         .document-modal-body pre {
-            background: #12284b;
-            color: #e6e7e8;
+            background: #C2471F;
+            color: #ECE6E1;
             padding: 16px 18px;
             border-radius: 10px;
             overflow-x: auto;
@@ -214,7 +214,7 @@
             border-left: 4px solid var(--custom-primary);
             background: var(--custom-primary-soft);
             border-radius: 0 10px 10px 0;
-            color: #3b435f;
+            color: #4A3F3A;
             font-style: italic;
         }
         .document-modal-body a {
@@ -239,7 +239,7 @@
             padding: 12px 14px;
             text-align: left;
             border: 0;
-            border-bottom: 1px solid #e6e7e8;
+            border-bottom: 1px solid #ECE6E1;
         }
         .document-modal-body table th {
             background: var(--custom-primary-soft);
@@ -256,18 +256,18 @@
             margin: 14px 0;
             padding-left: 22px;
         }
-        .document-modal-body ul li::marker { color: #3b435f; }
+        .document-modal-body ul li::marker { color: #4A3F3A; }
         .document-modal-body ol li::marker { color: var(--custom-primary); font-weight: 700; }
         .document-modal-body li {
             margin: 6px 0;
-            color: #3b435f;
+            color: #4A3F3A;
         }
         /* Mermaid diagram styling */
         .mermaid-diagram {
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            background: linear-gradient(135deg, #f7f7f8, #f1f2f2);
+            background: linear-gradient(135deg, #FBF8F6, #F5F1EE);
             border: 1px solid var(--custom-border);
             border-radius: 10px;
             padding: 2rem;
@@ -517,7 +517,7 @@
         }
 
         .wiki-link-card-content {
-            color: #3b435f;
+            color: #4A3F3A;
             font-size: 12px;
             line-height: 1.65;
             margin: 0;
@@ -529,7 +529,7 @@
 
         .wiki-link-card-footer {
             padding-top: 0.75rem;
-            border-top: 1px solid #e6e7e8;
+            border-top: 1px solid #ECE6E1;
             flex-grow: 0;
         }
 

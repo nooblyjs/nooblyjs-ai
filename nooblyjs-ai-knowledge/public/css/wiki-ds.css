@@ -478,11 +478,11 @@
    -------------------------------------------------------------------------- */
 [data-module="wiki"] .ds-root {
   /* Accent ramp (was the per-space teal) */
-  --kr-teal-900: #0C1C36;
-  --kr-teal-800: #12284B;
+  --kr-teal-900: #241C1A;
+  --kr-teal-800: #C2471F;
   --kr-teal-700: var(--accent-link);
   --kr-teal-600: var(--accent);
-  --kr-teal-500: #3B435F;
+  --kr-teal-500: #A63F1C;
   --kr-teal-400: var(--accent-light);
   --kr-teal-100: var(--accent-soft);
   --kr-teal-50:  var(--accent-tint);
@@ -492,7 +492,7 @@
   --kr-ink-700: var(--ink-2);
   --kr-ink-500: var(--muted);
   --kr-ink-400: var(--neutral-dot);
-  --kr-ink-300: #BABAC5;
+  --kr-ink-300: #CDBFB7;
   --kr-bg:        var(--bg);
   --kr-surface:   var(--surface);
   --kr-surface-2: var(--surface-sunken);
@@ -520,24 +520,24 @@
      screen rules below need no edits; values are the noobly accent. */
   --gold-50:  var(--accent-tint);
   --gold-100: var(--accent-soft);
-  --gold-200: #BABAC5;
+  --gold-200: #DCD2CB;
   --gold-300: var(--accent-light);
-  --gold-400: #3B435F;
+  --gold-400: #A63F1C;
   --gold-500: var(--accent);      /* PRIMARY */
   --gold-600: var(--accent-link);
-  --gold-700: #12284B;
-  --gold-800: #0C1C36;
-  --gold-900: #0C1C36;
+  --gold-700: #C2471F;
+  --gold-800: #241C1A;
+  --gold-900: #241C1A;
 
   /* Ink / neutrals — warm noobly greys */
-  --ink-950: #0C1C36;
+  --ink-950: #241C1A;
   --ink-900: var(--ink);
-  --ink-800: #3B435F;
+  --ink-800: #4A3F3A;
   --ink-700: var(--ink-2);
   --ink-600: var(--neutral-text);
   --ink-500: var(--muted);
   --ink-400: var(--neutral-dot);
-  --ink-300: #BABAC5;
+  --ink-300: #CDBFB7;
   --ink-200: var(--border-strong);
   --ink-100: var(--neutral-soft);
   --ink-50:  var(--surface-sunken);
@@ -580,7 +580,7 @@
   --brand-600: var(--accent);
 
   /* --bg and --shadow-sm/md/lg come from styles.css; only the extra step is local */
-  --shadow-xs: 0 1px 0 rgba(18, 40, 75, 0.04);
+  --shadow-xs: 0 1px 0 rgba(60, 30, 20, 0.04);
 }
 
 /* ===================== Buttons =====================
@@ -1159,7 +1159,7 @@
 
         [data-module="wiki"] .ds-root .provider-option.selected {
             border-color: var(--custom-primary);
-            background-color: rgba(18, 40, 75, 0.1);
+            background-color: rgba(194, 71, 31, 0.1);
         }
 
         [data-module="wiki"] .ds-root .loading {
@@ -1169,7 +1169,7 @@
 
         [data-module="wiki"] .ds-root .provider-option.selected {
             border-color: var(--custom-primary);
-            background-color: rgba(18, 40, 75, 0.08);
+            background-color: rgba(194, 71, 31, 0.08);
         }
 
         [data-module="wiki"] .ds-root .loading-indicator {
@@ -1247,7 +1247,7 @@
         }
 
         [data-module="wiki"] .ds-root #swagger-ui .btn.execute:hover {
-            background: var(--kr-teal-600, #12284b);
+            background: var(--kr-teal-600, #C2471F);
             border-color: #004785;
         }
 
@@ -1736,7 +1736,7 @@
         }
 
         [data-module="wiki"] .ds-root #swagger-ui .btn.execute:hover {
-            background: var(--kr-teal-600, #12284b);
+            background: var(--kr-teal-600, #C2471F);
             border-color: #004785;
         }
 
@@ -2180,7 +2180,7 @@
     display: flex; align-items: center; gap: 14px;
     padding: 16px 22px;
     border-bottom: 1px solid var(--kr-border-2);
-    background: linear-gradient(180deg, #f7f7f8, var(--kr-surface));
+    background: linear-gradient(180deg, #FBF8F6, var(--kr-surface));
 }
 [data-module="wiki"] .ds-root .pf-section > .head .ico {
     width: 38px; height: 38px; border-radius: 11px;
@@ -2308,7 +2308,7 @@
 /* Topbar */
 [data-module="wiki"] .ds-root .kr-brand .logo {
   width: 34px; height: 34px;
-  background: radial-gradient(circle at 30% 30%, #60627A, #12284B 70%);
+  background: radial-gradient(circle at 30% 30%, #C2471F, #7E2E12 70%);
   border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; color: #fff; font-size: 13px;
@@ -2380,7 +2380,7 @@
 }
 [data-module="wiki"] .ds-root .kr-avatar-pill .av {
   width: 26px; height: 26px; border-radius: 50%;
-  background: linear-gradient(135deg, #60627A, #12284B);
+  background: linear-gradient(135deg, #C2471F, #7E2E12);
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700;
   position: relative; overflow: hidden; flex-shrink: 0;
@@ -2431,7 +2431,7 @@
   background: var(--kr-border-2);
   padding: 1px 7px; border-radius: 999px;
 }
-[data-module="wiki"] .ds-root .kr-nav-item.active .count { background: rgba(18, 40, 75,.18); color: var(--kr-teal-800); }
+[data-module="wiki"] .ds-root .kr-nav-item.active .count { background: rgba(194, 71, 31,.18); color: var(--kr-teal-800); }
 
 /* Tree */
 [data-module="wiki"] .ds-root .kr-tree-node .chev { width: 14px; color: var(--kr-ink-400); font-size: 9px; }
@@ -2464,7 +2464,7 @@
 [data-module="wiki"] .ds-root .kr-breadcrumb .last { color: var(--kr-ink-900); font-weight: 600; }
 
 [data-module="wiki"] .ds-root .kr-page-hero {
-  background: linear-gradient(135deg, var(--kr-teal-700) 0%, var(--kr-teal-800) 50%, #12284b 100%);
+  background: linear-gradient(135deg, var(--kr-teal-700) 0%, var(--kr-teal-800) 50%, #7E2E12 100%);
   color: #fff;
   border-radius: var(--kr-radius-lg);
   padding: 15px 23px;
@@ -2567,7 +2567,7 @@
   background: linear-gradient(135deg, var(--kr-teal-500), var(--kr-teal-700));
   color: #fff;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 14px -4px rgba(18, 40, 75,.5);
+  box-shadow: 0 4px 14px -4px rgba(60, 30, 20,.5);
   position: relative;
 }
 [data-module="wiki"] .ds-root .kr-ai-head .badge-pulse::after {
@@ -2603,7 +2603,7 @@
   background: linear-gradient(135deg, var(--kr-teal-500), var(--kr-teal-700));
   color: #fff;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 6px -2px rgba(18, 40, 75,.6);
+  box-shadow: 0 2px 6px -2px rgba(60, 30, 20,.6);
   cursor: pointer;
 }
 [data-module="wiki"] .ds-root .kr-ctx-pill .x { color: var(--kr-ink-400); margin-left: 2px; cursor: pointer; }
@@ -3711,8 +3711,8 @@
 
       [data-module="wiki"] .ds-root .sources-dashboard .btn-warning:hover,
 [data-module="wiki"] .ds-root .sources-container .btn-warning:hover {
-        background-color: #0c1c36 !important;
-        border-color: #0c1c36 !important;
+        background-color: #241C1A !important;
+        border-color: #241C1A !important;
       }
 
       /* Filing Browser Styles */
@@ -3783,7 +3783,7 @@
       [data-module="wiki"] .ds-root .file-item:hover {
         border-color: var(--accent);
         background-color: #f0f8f9;
-        box-shadow: 0 2px 8px rgba(18, 40, 75, 0.1);
+        box-shadow: 0 2px 8px rgba(60, 30, 20, 0.1);
       }
 
       [data-module="wiki"] .ds-root .file-icon {

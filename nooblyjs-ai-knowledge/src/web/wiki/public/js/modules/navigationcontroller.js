@@ -409,7 +409,7 @@ export const navigationController = {
                 + ` | cache write ${ms(t.parsed, t.cached)}`
                 + ` | rehydrate ${ms(t.cached, t.hydrated)}`
                 + ` | render ${ms(t.hydrated ?? t.parsed, t.rendered)}`,
-                'color: #12284B; font-weight: bold'
+                'color: #241C1A; font-weight: bold'
             );
 
         } catch (error) {
@@ -1909,9 +1909,9 @@ export const navigationController = {
                 // Current (last) segment, or the space root when at root — muted.
                 parts.push(`<span class="text-muted" title="${full}">${safe}</span>`);
             } else if (seg.isRoot) {
-                parts.push(`<a href="#" class="breadcrumb-folder-link text-decoration-none" data-folder-path="" title="${full}" style="color: var(--kr-teal-600, #12284b); font-weight: bold;">${safe}</a>`);
+                parts.push(`<a href="#" class="breadcrumb-folder-link text-decoration-none" data-folder-path="" title="${full}" style="color: var(--kr-teal-600, #C2471F); font-weight: bold;">${safe}</a>`);
             } else {
-                parts.push(`<a href="#" class="breadcrumb-folder-link text-decoration-none" data-folder-path="${this.escapeHtml(seg.path)}" title="${full}" style="color: var(--kr-teal-600, #12284b);">${safe}</a>`);
+                parts.push(`<a href="#" class="breadcrumb-folder-link text-decoration-none" data-folder-path="${this.escapeHtml(seg.path)}" title="${full}" style="color: var(--kr-teal-600, #C2471F);">${safe}</a>`);
             }
         });
         return parts.join('');
@@ -2209,7 +2209,7 @@ export const navigationController = {
             <div id="folderView" class="view">
                 <div class="folder-header">
                     <nav class="breadcrumb mb-3">
-                        <a href="#" id="spacesLink" style="color: var(--kr-teal-600, #12284b); font-weight: bold;" class="text-decoration-none">Spaces</a>
+                        <a href="#" id="spacesLink" style="color: var(--kr-teal-600, #C2471F); font-weight: bold;" class="text-decoration-none">Spaces</a>
                         <span class="breadcrumb-separator">/</span>
                         ${this.renderFolderBreadcrumbSegments(folderContent.spaceName, folderContent.path)}
                     </nav>

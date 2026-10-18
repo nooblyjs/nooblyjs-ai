@@ -44,10 +44,10 @@
 [data-module="home"] .health__name { font-size: var(--text-eyebrow); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
 [data-module="home"] .health__count { font-size: 28px; font-weight: 600; color: var(--navy-900); line-height: 1.1; }
 [data-module="home"] .health__note { font-size: var(--text-caption); color: var(--text-muted); }
-[data-module="home"] .health__stage--slowest { background: var(--warning-100); border-color: #F1D3AE; }
+[data-module="home"] .health__stage--slowest { background: var(--warning-100); border-color: #E4B85C; }
 [data-module="home"] .health__stage--slowest .health__name, [data-module="home"] .health__stage--slowest .health__note { color: var(--warning-700); }
 [data-module="home"] .waitbar { display: grid; grid-template-columns: minmax(120px, 170px) 1fr 60px; gap: 14px; align-items: center; font-size: var(--text-small); }
-[data-module="home"] .waitbar__track { height: 10px; background: #EEF0F4; border-radius: var(--radius-full); overflow: hidden; }
+[data-module="home"] .waitbar__track { height: 10px; background: var(--track); border-radius: var(--radius-full); overflow: hidden; }
 [data-module="home"] .waitbar__fill { height: 10px; background: var(--navy-900); border-radius: var(--radius-full); }
 [data-module="home"] .waitbar__fill--longest { background: var(--warning-600); }
 [data-module="home"] .waitbar__value { text-align: right; font-family: var(--font-mono); font-size: var(--text-caption); }
@@ -182,7 +182,7 @@
 [data-module="home"] .signals__head { display: flex; justify-content: space-between; gap: 10px; font-size: var(--text-small); }
 [data-module="home"] .signals__head span:first-child::first-letter { text-transform: uppercase; }
 [data-module="home"] .signals__count { font-family: var(--font-mono); font-size: var(--text-caption); }
-[data-module="home"] .signals__track { height: 8px; background: #EEF0F4; border-radius: var(--radius-full); overflow: hidden; }
+[data-module="home"] .signals__track { height: 8px; background: var(--track); border-radius: var(--radius-full); overflow: hidden; }
 [data-module="home"] .signals__fill { height: 8px; background: var(--navy-900); border-radius: var(--radius-full); }
 [data-module="home"] .agent-card { display: flex; flex-direction: column; gap: 12px; padding: 22px; border-radius: var(--radius-card); background: var(--navy-900); color: var(--text-on-navy); }
 [data-module="home"] .agent-card__who { display: flex; align-items: center; gap: 12px; }
@@ -192,7 +192,7 @@
 [data-module="home"] .agent-card .meter__head { display: none; }
 [data-module="home"] .agent-card .meter__track { background: var(--navy-800); }
 [data-module="home"] .agent-card .meter__fill { background: var(--rail-dot); }
-[data-module="home"] .agent-card__action { align-self: flex-start; min-height: var(--control-min); display: inline-flex; align-items: center; padding: 0 16px; border-radius: var(--radius-full); border: 1px solid #3A5287; background: #1E3463; color: var(--text-on-navy); font-size: var(--text-small); text-decoration: none; }
+[data-module="home"] .agent-card__action { align-self: flex-start; min-height: var(--control-min); display: inline-flex; align-items: center; padding: 0 16px; border-radius: var(--radius-full); border: 1px solid #6B605A; background: var(--navy-800); color: var(--text-on-navy); font-size: var(--text-small); text-decoration: none; }
 [data-module="home"] .decisions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 [data-module="home"] .decision { display: flex; flex-direction: column; gap: 8px; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-tile); }
 [data-module="home"] .decision--yours { border: 2px solid var(--navy-900); padding: 17px; }
@@ -256,7 +256,7 @@
 [data-module="home"] .leadtime__part--product { background: var(--navy-900); }
 [data-module="home"] .leadtime__part--architecture { background: var(--warning-600); }
 [data-module="home"] .leadtime__part--design { background: var(--blue-600); }
-[data-module="home"] .leadtime__part--buildShip { background: #C9D8F7; }
+[data-module="home"] .leadtime__part--buildShip { background: var(--rail-dot); }
 [data-module="home"] .leadtime__labels { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; font-size: var(--text-eyebrow); color: var(--text-subtle); text-align: center; }
 [data-module="home"] .leadtime__sentence { margin: 0; font-size: var(--text-small); color: var(--text-muted); }
 [data-module="home"] .spend { flex: 2 1 340px; min-width: 0; }

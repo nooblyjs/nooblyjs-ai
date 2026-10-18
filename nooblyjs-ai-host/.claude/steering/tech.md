@@ -290,7 +290,7 @@ that clock (`host.clock`), never `Date.now()`, for business time. Its offset is 
   components, and one file per module only when needed. There are no inline styles: the
   mockups' inline values are turned into classes and tokens. The layout uses Grid and Flexbox
   and stacks at narrow widths.
-- **Fonts and icons:** Lexend (300–700) and JetBrains Mono (400/500), self-hosted as woff2 in
+- **Fonts and icons:** Figtree (400–700, the interface), Bricolage Grotesque (500–800, headings) and JetBrains Mono (400/500), self-hosted as woff2 in
   `nooblyjs-core/public/ui/fonts/` under the SIL Open Font Licence (copies beside them). No font CDN.
   Icons are inline SVG strokes in `/ui/js/icons.js`, with no emoji.
 - **Accessibility:** WCAG 2.2 AA. Use real `<button>`, `<a>` and `<label>`, give focus a

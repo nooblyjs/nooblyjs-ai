@@ -21,7 +21,7 @@
 .ob-step { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 56px; padding: 8px 12px; border: 0; border-radius: var(--radius-rail-item); background: transparent; color: var(--text-on-navy); font: inherit; text-align: left; cursor: pointer; }
 .ob-step:hover, .ob-step--current { background: var(--navy-800); }
 .ob-step:focus-visible { outline: 3px solid var(--text-on-navy); outline-offset: 2px; }
-.ob-step__dot { flex: 0 0 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-caption); font-weight: 600; border: 1.5px solid #6F82AB; color: var(--text-on-navy-muted); }
+.ob-step__dot { flex: 0 0 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--text-caption); font-weight: 600; border: 1.5px solid #8F837C; color: var(--text-on-navy-muted); }
 .ob-step--current .ob-step__dot { background: var(--text-on-navy); border-color: var(--text-on-navy); color: var(--navy-900); }
 .ob-step--done .ob-step__dot { background: var(--blue-600); border-color: var(--blue-600); color: var(--text-on-navy); }
 .ob-step__text { display: flex; flex-direction: column; gap: 2px; }

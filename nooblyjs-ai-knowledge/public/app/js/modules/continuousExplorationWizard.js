@@ -196,7 +196,7 @@ export const continuousExplorationWizard = {
         stepper.innerHTML = STEPS.map((s, i) => {
             const isActive = i === this.state.stepIndex;
             const isDone = i < this.state.stepIndex;
-            const bg = isActive ? 'linear-gradient(135deg, var(--kr-teal-500, #3b435f), var(--kr-teal-700, #12284b))' : (isDone ? 'var(--kr-teal-700, #12284b)' : '#e5e7eb');
+            const bg = isActive ? 'linear-gradient(135deg, var(--kr-teal-500, #C2471F), var(--kr-teal-700, #A63F1C))' : (isDone ? 'var(--kr-teal-700, #A63F1C)' : '#e5e7eb');
             const color = (isActive || isDone) ? '#fff' : '#6b7280';
             return `
               <div style="flex: 1; display: flex; align-items: center; gap: 8px; cursor: ${isDone ? 'pointer' : 'default'};" data-step-jump="${isDone ? i : ''}">
@@ -288,15 +288,15 @@ export const continuousExplorationWizard = {
             return `
               <button type="button" class="ce-template-pick"
                 data-template-id="${esc(t.id || '')}"
-                style="text-align: left; padding: 16px 18px; border: 2px solid ${selected ? 'var(--kr-teal-500, #3b435f)' : 'var(--kr-border, #e5e7eb)'};
-                       border-radius: 12px; background: ${selected ? 'var(--kr-teal-50, #f1f2f2)' : '#fff'}; cursor: pointer;
+                style="text-align: left; padding: 16px 18px; border: 2px solid ${selected ? 'var(--kr-teal-500, #C2471F)' : 'var(--kr-border, #e5e7eb)'};
+                       border-radius: 12px; background: ${selected ? 'var(--kr-teal-50, #FFF4EE)' : '#fff'}; cursor: pointer;
                        display: flex; flex-direction: column; gap: 8px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                   <strong style="font-size: 15px;">${esc(t.name)}</strong>
                   <span style="display:flex;gap:6px;align-items:center;">
                     ${scopeBadge}
                     ${t.documents && t.documents.length
-                      ? `<span style="background: var(--kr-teal-700, #12284b); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 600;">${t.documents.length} docs</span>`
+                      ? `<span style="background: var(--kr-teal-700, #A63F1C); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 600;">${t.documents.length} docs</span>`
                       : ''}
                   </span>
                 </div>
@@ -386,7 +386,7 @@ export const continuousExplorationWizard = {
           <div class="ce-card">
             <div class="ce-card-label">Template</div>
             <div style="font-weight: 600; margin-top: 4px;">
-              <i class="bi bi-diagram-3" style="color: var(--kr-teal-700, #12284b);"></i> ${esc(tplName)}
+              <i class="bi bi-diagram-3" style="color: var(--kr-teal-700, #A63F1C);"></i> ${esc(tplName)}
             </div>
             ${tpl && tpl.description ? `<div style="color: var(--kr-ink-500, #6b7280); margin-top: 2px; font-size: 12.5px;">${esc(tpl.description)}</div>` : ''}
             ${tplDocs.length
@@ -402,7 +402,7 @@ export const continuousExplorationWizard = {
               ? `<ol style="margin: 8px 0 0; padding-left: 20px;">
                    ${this.state.wikiContext.map(c => `
                      <li>
-                       <i class="bi bi-${!c.folderPath ? 'collection' : (c.kind === 'file' ? 'file-earmark-text' : 'folder2')}" style="color: var(--kr-teal-700, #12284b);"></i>
+                       <i class="bi bi-${!c.folderPath ? 'collection' : (c.kind === 'file' ? 'file-earmark-text' : 'folder2')}" style="color: var(--kr-teal-700, #A63F1C);"></i>
                        <strong>${esc(c.name)}</strong>
                        <small style="color: var(--kr-ink-400);">${c.folderPath ? esc(c.spaceName) + ' / ' + esc(c.folderPath) : esc(c.spaceName) + ' (entire space)'}</small>
                      </li>
@@ -411,7 +411,7 @@ export const continuousExplorationWizard = {
               : `<div style="color: var(--kr-ink-400); margin-top: 4px;">None — AI will use only the requirement and template.</div>`}
           </div>
 
-          <div style="background: var(--kr-teal-50, #f1f2f2); border: 1px solid var(--kr-teal-100, #d7d7dd); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--kr-teal-800, #0c1c36);">
+          <div style="background: var(--kr-teal-50, #FFF4EE); border: 1px solid var(--kr-teal-100, #FCE3D6); border-radius: 12px; padding: 14px 16px; font-size: 13px; color: var(--kr-teal-800, #7E2E12);">
             <i class="bi bi-rocket-takeoff"></i>
             Click <strong>Launch</strong> to create a continuous exploration folder in
             <strong>${esc(this.space.name)}${this.parentPath ? ' / ' + esc(this.parentPath) : ''}</strong>.

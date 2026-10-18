@@ -41,7 +41,7 @@
   font-family: inherit; font-size: 14.5px; font-weight: 700;
   display: inline-flex; align-items: center; gap: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 6px -2px rgba(18, 40, 75,.5);
+  box-shadow: 0 2px 6px -2px rgba(60, 30, 20,.5);
   transition: transform .12s ease, background .15s ease;
 }
 .ob-btn:hover { background: var(--kr-teal-800); transform: translateY(-1px); }
@@ -150,7 +150,7 @@
 .ob-suggest .row .ico { width: 22px; color: var(--kr-teal-600); font-size: 13px; text-align: center; }
 .ob-suggest .row .path { margin-left: auto; font-size: 11.5px; color: var(--kr-ink-400); }
 .ob-suggest .row .empty { color: var(--kr-ink-400); font-style: italic; padding: 4px 6px; }
-.ob-suggest .row mark { background: rgba(18, 40, 75,.18); color: inherit; padding: 0 2px; border-radius: 3px; }
+.ob-suggest .row mark { background: rgba(36, 28, 26,.18); color: inherit; padding: 0 2px; border-radius: 3px; }
 
 .ob-eyebrow {
   font-size: 11px; font-weight: 700;
@@ -222,7 +222,7 @@
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 30px;
   margin-bottom: 18px;
-  box-shadow: 0 8px 22px -6px rgba(18, 40, 75,.55);
+  box-shadow: 0 8px 22px -6px rgba(60, 30, 20,.55);
 }
 
 /* Variation A — Centered modal -------------------------------------------- */
@@ -231,7 +231,7 @@
 }
 .obA-scrim {
   position: absolute; inset: 0;
-  background: rgba(18, 40, 75, .42);
+  background: rgba(194, 71, 31, .42);
   backdrop-filter: blur(2px);
 }
 .obA-card {
@@ -241,9 +241,9 @@
   background: #fff;
   border-radius: 16px;
   box-shadow:
-    0 30px 60px -20px rgba(18, 40, 75,.35),
-    0 12px 24px -12px rgba(18, 40, 75,.25),
-    0 0 0 1px rgba(18, 40, 75,.04);
+    0 30px 60px -20px rgba(194, 71, 31,.35),
+    0 12px 24px -12px rgba(194, 71, 31,.25),
+    0 0 0 1px rgba(194, 71, 31,.04);
   padding: 28px 32px 24px;
   display: flex; flex-direction: column;
 }
@@ -259,7 +259,7 @@
 }
 .obA-card .brand-mark .logo {
   width: 26px; height: 26px;
-  background: radial-gradient(circle at 30% 30%, #60627A, #12284B 70%);
+  background: radial-gradient(circle at 30% 30%, #C2471F, #7E2E12 70%);
   border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; color: #fff; font-size: 12px;
@@ -292,11 +292,11 @@
 .ob-avatar-edit { position: relative; flex-shrink: 0; }
 .ob-avatar {
   width: 84px; height: 84px; border-radius: 50%;
-  background: linear-gradient(135deg, #60627A, #12284B);
+  background: linear-gradient(135deg, #C2471F, #7E2E12);
   color: #fff; font-size: 30px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   position: relative; overflow: hidden;
-  box-shadow: 0 6px 18px -8px rgba(18, 40, 75, .5);
+  box-shadow: 0 6px 18px -8px rgba(60, 30, 20, .5);
 }
 .ob-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .ob-avatar-btn {
@@ -306,7 +306,7 @@
   border: 2px solid #fff; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   font-size: 13px;
-  box-shadow: 0 2px 6px -2px rgba(18, 40, 75, .6);
+  box-shadow: 0 2px 6px -2px rgba(60, 30, 20, .6);
   transition: background .15s ease, transform .12s ease;
 }
 .ob-avatar-btn:hover { background: var(--kr-teal-800); transform: translateY(-1px); }
@@ -373,13 +373,13 @@
 .ob-layout-card .skel .bar.w80 { width: 80%; }
 .ob-layout-card .skel .bar.w70 { width: 70%; }
 .ob-layout-card .skel .bar.w60 { width: 60%; }
-.ob-layout-card .skel .bar.nav { width: 34%; background: var(--kr-teal-200, #d7d7dd); }
-.ob-layout-card .skel .bar.search { height: 14px; border-radius: 7px; background: var(--kr-teal-200, #d7d7dd); }
+.ob-layout-card .skel .bar.nav { width: 34%; background: var(--kr-teal-200, #C2471F); }
+.ob-layout-card .skel .bar.search { height: 14px; border-radius: 7px; background: var(--kr-teal-200, #C2471F); }
 .ob-layout-card .skel .row { display: flex; gap: 5px; }
 .ob-layout-card .skel .block { flex: 1; height: 18px; border-radius: 5px; background: var(--kr-border); }
 .ob-layout-card .skel .bubble { height: 11px; border-radius: 6px; }
 .ob-layout-card .skel .bubble.in { width: 64%; background: var(--kr-border); }
-.ob-layout-card .skel .bubble.out { width: 50%; align-self: flex-end; background: var(--kr-teal-200, #d7d7dd); }
+.ob-layout-card .skel .bubble.out { width: 50%; align-self: flex-end; background: var(--kr-teal-200, #C2471F); }
 
 /* What's New modal — reuses the variant-A modal shell (.obA-*). Just the bits
    specific to a rendered-markdown announcement. */

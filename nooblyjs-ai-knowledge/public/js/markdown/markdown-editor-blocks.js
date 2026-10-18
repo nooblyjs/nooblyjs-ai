@@ -627,7 +627,7 @@
     renderPreview(data, ctx) {
       const linkUrl = data.url || '#';
       const linkText = data.text || data.url || 'Untitled link';
-      return `<div style="margin:8px 0"><a href="${ctx._escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" style="color:#12284b;font-weight:500;text-decoration:underline;">${ctx._escapeHtml(linkText)}</a></div>`;
+      return `<div style="margin:8px 0"><a href="${ctx._escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" style="color:#A63F1C;font-weight:500;text-decoration:underline;">${ctx._escapeHtml(linkText)}</a></div>`;
     },
     handlers: {
       'link-edit'(e, ctx) {
@@ -904,7 +904,7 @@
     },
     renderPreview(data, ctx) {
       const summaryHtml = data.text ? ctx._markdownToHtml(data.text) : '';
-      return `<div style="border-left:4px solid #12284b;background:#f1f2f2;border-radius:0 6px 6px 0;padding:14px 18px;margin:12px 0;"><strong style="color:#12284b;text-transform:uppercase;font-size:0.8em;letter-spacing:0.05em;">Summary</strong>${summaryHtml}</div>`;
+      return `<div style="border-left:4px solid #C2471F;background:#F5F1EE;border-radius:0 6px 6px 0;padding:14px 18px;margin:12px 0;"><strong style="color:#241C1A;text-transform:uppercase;font-size:0.8em;letter-spacing:0.05em;">Summary</strong>${summaryHtml}</div>`;
     },
     handlers: {
       'summary-edit'(e, ctx) {
@@ -1252,7 +1252,7 @@
       const source = (data && data.source) || '';
       const clickout = !!(data && data.clickout);
       return `
-        <div class="editor-pane-container" style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+        <div class="editor-pane-container" style="border:1px dashed #99f6e4;background:#F5F1EE;border-radius:6px;padding:12px 14px;color:#0f766e;">
           <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
             <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Pane</strong>
             <span style="font-size:0.8em;color:#14b8a6;">Embeds another document in the published view.</span>
@@ -1273,7 +1273,7 @@
     },
     renderPreview(data, ctx) {
       const source = (data && data.source) || '';
-      return `<div style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+      return `<div style="border:1px dashed #99f6e4;background:#F5F1EE;border-radius:6px;padding:12px 14px;color:#0f766e;">
         <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Pane</strong>
         <span style="font-family:'JetBrains Mono',monospace;font-size:0.85em;margin-left:8px;">${ctx._escapeHtml(source || 'no source set')}</span>
         <div style="font-size:0.8em;margin-top:4px;color:#14b8a6;">Rendered from the source document in the published view.</div>
@@ -1365,7 +1365,7 @@
         </div>`).join('');
 
       return `
-        <div class="editor-linked-container" style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+        <div class="editor-linked-container" style="border:1px dashed #99f6e4;background:#F5F1EE;border-radius:6px;padding:12px 14px;color:#0f766e;">
           <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
             <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">Linked documents</strong>
             <span style="font-size:0.8em;color:#14b8a6;">Shows related documents and folders as cards.</span>
@@ -1389,7 +1389,7 @@
       const list = items.filter(i => i && i.ref).map(i =>
         `<li style="font-family:'JetBrains Mono',monospace;font-size:0.85em;">${ctx._escapeHtml(i.label || i.ref)}</li>`
       ).join('');
-      return `<div style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+      return `<div style="border:1px dashed #99f6e4;background:#F5F1EE;border-radius:6px;padding:12px 14px;color:#0f766e;">
         <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">${ctx._escapeHtml((data && data.title) || 'Linked documents')}</strong>
         ${list ? `<ul style="margin:6px 0 0 18px;">${list}</ul>` : '<div style="font-size:0.8em;margin-top:4px;color:#14b8a6;">No links yet.</div>'}
       </div>`;
@@ -1586,7 +1586,7 @@
           : field('recent-space', d.space, 'Space (optional — defaults to this one)');
 
         return `
-          <div class="editor-recent-container" style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+          <div class="editor-recent-container" style="border:1px dashed #99f6e4;background:#F5F1EE;border-radius:6px;padding:12px 14px;color:#0f766e;">
             <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
               <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">${ctx._escapeHtml(spec.label)}</strong>
               <span style="font-size:0.8em;color:#14b8a6;">${ctx._escapeHtml(spec.blurb)}</span>
@@ -1614,7 +1614,7 @@
           ? (d.folder ? (d.space ? `[${d.space}]/${d.folder}` : d.folder) : 'no folder set')
           : 'your pinned folders';
         const period = d.days > 0 ? `last ${d.days} days` : 'all time';
-        return `<div style="border:1px dashed #99f6e4;background:#f1f2f2;border-radius:6px;padding:12px 14px;color:#0f766e;">
+        return `<div style="border:1px dashed #99f6e4;background:#F5F1EE;border-radius:6px;padding:12px 14px;color:#0f766e;">
           <strong style="text-transform:uppercase;font-size:0.75em;letter-spacing:0.06em;">${ctx._escapeHtml(d.title || spec.defaultTitle)}</strong>
           <div style="font-size:0.8em;margin-top:4px;color:#14b8a6;">
             ${ctx._escapeHtml(`${d.limit || RECENT_DEFAULTS.limit} most recent in ${where} · ${period}`)}
@@ -1941,7 +1941,7 @@
       const phbImage = data.image || '';
       const phbAlign = data.imageAlign || 'right';
       const phbImgHtml = phbImage ? `<img src="${ctx._escapeHtml(ctx._resolveImageSrc(phbImage))}" alt="Hero" style="max-width:180px;max-height:120px;border-radius:6px;object-fit:cover;">` : '';
-      return `<div style="background:linear-gradient(135deg,#12284b 0%,#3b435f 100%);color:white;padding:32px 28px;border-radius:6px;margin:10px 0;display:flex;align-items:center;gap:24px;${phbAlign === 'left' ? 'flex-direction:row-reverse;' : ''}"><div style="flex:1;"><div style="font-size:1.8em;font-weight:700;">${ctx._escapeHtml(phbTitle)}</div><div style="font-size:1.1em;opacity:0.9;">${ctx._escapeHtml(phbSubtitle)}</div></div>${phbImgHtml}</div>`;
+      return `<div style="background:linear-gradient(135deg,#7E2E12 0%,#A63F1C 100%);color:white;padding:32px 28px;border-radius:6px;margin:10px 0;display:flex;align-items:center;gap:24px;${phbAlign === 'left' ? 'flex-direction:row-reverse;' : ''}"><div style="flex:1;"><div style="font-size:1.8em;font-weight:700;">${ctx._escapeHtml(phbTitle)}</div><div style="font-size:1.1em;opacity:0.9;">${ctx._escapeHtml(phbSubtitle)}</div></div>${phbImgHtml}</div>`;
     },
     handlers: {
       'hero-banner-edit'(e, ctx) {
@@ -2824,7 +2824,7 @@
       `).join('');
 
       const editTabsNavHtml = tabs.map((t, i) => `
-        <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: ${i === activeTab ? '#f5f5f5' : '#fff'}; border-bottom: 1px solid #e0e0e0; border-left: 3px solid ${i === activeTab ? '#12284b' : 'transparent'};">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: ${i === activeTab ? '#f5f5f5' : '#fff'}; border-bottom: 1px solid #e0e0e0; border-left: 3px solid ${i === activeTab ? '#C2471F' : 'transparent'};">
           <div class="editor-tabs-nav-item ${i === activeTab ? 'active' : ''}" data-role="tabs-edit-nav" data-index="${i}" style="cursor: pointer; flex: 1; padding: 0; margin: 0; border: none;">${ctx._escapeHtml(t.name || `Tab ${i + 1}`)}</div>
           <button type="button" class="block-edit-btn" data-role="tabs-edit-item" data-index="${i}" style="width: 24px; height: 24px; padding: 0; border: none; background: #f0f0f0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: #666; flex-shrink: 0; transition: all 0.2s;" title="Edit tab">✏️</button>
           <button type="button" class="block-delete-btn" data-role="tabs-delete-item" data-index="${i}" style="width: 24px; height: 24px; padding: 0; border: none; background: #f0f0f0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: #666; flex-shrink: 0; transition: all 0.2s;" title="Delete tab">✕</button>
@@ -2900,7 +2900,7 @@
           const container = item.closest('div[style*="display: flex"]');
           if (container) {
             container.style.background = i === tabIndex ? '#f5f5f5' : '#fff';
-            container.style.borderLeftColor = i === tabIndex ? '#12284b' : 'transparent';
+            container.style.borderLeftColor = i === tabIndex ? '#C2471F' : 'transparent';
           }
         });
         blockEl.querySelectorAll('.editor-tabs-edit-pane').forEach((pane, i) => {
@@ -3023,7 +3023,7 @@
       `).join('');
 
       const accordionEditNavHtml = items.map((item, idx) => `
-        <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: ${idx === editingIndex ? '#f5f5f5' : '#fff'}; border-bottom: 1px solid #e0e0e0; border-left: 3px solid ${idx === editingIndex ? '#12284b' : 'transparent'};">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background: ${idx === editingIndex ? '#f5f5f5' : '#fff'}; border-bottom: 1px solid #e0e0e0; border-left: 3px solid ${idx === editingIndex ? '#C2471F' : 'transparent'};">
           <div class="editor-accordion-edit-header ${idx === editingIndex ? 'active' : ''}" data-role="accordion-edit-nav" data-index="${idx}" style="cursor: pointer; flex: 1; padding: 0; margin: 0; border: none; background: none;">
             ${ctx._escapeHtml(item.title || `Item ${idx + 1}`)}
           </div>
@@ -3109,7 +3109,7 @@
           const container = item.closest('div[style*="display: flex"]');
           if (container) {
             container.style.background = i === itemIndex ? '#f5f5f5' : '#fff';
-            container.style.borderLeftColor = i === itemIndex ? '#12284b' : 'transparent';
+            container.style.borderLeftColor = i === itemIndex ? '#C2471F' : 'transparent';
           }
         });
         blockEl.querySelectorAll('.editor-accordion-edit-pane').forEach((pane, i) => {

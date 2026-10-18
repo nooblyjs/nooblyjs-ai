@@ -1,49 +1,36 @@
 /* Factory Design System - Custom Styles */
 
-/* Google Fonts Import: Nunito Sans stands in for Avenir Next where it is not installed */
-@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800&display=swap');
+/* Google Fonts Import */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Figtree:wght@400;500;600;700&display=swap');
 
 /* Design Tokens */
 :root {
-    /* Brand palette (CI guide). Primary: Pantone 2767 C. Secondary: tints of
-       the primary plus two cool greys. Every other colour token below is
-       built from these — change the brand here, not in the app stylesheets. */
-    --brand-navy: #12284B;      /* Pantone 2767 C — C100 M87 Y42 K41 */
-    --brand-navy-80: #3B435F;
-    --brand-navy-60: #60627A;
-    --brand-navy-30: #A09FAF;
-    --brand-navy-20: #BABAC5;
-    --brand-navy-10: #D7D7DD;
-    --brand-black-5: #F1F2F2;   /* C0 M0 Y0 K5 */
-    --brand-black-10: #E6E7E8;  /* C0 M0 Y0 K10 */
-    --brand-navy-deep: #0C1C36; /* darker step for text on navy-tinted fills */
-
     /* Colors */
-    --bg: var(--brand-black-5);
+    --bg: #F5F1EE;
     --surface: #FFFFFF;
-    --surface-sunken: #F7F7F8;
-    --chip: var(--brand-black-5);
-    --border: var(--brand-navy-10);
-    --border-strong: var(--brand-navy-20);
-    --divider: var(--brand-black-10);
-    --ink: var(--brand-navy);
-    --ink-2: var(--brand-navy-80);
-    --muted: var(--brand-navy-60);
-    --on-ink: #FFFFFF;
-    --on-ink-muted: var(--brand-navy-20);
-    --accent: var(--brand-navy);
-    --accent-link: var(--brand-navy);
-    --accent-soft: var(--brand-navy-10);
-    --accent-tint: var(--brand-black-5);
-    --accent-light: var(--brand-navy-30);
-    --teal: #2F5F9E;
-    --teal-soft: #DDE8F6;
-    --teal-text: #1F4A8A;
-    --teal-ink: #1F4A8A;
-    --neutral-soft: var(--brand-black-10);
-    --neutral-text: var(--brand-navy-60);
-    --neutral-ink: var(--brand-navy-60);
-    --neutral-dot: var(--brand-navy-30);
+    --surface-sunken: #FBF8F6;
+    --chip: #F5F1EE;
+    --border: #E6DED8;
+    --border-strong: #DCD2CB;
+    --divider: #F0E9E4;
+    --ink: #241C1A;
+    --ink-2: #4A3F3A;
+    --muted: #6B605A;
+    --on-ink: #FFF8F2;
+    --on-ink-muted: #CDBFB7;
+    --accent: #C2471F;
+    --accent-link: #A63F1C;
+    --accent-soft: #FCE3D6;
+    --accent-tint: #FFF4EE;
+    --accent-light: #F2A27E;
+    --teal: #2B7F86;
+    --teal-soft: #DDEFEC;
+    --teal-text: #1C5A5F;
+    --teal-ink: #1C5A5F;
+    --neutral-soft: #ECE6E1;
+    --neutral-text: #5E534D;
+    --neutral-ink: #5E534D;
+    --neutral-dot: #8F837C;
     --warn-soft: #FBEFC4;
     --warn-ink: #6B4E00;
     --warn-dot: #8A6500;
@@ -52,9 +39,9 @@
     --danger-soft: #FADDE2;
     --danger-ink: #8A1F35;
     --danger-wash: #F8DCE0;
-    --tier-light: var(--brand-navy-30);
-    --tier-balanced: var(--brand-navy-60);
-    --tier-premium: var(--brand-navy);
+    --tier-light: #F2A27E;
+    --tier-balanced: #C2471F;
+    --tier-premium: #241C1A;
 
     /* Avatar Colors */
     --avatar-peach-bg: #FFD7C2;
@@ -74,15 +61,11 @@
     --avatar-sand-bg: #EED9C4;
     --avatar-sand-deep: #6A3F1F;
 
-    /* Typography — CI guide: Avenir Next Bold for headings, Avenir Next
-       Regular for body copy. Nunito Sans (imported above) is the closest
-       web-available stand-in where Avenir Next is not installed. */
-    --font-weight-heading: 700;
-    --font-weight-body: 400;
-    --font-display: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
-    --font-body: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
-    --display: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
-    --body: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
+    /* Typography */
+    --font-display: 'Bricolage Grotesque', sans-serif;
+    --font-body: 'Figtree', sans-serif;
+    --display: 'Bricolage Grotesque', sans-serif;
+    --body: 'Figtree', sans-serif;
     --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
 
     /* Spacing */
@@ -105,8 +88,8 @@
     /* Shadows */
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 24px -14px rgba(18, 40, 75, 0.35);
-    --shadow: 0 10px 24px -14px rgba(18, 40, 75, 0.35);
+    --shadow-lg: 0 10px 24px -14px rgba(60, 30, 20, 0.35);
+    --shadow: 0 10px 24px -14px rgba(60, 30, 20, 0.35);
 }
 
 /* Reset & Base Styles */
@@ -157,7 +140,7 @@ h3 {
 .display-4 {
     font-family: var(--font-display);
     font-size: 44px;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: -0.03em;
 }
 
@@ -195,7 +178,7 @@ a {
 }
 
 a:hover {
-    color: var(--brand-navy-80);
+    color: #7E2E12;
 }
 
 /* Buttons */
@@ -273,7 +256,7 @@ a:hover {
 }
 
 .btn-link:hover {
-    color: var(--brand-navy-80);
+    color: #7E2E12;
     text-decoration: underline;
 }
 
@@ -435,7 +418,7 @@ a:hover {
 
 .pill-available {
     background-color: var(--accent-soft);
-    color: #12284B;
+    color: #8A3415;
 }
 
 .pill-paused {
@@ -465,11 +448,11 @@ a:hover {
 }
 
 .status-dot-paused {
-    background-color: #A09FAF;
+    background-color: #8F837C;
 }
 
 .status-dot-off {
-    background-color: #BABAC5;
+    background-color: #C9BEB7;
 }
 
 /* Skill Chips */
@@ -489,7 +472,7 @@ a:hover {
 }
 
 .chip:hover {
-    background-color: #E6E7E8;
+    background-color: #EEEBE8;
     border-color: var(--border-strong);
 }
 
@@ -511,8 +494,8 @@ a:hover {
 }
 
 .alert-primary {
-    background-color: #E6E7E8;
-    border-color: #D7D7DD;
+    background-color: #EEF8FF;
+    border-color: #CCDCF3;
     color: var(--ink);
 }
 
@@ -752,7 +735,7 @@ select:focus-visible {
 
 .navbar-brand {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 800;
     font-size: 18px;
     color: var(--ink) !important;
 }

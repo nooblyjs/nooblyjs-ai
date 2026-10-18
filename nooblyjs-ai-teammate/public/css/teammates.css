@@ -8,29 +8,31 @@
 /* Design Tokens */
 [data-module="teammates"] {
     /* Colors */
-    --bg: #F1F2F2;
+    --bg: #F5F1EE;
     --surface: #FFFFFF;
-    --surface-sunken: #F7F7F8;
-    --chip: #F1F2F2;
-
-    --ink: #12284B;
-    --ink-2: #3B435F;
-    --muted: #60627A;
-    --on-ink: #FFFFFF;
-    --on-ink-muted: #BABAC5;
-    --accent: #12284B;
-    --accent-link: #12284B;
-    --accent-soft: #D7D7DD;
-    --accent-tint: #F1F2F2;
-    --accent-light: #A09FAF;
-    --teal: #2F5F9E;
-    --teal-soft: #DDE8F6;
-    --teal-text: #1F4A8A;
-    --teal-ink: #1F4A8A;
-    --neutral-soft: #E6E7E8;
-    --neutral-text: #60627A;
-    --neutral-ink: #60627A;
-    --neutral-dot: #A09FAF;
+    --surface-sunken: #FBF8F6;
+    --chip: #F5F1EE;
+    --border: #E6DED8;
+    --border-strong: #DCD2CB;
+    --divider: #F0E9E4;
+    --ink: #241C1A;
+    --ink-2: #4A3F3A;
+    --muted: #6B605A;
+    --on-ink: #FFF8F2;
+    --on-ink-muted: #CDBFB7;
+    --accent: #C2471F;
+    --accent-link: #A63F1C;
+    --accent-soft: #FCE3D6;
+    --accent-tint: #FFF4EE;
+    --accent-light: #F2A27E;
+    --teal: #2B7F86;
+    --teal-soft: #DDEFEC;
+    --teal-text: #1C5A5F;
+    --teal-ink: #1C5A5F;
+    --neutral-soft: #ECE6E1;
+    --neutral-text: #5E534D;
+    --neutral-ink: #5E534D;
+    --neutral-dot: #8F837C;
     --warn-soft: #FBEFC4;
     --warn-ink: #6B4E00;
     --warn-dot: #8A6500;
@@ -39,9 +41,9 @@
     --danger-soft: #FADDE2;
     --danger-ink: #8A1F35;
     --danger-wash: #F8DCE0;
-    --tier-light: #A09FAF;
-    --tier-balanced: #60627A;
-    --tier-premium: #12284B;
+    --tier-light: #F2A27E;
+    --tier-balanced: #C2471F;
+    --tier-premium: #241C1A;
 
     /* Avatar Colors */
     --avatar-peach-bg: #FFD7C2;
@@ -62,10 +64,10 @@
     --avatar-sand-deep: #6A3F1F;
 
     /* Typography */
-    --font-display: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
-    --font-body: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
-    --display: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
-    --body: 'Avenir Next', 'Avenir Next LT Pro', Avenir, 'Nunito Sans', 'Segoe UI', sans-serif;
+    --font-display: 'Bricolage Grotesque', sans-serif;
+    --font-body: 'Figtree', sans-serif;
+    --display: 'Bricolage Grotesque', sans-serif;
+    --body: 'Figtree', sans-serif;
     --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
 
     /* Spacing */
@@ -88,8 +90,8 @@
     /* Shadows */
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 24px -14px rgba(18, 40, 75, 0.35);
-    --shadow: 0 10px 24px -14px rgba(18, 40, 75, 0.35);
+    --shadow-lg: 0 10px 24px -14px rgba(60, 30, 20, 0.35);
+    --shadow: 0 10px 24px -14px rgba(60, 30, 20, 0.35);
 }
 
 
@@ -105,22 +107,20 @@
     --muted: var(--text-subtle);
     --on-ink: var(--text-on-navy);
     --on-ink-muted: var(--text-on-navy-muted);
-    --accent: var(--navy-900);
+    --accent: var(--blue-600);
     --accent-link: var(--blue-700);
     --accent-soft: var(--blue-100);
     --accent-tint: var(--blue-50);
-    --teal: var(--blue-600);
-    --teal-soft: var(--blue-100);
-    --teal-text: var(--blue-700);
-    --teal-ink: var(--blue-700);
+    --teal: #2B7F86;
+    --teal-soft: var(--success-100);
+    --teal-text: var(--success-700);
+    --teal-ink: var(--success-700);
     --danger: var(--danger-700);
     --danger-soft: var(--danger-100);
     --danger-ink: var(--danger-700);
     --warn-soft: var(--warning-100);
     --warn-ink: var(--warning-700);
-    --font-display: var(--font-ui);
     --font-body: var(--font-ui);
-    --display: var(--font-ui);
     --body: var(--font-ui);
     --mono: var(--font-mono);
 }
@@ -230,7 +230,7 @@
 }
 
 [data-module="teammates"] :where(.tm-root) a:hover {
-    color: #3B435F;
+    color: #7E2E12;
 }
 
 /* Buttons */
@@ -308,7 +308,7 @@
 }
 
 [data-module="teammates"] .btn-link:hover {
-    color: #3B435F;
+    color: #7E2E12;
     text-decoration: underline;
 }
 
@@ -470,7 +470,7 @@
 
 [data-module="teammates"] .pill-available {
     background-color: var(--accent-soft);
-    color: #12284B;
+    color: #8A3415;
 }
 
 [data-module="teammates"] .pill-paused {
@@ -500,11 +500,11 @@
 }
 
 [data-module="teammates"] .status-dot-paused {
-    background-color: #A09FAF;
+    background-color: #8F837C;
 }
 
 [data-module="teammates"] .status-dot-off {
-    background-color: #BABAC5;
+    background-color: #C9BEB7;
 }
 
 /* Skill Chips */
@@ -524,7 +524,7 @@
 }
 
 [data-module="teammates"] :where(.tm-root) .chip:hover {
-    background-color: #E6E7E8;
+    background-color: #EEEBE8;
     border-color: var(--border-strong);
 }
 
@@ -546,8 +546,8 @@
 }
 
 [data-module="teammates"] .alert-primary {
-    background-color: #E6E7E8;
-    border-color: #D7D7DD;
+    background-color: #EEF8FF;
+    border-color: #CCDCF3;
     color: var(--ink);
 }
 

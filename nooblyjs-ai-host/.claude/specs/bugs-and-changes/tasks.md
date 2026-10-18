@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-006, CHG-004.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-006, CHG-005.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -126,6 +126,24 @@ know; "steps" can be one line.
     agent) aren't in the roster and none is assigned, so the API says "Choose which teammate drafts…". Those pages
     have no chooser (the spec page does), so they show that sentence and the forms. A chooser would be its own entry.
   - Steering: `nooblyjs-ai-product` `.claude/steering/product.md` §3 item 3
+
+- [ ] CHG-004 — Every app takes the warm Noobly theme, and a two-circle mark replaces the old logos · UI kit, every app, Edge, Teams · nooblyjs-core, nooblyjs-ai-host, nooblyjs-ai-teammate, nooblyjs-ai-factory, nooblyjs-ai-knowledge
+  - Asked: 2026-10-18 · Status: fixed · Commit: nooblyjs-core 74bb8a3; nooblyjs-ai the CHG-004 commit
+  - What and why: the apps still showed the old navy theme (the kit's tokens, Lexend) and an old `≡×` logo. The
+    shared theme is `nooblyjs/styling/styles.css` (warm paper, ink, terracotta; Bricolage Grotesque and Figtree).
+    The kit keeps its token names and takes those values; the fonts are self-hosted (the CSP allows `'self'` only).
+    `styles.css` is copied as it is where a page loads it unscoped (desktop, the factory dashboard, the standalone
+    wiki and datasources). Teammates and Factory keep their scoped copies with the new values. The host,
+    Edge and the wiki's own colours were moved off navy; the hosted wiki CSS was regenerated (`npm run port:ui`).
+    The favicon, the rail logo, `/images/nooblyjs-logo.png`, a new `/favicon.ico`, the Edge icons and the Teams
+    icons are one mark: two overlapping circles, terracotta and peach, with a cream lens.
+  - Check: on the e2e seed (dev sign-in), Home, Product, Teammates, Factory, Wiki, Infrastructure and Platform
+    screenshotted; axe colour-contrast finds nothing on any of them. Tests: teammate 140/140, knowledge 34/34,
+    host shell 7/7. Six host and factory tests (`teams-real` steps 4–5, `software-factory` step 3, factory
+    `redteam` RT4, `intake/handoff` steps 2–3) fail the same way without this change.
+  - Notes: the Teams app needs its manifest version bumped and the package uploaded again for the new icons. The
+    Teams tab's `App.css` (the toolkit template) and the wiki's own "N" logo were left as they were.
+  - Steering: nooblyjs-ai-host `.claude/steering/tech.md` (fonts), `structure.md` (fonts/)
 
 ## Closed
 

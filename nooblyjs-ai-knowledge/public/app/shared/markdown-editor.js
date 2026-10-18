@@ -2068,7 +2068,7 @@
       html = html.replace(/<\/h[1-3]><\/p>/g, '</h1>');
 
       // Links [text](url)
-      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#12284b;text-decoration:underline;">$1</a>');
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#A63F1C;text-decoration:underline;">$1</a>');
 
       // Bold **text** or __text__
       html = html.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
@@ -2092,7 +2092,7 @@
       html = html.replace(/(<li>.*<\/li>)/s, '<ul style="margin-left:20px;margin-top:10px;">$1</ul>');
 
       // Blockquotes
-      html = html.replace(/^&gt; (.*?)$/gm, '<blockquote style="border-left:4px solid #12284b;padding-left:12px;margin-left:0;color:#666;">$1</blockquote>');
+      html = html.replace(/^&gt; (.*?)$/gm, '<blockquote style="border-left:4px solid #C2471F;padding-left:12px;margin-left:0;color:#666;">$1</blockquote>');
 
       // Remove duplicate p tags
       html = html.replace(/<p><\/p>/g, '');
@@ -2118,7 +2118,7 @@
       if (!text) return '';
       let html = this._escapeHtml(text);
 
-      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#12284b;text-decoration:underline;">$1</a>');
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color:#A63F1C;text-decoration:underline;">$1</a>');
       html = html.replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>');
       html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
       html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');

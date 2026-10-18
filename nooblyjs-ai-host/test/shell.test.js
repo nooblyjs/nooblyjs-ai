@@ -78,7 +78,7 @@ test('the UI kit, the fonts and NooblyJS\'s modules are served with the right ty
   const c = env.client();
   const want = [
     ['/ui/css/tokens.css', /text\/css/], ['/ui/js/frame.js', /javascript/], ['/ui/js/components/index.js', /javascript/],
-    ['/ui/fonts/lexend-latin-400-normal.woff2', /font\/woff2/], ['/ui/img/favicon.svg', /svg/],
+    ['/ui/fonts/figtree-latin-400-normal.woff2', /font\/woff2/], ['/ui/img/favicon.svg', /svg/],
     ['/js/modules/home.js', /javascript/], ['/js/pages/placeholder.js', /javascript/], ['/css/login.css', /text\/css/],
     ['/hello/js/module.js', /javascript/],
   ];

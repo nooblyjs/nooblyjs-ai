@@ -80,10 +80,10 @@ export function createNotify({ store, people, profiles, connector, cards, events
   async function email(person, approval) {
     if (!emailReady) return { sent: false, why: 'email is not set up (MS_GRAPH_* in NooblyJS\'s environment)' };
     if (!person.email) return { sent: false, why: 'they have no email address in NooblyJS' };
-    const html = `<p style="font-family:Segoe UI,Arial,sans-serif;color:#1B2433">An approval in NooblyJS is waiting for you.</p>
-<p style="font-family:Segoe UI,Arial,sans-serif;font-size:16px;color:#14274E"><strong>${escapeHtml(approval.title)}</strong></p>
+    const html = `<p style="font-family:Segoe UI,Arial,sans-serif;color:#241C1A">An approval in NooblyJS is waiting for you.</p>
+<p style="font-family:Segoe UI,Arial,sans-serif;font-size:16px;color:#241C1A"><strong>${escapeHtml(approval.title)}</strong></p>
 <p style="font-family:Segoe UI,Arial,sans-serif;color:#3A4456">${escapeHtml(approval.kind)} · ${escapeHtml(approval.item)} · asked by ${escapeHtml(approval.requestedBy)}</p>
-<p><a href="${escapeHtml(approval.url)}" style="font-family:Segoe UI,Arial,sans-serif;background:#14274E;color:#FFFFFF;padding:10px 18px;border-radius:999px;text-decoration:none">Open the approval</a></p>
+<p><a href="${escapeHtml(approval.url)}" style="font-family:Segoe UI,Arial,sans-serif;background:#C2471F;color:#FFFFFF;padding:10px 18px;border-radius:999px;text-decoration:none">Open the approval</a></p>
 <p style="font-family:Segoe UI,Arial,sans-serif;font-size:12px;color:#4A5466">Decide it in NooblyJS. Replying to this email does nothing.</p>`;
     const res = await fetchImpl(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(graph.sender)}/sendMail`, {
       method: 'POST',

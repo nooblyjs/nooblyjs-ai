@@ -2092,7 +2092,7 @@ export const documentController = {
         contentWrapper.innerHTML = `
             <div class="download-viewer-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px 32px; text-align: center; gap: 18px;">
                 <div style="width: 96px; height: 96px; border-radius: 50%; background: var(--kr-teal-50, #e6f4f4); display: flex; align-items: center; justify-content: center;">
-                    <i class="${fileIcon}" style="font-size: 44px; color: var(--kr-teal-600, #12284b);"></i>
+                    <i class="${fileIcon}" style="font-size: 44px; color: var(--kr-teal-600, #C2471F);"></i>
                 </div>
                 <h2 style="margin: 0; font-size: 22px; font-weight: 600;">${this.escapeHtml(fileName)}</h2>
                 <div style="color: var(--kr-ink-500, #6c757d); font-size: 14px;">
@@ -3113,8 +3113,8 @@ export const documentController = {
         const space = doc.spaceName || (this.app.currentSpace && this.app.currentSpace.name) || 'Space';
 
         const sep = '<span class="breadcrumb-separator">/</span>';
-        const teal = 'color: var(--kr-teal-600, #12284b);';
-        const tealBold = 'color: var(--kr-teal-600, #12284b); font-weight: bold;';
+        const teal = 'color: var(--kr-teal-600, #C2471F);';
+        const tealBold = 'color: var(--kr-teal-600, #C2471F); font-weight: bold;';
         const parts = [];
 
         parts.push(`<a href="#" class="text-decoration-none" data-breadcrumb-spaces style="${tealBold}">Spaces</a>`);

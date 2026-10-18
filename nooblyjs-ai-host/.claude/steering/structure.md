@@ -514,7 +514,7 @@ ui/
     base.css                reset, typography, focus, skip link
     shell.css               rail, sidebar, content grid, chat dock, responsive stacking
     components.css          buttons, pills, cards, tables, kanban, timeline, meters, chevrons, chat bubbles
-  fonts/                    Lexend 300–700, JetBrains Mono 400/500 (woff2, self-hosted, OFL licences beside them)
+  fonts/                    Figtree 400–700, Bricolage Grotesque 500–800, JetBrains Mono 400/500 (woff2, self-hosted, OFL licences beside them)
   img/                      favicon.svg, logos
   frame.html                the one page every UI route returns (§2a)
   package.json              { "type": "module" }, so Node (the tests) treats the kit as ES modules
