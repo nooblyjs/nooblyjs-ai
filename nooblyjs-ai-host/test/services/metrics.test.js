@@ -65,7 +65,9 @@ test('an empty period says so: no value, never a measured zero', () => {
   assert.deepEqual(m.weeks.rows.map((r) => r.totalDays), [null, null, null, null, null, null]);
   assert.equal(m.weeks.sentence, 'No stage visit ended in the last six weeks.');
   assert.deepEqual([m.spend.totalUsd, m.spend.rows], [0, []]);
-  assert.deepEqual(m.stages.map((s) => [s.visits, s.medianDays, s.agentPct, s.sentBackPct, s.slowest]), Array(5).fill([0, null, null, null, false]));
+  // Seven groups since the nine stages (Phase 16a); Ship, from before, shows only in a period that has a visit to it.
+  assert.deepEqual(m.stages.map((s) => s.key), ['product', 'architecture', 'design', 'build', 'verify', 'release', 'operate']);
+  assert.deepEqual(m.stages.map((s) => [s.visits, s.medianDays, s.agentPct, s.sentBackPct, s.slowest]), Array(7).fill([0, null, null, null, false]));
 });
 
 test('pull requests: merged, from how many items, first pass, changed by a person, cost and idea → merge against the period before', () => {
@@ -131,7 +133,7 @@ test('stage visits: length from entering a group to leaving it, sent back, who w
   assert.deepEqual(Object.values(by).filter((s) => s.slowest).map((s) => s.key), ['product']);
 });
 
-test('the weekly chart: six complete weeks, Build and Ship drawn together, and a sentence that is computed', () => {
+test('the weekly chart: six complete weeks, Build to release drawn together (Ship, from before the nine stages, too), and a sentence that is computed', () => {
   const monday = weekStart(NOW);
   const visit = (id, stage, next, endsDaysBeforeMonday, days, { ask = false } = {}) => {
     const end = monday - endsDaysBeforeMonday * DAY;
@@ -154,7 +156,7 @@ test('the weekly chart: six complete weeks, Build and Ship drawn together, and a
   ];
   const { rows, parts, sentence } = metrics(events).weeks;
   assert.deepEqual(rows.map((r) => r.label), ['W35', 'W36', 'W37', 'W38', 'W39', 'W40']);
-  assert.deepEqual(parts.map((p) => p.label), ['Product', 'Architecture', 'UX & UI design', 'Build & ship']);
+  assert.deepEqual(parts.map((p) => p.label), ['Product', 'Architecture', 'UX & UI design', 'Build to release']);
   assert.deepEqual(rows[5], { label: 'W40', start: '2026-09-28T00:00:00.000Z', parts: { product: 3, architecture: 5, design: null, buildShip: 1.5 }, totalDays: 9.5 });
   assert.deepEqual([rows[4].parts.architecture, rows[4].totalDays, rows[3].totalDays], [3, 3, null]);
   // Architecture leads both weeks; 3.75 of its 8 days had an approval open, so it is not "waiting for sign-off".

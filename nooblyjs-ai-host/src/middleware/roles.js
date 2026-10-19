@@ -2,9 +2,22 @@
 // A hidden button is not a control: every restricted route checks here. Unknown permissions are refused.
 import { sendError, wantsJson } from '../util/errors.js';
 
+/**
+ * Permissions added after a data folder was made (the nine stages, Phase 16a). A folder from before keeps working: a
+ * permission it doesn't list is used from here, and one it lists (edited or not) wins.
+ */
+export const BUILT_IN_PERMISSIONS = {
+  'accept-requirement': ['Approver', 'Architect', 'Owner'],
+  'accept-threat-model': ['Architect', 'Owner'],
+  'accept-risk': ['Architect', 'Owner'],
+  'accept-release-candidate': ['Approver', 'Architect', 'Owner'],
+  'deploy-production': ['Approver', 'Architect', 'Owner'],
+  'declare-incident': ['Contributor', 'Approver', 'Architect', 'Owner'],
+};
+
 export function createRoles({ store }) {
   async function matrix() {
-    return (await store.readYaml(['access', 'roles.yaml']))?.permissions ?? {};
+    return { ...BUILT_IN_PERMISSIONS, ...((await store.readYaml(['access', 'roles.yaml']))?.permissions ?? {}) };
   }
 
   /** True when `accessRole` has `permission`. */

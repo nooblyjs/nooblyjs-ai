@@ -44,7 +44,8 @@ test('step 1: on the seeded data, 30 days shows the numbers of the mockup story'
   assert.equal(t.costPerPr.usd, 6.1);
 
   assert.deepEqual(m.weeks.rows.map((r) => r.totalDays), [11.2, 10.4, 9.9, 9.3, 8.9, 8.5]);
-  // The mockup's columns: Product, Architecture, UX & UI design, Build & ship (its heights at 20 px a day).
+  // The mockup's columns: Product, Architecture, UX & UI design, Build & ship (its heights at 20 px a day). Since the
+  // nine stages the last column is Build to release; the seed's history is from before, so it is Build + Ship.
   assert.deepEqual(m.weeks.rows.map((r) => [r.parts.product, r.parts.architecture, r.parts.design, r.parts.buildShip]), [
     [3.0, 3.4, 2.0, 2.8], [2.8, 3.1, 1.9, 2.6], [2.7, 3.0, 1.8, 2.4], [2.6, 2.9, 1.7, 2.1], [2.5, 2.7, 1.7, 2.0], [2.4, 2.6, 1.6, 1.9],
   ]);
@@ -60,7 +61,11 @@ test('step 1: on the seeded data, 30 days shows the numbers of the mockup story'
     ['Architecture', 62, 38, 2.6, 5.8, 12],
     ['UX & UI design', 55, 45, 2.1, 4.2, 6],
     ['Build', 91, 9, 0.6, 1.4, 18],
-    ['Ship', 35, 65, 0.4, 1.1, 3],
+    // The nine stages (Phase 16a): no visit has ended in Verify, Release or Operate yet, and Ship is history.
+    ['Verify', null, null, null, null, null],
+    ['Release', null, null, null, null, null],
+    ['Operate', null, null, null, null, null],
+    ['Ship (before nine stages)', 35, 65, 0.4, 1.1, 3],
   ]);
   assert.deepEqual(m.stages.filter((s) => s.slowest).map((s) => s.key), ['architecture']);
 });

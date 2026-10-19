@@ -9,8 +9,16 @@ import { notFound } from '../errors.js';
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
 
-const GATE_LABELS = { adr: 'Architecture sign-off', spec: 'Spec approval', merge: 'PR review & merge', 'ui-handoff': 'UI handoff' };
-const TAG_TONES = { spec: 'info', adr: 'warning', 'ui-handoff': 'success', merge: 'neutral', deploy: 'navy', stage: 'neutral', 'infra-design': 'navy' };
+const GATE_LABELS = { adr: 'Architecture sign-off', spec: 'Spec approval', merge: 'PR review & merge', 'ui-handoff': 'UI handoff', 'release-candidate': 'Release candidate', deploy: 'Production deploy', 'outcome-review': 'Outcome review' };
+const TAG_TONES = { spec: 'info', adr: 'warning', 'ui-handoff': 'success', merge: 'neutral', deploy: 'navy', stage: 'neutral', 'infra-design': 'navy', 'release-candidate': 'info', 'outcome-review': 'success', 'threat-model': 'warning', 'risk-acceptance': 'danger' };
+// What Approve & move says on an item's page, for the stages whose exit is a named decision (Phase 16a).
+const ADVANCE_LABELS = {
+  ui: 'Approve & send to the Software Factory',
+  build: 'Approve the merge',
+  verify: 'Accept the release candidate',
+  release: 'Approve the production deploy',
+  operate: 'Close with the outcome review',
+};
 const NUMBER_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
 
 const ms = (iso) => new Date(iso).getTime();
@@ -132,8 +140,10 @@ export function createViews({ repos, host, engine }) {
       architect: () => `${plural(count('adr'), 'ADR')} proposed`,
       ux: () => 'flows in progress',
       ui: () => `${count('ui-handoff')} awaiting handoff`,
-      build: () => 'on the line',
-      ship: () => `${plural(count('merge'), 'PR')} awaiting merge`,
+      build: () => `on the line · ${plural(count('merge'), 'PR')} awaiting merge`,
+      verify: () => `${plural(count('release-candidate'), 'release candidate')} in review`,
+      release: () => `${plural(count('deploy'), 'deploy')} awaiting approval`,
+      operate: () => `${plural(count('outcome-review'), 'outcome review')} due`,
     };
     const stages = STAGES.map((s) => ({ key: s.key, number: s.number, label: s.label, count: active.filter((i) => i.stage === s.key).length, note: notes[s.key](), href: '/home/lifecycle' }));
     const busiest = [...stages].sort((a, b) => b.count - a.count)[0];
@@ -227,7 +237,7 @@ export function createViews({ repos, host, engine }) {
     const readiness = await engine.readinessOf(found);
     const canApprove = await host.can(person.accessRole, 'approve');
     const blocking = approvals.filter((a) => isOpen(a) && a.from === found.stage);
-    const next = found.stage === 'ship' ? null : STAGES[stageIndex(found.stage) + 1];
+    const next = STAGES[stageIndex(found.stage) + 1] ?? null;
     return {
       at: ctx.at,
       item: {
@@ -245,7 +255,7 @@ export function createViews({ repos, host, engine }) {
         canSendBack: canApprove && found.status === 'active' && stageIndex(found.stage) > 0,
         sendBackTo: STAGES.slice(0, Math.max(0, stageIndex(found.stage))).map((s) => ({ key: s.key, label: s.label })),
         canAdvance: canApprove && found.status === 'active' && !blocking.length,
-        advanceLabel: found.stage === 'ship' ? 'Approve the merge' : found.stage === 'ui' ? 'Approve & send to the Software Factory' : `Approve & move to ${next?.label}`,
+        advanceLabel: ADVANCE_LABELS[found.stage] ?? `Approve & move to ${next?.label}`,
         blockedBy: blocking.map((a) => a.id),
       },
     };
@@ -354,7 +364,7 @@ export function createViews({ repos, host, engine }) {
         },
         decide: {
           can: !cannot, cannot, needsReadiness: Boolean(rule.needsReadiness),
-          approveLabel: a.type === 'infra-design' ? `Approve & provision ${a.ref?.kindLabel ?? a.ref?.kind ?? ''}`.trim() : a.type === 'spec' ? `Approve & send to ${rule.toLabel ?? next ?? 'the next stage'}` : a.type === 'ui-handoff' ? 'Approve & send to the Software Factory' : a.type === 'merge' ? 'Approve the merge' : a.type === 'adr' ? 'Accept the decision' : 'Approve',
+          approveLabel: a.type === 'infra-design' ? `Approve & provision ${a.ref?.kindLabel ?? a.ref?.kind ?? ''}`.trim() : a.type === 'spec' ? `Approve & send to ${rule.toLabel ?? next ?? 'the next stage'}` : a.type === 'ui-handoff' ? 'Approve & send to the Software Factory' : a.type === 'merge' ? 'Approve the merge' : a.type === 'adr' ? 'Accept the decision' : rule.transition ?? 'Approve',
           eligible,
         },
       },

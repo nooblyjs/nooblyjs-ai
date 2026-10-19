@@ -1,4 +1,4 @@
-// The lifecycle engine (NooblyJS product.md §4): items move through the seven stages, and a person approves each gate.
+// The lifecycle engine (NooblyJS product.md §4): items move through the nine stages, and a person approves each gate.
 // Agents propose, people decide: every decision here refuses an agent before anything else, whatever its access
 // role, and checks the person's access role against the rule's permission (never their work role).
 //
@@ -14,15 +14,24 @@ const DECISIONS = new Set(['approve', 'request-changes']);
 const MAX_TEXT = 2000;
 const NUDGE_EVERY_MS = 4 * 3_600_000;
 
-/** What an approved approval does to its item, by rule key. Rules not listed (adr, deploy) don't move the item. */
-const MOVES = { spec: 'architect', 'ui-handoff': 'build', stage: null, merge: 'complete' };
+/**
+ * What an approved approval does to its item, by rule key. Rules not listed (adr, the app approvals) don't move it.
+ * Since the nine stages (Phase 16a) the merge leaves Build for Verify, and the item is done after its outcome review.
+ */
+const MOVES = {
+  spec: 'architect', 'ui-handoff': 'build', stage: null,
+  merge: 'verify', 'release-candidate': 'release', deploy: 'operate', 'outcome-review': 'complete',
+};
+
+/** The approval that leaves each stage when a person presses Approve & move (any other stage: a plain stage move). */
+const LEAVES_BY = { specify: 'spec', ui: 'ui-handoff', build: 'merge', verify: 'release-candidate', release: 'deploy', operate: 'outcome-review' };
 
 /**
  * Approvals another NooblyJS app asks for, on its own artefact. The app named in the approval's `ref.app` carries the
  * decision out (its `decideApproval` service) before it is recorded here, so its rules refuse the same way on
  * Home · Approvals as on its own screen. They move no stage.
  */
-const APP_TYPES = new Set(['infra-design', 'devtools-write']);
+const APP_TYPES = new Set(['infra-design', 'devtools-write', 'threat-model', 'risk-acceptance']);
 const sameRef = (a, b) => a && b && a.app === b.app && a.designId === b.designId && a.kind === b.kind;
 
 const text = (value, max = MAX_TEXT) => {
@@ -196,6 +205,11 @@ export function createEngine({ repos, host, log, clock }) {
     stage: (i, a) => `approved moving ${i.ref ?? i.id} · ${i.title} to ${stageLabel(a.to)}`,
     'infra-design': (i, a) => `approved ${a.subject ?? 'an infrastructure design'} for ${a.ref?.kindLabel ?? a.ref?.kind ?? 'an environment'}`,
     'devtools-write': (i, a) => `approved a write to ${a.ref?.kindLabel ?? 'Jira or Bitbucket'}: ${a.title}`,
+    'release-candidate': (i) => `accepted the release candidate of ${i.ref ?? i.id} · ${i.title}`,
+    deploy: (i) => `approved the production deploy of ${i.ref ?? i.id} · ${i.title}`,
+    'outcome-review': (i) => `closed ${i.ref ?? i.id} · ${i.title} with its outcome review`,
+    'threat-model': (i, a) => `accepted the threat model${a.subject ? ` ${a.subject}` : ''} for ${i.ref ?? i.id}`,
+    'risk-acceptance': (i, a) => `accepted the risk${a.subject ? ` ${a.subject}` : ''} on ${i.ref ?? i.id}`,
   };
 
   /**
@@ -266,7 +280,8 @@ export function createEngine({ repos, host, log, clock }) {
       const move = approval.type === 'stage' ? approval.to : MOVES[approval.type];
       if (approval.type === 'ui-handoff') handoff = await createHandoff(item, updated, person);
       if (move === 'complete') await complete(item.id, person, `completed ${item.ref ?? item.id} · ${item.title}`);
-      else if (move) moved = (await moveStage(item.id, move, person)).item;
+      // A move to where the item already is (a merge approval opened in Ship, before the nine stages) moves nothing.
+      else if (move && move !== item.stage) moved = (await moveStage(item.id, move, person)).item;
     }
     return {
       approval: updated, outcome, item: moved ?? await repos.items.get(item.id), handoff, ...(carried ? { carried } : {}),
@@ -369,20 +384,37 @@ export function createEngine({ repos, host, log, clock }) {
   }
 
   /**
-   * Opens an approval with this person as its only reviewer and decides it at once: how a person moves an item on
-   * when no approval is waiting ("Approve & move to …"), and how the Product Factory's Send to Software Factory
-   * lands. The rule still applies (permission, readiness), and the decision is on record like any other.
+   * Opens an approval with this person as a reviewer and records their decision at once: how a person moves an item
+   * on when no approval is waiting ("Approve & move to …"), and how the Product Factory's Send to Software Factory
+   * lands. The rule still applies (permission, readiness), and the decision is on record like any other. A rule that
+   * needs more than one person (a production deploy needs two) also waits on the others who may decide it, so the
+   * item stays where it is until one of them approves too.
    */
   async function openAndDecide({ item, type, to, person, input, extra = {} }) {
     const rule = await ruleOr500(type);
     await requirePermission(person, rule, `${rule.verb ?? 'approve'} this`);
+    const reviewers = [{ id: person.id, role: rule.selfRole ?? 'Approver', status: 'waiting' }];
+    if (Number.isInteger(rule.quorum) && rule.quorum > 1) {
+      let others = (await reviewersFor(rule, item.team, person.id)).filter((r) => r.id !== person.id);
+      // Too few on the item's team (or it has none): everyone else who may decide it.
+      if (others.length < rule.quorum - 1) others = (await reviewersFor(rule, null, person.id, { everyone: true })).filter((r) => r.id !== person.id);
+      if (others.length < rule.quorum - 1) {
+        throw conflict('no_reviewers', `${rule.label ?? 'This decision'} needs ${rule.quorum} different people with the "${rule.permission}" permission, and there ${others.length === 1 ? 'is only one other' : `are only ${others.length} others`}. Ask an Owner to give someone that permission.`);
+      }
+      reviewers.push(...others);
+    }
     const at = now();
     const approval = await repos.approvals.create({
       id: newId('apr'), type, itemId: item.id, subject: extra.subject ?? null, title: item.title,
       from: item.stage, to, requestedBy: { id: person.id, name: person.name, kind: 'person' }, requestedAt: at,
-      dueAt: dueFrom(at, rule.target), reviewers: [{ id: person.id, role: rule.selfRole ?? 'Approver', status: 'waiting' }],
-      status: 'open', ...extra,
+      dueAt: dueFrom(at, rule.target), reviewers, status: 'open', ...extra,
     });
+    if (reviewers.length > 1) {
+      await emit('approval.requested', {
+        approvalId: approval.id, itemId: item.id, type, system: item.system, reviewerIds: reviewers.map((r) => r.id),
+        summary: `asked for the ${rule.label?.toLowerCase() ?? 'approval'} of ${item.ref ?? item.id} · ${item.title} (${rule.quorum} people)`,
+      }, person.id);
+    }
     try {
       return await decideApproval(approval.id, { decision: 'approve', comment: input.comment, override: input.override }, person);
     } catch (err) {
@@ -399,10 +431,10 @@ export function createEngine({ repos, host, log, clock }) {
     if (item.status !== 'active') throw conflict('not_active', `${item.ref ?? item.id} is ${item.status}.`);
     const open = (await repos.approvals.list()).filter((a) => a.itemId === item.id && a.status === 'open' && a.from === item.stage);
     if (open.length) throw conflict('approval_open', `${item.ref ?? item.id} already has an approval waiting for this step. Decide it in Approvals.`, { approvalIds: open.map((a) => a.id) });
-    if (item.stage === 'ship') return openAndDecide({ item, type: 'merge', to: null, person, input, extra: { subject: item.ref ?? item.id } });
-    if (item.stage === 'ui') return openAndDecide({ item, type: 'ui-handoff', to: 'build', person, input, extra: { workItems: [] } });
-    if (item.stage === 'specify') return openAndDecide({ item, type: 'spec', to: 'architect', person, input });
-    return openAndDecide({ item, type: 'stage', to: nextStage(item.stage), person, input });
+    const type = LEAVES_BY[item.stage] ?? 'stage';
+    const to = type === 'stage' ? nextStage(item.stage) : MOVES[type] === 'complete' ? null : MOVES[type];
+    const extra = type === 'ui-handoff' ? { workItems: [] } : type === 'merge' ? { subject: item.ref ?? item.id } : {};
+    return openAndDecide({ item, type, to, person, input, extra });
   }
 
   // ---------------------------------------------------------------------------- services for other apps
@@ -419,10 +451,11 @@ export function createEngine({ repos, host, log, clock }) {
    * The reviewers for a new approval: the people on the item's team whose access role has the rule's permission
    * and, when that leaves nobody but the person asking, the Owners. Agents are never reviewers.
    */
-  async function reviewersFor(rule, team, requesterId) {
+  async function reviewersFor(rule, team, requesterId, { everyone: all = false } = {}) {
     const everyone = (await host.people.list()).filter((p) => p.active !== false && p.kind !== 'agent');
     const may = [];
     for (const p of everyone) if (await host.can(p.accessRole, rule.permission)) may.push(p);
+    if (all) return may.map((p) => ({ id: p.id, role: p.jobTitle ?? p.accessRole, status: 'waiting' }));
     let picked = may.filter((p) => team && (p.teams ?? []).includes(team));
     if (!picked.some((p) => p.id !== requesterId)) {
       const owners = may.filter((p) => p.accessRole === 'Owner');
@@ -630,7 +663,7 @@ export function createEngine({ repos, host, log, clock }) {
   }
 
   /**
-   * The item's pull requests were merged in Bitbucket by people (NooblyJS Phase 13): the item moves Build → Ship. The
+   * The item's pull requests were merged in Bitbucket by people (NooblyJS Phase 13): the item moves Build → Verify. The
    * decision is the merge, taken by a person in Bitbucket under Bitbucket's own rules, so it is recorded as theirs
    * ("merged in Bitbucket by …") and no NooblyJS approval is opened. NooblyJS itself never merges: the caller passes who
    * merged, and a merge with nobody named, or by an agent, is refused here as well.
@@ -638,11 +671,11 @@ export function createEngine({ repos, host, log, clock }) {
   async function movedByMerge({ itemId, mergedBy = [], pullRequests = [] } = {}) {
     const names = mergedBy.map((m) => text(m?.name ?? m, 120)).filter(Boolean);
     if (!names.length || mergedBy.some((m) => m?.kind === 'agent')) {
-      await audit({ actor: 'system', action: 'access.refused', target: `item ${itemId}`, reason: 'agents propose, people decide: only a person\'s merge moves an item to Ship' });
-      throw forbidden('people_only', 'Only a person\'s merge in Bitbucket moves an item to Ship.');
+      await audit({ actor: 'system', action: 'access.refused', target: `item ${itemId}`, reason: 'agents propose, people decide: only a person\'s merge moves an item to Verify' });
+      throw forbidden('people_only', 'Only a person\'s merge in Bitbucket moves an item to Verify.');
     }
     const item = await itemOr404(itemId);
-    if (item.status !== 'active' || item.stage !== 'build') return { moved: false, item, reason: item.stage === 'ship' ? 'already in Ship' : `${item.ref ?? item.id} is not in Build` };
+    if (item.status !== 'active' || item.stage !== 'build') return { moved: false, item, reason: item.stage === 'verify' ? 'already in Verify' : `${item.ref ?? item.id} is not in Build` };
     const by = { id: 'bitbucket', name: `Bitbucket (merged by ${[...new Set(names)].join(', ')})`, kind: 'system' };
     const open = (await repos.approvals.list()).filter((a) => a.itemId === item.id && a.status === 'open' && a.from === 'build');
     const at = now();
@@ -651,13 +684,47 @@ export function createEngine({ repos, host, log, clock }) {
       await emit('approval.withdrawn', { approvalId: a.id, itemId: item.id, type: a.type, reason: 'merged in Bitbucket', summary: `withdrew the ${a.subject ?? item.ref ?? item.id} approval: merged in Bitbucket` }, by.id);
     }
     await audit({ actor: by.id, action: 'item.moved_by_merge', target: item.id, itemId: item.id, mergedBy: [...new Set(names)], pullRequests });
-    const moved = (await moveStage(item.id, 'ship', by)).item;
+    const moved = (await moveStage(item.id, 'verify', by)).item;
     await emit('item.merged', {
       itemId: item.id, system: item.system, mergedBy: [...new Set(names)], pullRequests, actorName: by.name,
-      summary: `${item.ref ?? item.id} · ${item.title} moved to Ship: its pull request${pullRequests.length === 1 ? ' was' : 's were'} merged in Bitbucket by ${[...new Set(names)].join(', ')}`,
+      summary: `${item.ref ?? item.id} · ${item.title} moved to Verify: its pull request${pullRequests.length === 1 ? ' was' : 's were'} merged in Bitbucket by ${[...new Set(names)].join(', ')}`,
     }, by.id);
     return { moved: true, item: moved };
   }
 
-  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge };
+  /**
+   * The nine stages replaced Ship (Phase 16a): each active item still in `ship` moves to `verify`, where its waiting
+   * now belongs, and approvals that left from Ship leave from Verify. Nobody decided this, so no stage event is
+   * emitted (Activity and Metrics count no handoff); one audit record says what moved. Only `ship` is looked at, so a
+   * second run changes nothing.
+   */
+  async function migrateShip() {
+    const at = now();
+    const items = [];
+    for (const found of await repos.items.list()) {
+      if (found.status !== 'active' || found.stage !== 'ship') continue;
+      const updated = await repos.items.update(found.id, (current) => {
+        if (current.status !== 'active' || current.stage !== 'ship') return null;
+        const history = (current.history ?? []).map((h) => ({ ...h }));
+        const open = history.at(-1);
+        if (open && !open.leftAt) open.leftAt = at;
+        history.push({ stage: 'verify', enteredAt: at, by: 'system', kind: 'migrated', from: 'ship' });
+        return { ...current, stage: 'verify', stageEnteredAt: at, history, version: (current.version ?? 0) + 1, updatedAt: at };
+      });
+      if (updated) items.push(found.id);
+    }
+    const approvals = [];
+    for (const a of await repos.approvals.list()) {
+      if (a.status !== 'open' || a.from !== 'ship') continue;
+      const updated = await repos.approvals.update(a.id, (current) => (current.status === 'open' && current.from === 'ship' ? { ...current, from: 'verify', updatedAt: at } : null));
+      if (updated) approvals.push(a.id);
+    }
+    if (items.length || approvals.length) {
+      await audit({ actor: 'system', action: 'lifecycle.stages_migrated', target: 'lifecycle', from: 'ship', to: 'verify', items, approvals, reason: 'the nine stages replaced Ship (Phase 16a)' });
+      log.info(`moved ${items.length} item(s) and ${approvals.length} open approval(s) from Ship to Verify (nine stages)`);
+    }
+    return { items, approvals };
+  }
+
+  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateShip };
 }

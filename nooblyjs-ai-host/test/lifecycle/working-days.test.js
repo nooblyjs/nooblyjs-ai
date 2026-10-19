@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addWorkingDays, dueFrom, daysBetween } from '../../src/lifecycle/working-days.js';
-import { stageKey, handoffLabel, nextStage } from '../../src/lifecycle/stages.js';
+import { stageKey, stageLabel, handoffLabel, nextStage } from '../../src/lifecycle/stages.js';
 
 test('working days skip the weekend', () => {
   assert.equal(addWorkingDays('2026-10-08T08:00:00.000Z', 1), '2026-10-09T08:00:00.000Z'); // Thu → Fri
@@ -21,11 +21,15 @@ test('due times follow the rule: end of the working day, clock hours, or the end
 test('stages: the Product Factory\'s names map onto the lifecycle\'s, and handoffs are named by area', () => {
   assert.equal(stageKey('product'), 'specify');
   assert.equal(stageKey('Architecture'), 'architect');
-  assert.equal(stageKey('ship'), 'ship');
+  // Ship was replaced by Verify, Release and Operate (Phase 16a): an old name still lands, and history still reads.
+  assert.equal(stageKey('ship'), 'verify');
+  assert.equal(stageLabel('ship'), 'Ship');
   assert.equal(stageKey('nowhere'), null);
   assert.equal(nextStage('ui'), 'build');
-  assert.equal(nextStage('ship'), null);
+  assert.equal(nextStage('build'), 'verify');
+  assert.equal(nextStage('operate'), null);
   assert.equal(handoffLabel('specify', 'architect'), 'Product → Architecture');
   assert.equal(handoffLabel('discover', 'specify'), 'Discover → Specify');
-  assert.equal(handoffLabel('build', 'ship'), 'Software Factory → Ship');
+  assert.equal(handoffLabel('build', 'verify'), 'Software Factory → Verify');
+  assert.equal(handoffLabel('release', 'operate'), 'Release → Operate');
 });

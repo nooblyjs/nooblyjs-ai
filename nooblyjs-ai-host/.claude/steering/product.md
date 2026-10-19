@@ -80,11 +80,15 @@ These are company governance rules, so they are not optional:
 ## 4. The lifecycle (core concept)
 
 Every piece of work is an **Item** (e.g. `IDEA-018`, `PRD-031`, or a PR such as
-`slots-api #482`) that moves through seven stages:
+`slots-api #482`) that moves through nine stages (since Phase 16a, 2026-10-19; the whole-SDLC view is the monorepo
+root's `.claude/steering/product.md` §3):
 
 ```
-1 Discover → 2 Specify → 3 Architect → 4 UX design → 5 UI design → 6 Build → 7 Ship
+1 Discover → 2 Specify → 3 Architect → 4 UX design → 5 UI design → 6 Build → 7 Verify → 8 Release → 9 Operate
 ```
+
+Ship, the seventh stage until 2026-10-19, was replaced by Verify, Release and Operate. Items that were in Ship moved to
+Verify once, on record (`lifecycle.stages_migrated` in the audit log), and history written before still says Ship.
 
 | Stage | Main artifact | Default agent | Exit gate (a person approves) |
 | --- | --- | --- | --- |
@@ -93,8 +97,10 @@ Every piece of work is an **Item** (e.g. `IDEA-018`, `PRD-031`, or a PR such as
 | Architect | Container diagram, ADRs, standards check, quality attributes | Architect agent (e.g. Rhea Voss) | **ADR acceptance** when a new dependency is added (Architect) |
 | UX design | Journey map, user flows, research findings | Design agent | Flow approved |
 | UI design | Screens, design-system components, accessibility checks | UI agent | **UI handoff** (Design lead), which generates Work Items |
-| Build | Work items → Software Factory runs → PRs | Factory stations / engineering teammates | Gates pass (tests, contracts, quality attributes) |
-| Ship | Merge, deploy | — | **Merge** (code owner); **prod deploy** (two approvers) |
+| Build | Work items → Software Factory runs → PRs | Factory stations / engineering teammates | Gates pass (tests, contracts, quality attributes); **merge** (code owner), or a person's merge in Bitbucket |
+| Verify | The deployed system tested in environments (the Quality and Security apps, root roadmap Phases 19–21) | Test agent, security agent | **Release candidate accepted** (QA lead, `accept-release-candidate`) |
+| Release | Release, rollout and rollback plans (the Operations app, Phase 22) | Release agent | **Production deploy** (two different people, `deploy-production`) |
+| Operate | SLOs, incidents, the outcome review (Operations, Phase 23) | SRE agent | **Outcome review** (Product lead): the item is done |
 
 **Rules**
 
@@ -118,14 +124,21 @@ Every piece of work is an **Item** (e.g. `IDEA-018`, `PRD-031`, or a PR such as
 | Spec → Architecture | Product lead + Engineering | 1 working day | Remind, then escalate |
 | New dependency (ADR) | Architect | 1 working day | Remind |
 | UI → Software Factory | Design lead | 4 hours | Remind |
-| Merge to main | Code owner of the repo | 4 hours | Remind |
-| Production deploy | Two approvers | Same day | Hold deploy |
+| Merge to main (Build → Verify) | Code owner of the repo | 4 hours | Remind |
+| Release candidate (Verify → Release) | QA lead | 4 hours | Remind |
+| Production deploy (Release → Operate) | Two approvers | Same day | Hold deploy |
+| Outcome review (Operate → done) | Product lead | 5 working days `[CONFIRM]` | Remind |
+| Threat model accepted (the Security app, Phase 19) | Architect | 1 working day | Remind, then escalate |
+| Risk acceptance (the Security app, Phase 19) | Risk owner (`accept-risk`) | 1 working day | Hold the release |
 | Infrastructure design → Test or Staging | Platform owner | 1 working day | Remind |
 | Write to Jira or Bitbucket (only for a kind of write an Owner set to "needs approval", Phase 13) | Approver | 1 working day | Remind |
 
 Rules are editable in **Teams & roles** (Phase 3; until then they are the file
 `data/workflows/approval-rules.yaml`). As built in Phase 2: a spec needs **every** named reviewer,
-an ADR, a UI handoff and a merge need **one** of theirs, and a production deploy needs two.
+an ADR, a UI handoff and a merge need **one** of theirs, and a production deploy needs two different people (Phase 16a:
+Approve & move on an item in Release records one and waits on the others who may decide it). Release candidate,
+outcome review, threat model and risk acceptance are built-in rules (`src/lifecycle/config.js`); threat model and risk
+acceptance are decided by the Security app and are refused until it runs.
 "1 working day" means by the end of the next working day (Monday to Friday). An escalation goes
 to the Owners one working day after the target `[CONFIRM]`.
 
@@ -154,10 +167,11 @@ Nav: For you, Overview, Lifecycle, Approvals (badge), Activity, Metrics, Teams &
 0. **For you** (the default landing page after onboarding): see §5.8.
 1. **Overview** (`noobly-platform-home`; the landing page for Designer and Engineering lead until their own "For you" layouts are designed): eyebrow "NooblyJS · Engineering lifecycle", title "From idea to merged code", and a summary in words ("14 items in flight across five systems. Four are waiting on you."),
    with a **New idea** action.
-   - **The line, end to end**: the seven stages, each with a count of what is in it.
+   - **The line, end to end**: the nine stages, each with a count of what is in it.
      Discover: ideas. Specify: specs (and how many are in review). Architect: ADRs
-     proposed. UX design: flows in progress. UI design: ready for handoff. Build: runs on the
-     line. Ship: PRs awaiting merge. Above the strip sits the median idea → merge over the
+     proposed. UX design: flows in progress. UI design: ready for handoff. Build: on the line and
+     PRs awaiting merge. Verify: release candidates in review. Release: deploys awaiting approval. Operate: outcome
+     reviews due. Above the strip sits the median idea → merge over the
      last 30 days. Under it are two bands: **Knowledge Repository** ("every stage reads
      context in and writes decisions back") and **Platform** ("repos, containers, models,
      budgets and guardrails underneath").
@@ -555,6 +569,16 @@ How it sits in NooblyJS:
 | Change guardrails and repo access | — | — | — | — | ✓ |
 | Change a person's access role (`manage-members`) | — | — | — | — | ✓ |
 | Read the audit log (`read-audit`) | — | — | ✓ | ✓ | ✓ |
+| Accept requirements (`accept-requirement`) | — | — | ✓ | ✓ | ✓ |
+| Accept threat models (`accept-threat-model`) | — | — | — | ✓ | ✓ |
+| Accept a security risk (`accept-risk`) | — | — | — | ✓ | ✓ |
+| Accept a release candidate (`accept-release-candidate`) | — | — | ✓ | ✓ | ✓ |
+| Approve a production deploy, one of two (`deploy-production`) | — | — | ✓ | ✓ | ✓ |
+| Declare an incident (`declare-incident`) | — | ✓ | ✓ | ✓ | ✓ |
+
+The last six rows were added in Phase 16a; a data folder from before gets them built in (`src/middleware/roles.js`
+`BUILT_IN_PERMISSIONS`), and a row its `roles.yaml` lists wins. Nothing uses `accept-requirement` or `declare-incident` yet
+(Phases 18 and 23).
 
 **Agents are always capped at Contributor.** Teams mix people and agents. Sign-in is
 Microsoft Entra ID (SSO).

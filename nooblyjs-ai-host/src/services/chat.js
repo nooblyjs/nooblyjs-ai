@@ -33,7 +33,7 @@ const CHIPS = {
   channel: [{ action: 'summarise', label: 'Summarise thread' }],
 };
 const SYSTEM = { id: 'system', name: 'NooblyJS', kind: 'system' };
-const STAGE_LABELS = { discover: 'Discover', specify: 'Specify', architect: 'Architect', ux: 'UX design', ui: 'UI design', build: 'Build', ship: 'Ship' };
+const STAGE_LABELS = { discover: 'Discover', specify: 'Specify', architect: 'Architect', ux: 'UX design', ui: 'UI design', build: 'Build', verify: 'Verify', release: 'Release', operate: 'Operate', ship: 'Ship' };
 
 const forbidden = (code, message) => new HttpError(403, code, message);
 const short = (text, max = 90) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);

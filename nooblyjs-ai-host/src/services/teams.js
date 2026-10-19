@@ -3,6 +3,7 @@
 // in data/access/roles.yaml and from nowhere else.
 import { HttpError } from '../util/errors.js';
 import { ID } from '../util/ids.js';
+import { BUILT_IN_PERMISSIONS } from '../middleware/roles.js';
 
 // The matrix rows of product.md §6, each naming the permissions it stands for. A role has the row when it has all.
 export const MATRIX_ROWS = [
@@ -13,6 +14,13 @@ export const MATRIX_ROWS = [
   { label: 'Merge to main (as code owner)', permissions: ['merge'] },
   { label: 'Hire teammates, set budgets', permissions: ['hire-teammates', 'set-budgets'] },
   { label: 'Change guardrails and repo access', permissions: ['change-guardrails', 'change-repo-access'] },
+  // The nine stages (root product.md §5, Phase 16a).
+  { label: 'Accept requirements', permissions: ['accept-requirement'] },
+  { label: 'Accept threat models', permissions: ['accept-threat-model'] },
+  { label: 'Accept a security risk', permissions: ['accept-risk'] },
+  { label: 'Accept a release candidate', permissions: ['accept-release-candidate'] },
+  { label: 'Approve a production deploy (one of two)', permissions: ['deploy-production'] },
+  { label: 'Declare an incident', permissions: ['declare-incident'] },
 ];
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,7 +47,7 @@ export function createTeams({ store, people }) {
   async function matrix() {
     const doc = (await store.readYaml(['access', 'roles.yaml'])) ?? {};
     const all = doc.roles ?? [];
-    const permissions = doc.permissions ?? {};
+    const permissions = { ...BUILT_IN_PERMISSIONS, ...(doc.permissions ?? {}) };
     return {
       roles: all,
       agentCap: doc.agentCap ?? 'Contributor',

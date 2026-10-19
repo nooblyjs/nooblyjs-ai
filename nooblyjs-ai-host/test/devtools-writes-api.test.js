@@ -1,5 +1,5 @@
 // Phase 13 in the real app (roadmap Phase 13 test script): steps 1 and 2 with every lock open: a handoff becomes Jira issues, Jira's
-// statuses come back, pull requests are followed, and people merging them in Bitbucket moves the item to Ship.
+// statuses come back, pull requests are followed, and people merging them in Bitbucket moves the item to Verify.
 // Jira and Bitbucket are production systems: here they are the fake in test/fixtures/atlassian.js.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -43,7 +43,7 @@ test('step 1, the reverse: a run that starts for a work item moves its issue to 
   assert.equal(open.fetch.writes().filter((c) => c.path.endsWith('/issue/DTE-501/transitions')).length, 1);
 });
 
-test('step 2: pull requests the Factory opens show their checks and reviewers, and people merging them in Bitbucket moves the item to Ship', async () => {
+test('step 2: pull requests the Factory opens show their checks and reviewers, and people merging them in Bitbucket moves the item to Verify', async () => {
   // Platform decides where agents may open pull requests. None yet: the Factory's forge is refused.
   await open.app.noobly.platform.importRepositories();
   const refused = await open.app.noobly.devtools.forge.openOrUpdatePullRequest({ slug: 'web-storefront', pr: { title: 'picker', head: 'factory/issue-1/main', base: 'main', status: 'ready', body: 'x' }, itemId: 'PRD-028', workItemId: 'WI-PRD-028-1', runId: 'r1' });
@@ -68,14 +68,14 @@ test('step 2: pull requests the Factory opens show their checks and reviewers, a
   for (const key of all.slice(0, 5)) open.fetch.merge(...key.split('#').map((v, i) => (i ? Number(v) : v)));
   await post(open.priya, '/api/v1/devtools/sync');
   assert.equal((await open.priya.json('/workflows/api/v1/items/PRD-028')).body.item.stage, 'build');
-  // The last one merged by a person: Ship.
+  // The last one merged by a person: Verify.
   open.fetch.merge(...all[5].split('#').map((v, i) => (i ? Number(v) : v)), { display_name: 'Naledi Khumalo', uuid: '{aaaaaaaa-0000-4000-8000-000000000002}' });
   await post(open.priya, '/api/v1/devtools/sync');
   const item = (await open.priya.json('/workflows/api/v1/items/PRD-028')).body.item;
-  assert.equal(item.stage, 'ship');
+  assert.equal(item.stage, 'verify');
   const events = await today(open.app.store, 'events');
   const merged = events.find((e) => e.type === 'item.merged');
-  assert.match(merged.payload.summary, /moved to Ship: its pull requests were merged in Bitbucket by .*Naledi Khumalo/);
+  assert.match(merged.payload.summary, /moved to Verify: its pull requests were merged in Bitbucket by .*Naledi Khumalo/);
   assert.equal(events.filter((e) => e.type === 'pr.merged').length, 6);
   const audit = await today(open.app.store, 'audit');
   assert.ok(audit.some((a) => a.action === 'item.moved_by_merge' && a.target === 'PRD-028' && a.actor === 'bitbucket'));

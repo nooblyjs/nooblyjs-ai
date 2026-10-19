@@ -34,7 +34,7 @@ async function make({ writes = true, modes = { jira: 'send', bitbucket: 'send' }
       item: async () => item,
       requestAppApproval: async (input) => { asked.push(input); return { approvalId: `apr_${asked.length}` }; },
       withdrawAppApprovals: async () => 1,
-      movedByMerge: async (input) => { moved.push(input); item.stage = 'ship'; return { moved: true, item }; },
+      movedByMerge: async (input) => { moved.push(input); item.stage = 'verify'; return { moved: true, item }; },
     }],
     ['platform', { repository: async (name) => (name === 'examplews/web-storefront' ? { name, access: 'read-prs', accessText: 'Read + open PRs', ...access } : null) }],
   ]);
@@ -371,7 +371,7 @@ test('record only: the branch is not pushed and no pull request is opened, and t
   } finally { await t.stop(); await g.stop(); }
 });
 
-test('step 2: checks and reviewers are read from Bitbucket, and a person\'s merge of every pull request moves the item to Ship', async () => {
+test('step 2: checks and reviewers are read from Bitbucket, and a person\'s merge of every pull request moves the item to Verify', async () => {
   const g = await gitFixture();
   const t = await make({ gitRemote: () => g.remote });
   try {
@@ -392,13 +392,13 @@ test('step 2: checks and reviewers are read from Bitbucket, and a person\'s merg
     assert.ok(t.events.some((e) => e.type === 'pr.merged' && e.workItemId === 'WI-PRD-031-1' && e.mergedBy === 'Thabo Reviewer'));
     assert.equal(t.fetch.state.issues.get('DTE-500').status, 'Done');
     assert.equal(t.moved.length, 0);
-    // The second merged by a person: Build → Ship, recorded as their merges.
+    // The second merged by a person: Build → Verify, recorded as their merges.
     t.fetch.merge('web-storefront', 8, { display_name: 'Naledi Khumalo', uuid: '{aaaaaaaa-0000-4000-8000-000000000002}' });
     await t.devtools.sync.poll();
     assert.equal(t.moved.length, 1);
     assert.deepEqual(t.moved[0].mergedBy.map((m) => m.name).sort(), ['Naledi Khumalo', 'Thabo Reviewer']);
     assert.deepEqual(t.moved[0].pullRequests.map((p) => p.id).sort(), [7, 8]);
-    assert.equal(t.item.stage, 'ship');
+    assert.equal(t.item.stage, 'verify');
     work = await t.devtools.sync.workFor('PRD-031');
     assert.deepEqual(work.workItems.map((w) => [w.pr.state, w.pr.mergedBy]), [['MERGED', 'Thabo Reviewer'], ['MERGED', 'Naledi Khumalo']]);
     assert.ok(t.fetch.writes().every((c) => !/merge/.test(c.path)), 'NooblyJS itself never merged');

@@ -13,21 +13,27 @@ export const RANGES = {
 export const LOOKBACK_DAYS = 120;
 export const CHART_WEEKS = 6;
 
-// A stage visit is the time an item spends in one of these groups, from entering it to leaving it.
+// A stage visit is the time an item spends in one of these groups, from entering it to leaving it. The nine stages
+// (Phase 16a) replaced Ship with Verify, Release and Operate; Ship stays as a legacy group so visits from before still
+// count, and its row is shown only in a period that has one.
 export const GROUPS = [
   { key: 'product', label: 'Product', stages: ['discover', 'specify'] },
   { key: 'architecture', label: 'Architecture', stages: ['architect'] },
   { key: 'design', label: 'UX & UI design', stages: ['ux', 'ui'] },
   { key: 'build', label: 'Build', stages: ['build'] },
-  { key: 'ship', label: 'Ship', stages: ['ship'] },
+  { key: 'verify', label: 'Verify', stages: ['verify'] },
+  { key: 'release', label: 'Release', stages: ['release'] },
+  { key: 'operate', label: 'Operate', stages: ['operate'] },
+  { key: 'ship', label: 'Ship (before nine stages)', stages: ['ship'], legacy: true },
 ];
 const GROUP_OF = Object.fromEntries(GROUPS.flatMap((g) => g.stages.map((s) => [s, g.key])));
-// The chart draws Build and Ship as one part: the mean Build visit plus the mean Ship visit.
+// The chart's last part is Build to release: the mean Build, Ship (history), Verify and Release visits, added up.
+// Operate is the time after release, not lead time, so the chart leaves it out. The key stays `buildShip` (its colour).
 export const CHART_PARTS = [
   { key: 'product', label: 'Product', groups: ['product'] },
   { key: 'architecture', label: 'Architecture', groups: ['architecture'] },
   { key: 'design', label: 'UX & UI design', groups: ['design'] },
-  { key: 'buildShip', label: 'Build & ship', groups: ['build', 'ship'] },
+  { key: 'buildShip', label: 'Build to release', groups: ['build', 'ship', 'verify', 'release'] },
 ];
 const SPEND_LABELS = { teammates: 'Digital Teammates', compute: 'Platform compute', product: 'Product Factory', factory: 'Software Factory', knowledge: 'Knowledge', cloud: 'Cloud (Infrastructure)' };
 
@@ -272,8 +278,9 @@ function stages(visits, { start, end }) {
       sentBackPct: pct(own.filter((v) => v.back).length, own.length),
     };
   });
-  const slowest = Math.max(...rows.map((r) => r.p90Days ?? -1));
-  return rows.map((r) => ({ ...r, slowest: slowest > 0 && r.p90Days === slowest }));
+  const shown = rows.filter((r) => !GROUPS.find((g) => g.key === r.key)?.legacy || r.visits);
+  const slowest = Math.max(...shown.map((r) => r.p90Days ?? -1));
+  return shown.map((r) => ({ ...r, slowest: slowest > 0 && r.p90Days === slowest }));
 }
 
 /**

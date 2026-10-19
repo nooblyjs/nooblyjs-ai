@@ -28,6 +28,13 @@ export const MATRIX = {
   'accept-decisions': ['Architect', 'Owner'],
   merge: ['Approver', 'Architect', 'Owner'],
   'change-repo-access': ['Owner'],
+  // The nine stages (Phase 16a), as in src/seed/data/access/roles.yaml.
+  'accept-requirement': ['Approver', 'Architect', 'Owner'],
+  'accept-threat-model': ['Architect', 'Owner'],
+  'accept-risk': ['Architect', 'Owner'],
+  'accept-release-candidate': ['Approver', 'Architect', 'Owner'],
+  'deploy-production': ['Approver', 'Architect', 'Owner'],
+  'declare-incident': ['Contributor', 'Approver', 'Architect', 'Owner'],
 };
 
 export const PERSON_HEADER = 'x-dev-person';

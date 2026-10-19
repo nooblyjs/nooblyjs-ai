@@ -4,7 +4,7 @@ import { html } from '/ui/js/html.js';
 import { icon, ICONS } from '/ui/js/icons.js';
 import {
   pageHead, card, notice, button, statusPill, statCard, listRow, dataTable, kanbanColumn, timelineRow, timelineDay,
-  meter, processChevron, stageStrip, STAGES, swimlane, checklist, chips,
+  meter, processChevron, stageStrip, swimlane, checklist, chips,
 } from '/ui/js/components/index.js';
 
 const TOKENS = [
@@ -49,7 +49,7 @@ ${section('Meters', html`<div class="grid">${meter({ label: 'Spent today', value
 
 ${section('Process chevrons', html`<div class="chevrons">${processChevron({ code: 'PL', name: 'Plan', meta: 'L1 · 7 L2', tone: 'value' })}${processChevron({ code: 'PR', name: 'Procure', meta: 'L1 · 6 L2', tone: 'value' })}${processChevron({ code: 'SU', name: 'Supply', meta: '2 active specs', tone: 'active', href: '/dev/styleguide' })}${processChevron({ code: 'SE', name: 'Sell', meta: '3 active specs', tone: 'value' })}</div><div class="chevrons">${processChevron({ code: 'EM', name: 'Enterprise Management', meta: 'L1 · 6 L2' })}${processChevron({ code: '[HC]', name: 'Develop and Manage Human Capital', meta: 'L1' })}</div>`, 'value chain · active · enterprise/support')}
 
-${section('Stage strip', stageStrip({ current: 'Build', stages: STAGES.map((name, i) => ({ name, count: [6, 4, 3, 3, 2, 5, 2][i], note: ['ideas', 'specs · 2 in review', 'ADRs proposed', 'flows in progress', 'ready for handoff', 'runs on the line', 'PRs awaiting merge'][i], href: '/home/lifecycle' })) }), 'current: Build')}
+${section('Stage strip', stageStrip({ current: 'Build', stages: ['Discover', 'Specify', 'Architect', 'UX design', 'UI design', 'Build', 'Verify', 'Release', 'Operate'].map((name, i) => ({ name, count: [6, 4, 3, 3, 2, 5, 2, 1, 4][i], note: ['ideas', 'specs · 2 in review', 'ADRs proposed', 'flows in progress', 'ready for handoff', 'on the line · 2 PRs awaiting merge', '1 release candidate in review', '1 deploy awaiting approval', '1 outcome review due'][i], href: '/home/lifecycle' })) }), 'current: Build')}
 
 ${section('Swimlane', swimlane({ rows: [
     { title: 'Same-day delivery slots', id: 'PRD-031', age: '6 d', cells: { Discover: { state: 'done' }, Specify: { state: 'now', text: 'Your review' } } },

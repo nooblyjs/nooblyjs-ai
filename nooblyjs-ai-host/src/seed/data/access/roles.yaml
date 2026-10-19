@@ -18,3 +18,10 @@ permissions:
   change-repo-access: [Owner]
   manage-members: [Owner]
   read-audit: [Approver, Architect, Owner]
+  # The nine stages and the SDLC apps (root product.md §5, Phase 16a). Built in for data folders made before.
+  accept-requirement: [Approver, Architect, Owner]
+  accept-threat-model: [Architect, Owner]
+  accept-risk: [Architect, Owner]
+  accept-release-candidate: [Approver, Architect, Owner]
+  deploy-production: [Approver, Architect, Owner]
+  declare-incident: [Contributor, Approver, Architect, Owner]

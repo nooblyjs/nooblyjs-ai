@@ -65,7 +65,9 @@ test('the blank folder has the system files and one person: the Owner the script
   assert.deepEqual(roles.roles, ['Viewer', 'Contributor', 'Approver', 'Architect', 'Owner']);
   const settings = (await stevie.json('/api/v1/platform/settings')).body;
   assert.ok(settings.models.routes.length > 0 && settings.guardrails.length > 0 && settings.budgets.systems.length > 0);
-  assert.equal((await stevie.json('/workflows/api/v1/rules')).body.rules.length, 7);
+  // Five from the file, six built in: infra-design, devtools-write, and since the nine stages (Phase 16a) release-candidate,
+  // outcome-review, threat-model and risk-acceptance.
+  assert.equal((await stevie.json('/workflows/api/v1/rules')).body.rules.length, 11);
 });
 
 test('every main page answers, with nothing in it', async () => {

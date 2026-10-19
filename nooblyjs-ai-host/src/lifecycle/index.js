@@ -1,4 +1,4 @@
-// The lifecycle engine (product.md §4): items, the seven stages, readiness, approvals with target times and
+// The lifecycle engine (product.md §4): items, the nine stages, readiness, approvals with target times and
 // escalation, handoffs and send-back. It was the hosted app nooblyjs-ai-workflows until 2026-10-10 and is part of NooblyJS
 // now: src/noobly.js mounts it at start, before any hosted app, so it is always there.
 //
@@ -46,6 +46,14 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
   const views = createViews({ repos, host, engine });
   const about = { name: NAME, version: VERSION, mountPath };
 
+  // The nine stages replaced Ship (Phase 16a): items still in Ship move to Verify once, on record. A failure here is
+  // logged and NooblyJS starts anyway; the next start tries again.
+  try {
+    await engine.migrateShip();
+  } catch (err) {
+    log.error(`moving items from Ship to Verify failed: ${err.message}`);
+  }
+
   const router = host.express.Router();
   router.use('/api/v1', createApi({ host, log, engine, views, about }));
   // API only: anything else under the mount path isn't ours (structure.md §2a).
@@ -78,7 +86,7 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       closeAppApproval: (input) => engine.closeAppApproval(input),
       /** The app's artefact no longer waits for this approval. */
       withdrawAppApprovals: (input) => engine.withdrawAppApprovals(input),
-      /** A person merged the item's pull requests in Bitbucket: Build → Ship, recorded as their decision (Phase 13). */
+      /** A person merged the item's pull requests in Bitbucket: Build → Verify, recorded as their decision (Phases 13, 16a). */
       movedByMerge: (input) => engine.movedByMerge(input),
       /** Send an item back to an earlier stage, with a reason. */
       sendBack: ({ itemId, to, reason, actor }) => engine.sendBack(itemId, { to, reason }, actor),

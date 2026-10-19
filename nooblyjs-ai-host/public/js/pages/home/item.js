@@ -6,7 +6,7 @@ import { pageHead, card, button, checklist, statusPill, notice, dataTable } from
 import { ApiError } from '/ui/js/api.js';
 import { workflowsApi, onChange, engineMissing, isMissing, dayLabel, timeText } from './lib.js';
 
-const STAGES = ['discover', 'specify', 'architect', 'ux', 'ui', 'build', 'ship'];
+const STAGES = ['discover', 'specify', 'architect', 'ux', 'ui', 'build', 'verify', 'release', 'operate'];
 
 function tracker(item) {
   const at = STAGES.indexOf(item.stage);
@@ -56,7 +56,7 @@ function workCard(work, canRefresh) {
     title: 'Work items in Jira and Bitbucket',
     meta: `${work.workItems.length} work item${work.workItems.length === 1 ? '' : 's'}${recorded ? ` · ${recorded} write${recorded === 1 ? '' : 's'} recorded, not sent` : ''}`,
     body: html`<ul class="waits" role="list">${rows}</ul>
-      ${work.allDoneInJira ? html`<p class="row__meta" role="status">All work items are done in Jira. The item moves to Ship when its pull requests are merged in Bitbucket, or when a person moves it.</p>` : ''}
+      ${work.allDoneInJira ? html`<p class="row__meta" role="status">All work items are done in Jira. The item moves to Verify when its pull requests are merged in Bitbucket, or when a person approves the merge.</p>` : ''}
       <p class="row__meta">Jira owns each issue's status; NooblyJS reads it every few minutes. A person merges a pull request in Bitbucket: NooblyJS never merges.</p>
       ${canRefresh ? html`<div class="actions">${button({ label: 'Read Jira and Bitbucket now', kind: 'secondary', attrs: { 'data-action': 'work-refresh' } })}</div>` : ''}`,
   });

@@ -20,6 +20,29 @@ export const BUILT_IN_RULES = [
     quorum: 'any', target: { workingDays: 1 }, targetText: '1 working day', ifLate: 'Remind', remind: true,
     tag: 'Write', label: 'Write to Jira or Bitbucket', transition: 'Approve & send',
   },
+  // The nine stages (Phase 16a): leaving Verify and Operate. Merge (Build → Verify) and deploy (Release → Operate) are
+  // in the seed's approval-rules.yaml.
+  {
+    key: 'release-candidate', decision: 'Verify → Release (release candidate)', approver: 'QA lead', permission: 'accept-release-candidate',
+    verb: 'accept', quorum: 'any', target: { hours: 4 }, targetText: '4 hours', ifLate: 'Remind', remind: true, needsReadiness: true,
+    tag: 'Release', label: 'Release candidate', transition: 'Accept & send to Release', toLabel: 'Release',
+  },
+  {
+    key: 'outcome-review', decision: 'Operate → done (outcome review)', approver: 'Product lead', permission: 'approve',
+    quorum: 'any', target: { workingDays: 5 }, targetText: '5 working days', ifLate: 'Remind', remind: true,
+    tag: 'Outcome', label: 'Outcome review', transition: 'Close with the outcome', toLabel: 'Done',
+  },
+  // App approvals the Security app will carry out (root roadmap Phase 19). Until it runs, deciding one is refused.
+  {
+    key: 'threat-model', decision: 'Threat model accepted', approver: 'Architect', permission: 'accept-threat-model',
+    verb: 'accept', quorum: 'any', target: { workingDays: 1 }, targetText: '1 working day', ifLate: 'Remind, then escalate',
+    remind: true, escalate: { afterWorkingDays: 1, to: 'Owner' }, tag: 'Threat', label: 'Threat model', transition: 'Accept the threat model',
+  },
+  {
+    key: 'risk-acceptance', decision: 'Risk acceptance', approver: 'Risk owner', permission: 'accept-risk',
+    verb: 'accept', quorum: 'any', target: { workingDays: 1 }, targetText: '1 working day', ifLate: 'Hold the release', remind: true,
+    tag: 'Risk', label: 'Risk acceptance', transition: 'Accept the risk',
+  },
 ];
 
 export async function loadRules(repos, log) {

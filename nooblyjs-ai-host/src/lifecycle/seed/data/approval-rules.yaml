@@ -1,7 +1,9 @@
 # Who approves what (product.md §4). Read on every use, so an edit applies without a restart. Each rule: key (the
 # approval type), decision, approver, permission (from access/roles.yaml), quorum (all · any · a number), target
 # ({ workingDays } · { hours } · { sameDay: true }), ifLate, remind, escalate, needsReadiness, tag, label, transition.
-# The infra-design and devtools-write rules are built in (src/lifecycle/config.js) unless listed here.
+# The infra-design, devtools-write, release-candidate, outcome-review, threat-model and risk-acceptance rules are built in
+# (src/lifecycle/config.js) unless listed here. Since Phase 16a (nine stages) merge moves an item Build → Verify and
+# deploy moves it Release → Operate.
 # Rebuilt 2026-10-19 from product.md §4 and the Phase 2 design.
 rules:
   - key: spec
@@ -44,7 +46,7 @@ rules:
     label: UI handoff
     transition: Approve & send to the Software Factory
   - key: merge
-    decision: Merge to main
+    decision: Merge to main (Build → Verify)
     approver: Code owner of the repo
     permission: merge
     quorum: any
@@ -56,9 +58,9 @@ rules:
     label: Merge to main
     transition: Approve the merge
   - key: deploy
-    decision: Production deploy
+    decision: Release → Operate (production deploy)
     approver: Two approvers
-    permission: approve
+    permission: deploy-production
     quorum: 2
     target: { sameDay: true }
     targetText: Same day
@@ -67,3 +69,4 @@ rules:
     tag: Deploy
     label: Production deploy
     transition: Approve the deploy
+    toLabel: Operate

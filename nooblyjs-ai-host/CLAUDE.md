@@ -17,7 +17,8 @@ you" homes), 4 (Team chat), 5 (Product Factory, the hosted app `nooblyjs-ai-prod
 everywhere, and the Teams simulator), 7 (Software Factory integration), 8 (Knowledge
 Repository), 9 (Platform and governance), 9a (Infrastructure joins NooblyJS), 10 (Metrics) and 11 (Development tools:
 Bitbucket and Jira, read-only) are done** (`docs/phases/phase-0N-summary.md`; Phase 11: `src/services/devtools/`,
-tech.md §8a). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and waiting for review**
+tech.md §8a). **Phase 16a (nine stages: Verify, Release and Operate replace Ship) is built and waiting for review**
+(`.claude/specs/phase-16a-nine-stages/`; the root roadmap `../.claude/steering/roadmap.md` holds every phase). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and waiting for review**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, waiting for
 review)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent
@@ -71,11 +72,11 @@ Read the relevant one before changing anything:
 
 | File | Answers |
 | --- | --- |
-| `.claude/steering/product.md` | What NooblyJS does: systems, the 7-stage lifecycle, every screen, roles, governance rules |
+| `.claude/steering/product.md` | What NooblyJS does: systems, the 9-stage lifecycle, every screen, roles, governance rules |
 | `.claude/steering/tech.md` | How it's built: stack, storage, API conventions, agents, Teams bot, config, commands |
 | `.claude/steering/structure.md` | Where things live: sibling repos, the hosted-app `register()` contract, `public/`, `data/` |
-| `.claude/steering/roadmap.md` | Build order: Phases 0–15, each with a manual test script, and a stop for review |
-| `.claude/steering/brief/` | Design input (build brief + mockups). **Not in this repo**: the original brief was company material and stayed out of the migration (`.claude/steering/migration-plan.md` in the monorepo root). |
+| `../.claude/steering/roadmap.md` | **The one roadmap** (monorepo root): every phase, each with a manual test script, and a stop for review. The root's `product.md`, `design.md` and `stack.md` give the whole factory across the SDLC |
+| `.claude/steering/brief/` | Design input (build brief + mockups). **Not in this repo**: the original brief was company material and stayed out of the migration (the migration plan, since removed from the monorepo root). |
 
 When you change scope or architecture, update the steering doc that owns it. Keep the four docs
 consistent with each other.
@@ -116,7 +117,7 @@ initialises nooblyjs-core's `ServiceRegistry` (the **`serverManager`**) once, th
   `nooblyjs-ai-harness` (agent runtime) are libraries.
 - `nooblyjs-ai-host` itself owns Home, the Product Factory screens, Platform, onboarding, team chat and the Teams bot endpoint.
 - **nooblyjs-ai-host owns everything shared** (`structure.md` §1a): the product, the lifecycle, governance, the hosted-app
-  contract (§2a), the cross-app services (`tech.md` §8b) and the one roadmap. Child repos describe only themselves,
+  contract (§2a), and the cross-app services (`tech.md` §8b). The one roadmap is in the monorepo root (`../.claude/steering/roadmap.md`). Child repos describe only themselves,
   and load the shared rules from `.claude/steering/nooblyjs-ai.md`, generated from `docs/steering/nooblyjs-ai-shared-rules.md`:
   after changing that file run `npm run steering:sync` (`test/steering.test.js` fails on a stale copy).
 

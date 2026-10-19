@@ -34,7 +34,7 @@ function axisTop(max) {
 function leadTime(weeks) {
   const top = axisTop(Math.max(0, ...weeks.rows.map((r) => r.totalDays ?? 0)));
   const ticks = [top, (top * 2) / 3, top / 3, 0].map((v) => (v ? `${Number.isInteger(v) ? v : v.toFixed(1)} d` : '0'));
-  // Drawn from the bottom up: Build & ship, design, Architecture, Product (the legend reads top down).
+  // Drawn from the bottom up: Build to release, design, Architecture, Product (the legend reads top down).
   const stack = [...weeks.parts].reverse();
   const columns = weeks.rows.map((row) => html`<div class="leadtime__col">${stack.map((p) => (row.parts[p.key]
     ? html`<span class="leadtime__part leadtime__part--${p.key}" style="height: ${((row.parts[p.key] / top) * CHART_PX).toFixed(1)}px"></span>` : ''))}</div>`);
