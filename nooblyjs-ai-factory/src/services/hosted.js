@@ -8,6 +8,8 @@
 //   /factory/api/v1/…     the dashboard API (the same route table `factory dashboard` serves),
 //                         behind the host's sign-in, its permissions matrix and its audit log
 //   /factory/js, /css     the UI module the NooblyJS frame loads (public/js/module.js)
+//   /factory/product/…    the Product section, and /factory/infrastructure/… the Infrastructure section
+//                         (sections.js): each with its own API, pages and data, mounted before our own router
 //   /factory/<anything>   a page URL: the host's frame answers, and our module draws the page
 //
 // The event log is still the only source of truth. Hosted, it lives in the folder NooblyJS
@@ -35,6 +37,7 @@ import { apiRoutes } from '../routes/api.js';
 import { spentToday } from './scheduler/budgets.js';
 import { cancelRun, isStopped, stopAll } from './scheduler/kill-switch.js';
 import { toExpressRouter } from './to-express.js';
+import { mountSections, sectionsFromEnv } from './sections.js';
 
 const NAME = 'factory';
 const MOUNT = /^\/[a-z0-9][a-z0-9-]{0,62}$/;
@@ -42,7 +45,10 @@ const NEEDS = ['express', 'auth', 'requireRole', 'audit', 'events', 'frame'];
 const PUBLIC_DIR = fileURLToPath(new URL('../../public/', import.meta.url));
 const STATIC = { index: false, redirect: false };
 
-/** Sidebar rows: `path` is relative to the mount path, `icon` names a NooblyJS UI kit icon. */
+/**
+ * The Factory's own sidebar rows (the Build group): `path` is relative to the mount path, `icon` names a NooblyJS UI
+ * kit icon. register() puts the Product section's rows before them and Infrastructure's after (sections.js).
+ */
 export const NAV = [
   { key: 'line', label: 'Line', path: '/line', icon: 'flow' },
   { key: 'runs', label: 'Runs', path: '/runs', icon: 'list' },
@@ -101,12 +107,14 @@ const dollars = (n) => `$${(n ?? 0).toFixed(2).replace(/\.00$/, '')}`;
  * Attach the Software Factory to a host Express app.
  * @param {any} app             the host's Express app
  * @param {any} serverManager   nooblyjs-core ServiceRegistry, already initialised by the host
- * @param {{ mountPath?: string, dataDir?: string, host?: any, pollMs?: number }} [options]
+ * @param {{ mountPath?: string, dataDir?: string, host?: any, pollMs?: number, schedule?: boolean, tickMs?: number, sections?: string[], sectionOptions?: Record<string, object> }} [options]
  *   pollMs: how often new log events are passed on to the host (0: only when flush() is called; for tests)
  *   schedule: false to not work the queue here (tests drive it with tick()); tickMs: how often it looks
+ *   sections: which sections to mount (default FACTORY_SECTIONS, else all: product, infrastructure; [] for none)
+ *   sectionOptions: extra register() options per section, by key (tests: { product: { draftStepMs: 0 } })
  * @returns {Promise<object>} the HostedApp description
  */
-export async function register(app, serverManager, { mountPath = '/factory', dataDir, host, pollMs = 2000, schedule = true, tickMs } = {}) {
+export async function register(app, serverManager, { mountPath = '/factory', dataDir, host, pollMs = 2000, schedule = true, tickMs, sections: only = sectionsFromEnv(process.env.FACTORY_SECTIONS), sectionOptions = {} } = {}) {
   // Check everything before mounting anything, so a failed start leaves nothing half-mounted.
   if (typeof app?.use !== 'function') throw new Error("nooblyjs-ai-factory needs the host's Express app.");
   if (!MOUNT.test(mountPath ?? '')) throw new Error(`mountPath must look like /factory, not ${JSON.stringify(mountPath)}`);
@@ -115,6 +123,9 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
   if (missing.length) throw new Error(`nooblyjs-ai-factory needs host.${missing.join(', host.')} from the host.`);
 
   const log = serverManager?.logger?.(serverManager.getDefaultProviderType?.('logging'), { instanceName: NAME }) ?? console;
+  // The sections first: their routers must be mounted before ours, whose page fallback would answer their URLs. If one
+  // fails, nothing of the Factory is left mounted.
+  const sections = await mountSections({ app, serverManager, mountPath, dataDir, host, only, options: sectionOptions, log });
   const now = () => Number(host.clock?.now?.() ?? Date.now());
   // Everything the factory keeps goes under the folder the host gave us.
   // FACTORY_HOSTED tells the stations they run inside NooblyJS: a hosted run never merges.
@@ -125,7 +136,13 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
   // Unsandboxed commands (a repository's own gates) only when the host says this is development,
   // and never in production. Elsewhere the factory needs a real sandbox, as it always did.
   const development = host.development === true && process.env.NODE_ENV !== 'production';
-  const store = openStore({ env });
+  let store;
+  try {
+    store = openStore({ env });
+  } catch (error) {
+    await sections.close();
+    throw error;
+  }
   // The log was a SQLite file before NooblyJS Phase 7. It is not read any more, and never written.
   if (fs.existsSync(path.join(dataDir, 'factory.db'))) log.warn?.(`factory: ${path.join(dataDir, 'factory.db')} is from before the log moved to files (events/). It is ignored; delete it when you no longer need it.`);
 
@@ -170,6 +187,7 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     router.get('/{*rest}', (req, res, next) => (path.extname(req.path) || req.path.startsWith('/api/') ? next() : host.frame(req, res, next)));
   } catch (error) {
     store.close();
+    await sections.close();
     throw error;
   }
   app.use(mountPath, router);
@@ -265,21 +283,32 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     label: 'Factory',
     icon: 'factory',
     mountPath,
-    ui: { entry: 'js/module.js', styles: ['css/factory.css'] },
-    nav: NAV,
-    /** The sidebar's status card and the Inbox badge. */
+    ui: { entry: 'js/module.js', styles: ['css/factory.css', ...sections.styles] },
+    // Product, then the Factory's own rows (Build), then Infrastructure: the order work moves in.
+    nav: [...sections.nav('before'), ...NAV.map((row) => ({ ...row, group: 'Build' })), ...sections.nav('after')],
+    /**
+     * The sidebar's status card and badges: the line's (slots, today's spend, the Inbox badge), with one line per
+     * section saying how it stands in words (the Product section's agents on duty, Infrastructure's drift).
+     */
     async status() {
       const s = summary();
       const ratio = s.dailyBudgetUsd ? s.spentToday / s.dailyBudgetUsd : 0;
+      const parts = await sections.status();
       return {
-        badges: { inbox: s.inbox },
+        badges: { inbox: s.inbox, ...Object.assign({}, ...parts.map((p) => p.badges)) },
         card: {
           pill: s.stopped ? { text: 'Stopped', tone: 'danger' } : { text: 'Accepting work', tone: 'ok' },
-          items: [{ label: 'Running now', value: `${s.running} of ${s.maxConcurrent} slots · ${s.queued} queued` }],
+          items: [
+            { label: 'Running now', value: `${s.running} of ${s.maxConcurrent} slots · ${s.queued} queued` },
+            ...parts.filter((p) => p.card?.pill?.text).map((p) => ({ label: p.section.label, value: p.card.pill.text })),
+          ],
           meter: { label: 'Spent today', value: `${dollars(s.spentToday)} of ${dollars(s.dailyBudgetUsd)}`, ratio, tone: ratio >= 1 ? 'danger' : ratio >= 0.8 ? 'warning' : 'ok' },
         },
       };
     },
+    // host.service('product') and host.service('infrastructure'): the sections' services, under the names other
+    // NooblyJS apps have always asked for (the host's loader reads an object here as name → services).
+    provides: sections.provides,
     // What other apps may call through host.service('factory').
     services: {
       status: async () => summary(),
@@ -318,7 +347,9 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       },
     },
     /** The demo repository, the map that names it and the seed story's scripted agents (development and demos). */
-    async seed({ content = host.sampleData !== false } = {}) {
+    async seed({ reset = false, content = host.sampleData !== false } = {}) {
+      // The sections seeded themselves when their folders were new (sections.js); a reset writes them again.
+      if (reset) await sections.seed({ reset, content });
       // No sample content: no demo repository and no scripted agents. Repositories come from data/factory/repos.yaml.
       if (!content) return;
       const made = seedDemo(env);
@@ -333,10 +364,11 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       await scheduler.stop('NooblyJS is stopping');
       await flush().catch(() => {});
       store.close();
+      await sections.close();
     },
     /** For the tests: pass new log events on to the host now. */
     flush,
     /** For the tests: the scheduler (tick(), idle()), the intake and the store. */
-    internals: { scheduler, intake, store, env },
+    internals: { scheduler, intake, store, env, sections: Object.fromEntries(sections.list.map(({ section, hosted }) => [section.key, hosted])) },
   };
 }

@@ -1,4 +1,4 @@
-// Roadmap Phase 9a in a real browser: NooblyJS Infrastructure (nooblyjs-ai-infrastructure) hosted at /infrastructure. Stevie
+// Roadmap Phase 9a in a real browser: NooblyJS Infrastructure (the Factory's Infrastructure section) at /factory/infrastructure. Stevie
 // (Owner) and Priya (Contributor) work through the seven steps of the test script, and every Infrastructure screen is
 // scanned with axe (WCAG 2.2 AA) and checked at phone width. The provisioner is the mock (about 3 seconds a run).
 // test/infrastructure.test.js runs the same steps through the API, with the hosted-app checklist.
@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
-const API = '/infrastructure/api/v1';
+const API = '/factory/infrastructure/api/v1';
 const content = (page) => page.locator('#noobly-content');
 
 async function signIn(browser, personId) {
@@ -46,19 +46,19 @@ test.afterAll(async () => {
   for (const page of [stevie, priya]) await page?.context().close();
 });
 
-test('step 1: Infra is on the rail between Factory and Teammates, with "1 drift detected"; opening it does not reload the page', async () => {
+test('step 1: Infrastructure is the last group of the Factory\'s sidebar, with "No drift" or the drift on its card; opening it does not reload the page', async () => {
   const rail = await stevie.locator('#noobly-rail [data-app]').evaluateAll((els) => els.map((el) => el.dataset.app));
-  expect(rail.indexOf('infrastructure')).toBe(rail.indexOf('factory') + 1);
-  expect(rail.indexOf('teammates')).toBe(rail.indexOf('infrastructure') + 1);
+  expect(rail).not.toContain('infrastructure');
   await stevie.evaluate(() => { window.__nooblyNoReload = 'still here'; });
-  await stevie.locator('#noobly-rail [data-app="infrastructure"]').click();
+  await stevie.locator('#noobly-rail [data-app="factory"]').click();
+  await stevie.locator('#noobly-sidebar [data-nav="infra-environments"]').click();
   await expect(content(stevie).locator('h1')).toHaveText('Environments');
   await expect(stevie.locator('#noobly-sidebar')).toContainText('1 drift detected');
   expect(await stevie.evaluate(() => window.__nooblyNoReload)).toBe('still here');
   await expectNoAxeViolations(stevie, 'Environments');
   await expectFitsPhone(stevie, 'Environments');
   // A deep link lands on the same screen after a refresh.
-  await stevie.goto('/infrastructure/designs/INF-031');
+  await stevie.goto('/factory/infrastructure/designs/INF-031');
   await stevie.reload();
   await expect(content(stevie)).toContainText('INF-031');
   await expectNoAxeViolations(stevie, 'Design INF-031');
@@ -73,16 +73,16 @@ test('step 2: Home · Approvals shows INF-031 for Test; Priya is refused; Stevie
   const refused = await api(priya, `/workflows/api/v1/approvals/${id}/decision`, { method: 'POST', body: { decision: 'approve' } });
   expect(refused.status).toBe(403);
   await row.click();
-  await expect(content(stevie).getByRole('link', { name: 'Open INF-031 v2' })).toHaveAttribute('href', '/infrastructure/designs/INF-031?kind=test');
+  await expect(content(stevie).getByRole('link', { name: 'Open INF-031 v2' })).toHaveAttribute('href', '/factory/infrastructure/designs/INF-031?kind=test');
   await expectNoAxeViolations(stevie, 'Approvals with an infrastructure design');
   await content(stevie).getByRole('button', { name: 'Approve & provision Test' }).click();
   await expect(content(stevie)).toContainText('Approved for Test. Provisioning test-slots');
-  await stevie.goto('/infrastructure/designs/INF-031');
+  await stevie.goto('/factory/infrastructure/designs/INF-031');
   await expect(content(stevie)).toContainText('Approved · v2');
 });
 
 test('step 3: Provisioning runs move with no refresh; the run page shows the plan, who approved and its log', async () => {
-  await stevie.goto('/infrastructure/runs');
+  await stevie.goto('/factory/infrastructure/runs');
   await stevie.evaluate(() => { window.__nooblyNoReload = 'still here'; });
   const row = content(stevie).locator('tr', { hasText: 'test-slots' }).first();
   await expect(row).toContainText('Approved by Stevie');
@@ -110,7 +110,7 @@ test('step 4: the Cloud budget lowered below this month\'s cloud spend refuses a
   await content(stevie).getByRole('button', { name: 'Save changes' }).click();
   await expect(content(stevie).getByRole('status').first()).toContainText('budgets saved');
 
-  await stevie.goto('/infrastructure/environments');
+  await stevie.goto('/factory/infrastructure/environments');
   await content(stevie).getByRole('button', { name: 'New environment' }).click();
   await content(stevie).getByLabel('Kind').selectOption('dev');
   await content(stevie).getByLabel('Name').fill('dev-two');
@@ -135,7 +135,7 @@ test('step 5: six hours on the dev clock and the drift sweep has run; Restore fr
   await expect(content(stevie)).toContainText(/checked \d+ environments for drift/, { timeout: 20_000 });
   await api(stevie, '/api/v1/dev/clock', { method: 'POST', body: { reset: true } });
 
-  await stevie.goto('/infrastructure/environments/dev-slots');
+  await stevie.goto('/factory/infrastructure/environments/dev-slots');
   await expect(content(stevie).getByRole('region', { name: 'Needs attention' })).toContainText('Redis');
   await expectNoAxeViolations(stevie, 'Environment with drift');
   await expectFitsPhone(stevie, 'Environment with drift');
@@ -149,12 +149,12 @@ test('step 6: a queued run is cancelled and pr-485 destroyed; both are audited, 
   const first = await api(priya, `${API}/environments`, { method: 'POST', body: { name: 'dev-three', kind: 'dev', designId: 'INF-031' } });
   const second = await api(priya, `${API}/environments`, { method: 'POST', body: { name: 'dev-four', kind: 'dev', designId: 'INF-031' } });
   expect([first.status, second.status]).toEqual([201, 201]);
-  await priya.goto(`/infrastructure/runs/${second.body.run.id}`);
+  await priya.goto(`/factory/infrastructure/runs/${second.body.run.id}`);
   await content(priya).getByRole('button', { name: 'Cancel run' }).click();
   await expect(content(priya).getByRole('status')).toContainText(/cancelled|Asked to stop/);
   await expect(content(priya)).toContainText('Cancelled by Priya S.', { timeout: 20_000 });
 
-  await priya.goto('/infrastructure/environments/pr-485');
+  await priya.goto('/factory/infrastructure/environments/pr-485');
   await content(priya).getByRole('button', { name: 'Destroy', exact: true }).click();
   const form = content(priya).getByRole('form', { name: 'Destroy pr-485' });
   await expectNoAxeViolations(priya, 'Environment, asking to destroy');
@@ -176,11 +176,11 @@ test('step 7: Platform · Environments lists Infrastructure\'s environments, eac
   await expectNoAxeViolations(stevie, 'Platform · Environments from Infrastructure');
   await content(stevie).getByRole('link', { name: 'staging', exact: true }).click();
   await expect(content(stevie).locator('h1')).toHaveText('staging');
-  await expect(stevie.locator('#noobly-rail [data-app="infrastructure"]')).toHaveAttribute('aria-current', 'page');
+  await expect(stevie.locator('#noobly-rail [data-app="factory"]')).toHaveAttribute('aria-current', 'page');
 });
 
 test('the other Infrastructure screens read well at any width', async () => {
-  for (const [path, title] of [['/infrastructure/designs', 'Designs'], ['/infrastructure/testing', 'Testing in environments'], ['/infrastructure/blueprints', 'Blueprints'], ['/infrastructure/cost', 'Cost'], ['/infrastructure/policies', 'Policies']]) {
+  for (const [path, title] of [['/factory/infrastructure/designs', 'Designs'], ['/factory/infrastructure/testing', 'Testing in environments'], ['/factory/infrastructure/blueprints', 'Blueprints'], ['/factory/infrastructure/cost', 'Cost'], ['/factory/infrastructure/policies', 'Policies']]) {
     await stevie.goto(path);
     await expect(content(stevie).locator('h1')).toHaveText(title);
     await expectNoAxeViolations(stevie, title);

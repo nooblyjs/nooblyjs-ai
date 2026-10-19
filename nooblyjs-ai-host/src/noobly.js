@@ -7,7 +7,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { HOME, PLATFORM, DEV, statusFor } from './built-in-apps.js';
-import { loadHostedApps } from './hosted-apps.js';
+import { loadHostedApps, foldData } from './hosted-apps.js';
 import { seedFiles, seedMissing, isEmptyDir, isBlank } from './seed/index.js';
 import { renameOpportunitiesToIdeas } from './seed/ideas.js';
 import { createEvents } from './services/events.js';
@@ -246,6 +246,10 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   services.set('workflows', lifecycle.services);
   if (lifecycleIsNew) await lifecycle.seed({ reset: false, content: sampleData });
 
+  // Apps that became part of another (Product and Infrastructure are sections of the Software Factory since 2026-10-19)
+  // keep their data: it moves to where that app keeps it, once, before anything loads. A failure is logged; the app
+  // that took them in then starts on an empty folder and the old one is left as it was.
+  await foldData(config.dataDir, log).catch((err) => log.error(`moving the data of folded apps failed: ${err.message}`));
   const hosted = await loadHostedApps({ app, serverManager, config, store, shell, hostFor, services, log, sampleData });
 
   // A Software Factory run that is stuck asks a person. The question is also a line in the item's thread, so the

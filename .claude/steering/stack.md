@@ -41,9 +41,9 @@ inclusion: always
     ├── .claude/steering/       this file, product.md, design.md, roadmap.md (the whole factory)
     ├── scripts/each.js         runs install / test / coverage / build / clean in every project, in order
     ├── nooblyjs-ai-host/       the host: frame, Home, lifecycle engine, Platform, chat, Teams, devtools, apps/{electron,edge,msteams}
-    ├── nooblyjs-ai-product/    Product Factory            (/product)
-    ├── nooblyjs-ai-factory/    Software Factory           (/factory, and the `factory` CLI)
-    ├── nooblyjs-ai-infrastructure/  Infrastructure       (/infrastructure)
+    ├── nooblyjs-ai-factory/    Software Factory           (/factory, and the `factory` CLI), one package with:
+    │   ├── product/            its Product section        (/factory/product; was nooblyjs-ai-product)
+    │   └── infrastructure/     its Infrastructure section (/factory/infrastructure; was nooblyjs-ai-infrastructure)
     ├── nooblyjs-ai-teammate/   Digital Teammates          (/teammates, or standalone)
     ├── nooblyjs-ai-knowledge/  Knowledge (the wiki)       (/wiki)
     ├── nooblyjs-ai-harness/    the agent runtime and `noobly` CLI (library)
@@ -51,18 +51,18 @@ inclusion: always
 ```
 
 Proposed additions (`product.md` §4): `nooblyjs-ai-quality` (`/quality`), `nooblyjs-ai-security` (`/security`),
-`nooblyjs-ai-operations` (`/operations`) `[CONFIRM names and mount paths]`. Each is made from the same template as
-`nooblyjs-ai-infrastructure` (the smallest clean hosted app): `index.js` → `register()`, standalone `server.js`,
-`src/{routes,services,repos,seed,util}`, `public/js/module.js` and pages on the kit, `test/`.
+`nooblyjs-ai-operations` (`/operations`) `[CONFIRM names and mount paths]`. Each is made from the same template as the
+Infrastructure section (the smallest clean one): `index.js` → `register()`, `src/{routes,services,repos,seed,util}`,
+`public/js/module.js` and pages on the kit, `test/`. The same template works as a new **section** of the Software
+Factory (`nooblyjs-ai-factory/<section>/`, added to `src/services/sections.js` and `public/js/sections.js`), which is
+how Product and Infrastructure joined it on 2026-10-19; which way the three new ones go is open (`product.md` §9).
 
 ## 3. Each project today
 
 | Project | Modules | Runtime dependencies | Tests | Notes |
 | --- | --- | --- | --- | --- |
 | `nooblyjs-ai-host` | ESM | express, js-yaml, helmet, compression, express-rate-limit, express-session, passport, nooblyjs-core, AI module, the hosted apps | 47 files + Playwright e2e | `nodemon` sits in runtime dependencies; it belongs in dev dependencies |
-| `nooblyjs-ai-product` | ESM | js-yaml, nooblyjs-core, AI module, harness | 20 | Clean |
-| `nooblyjs-ai-factory` | ESM | harness, AI module | 108 | Needs Node 24; event log is daily YAML streams |
-| `nooblyjs-ai-infrastructure` | ESM | nooblyjs-core | 7 | Clean; mock provisioner |
+| `nooblyjs-ai-factory` | ESM | harness, AI module; `nooblyjs-core` and `js-yaml` for its sections | 108 for the line, 19 for the Product section, 7 for Infrastructure | Needs Node 24; event log is daily YAML streams. Since 2026-10-19 one package with the Product and Infrastructure sections (`product/`, `infrastructure/`, each with its own `src/`, `test/` and docs; their pages in `public/<section>/`); no standalone server for either section |
 | `nooblyjs-ai-teammate` | ESM | express, js-yaml, nooblyjs-core, AI module | 43 | Keeps its own FsStore copy, not `host.store` |
 | `nooblyjs-ai-harness` | ESM, `.jsx` via `tsx` | Ink, React, marked, tsx, AI module | 44 | React is for the **terminal** UI only; no browser code |
 | `nooblyjs-ai-knowledge` | **CommonJS** | ~35, including Socket.IO, multer, document converters, `@anthropic-ai/sdk`, `openai`, `@anthropic-ai/claude-agent-sdk` | 96 (Jest and `node:test`) | Express 4 behind an Express 5 adapter; generated browser UI |

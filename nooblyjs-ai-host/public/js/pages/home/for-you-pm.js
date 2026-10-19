@@ -36,7 +36,7 @@ const agent = (a) => (a ? html`<section class="agent-card" aria-label="Your agen
 export function panels(data) {
   return {
     main: html`${waiting(data.panels.waiting)}${items(data.panels.items)}`,
-    side: html`<section class="card card--side" aria-label="Top signals" data-signals><div class="card__head"><h2 class="card__title card__title--small">Top signals this week</h2><a href="/product/board">Board</a></div><p class="row__meta" role="status">Loading…</p></section>${agent(data.panels.agent)}`,
+    side: html`<section class="card card--side" aria-label="Top signals" data-signals><div class="card__head"><h2 class="card__title card__title--small">Top signals this week</h2><a href="/factory/product/board">Board</a></div><p class="row__meta" role="status">Loading…</p></section>${agent(data.panels.agent)}`,
   };
 }
 
@@ -50,7 +50,7 @@ export async function after(view, { ctx }) {
   };
   let signals;
   try {
-    ({ signals } = await createApi('/product/api/v1', { signal: ctx.signal }).get('signals'));
+    ({ signals } = await createApi('/factory/product/api/v1', { signal: ctx.signal }).get('signals'));
   } catch (err) {
     if (err?.name !== 'AbortError') say('The Product Factory is not running here, so there are no signals to show.');
     return;

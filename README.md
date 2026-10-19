@@ -6,9 +6,7 @@ ship, where AI agents draft and people decide), the agent harness it runs on, an
 | Project | What it is |
 | --- | --- |
 | [`nooblyjs-ai-host`](nooblyjs-ai-host) | The host: one process and one frame for every app. Home, the lifecycle engine, onboarding and people, team chat, Platform and governance, Metrics, Microsoft Entra and Teams, Jira and Bitbucket (integrations off until configured) |
-| [`nooblyjs-ai-product`](nooblyjs-ai-product) | Product Factory: signals, ideas, specs, architecture, UX and UI, drafting agents (hosted at `/product`) |
-| [`nooblyjs-ai-factory`](nooblyjs-ai-factory) | Software Factory: issues in, verified PRs out (hosted at `/factory`, and the `factory` CLI) |
-| [`nooblyjs-ai-infrastructure`](nooblyjs-ai-infrastructure) | Infrastructure: designs, environments, provisioning runs, drift, cloud cost (hosted at `/infrastructure`) |
+| [`nooblyjs-ai-factory`](nooblyjs-ai-factory) | The Software Factory, one app at `/factory` with three parts: the **Product section** ([`product/`](nooblyjs-ai-factory/product): signals, ideas, specs, architecture, UX and UI, drafting agents; at `/factory/product`), the **line** (issues in, verified PRs out; also the `factory` CLI) and the **Infrastructure section** ([`infrastructure/`](nooblyjs-ai-factory/infrastructure): designs, environments, provisioning runs, drift, cloud cost; at `/factory/infrastructure`) |
 | [`nooblyjs-ai-teammate`](nooblyjs-ai-teammate) | Digital Teammates: hire, configure, budget and bill named AI agents (hosted at `/teammates`, or standalone) |
 | [`nooblyjs-ai-knowledge`](nooblyjs-ai-knowledge) | The knowledge repository: wiki, datasources, AI answers with citations, MCP (hosted at `/wiki`) |
 | [`nooblyjs-ai-harness`](nooblyjs-ai-harness) | `noobly`, the agent runtime and AI coding CLI every agent runs in |
@@ -28,7 +26,7 @@ npm install            # installs every project, in dependency order (scripts/ea
 npm run seed           # the host's sample story (the fictional Acme Retail)
 npm start              # the host, with every app on the rail: http://127.0.0.1:11001
 npm test               # every project's tests, offline
-npm run start:teammate # one app on its own (also :desktop, :product, :infrastructure, :knowledge, :factory, :harness)
+npm run start:teammate # one app on its own (also :desktop, :knowledge, :factory, :harness)
 ```
 
 The shared rules every project follows are in `nooblyjs-ai-host/docs/steering/nooblyjs-ai-shared-rules.md`, copied

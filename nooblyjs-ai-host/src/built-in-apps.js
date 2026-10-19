@@ -1,6 +1,6 @@
 // NooblyJS's built-in apps (structure.md §2a): Home and Platform, described like hosted apps and loaded into the same
-// frame. Their UI modules are in public/js/modules/. The nav comes from product.md §5. The Product Factory is a
-// hosted app (nooblyjs-ai-product), which owns its screens like Teammates does.
+// frame. Their UI modules are in public/js/modules/. The nav comes from product.md §5. The Product Factory is the
+// Software Factory's Product section (nooblyjs-ai-factory, /factory/product), which owns its screens like Teammates does.
 // The dev app (/dev/styleguide) has no rail item and only exists when NOOBLY_DEV_LOGIN=true.
 
 export const HOME = {
@@ -56,11 +56,10 @@ export const DEV = {
 
 /** How the suite shows its child apps before they are installed (product.md §1, roadmap phases). */
 export const SUITE_APPS = {
+  // Product and Infrastructure are its sections since 2026-10-19 (nooblyjs-ai-factory/product, /infrastructure).
   'nooblyjs-ai-factory': { name: 'factory', label: 'Factory', icon: 'factory', phase: 7 },
-  'nooblyjs-ai-infrastructure': { name: 'infrastructure', label: 'Infra', title: 'infrastructure', icon: 'cube', phase: '9a' },
   'nooblyjs-ai-teammate': { name: 'teammates', label: 'Teammates', icon: 'team', phase: 6 },
   'nooblyjs-ai-knowledge': { name: 'wiki', label: 'Wiki', icon: 'book', phase: 8 },
-  'nooblyjs-ai-product': { name: 'product', label: 'Product', title: 'product factory', icon: 'product', phase: 5 },
 };
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;

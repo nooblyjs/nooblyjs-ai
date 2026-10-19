@@ -52,7 +52,7 @@ export async function render(view, { ctx, note }) {
     const head = pageHead({
       ...HEAD,
       lead: lifecycle?.summary ?? 'The lifecycle engine is not running, so items and approvals are not shown.',
-      actions: button({ label: 'New idea', icon: 'plus', href: '/product/board' }),
+      actions: button({ label: 'New idea', icon: 'plus', href: '/factory/product/board' }),
     });
     const missing = notice({ title: 'The lifecycle engine is not running', text: 'Items, stages and approvals come from the lifecycle engine, which is part of NooblyJS. It did not start: check the NooblyJS log.', tone: 'error' });
     view.innerHTML = String(html`${head}${note ?? ''}${lifecycle ? line(lifecycle) : missing}${systems(data.systems)}

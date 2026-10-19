@@ -44,7 +44,7 @@ before(async () => {
   env = await startApp({
     env: { CHAT_MOCK_REPLY_MS: '0', PUBLIC_BASE_URL: 'https://noobly.example' },
     hostedApps: [
-      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
       { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
     ],
   });

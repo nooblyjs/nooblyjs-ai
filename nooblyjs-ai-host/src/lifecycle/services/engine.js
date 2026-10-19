@@ -439,7 +439,7 @@ export function createEngine({ repos, host, log, clock }) {
 
   // ---------------------------------------------------------------------------- services for other apps
 
-  /** nooblyjs-ai-product's Approve / Request changes on a spec: the open spec approval this person is waiting on. */
+  /** The Product section's Approve / Request changes on a spec: the open spec approval this person is waiting on. */
   async function decide({ itemId, decision, reason, version, override = null, actor } = {}) {
     const open = (await repos.approvals.list()).filter((a) => a.itemId === itemId && a.type === 'spec' && a.status === 'open');
     if (!open.length) throw conflict('no_open_approval', `${itemId} has no spec approval waiting, so there is nothing to decide.`);
@@ -465,7 +465,7 @@ export function createEngine({ repos, host, log, clock }) {
   }
 
   /**
-   * nooblyjs-ai-product's Send for review: opens the spec approval for an item, and the item itself when the lifecycle
+   * The Product section's Send for review: opens the spec approval for an item, and the item itself when the lifecycle
    * doesn't know it yet (a spec drafted from a new idea). Asking for review is a proposal, not a decision,
    * so it needs `draft`; who decides is the rule's business. Refused while another spec approval is open.
    */
@@ -507,7 +507,7 @@ export function createEngine({ repos, host, log, clock }) {
     return { approvalId: approval.id, itemId: item.id, reviewers, dueAt: approval.dueAt };
   }
 
-  /** nooblyjs-ai-product's Send to Software Factory: the UI handoff decision, which creates the work items. */
+  /** The Product section's Send to Software Factory: the UI handoff decision, which creates the work items. */
   async function handoff({ itemId, workItems = [], repositories = [], estimate = null, repoCount, openChecks = [], note = null, actor } = {}) {
     const person = await personFor(actor, { what: 'send work to the Software Factory', target: `item ${itemId}` });
     const item = await itemOr404(itemId);

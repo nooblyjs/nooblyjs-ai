@@ -61,7 +61,7 @@ after(async () => {
 
 test('an app opens an approval on its artefact; it waits on the people with the rule\'s permission, once per artefact and kind', async () => {
   const opened = await hosted.services.requestAppApproval({
-    type: 'infra-design', itemId: 'PRD-031', title: 'Slot availability', subject: 'INF-031 v2', ref: REF, link: '/infrastructure/designs/INF-031',
+    type: 'infra-design', itemId: 'PRD-031', title: 'Slot availability', subject: 'INF-031 v2', ref: REF, link: '/factory/infrastructure/designs/INF-031',
     requestedBy: { id: 'infrastructure', name: 'Infrastructure', kind: 'app' },
   });
   assert.deepEqual(opened.reviewers.map((r) => r.id), ['stevie']);
@@ -71,7 +71,7 @@ test('an app opens an approval on its artefact; it waits on the people with the 
   const row = body.rows.find((r) => r.id === opened.approvalId);
   assert.deepEqual([row.tag, row.title], ['Infra', 'INF-031 v2 · Approve & provision Test']);
   const detail = (await call('stevie', 'GET', `/approvals/${opened.approvalId}`)).body.approval;
-  assert.deepEqual([detail.decide.approveLabel, detail.links.artefact, detail.links.artefactLabel], ['Approve & provision Test', '/infrastructure/designs/INF-031', 'Open INF-031 v2']);
+  assert.deepEqual([detail.decide.approveLabel, detail.links.artefact, detail.links.artefactLabel], ['Approve & provision Test', '/factory/infrastructure/designs/INF-031', 'Open INF-031 v2']);
 });
 
 test('deciding it: an agent and a Contributor are refused; the app\'s refusal is the answer; then the app carries it out and no stage moves', async () => {

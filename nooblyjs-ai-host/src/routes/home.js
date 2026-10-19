@@ -3,9 +3,10 @@
 // event log. The lifecycle screens themselves (Lifecycle, Approvals) call the NooblyJS lifecycle engine at /workflows/api/v1.
 import { FILTERS } from '../services/activity.js';
 
-// The five systems on Overview, in the mockup's order. `app` is the shell name of the app that reports its status.
+// The five systems on Overview, in the mockup's order. `app` is the shell name of the app that reports its status. The
+// Product Factory is the Software Factory's Product section since 2026-10-19: one app, two cards.
 const SYSTEMS = [
-  { key: 'product', app: 'product', label: 'Product Factory', icon: 'product', href: '/product', purpose: 'Product, architecture, UX and UI design, from signal to handoff.' },
+  { key: 'product', app: 'factory', label: 'Product Factory', icon: 'product', href: '/factory/product', purpose: 'Product, architecture, UX and UI design, from signal to handoff.' },
   { key: 'factory', app: 'factory', label: 'Software Factory', icon: 'factory', href: '/factory', purpose: 'Runs specs through stations to reviewed pull requests.' },
   { key: 'teammates', app: 'teammates', label: 'Digital Teammates', icon: 'team', href: '/teammates', purpose: 'Named agents with skills, memory, rates and timesheets.' },
   { key: 'knowledge', app: 'wiki', label: 'Knowledge Repository', icon: 'book', href: '/wiki', purpose: 'One searchable memory of decisions, code, specs and customers.' },

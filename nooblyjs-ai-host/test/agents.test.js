@@ -14,6 +14,7 @@ before(async () => {
     env: { CHAT_MOCK_REPLY_MS: '0' },
     hostedApps: [
       { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: false },
+      // Part of the Software Factory since 2026-10-19: an older hosted-apps.yaml may still list it. It is skipped.
       { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: false },
       { path: 'test/fixtures/broken-app', mountPath: '/broken', enabled: true },
     ],
@@ -28,9 +29,8 @@ test('hosted-app checklist steps 8 and 9: with Teammates switched off NooblyJS s
   const teammates = body.apps.find((a) => a.mountPath === '/teammates');
   assert.deepEqual([teammates.name, teammates.label, teammates.state], ['teammates', 'Teammates', 'not-installed']);
   assert.equal(body.apps.find((a) => a.mountPath === '/broken').state, 'unavailable');
-  // Infrastructure (Phase 9a), switched off: still on the rail, by its own name, as not installed.
-  const infra = body.apps.find((a) => a.mountPath === '/infrastructure');
-  assert.deepEqual([infra.name, infra.label, infra.state], ['infrastructure', 'Infra', 'not-installed']);
+  // Infrastructure is a section of the Software Factory since 2026-10-19: its old entry is not an app, on or off.
+  assert.equal(body.apps.find((a) => a.mountPath === '/infrastructure' || a.name === 'infrastructure'), undefined);
   // Its pages still get the frame, which says why there is nothing to show; its API is not there.
   assert.equal((await lerato.get('/teammates/team')).status, 200);
   assert.equal((await lerato.get('/teammates/api/v1/teammates')).status, 404);

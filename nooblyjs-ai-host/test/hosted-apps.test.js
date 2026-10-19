@@ -4,7 +4,9 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import { startApp, today, eventually } from './helpers.js';
+import { foldData, FOLDED } from '../src/hosted-apps.js';
 
 let env;
 before(async () => {
@@ -99,6 +101,37 @@ test('the app seeded its own folder on first start and its services are reachabl
   const c = env.client();
   await c.signIn('stevie');
   assert.equal((await c.json('/hello/api/v1/greeting')).body.text, 'Hello, Stevie');
+  // `provides` as an object: each name is services of its own (the Software Factory's sections).
+  assert.equal((await c.json('/hello/api/v1/section-greeting')).body.text, 'A wave for Stevie');
+});
+
+test('apps that are part of another now: their data moves once to where that app keeps it, and never over data that is there', async () => {
+  const quiet = { info: () => {}, warn: () => {} };
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'noobly-fold-'));
+  try {
+    await fs.mkdir(path.join(dir, 'product', 'specs'), { recursive: true });
+    await fs.writeFile(path.join(dir, 'product', 'specs', 'PRD-031.md'), '---\nid: PRD-031\n---\n');
+    await fs.mkdir(path.join(dir, 'factory', 'infrastructure'), { recursive: true }); // empty: may be replaced
+    await fs.mkdir(path.join(dir, 'infrastructure'));
+    await fs.writeFile(path.join(dir, 'infrastructure', 'seed.yaml'), 'story: INF-031\n');
+    const moved = await foldData(dir, quiet);
+    assert.deepEqual(moved.map((m) => m.name).sort(), ['nooblyjs-ai-infrastructure', 'nooblyjs-ai-product']);
+    assert.equal(await fs.readFile(path.join(dir, 'factory', 'product', 'specs', 'PRD-031.md'), 'utf8'), '---\nid: PRD-031\n---\n');
+    assert.ok(await fs.stat(path.join(dir, 'factory', 'infrastructure', 'seed.yaml')));
+    await assert.rejects(fs.stat(path.join(dir, 'product')), 'the old folder is gone');
+    // A second start finds nothing to move.
+    assert.deepEqual(await foldData(dir, quiet), []);
+    // Both there: nothing is moved, and the log says so.
+    await fs.mkdir(path.join(dir, 'product'));
+    await fs.writeFile(path.join(dir, 'product', 'stray.md'), 'x');
+    const warned = [];
+    assert.deepEqual(await foldData(dir, { info: () => {}, warn: (m) => warned.push(m) }), []);
+    assert.match(warned.join('\n'), /both .*product and .*factory\/product exist; nothing was moved/);
+    assert.ok(await fs.stat(path.join(dir, 'product', 'stray.md')));
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+  assert.deepEqual(Object.keys(FOLDED).sort(), ['nooblyjs-ai-infrastructure', 'nooblyjs-ai-product', 'nooblyjs-ai-workflows']);
 });
 
 test('/api/v1/shell/status returns each ready app\'s status', async () => {

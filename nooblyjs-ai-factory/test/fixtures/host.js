@@ -80,7 +80,18 @@ export function createHost({ people = PEOPLE, now = () => Date.now() } = {}) {
   };
 }
 
-/** The nooblyjs-core serverManager, as far as the factory uses it. Only the host may initialise it. */
+/** nooblyjs-core's memory queue, as far as the sections use it (the Product section's drafts, Infrastructure's runs). */
+function memoryQueue() {
+  const queues = new Map();
+  const q = (name) => (queues.has(name) ? queues.get(name) : queues.set(name, []).get(name));
+  return {
+    enqueue: async (name, item) => void q(name).push(item),
+    dequeue: async (name) => q(name).shift(),
+    size: async (name) => q(name).length,
+  };
+}
+
+/** The nooblyjs-core serverManager, as far as the factory and its sections use it. Only the host may initialise it. */
 export function createTestServerManager() {
   const lines = [];
   return {
@@ -90,6 +101,8 @@ export function createTestServerManager() {
       throw new Error('Only the host initialises the serverManager.');
     },
     getDefaultProviderType: () => 'memory',
-    logger: (type, { instanceName } = {}) => Object.fromEntries(['error', 'warn', 'info', 'debug'].map((level) => [level, (message) => void lines.push({ level, instanceName, message: String(message) })])),
+    getEventEmitter: () => new EventEmitter(),
+    logger: (type, { instanceName } = {}) => Object.fromEntries(['error', 'warn', 'info', 'log', 'debug'].map((level) => [level, (message) => void lines.push({ level, instanceName, message: String(message) })])),
+    queue: () => memoryQueue(),
   };
 }

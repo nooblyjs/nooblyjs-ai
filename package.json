@@ -1,7 +1,7 @@
 {
   "name": "nooblyjs-ai",
   "version": "1.0.0",
-  "description": "NooblyJS AI: the host and its hosted apps (Product, Factory, Infrastructure, Teammates, Knowledge), the agent harness, the AI module and the desktop app, in one repository",
+  "description": "NooblyJS AI: the host and its hosted apps (the Software Factory with its Product and Infrastructure sections, Teammates, Knowledge), the agent harness, the AI module and the desktop app, in one repository",
   "homepage": "https://github.com/nooblyjs/nooblyjs-ai#readme",
   "bugs": {
     "url": "https://github.com/nooblyjs/nooblyjs-ai/issues"
@@ -25,8 +25,6 @@
     "start:host": "npm start --prefix nooblyjs-ai-host",
     "start:desktop": "npm start --prefix nooblyjs-ai-desktop",
     "start:teammate": "npm start --prefix nooblyjs-ai-teammate",
-    "start:product": "npm start --prefix nooblyjs-ai-product",
-    "start:infrastructure": "npm start --prefix nooblyjs-ai-infrastructure",
     "start:knowledge": "npm start --prefix nooblyjs-ai-knowledge",
     "start:factory": "npm start --prefix nooblyjs-ai-factory",
     "start:harness": "npm start --prefix nooblyjs-ai-harness",

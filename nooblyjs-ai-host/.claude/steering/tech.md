@@ -5,8 +5,8 @@ inclusion: always
 # NooblyJS — Technology and architecture
 
 > How NooblyJS is built. `product.md` says **what** to build; this says **how**. The rules
-> here apply to `nooblyjs-ai-host` and to every child project (`nooblyjs-core`, `nooblyjs-ai-common`, `nooblyjs-ai-harness`, `nooblyjs-ai-product`, `nooblyjs-ai-factory`, `nooblyjs-ai-teammate`,
-> `nooblyjs-ai-knowledge`, `nooblyjs-ai-infrastructure`). The lifecycle engine is part of `nooblyjs-ai-host` (`src/lifecycle/`). Each hosted child restates the rules it must follow
+> here apply to `nooblyjs-ai-host` and to every child project (`nooblyjs-core`, `nooblyjs-ai-common`, `nooblyjs-ai-harness`, `nooblyjs-ai-factory` with its Product
+> and Infrastructure sections, `nooblyjs-ai-teammate`, `nooblyjs-ai-knowledge`). The lifecycle engine is part of `nooblyjs-ai-host` (`src/lifecycle/`). Each hosted child restates the rules it must follow
 > in its own `.claude/steering/tech.md`; this document wins if they disagree. Where the build brief (`brief/noobly-build-brief.md` §4) suggests
 > TypeScript, React, Postgres or pgvector, **this document overrides it**.
 
@@ -50,16 +50,17 @@ accepted unsigned. `electron` is a devDependency and nothing in `src/` or `publi
 ┌──────────────────────────── nooblyjs-ai-host (Express 5, one process) ─────────────────────────────┐
 │  middleware: session/SSO → CSRF → role check → audit (every write) → rate limit         │
 │                                               POST /api/teams/messages (bot endpoint)   │
-│  /api/v1/home   /workflows/api/v1   /product/api/v1   /api/v1/platform   /api/v1/events │
+│  /api/v1/home   /workflows/api/v1   /factory/product/api/v1   /api/v1/platform   /api/v1/events │
 │  /api/v1/me (profile, onboarding)   /api/v1/chat (threads, messages, cards)             │
 │        │                │                  │                  │                         │
 │  ┌─────┴────────────────┴──────────────────┴──────────────────┴──────────────────────┐ │
 │  │ hosted apps: register(app, serverManager, options) → /factory /teammates /wiki      │ │
 │  │  lifecycle (nooblyjs-ai-host) items · stages · readiness · approvals · handoffs · escalation  │ │
-│  │  nooblyjs-ai-product  signals · specs · architecture · UX · UI · drafting agents      │ │
+│  │  nooblyjs-ai-factory   product/: signals · specs · architecture · UX · UI · drafting  │ │
 │  │  nooblyjs-ai-knowledge spaces · sources · ingest · search · answers · process models  │ │
 │  │  nooblyjs-ai-teammate teammates · skills · memory · timesheets · billing             │ │
-│  │  nooblyjs-ai-factory   line · runs · inbox · campaigns · gates · PRs                  │ │
+│  │                        line · runs · inbox · campaigns · gates · PRs                  │ │
+│  │                        infrastructure/: designs · environments · runs · drift · cost  │ │
 │  └──────────────────────────────────┬─────────────────────────────────────────────────┘ │
 │        services:  event bus · audit · notifications · metrics · search index            │
 │        (nooblyjs-core)                  │                                                     │
@@ -214,8 +215,8 @@ listens and handles shutdown. Folder layout: `structure.md` §2.
   `GET /workflows/api/v1/items?stage=architect`,
   `POST /workflows/api/v1/approvals/:id/decision`.
 - Actions that aren't plain CRUD are sub-resources with verbs:
-  `POST /product/api/v1/specs/PRD-031/send-to-architecture`,
-  `POST /product/api/v1/ui/PRD-031/handoff`.
+  `POST /factory/product/api/v1/specs/PRD-031/send-to-architecture`,
+  `POST /factory/product/api/v1/ui/PRD-031/handoff`.
 - Errors use one shape: `{ "error": { "code": "readiness_failed", "message": "…", "details": {} } }`,
   with the right status (400 validation, 401, 403 role/guardrail, 404, 409 conflict, 422 rule refused).
 - Writes accept an `If-Match` version (front-matter `version` or `updatedAt`) and return 409 on conflict.
@@ -255,7 +256,7 @@ that clock (`host.clock`), never `Date.now()`, for business time. Its offset is 
 
 ## 5. Front end (plain HTML, CSS, JS)
 
-- **One frame, many app modules.** Every UI URL (`/`, `/product/…`, `/factory/…`) returns
+- **One frame, many app modules.** Every UI URL (`/`, `/factory/product/…`, `/factory/…`) returns
   the same static **frame page** from nooblyjs-core's `createShell()`. It loads the **shared UI
   kit** from `/ui/` (`nooblyjs-core/public/ui/`). `/ui/js/frame.js` reads the app list from
   `GET /api/v1/shell`, draws the suite rail, the module sidebar and the chat dock once, and
@@ -497,12 +498,12 @@ address. Permissions are only `sidePanel` and `storage`, localhost, and any othe
 | `nooblyjs-core` | Library | Shared UI kit (`public/ui/`: frame, shell, router, components), `createShell()`, service registry (the `serverManager`), logging, caching, queueing, scheduling, notifying (Teams/Outlook), measuring, searching, auth, **FsStore**, event bus |
 | `nooblyjs-ai-common` | Library, inside nooblyjs-core (`src/aiservice/common`) | Provider adapters (Anthropic, OpenAI-compatible, mock, Bedrock, Vertex AI, Azure), model discovery, model catalogue, tokens, cost, retry, SSE, front matter |
 | `nooblyjs-ai-harness` | Library + CLI | Agent loop, tools, permissions, sandboxing, hooks, MCP, skills, memory |
-| `nooblyjs-ai-infrastructure` | Hosted app at `/infrastructure` (Phase 9a); its provisioning runs work one at a time in the NooblyJS process | Designs and their versions, apply rules by environment kind, policy checks, the provisioner interface (only `mock` today), runs with a log, drift and its sweep, the cloud cost ledger. Opens `infra-design` approvals in the lifecycle engine and carries their decisions out; asks Platform's cloud budget before a run |
-| `nooblyjs-ai-factory` | Hosted app at `/factory`; its scheduler runs in the NooblyJS process (separate workers later) | Line, stations, scheduler, gates (the repository's, matched to quality attributes by name), PR delivery, handoff intake, factory events |
+| `nooblyjs-ai-factory` · Infrastructure section (`infrastructure/`; the hosted app `nooblyjs-ai-infrastructure` until 2026-10-19) | Mounted by the Factory at `/factory/infrastructure` (Phase 9a); its provisioning runs work one at a time in the NooblyJS process | Designs and their versions, apply rules by environment kind, policy checks, the provisioner interface (only `mock` today), runs with a log, drift and its sweep, the cloud cost ledger. Opens `infra-design` approvals in the lifecycle engine and carries their decisions out; asks Platform's cloud budget before a run |
+| `nooblyjs-ai-factory` | Hosted app at `/factory`; its scheduler runs in the NooblyJS process (separate workers later); it mounts its two sections first (`src/services/sections.js`) and provides `product` and `infrastructure` | Line, stations, scheduler, gates (the repository's, matched to quality attributes by name), PR delivery, handoff intake, factory events |
 | `nooblyjs-ai-teammate` | Hosted app at `/teammates` (a library: no standalone server) | The source of agents (`services`: `roster`, `get`, `availability`, `provider`, `runTask`). Teammates, skills, memory, timesheets, billing (incl. per-team billing for meetings), hiring, `chat.reply` tasks |
 | `nooblyjs-ai-knowledge` | Hosted app at `/wiki` (the Wiki Platform: CommonJS modules behind an adapter, its UI generated into the frame) | Spaces, pages, search, AI chat with cited answers; from Phase 8: import with PII redaction, sources, answer actions, needs-review, the process model, `services` for other apps (`provides: ['knowledge']`) |
 | the lifecycle engine (`noobly/src/lifecycle/`, part of NooblyJS since 2026-10-10; before that the hosted app `nooblyjs-ai-workflows`) | Mounted by `src/noobly.js` before any hosted app: API at `/workflows/api/v1`, `host.service('workflows')`, files in `data/workflows/` | Items, stages, readiness checks, approvals + escalation (an in-process sweep on the host's clock), handoffs, send-back, stage orchestration (emits `item.stage_changed`) |
-| `nooblyjs-ai-product` | Hosted API at `/product` + drafting workers | Product Factory engine: signals, ideas (RICE), specs and versions, architecture (diagram as code, ADRs, standards check, quality attributes), UX (journeys, flows, research), UI (screens, design-system reuse, accessibility checks, handoff preview), roadmap; drafting agents per stage. Owns its screens (UI module in the frame, like Teammates) |
+| `nooblyjs-ai-factory` · Product section (`product/`; the hosted app `nooblyjs-ai-product` until 2026-10-19) | Mounted by the Factory at `/factory/product` + drafting workers | Product Factory engine: signals, ideas (RICE), specs and versions, architecture (diagram as code, ADRs, standards check, quality attributes), UX (journeys, flows, research), UI (screens, design-system reuse, accessibility checks, handoff preview), roadmap; drafting agents per stage. Owns its screens (UI module in the frame, like Teammates) |
 
 `nooblyjs-ai-factory` keeps its event log as daily YAML streams under `data/factory/events/YYYY/MM/<day>.yaml`
 (one event a line, a `HEAD` file, a lock folder for writers in other processes). Its projections are rebuilt in
@@ -612,10 +613,10 @@ changing a function here is a shared change: update this table in the same chang
 | `devtools` | NooblyJS (`src/services/devtools/`): reads (Phase 11), and writes through the gate only (Phase 13) | `writes` (`status`, `outbox`, `retry`, `discard`, `setMode`, `setRule`), `sync` (`onHandoff`, `onRunStarted`, `poll`, `workFor`), `forge` (`pushBranch`, `openOrUpdatePullRequest`, for the Factory), `decideApproval`, `status`, `repositories`, `repository(slug)`, `file(slug, path, { ref })`, `jira.search` / `issue` / `issues` / `projects`, `links` | Product (Architecture · Repositories), Factory |
 | `teams` | NooblyJS | `list`, `get(id)` (NooblyJS teams, for billing and homes) | Teammates, Factory |
 | `teammates` | `nooblyjs-ai-teammate` | `roster`, `get(slug)`, `availability(slug)`, `provider`, **`runTask(request)`**: every agent action in NooblyJS is one | chat, the Teams bot, Product, Infrastructure |
-| `product` | `nooblyjs-ai-product` | `artefactsFor`, `summary`, `readinessFacts`, `updateSpec` (a person's edit; agents refused), `linkKnowledge`, `adrFor`, `architectureFor`, `gatesFor`, `waitingFor`, `metrics` | Home, chat, Knowledge, Factory |
+| `product` | the Factory's Product section (`nooblyjs-ai-factory/product`, through the Factory's `provides`) | `artefactsFor`, `summary`, `readinessFacts`, `updateSpec` (a person's edit; agents refused), `linkKnowledge`, `adrFor`, `architectureFor`, `gatesFor`, `waitingFor`, `metrics` | Home, chat, Knowledge, Factory |
 | `factory` | `nooblyjs-ai-factory` (`src/services/hosted.js`) | `status`, `runsForItem`, `runsFor`, `questionsFor(person)`, `waitingWork`, `intake`, `cancel(runId)`, `stopAll` | Home, Platform · Containers |
 | `knowledge` (the wiki returns `provides: ['knowledge']`) | `nooblyjs-ai-knowledge` | `contextFor`, `search`, `find`, `locate`, `contextOf`, `flagged`, `status` | Product (drafts, Architecture · Knowledge), Factory (run context), chat |
-| `infrastructure` | `nooblyjs-ai-infrastructure` (`src/services/summary.js`) | `summary`, `designFor`, `environmentsFor`, `previewFor`, `waitingFor`, `environments`, `decideApproval` | Home · Approvals (through the lifecycle engine), Platform · Environments |
+| `infrastructure` | the Factory's Infrastructure section (`nooblyjs-ai-factory/infrastructure/src/services/summary.js`, through `provides`) | `summary`, `designFor`, `environmentsFor`, `previewFor`, `waitingFor`, `environments`, `decideApproval` | Home · Approvals (through the lifecycle engine), Platform · Environments |
 
 Events are the other way apps talk (`host.events.emit` / `on`); each app lists the events it emits in its own
 `structure.md`, and metrics read them through `src/services/metrics/facts.js`.

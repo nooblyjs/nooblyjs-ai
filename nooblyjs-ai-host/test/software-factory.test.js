@@ -22,7 +22,6 @@ const until = (check) => eventually(check, { ms: 240_000, every: 500 });
 before(async () => {
   env = await startApp({
     hostedApps: [
-      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
     ],
   });

@@ -4,6 +4,13 @@ inclusion: always
 
 # Software Factory: what NooblyJS needs from this repo
 
+> **Since 2026-10-19 the Software Factory is one app with three parts**, in the order work moves through it: the
+> **Product section** (`product/`; what NooblyJS needs from it is `product/.claude/steering/product.md`), the **line**
+> (this file), and the **Infrastructure section** (`infrastructure/`; `infrastructure/.claude/steering/product.md`).
+> One rail item, **Factory**; one sidebar, grouped **Product · Build · Infrastructure**; one status card with a line per
+> section. The Product Factory and Infrastructure keep their screens, rules and services, at `/factory/product` and
+> `/factory/infrastructure`.
+
 > Extracted from the NooblyJS product definition (`../nooblyjs-ai-host/.claude/steering/product.md`, the source
 > of truth) and the design mockups in `../nooblyjs-ai-host/.claude/steering/brief/`. This file lists only
 > what the **Software Factory** must provide inside NooblyJS. `tech.md` says how this repo plugs

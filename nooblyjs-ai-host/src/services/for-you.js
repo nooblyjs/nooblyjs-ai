@@ -97,7 +97,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     return {
       summary: `${need}${waits}.`,
       filters: { what: 'My items' },
-      action: { label: 'New idea', href: '/product/board', icon: 'plus' },
+      action: { label: 'New idea', href: '/factory/product/board', icon: 'plus' },
       tiles: [
         { key: 'specs', label: 'Specs waiting on you', value: specs.length, note: specs.length ? `Oldest ${specs.map((a) => a.age)[0]}` : 'Nothing waiting', tone: specs.length ? 'warning' : null },
         { key: 'items', label: 'Your items in flight', value: work.length, note: `across ${stages} ${plural(stages, 'stage')}` },
@@ -113,7 +113,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
           title: agentItem ? `${role.teammate.name} is working for you` : `${role.teammate.name} is available`,
           text: agentItem ? `${agentItem.work.task ?? `Drafting ${agentItem.ref}`} · ${Math.round(agentItem.work.progress * 100)}%` : 'No draft in progress on your items',
           progress: agentItem?.work.progress ?? null,
-          action: { label: `Give ${firstName(role.teammate.name)} a new brief`, href: '/product/specs' },
+          action: { label: `Give ${firstName(role.teammate.name)} a new brief`, href: '/factory/product/specs' },
         } : listed?.agent ? { id: null, name: null, title: nobody, text: 'Hire one in Teammates to draft for you.', progress: null, action: { label: 'Hire a teammate', href: '/teammates/hire' } } : null,
       },
     };
@@ -131,8 +131,8 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const arriving = active.filter((i) => i.stage === 'specify' && snapshot.approvals.some((a) => a.itemId === i.id && a.type === 'spec'));
     const queue = [
       ...inArch.map((i) => (typeof i.work?.progress === 'number'
-        ? { id: i.id, title: `${i.title} · ${i.ref}`, text: `${i.work.text}${i.work.task ? ` · ${i.work.task}` : ''} · ${Math.round(i.work.progress * 100)}%`, action: { label: 'Watch', href: `/product/architecture/${encodeURIComponent(i.id)}` } }
-        : { id: i.id, title: `${i.title} · ${i.ref}`, late: i.late, text: i.waitingSince ? `Waiting ${Math.floor((new Date(at) - new Date(i.waitingSince)) / DAY)} days · no draft requested yet` : `In Architecture for ${i.waitingDays || 0} d`, action: { label: role.teammate ? `Ask ${firstName(role.teammate.name)} to draft` : 'Ask a teammate to draft', href: `/product/architecture/${encodeURIComponent(i.id)}` } })),
+        ? { id: i.id, title: `${i.title} · ${i.ref}`, text: `${i.work.text}${i.work.task ? ` · ${i.work.task}` : ''} · ${Math.round(i.work.progress * 100)}%`, action: { label: 'Watch', href: `/factory/product/architecture/${encodeURIComponent(i.id)}` } }
+        : { id: i.id, title: `${i.title} · ${i.ref}`, late: i.late, text: i.waitingSince ? `Waiting ${Math.floor((new Date(at) - new Date(i.waitingSince)) / DAY)} days · no draft requested yet` : `In Architecture for ${i.waitingDays || 0} d`, action: { label: role.teammate ? `Ask ${firstName(role.teammate.name)} to draft` : 'Ask a teammate to draft', href: `/factory/product/architecture/${encodeURIComponent(i.id)}` } })),
       ...arriving.map((i) => {
         const a = snapshot.approvals.find((x) => x.itemId === i.id && x.type === 'spec');
         return { id: i.id, title: `${i.title} · ${i.ref}`, text: `Arrives when ${a.waitingOnNames.join(' and ')} ${plural(a.waitingOnNames.length, 'approves', 'approve')} the spec${a.due?.text === 'due today' ? ' · expected today' : ''}`, action: { label: 'Preview spec', href: i.specHref ?? i.href } };
@@ -142,7 +142,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     return {
       summary: `${yours.length ? `${words(yours.length)} ${plural(yours.length, 'decision needs', 'decisions need')} your sign-off.` : 'No decisions are waiting on you.'}${slowest?.key === 'architect' ? ` Architecture is the slowest stage (median ${slowest.medianDays} d).` : ''}`,
       filters: { what: 'Architecture work' },
-      action: { label: 'Open Architecture', href: '/product/architecture' },
+      action: { label: 'Open Architecture', href: '/factory/product/architecture' },
       tiles: [
         { key: 'decisions', label: 'Decisions awaiting you', value: yours.length, note: past ? `${past} past ${plural(past, 'its', 'their')} target` : yours.length ? 'All within target' : 'Nothing waiting', tone: past ? 'warning' : null },
         { key: 'in-architecture', label: 'In Architecture', value: inArch.length, note: stage?.medianDays === null || !stage ? 'no moves in 30 days' : `median ${stage.medianDays} d · target 1 d` },
@@ -153,7 +153,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         decisions: decisions.map((a) => ({
           id: a.id, eyebrow: `${a.subject ?? 'ADR'} · ${a.itemRef}`, age: `${a.age}${a.due ? ` · ${a.due.text}` : ''}`, overdue: a.overdue,
           title: a.shortTitle, summary: a.summary, context: a.context, canDecide: a.canDecide, waitingOn: a.waitingOnNames,
-          discussHref: `/product/architecture/${encodeURIComponent(a.itemId)}`, approvalHref: a.href,
+          discussHref: `/factory/product/architecture/${encodeURIComponent(a.itemId)}`, approvalHref: a.href,
         })),
         queue,
         standards: { unavailable: later(7, 'Standards are checked on every pull request once the Software Factory joins NooblyJS.') },

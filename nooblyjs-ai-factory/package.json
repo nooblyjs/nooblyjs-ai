@@ -1,7 +1,7 @@
 {
   "name": "nooblyjs-ai-factory",
   "version": "0.1.0",
-  "description": "A learning-first agentic software factory, built one concept at a time on top of the noobly harness",
+  "description": "The Software Factory: product (signal → spec → architecture → design → handoff), build (issues in, verified PRs out, on the noobly harness) and infrastructure (designs → environments → provisioning), one NooblyJS app at /factory",
   "type": "module",
   "bin": {
     "factory": "bin/factory.js"
@@ -16,15 +16,17 @@
   "scripts": {
     "start": "node bin/factory.js",
     "run": "npm start",
-    "test": "node --test \"test/**/*.test.js\"",
-    "coverage": "node --test --experimental-test-coverage \"test/**/*.test.js\"",
+    "test": "node --test \"test/**/*.test.js\" \"product/test/**/*.test.js\" \"infrastructure/test/**/*.test.js\"",
+    "coverage": "node --test --experimental-test-coverage \"test/**/*.test.js\" \"product/test/**/*.test.js\" \"infrastructure/test/**/*.test.js\"",
     "build": "node -e \"console.log('No build step: plain JavaScript')\"",
     "clean": "node -e \"for (const d of ['node_modules','coverage','dist']) require('fs').rmSync(d, { recursive: true, force: true })\"",
     "check:examples": "scripts/check-examples.sh"
   },
   "dependencies": {
     "nooblyjs-ai-harness": "file:../nooblyjs-ai-harness",
-    "nooblyjs-ai-common": "file:../../nooblyjs-core/src/aiservice/common"
+    "nooblyjs-ai-common": "file:../../nooblyjs-core/src/aiservice/common",
+    "nooblyjs-core": "file:../../nooblyjs-core",
+    "js-yaml": "^4.3.2"
   },
   "devDependencies": {
     "express": "^5.2.1"

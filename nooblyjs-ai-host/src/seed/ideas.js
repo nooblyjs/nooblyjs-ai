@@ -1,6 +1,6 @@
 // Ideas were "opportunities" until 2026-10-12 (nooblyjs-ai-product CHG-001 follow-up): the word, the ids (OPP-018 is
 // IDEA-018 now), the item type and the events. This brings a data folder from before up to date at each start, for
-// the files NooblyJS itself owns; the Product Factory moves its own (nooblyjs-ai-product src/services/ideas.js).
+// the files NooblyJS itself owns; the Product Factory moves its own (nooblyjs-ai-factory/product/src/services/ideas.js).
 // - workflows/items/OPP-NNN.md → IDEA-NNN.md, `type: opportunity` → `idea`; approvals and handoffs that name one follow
 // - devtools/links.yaml: Jira links kept under OPP-NNN move to IDEA-NNN
 // - config/work-roles.yaml: a first thing done on `opportunity.scored` for OPP-NNN waits for `idea.scored` and IDEA-NNN

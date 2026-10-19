@@ -18,7 +18,7 @@ const post = (c, url, json = {}) => c.request(url, { method: 'POST', json });
 before(async () => {
   env = await startApp({
     hostedApps: [
-      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
     ],
   });
   [stevie, lerato, priya] = [env.client(), env.client(), env.client()];
@@ -86,7 +86,7 @@ test('step 2: the PRD-031 approval reads 6 of 7 from the Product Factory\'s own 
   assert.equal(`${approval.readiness.passed} of ${approval.readiness.total}`, '6 of 7');
   assert.deepEqual(approval.readiness.failing.map((c) => c.text), ['Rollout plan missing']);
   assert.deepEqual(approval.others.names, ['Lerato M.']);
-  assert.equal(approval.links.artefact, '/product/specs/PRD-031');
+  assert.equal(approval.links.artefact, '/factory/product/specs/PRD-031');
 });
 
 test('steps 3 to 5: refused without an override; with one PRD-031 moves to Architect, Lerato sees it live, and it is in the files', async () => {
@@ -132,7 +132,7 @@ test('steps 3 to 5: refused without an override; with one PRD-031 moves to Archi
   });
   // The Product Factory heard it: the spec is approved and shows on its Architecture stage.
   await eventually(async () => {
-    const spec = (await stevie.json('/product/api/v1/specs/PRD-031')).body;
+    const spec = (await stevie.json('/factory/product/api/v1/specs/PRD-031')).body;
     assert.equal(spec.status?.key ?? spec.status, 'approved');
   });
 });
@@ -152,7 +152,7 @@ test('an ADR accepted in Approvals is accepted in the Product Factory too, and i
   const res = await post(stevie, `${api}/approvals/apr_adr014/decision`, { decision: 'approve' });
   assert.equal((await res.json()).outcome, 'approved');
   await eventually(async () => {
-    const view = (await stevie.json('/product/api/v1/architecture/PRD-031/adrs')).body;
+    const view = (await stevie.json('/factory/product/api/v1/architecture/PRD-031/adrs')).body;
     const adr = (view.adrs ?? view).find((a) => a.id === 'ADR-014');
     assert.equal(adr.status?.key ?? adr.status, 'accepted');
   });
@@ -197,7 +197,7 @@ test('step 8: PRD-027 goes back to Specify with a reason, and Sent back for chan
   assert.equal((await stevie.json(`${api}/flow`)).body.sentBack, before + 1);
   // The Product Factory reopened the spec.
   await eventually(async () => {
-    const spec = (await stevie.json('/product/api/v1/specs/PRD-027')).body;
+    const spec = (await stevie.json('/factory/product/api/v1/specs/PRD-027')).body;
     assert.equal(spec.status?.key ?? spec.status, 'changes-requested');
   });
 });

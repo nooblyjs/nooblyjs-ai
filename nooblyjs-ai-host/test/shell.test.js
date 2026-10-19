@@ -8,7 +8,8 @@ let env;
 before(async () => {
   env = await startApp({
     hostedApps: [
-      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: false },
+      // Part of the Software Factory since 2026-10-19: an older hosted-apps.yaml may still list it. It is skipped.
+      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: false },
       { path: 'test/fixtures/hello-app', mountPath: '/hello', enabled: true },
       { path: 'test/fixtures/throwing-app', mountPath: '/throwing', enabled: true },
@@ -18,12 +19,12 @@ before(async () => {
 });
 after(async () => { await env?.stop(); });
 
-test('the rail order is Home, the hosted apps with a UI (Product first), Platform; API-only apps are off the rail', async () => {
+test('the rail order is Home, the hosted apps with a UI (Factory first), Platform; API-only apps and folded apps are off the rail', async () => {
   const c = env.client();
   await c.signIn('stevie');
   const { body } = await c.json('/api/v1/shell');
   const rail = body.apps.filter((a) => a.rail).map((a) => a.name);
-  assert.deepEqual(rail, ['home', 'product', 'factory', 'hello-app', 'throwing-app', 'broken-app', 'platform']);
+  assert.deepEqual(rail, ['home', 'factory', 'hello-app', 'throwing-app', 'broken-app', 'platform']);
   const by = Object.fromEntries(body.apps.map((a) => [a.name, a]));
   assert.equal(by.factory.state, 'not-installed');
   assert.equal(by.factory.phase, 7);
@@ -33,9 +34,9 @@ test('the rail order is Home, the hosted apps with a UI (Product first), Platfor
   assert.equal(by.dev.rail, false, 'the dev app has no rail item');
   assert.equal(by.home.title, 'noobly');
   assert.deepEqual(by.home.nav.map((n) => n.key), ['for-you', 'overview', 'lifecycle', 'approvals', 'activity', 'metrics', 'teams']);
-  // Product is nooblyjs-ai-product's (test/product.test.js has it running); here it is listed but not installed.
-  assert.equal(by.product.state, 'not-installed');
-  assert.equal(by.product.label, 'Product');
+  // Product is the Software Factory's section now (test/product.test.js has it running): its old entry loads nothing.
+  assert.equal(by.product, undefined);
+  assert.equal(body.apps.find((a) => a.mountPath === '/product'), undefined);
   assert.deepEqual([...new Set(by.platform.nav.map((n) => n.group))], ['Build', 'Govern']);
 });
 
@@ -63,13 +64,13 @@ test('status cards come in the mockup shape', async () => {
 test('every UI route answers with the frame; signed out it goes to /login', async () => {
   const c = env.client();
   await c.signIn('lerato-m');
-  for (const p of ['/', '/home', '/home/approvals', '/product', '/product/specs/PRD-031', '/platform', '/platform/audit',
+  for (const p of ['/', '/home', '/home/approvals', '/factory/product', '/factory/product/specs/PRD-031', '/platform', '/platform/audit',
     '/dev/styleguide', '/factory', '/factory/runs/214', '/broken', '/broken/x', '/hello', '/hello/deep/link', '/throwing']) {
     const res = await c.get(p);
     assert.equal(res.status, 200, p);
     assert.match(await res.text(), /src="\/ui\/js\/frame\.js"/, `${p} is not the frame`);
   }
-  const anon = await env.client().get('/product/specs/PRD-031');
+  const anon = await env.client().get('/factory/product/specs/PRD-031');
   assert.equal(anon.status, 302);
   assert.match(anon.headers.get('location'), /^\/login\?next=/);
 });

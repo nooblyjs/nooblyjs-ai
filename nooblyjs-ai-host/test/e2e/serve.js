@@ -12,11 +12,12 @@ import { pinClock } from '../helpers.js';
 const require = createRequire(import.meta.url);
 const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
 
-// The stories run with the Software Factory hosted (E2E_FACTORY=true); the specs keep it off, as a stub on the rail.
-// The same goes for the wiki (E2E_WIKI) and Infrastructure (E2E_INFRA): hosted, Infrastructure adds two approvals to
-// Stevie's list, and the Home specs count the Phase 2 story's four.
+// The Software Factory is always hosted: the Product Factory is its Product section (/factory/product) since 2026-10-19.
+// Its Infrastructure section only for the Infrastructure story (E2E_INFRA, through FACTORY_SECTIONS): it adds two
+// approvals to Stevie's list, and the Home specs count the Phase 2 story's four. The wiki only with E2E_WIKI.
 // No e2e run calls a model: with the mock, agents answer from their scripts (tech.md §11).
 process.env.AI_PROVIDER = 'mock';
+process.env.FACTORY_SECTIONS = process.env.E2E_INFRA === 'true' ? 'product,infrastructure' : 'product';
 
 const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'noobly-e2e-'));
 const store = new FsStore(dataDir);
@@ -24,9 +25,7 @@ const store = new FsStore(dataDir);
 await seedFiles(store, { now: await pinClock(store) });
 await store.writeYaml(['config', 'hosted-apps.yaml'], {
   apps: [
-    { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
-    { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: process.env.E2E_FACTORY === 'true' },
-    { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: process.env.E2E_INFRA === 'true' },
+    { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
     { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
     { package: 'nooblyjs-ai-knowledge', mountPath: '/wiki', enabled: process.env.E2E_WIKI === 'true' },
     { path: 'test/fixtures/hello-app', mountPath: '/hello', enabled: true },

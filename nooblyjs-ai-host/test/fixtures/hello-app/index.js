@@ -22,6 +22,8 @@ export async function register(app, serverManager, { mountPath = '/hello', dataD
     }
   });
   router.get('/api/v1/greeting', host.auth, (req, res) => res.json({ text: host.service('hello-app')?.greet(req.person.name) }));
+  // A section's services, under a name of their own (`provides` as an object, as the Software Factory does).
+  router.get('/api/v1/section-greeting', host.auth, (req, res) => res.json({ text: host.service('hello-section')?.wave(req.person.name) ?? null }));
   // Every other GET under the mount path is a UI route: the host's frame answers it.
   router.get('/{*rest}', (req, res, next) => (req.path.startsWith('/api/') ? next() : host.frame(req, res, next)));
 
@@ -40,6 +42,7 @@ export async function register(app, serverManager, { mountPath = '/hello', dataD
       return { badges: { home: 1 }, card: { lines: ['The stub app is running'], tone: 'ok' } };
     },
     services: { greet: (name) => `Hello, ${name}` },
+    provides: { 'hello-section': { wave: (name) => `A wave for ${name}` } },
     async seed() {
       await host.store.writeDoc(['notes', 'welcome.md'], { id: 'welcome', seeded: true }, 'Seeded by hello-app on first start.');
     },

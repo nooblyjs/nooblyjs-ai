@@ -143,7 +143,7 @@ export function createPlatform({ store, events, auditLog, clock, services = new 
     if (typeof infra?.environments === 'function') {
       try {
         const list = await infra.environments();
-        return { source: 'infrastructure', href: '/infrastructure', ...list };
+        return { source: 'infrastructure', href: '/factory/infrastructure', ...list };
       } catch (err) {
         log?.warn?.(`platform: Infrastructure's environments are unavailable: ${err.message}`);
       }

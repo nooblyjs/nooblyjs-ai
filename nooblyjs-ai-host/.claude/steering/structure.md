@@ -20,9 +20,9 @@ nooblyjs-core/                 shared services + FsStore + event bus + UI kit an
 nooblyjs-ai/                   the monorepo
   nooblyjs-ai-host/            the NooblyJS app: shell, Home, Product Factory screens, Platform, chat, Teams bot
   nooblyjs-ai-harness/         agent runtime                                   (library + CLI)
-  nooblyjs-ai-product/         Product Factory: screens, artefacts + drafting  (module, UI + API + workers)
-  nooblyjs-ai-factory/         Software Factory                                (module + workers + CLI)
-  nooblyjs-ai-infrastructure/  Infrastructure: designs, environments, runs, drift, cost   (module, UI + API)
+  nooblyjs-ai-factory/         Software Factory: one app at /factory           (module + workers + CLI)
+    product/                   its Product section: screens, artefacts + drafting (was nooblyjs-ai-product)
+    infrastructure/            its Infrastructure section: designs, environments, runs, drift, cost (was nooblyjs-ai-infrastructure)
   nooblyjs-ai-teammate/        Digital Teammates                               (module + standalone server)
   nooblyjs-ai-knowledge/       Knowledge Repository                            (module + workers)
   nooblyjs-ai-desktop/         projects, documents and chat for any LLM        (standalone app, not hosted)
@@ -33,9 +33,9 @@ modules never import each other. They talk through events, through services the 
 out (`options.host.service(name)`, §2a), and, from the browser, through each other's HTTP APIs:
 
 ```
-nooblyjs-ai-host ──► nooblyjs-ai-product, nooblyjs-ai-knowledge, nooblyjs-ai-teammate, nooblyjs-ai-factory, nooblyjs-ai-infrastructure
-              │                 │                 │                  │                  │
-              └────────┬────────┴─────────┬───────┴──────────────────┴──────────────────┘
+nooblyjs-ai-host ──► nooblyjs-ai-factory (with its sections), nooblyjs-ai-knowledge, nooblyjs-ai-teammate
+              │                 │                          │                    │
+              └────────┬────────┴─────────┬────────────────┴────────────────────┘
                        ▼                  ▼
                   nooblyjs-core         nooblyjs-ai-harness ──► nooblyjs-ai-common
                        ▲                                      ▲
@@ -170,24 +170,26 @@ stays in place. Why: `docs/adr/ADR-001-host-owned-shell.md`.
 
 | Child project | Mount path | Has a UI module (`public/js/module.js`) | API base |
 | --- | --- | --- | --- |
-| `nooblyjs-ai-factory` | `/factory` | yes | `/factory/api/v1/…` |
-| `nooblyjs-ai-infrastructure` (rail label Infra) | `/infrastructure` | yes | `/infrastructure/api/v1/…` |
+| `nooblyjs-ai-factory` (with its Product and Infrastructure sections since 2026-10-19; provides `product` and `infrastructure`) | `/factory`; the sections at `/factory/product` and `/factory/infrastructure` | yes (one module: the sections' routes are in it) | `/factory/api/v1/…`, `/factory/product/api/v1/…`, `/factory/infrastructure/api/v1/…` |
 | `nooblyjs-ai-teammate` | `/teammates` | yes | `/teammates/api/v1/…` |
 | `nooblyjs-ai-knowledge` (the Wiki Platform; provides `knowledge`) | `/wiki` | yes | `/wiki/api/v1/…` |
-| `nooblyjs-ai-product` | `/product` | yes (its own screens, like Teammates; first on the rail after Home) | `/product/api/v1/…` |
 | the lifecycle engine (**not a child project**: `noobly/src/lifecycle/`, mounted by `src/noobly.js` before any hosted app; it was the hosted app `nooblyjs-ai-workflows` until 2026-10-10) | `/workflows` (reserved) | no (API only; its screens are Home's Overview, Lifecycle and Approvals) | `/workflows/api/v1/…`, and `host.service('workflows')` |
 | `nooblyjs-core`, `nooblyjs-ai-common`, `nooblyjs-ai-harness` | — | libraries, not hosted | — |
 
-`nooblyjs-ai-product` owns everything under `/product`: its page URLs (`/product/specs/PRD-031`) answer with
-the frame and its UI module draws them, like Teammates. (Until 2026-10-09 `nooblyjs-ai-host` had a built-in Product
-placeholder app there; it is retired.) API-only apps have no rail item, and their router calls `next()`
-for anything that isn't theirs.
+The Software Factory owns everything under `/factory`, its sections included: their page URLs
+(`/factory/product/specs/PRD-031`) answer with the frame and the Factory's UI module draws them. Until 2026-10-19 the
+Product Factory was the hosted app `nooblyjs-ai-product` at `/product` and Infrastructure `nooblyjs-ai-infrastructure` at
+`/infrastructure`; an older `hosted-apps.yaml` that still lists them has those entries skipped, and their data folders
+move to `data/factory/product` and `data/factory/infrastructure` on the first start (`src/hosted-apps.js` `FOLDED`,
+`foldData`). An app's `provides` may be a list (other names for its services, like the wiki's `knowledge`) or an object
+(names with services of their own, like the Factory's `product` and `infrastructure`). API-only apps have no rail item,
+and their router calls `next()` for anything that isn't theirs.
 
 **This section is the only copy of the contract** (§1a). A child repo's `tech.md` gives only its own values and
 how it differs, and its `.claude/steering/nooblyjs-ai.md` (generated) points here. When you change the contract, change the
 child code that depends on it in the same change; the child docs need no edit unless one of their values changes.
 
-The `nooblyjs-ai-host` host keeps `/` (Home), `/product` (pages), `/platform`, `/login`, `/onboarding`, `/api/v1/…`
+The `nooblyjs-ai-host` host keeps `/` (Home), `/platform`, `/login`, `/onboarding`, `/api/v1/…`
 (including `/api/v1/shell`), `/api/teams/messages`, `/services/…` (nooblyjs-core dashboards) and
 `/ui/…` (the shared UI kit). Home, Product Factory and Platform are the host's **built-in apps**:
 they're described with the same fields as a hosted app and use the same module contract, so
@@ -340,9 +342,6 @@ apps:
     enabled: true
   - package: nooblyjs-ai-knowledge
     mountPath: /wiki
-    enabled: true
-  - package: nooblyjs-ai-product
-    mountPath: /product
     enabled: true
 ```
 
@@ -561,7 +560,6 @@ public/
                             descriptions (rail, nav, status) are in src/built-in-apps.js, with an absolute
                             ui.entry ('/js/modules/home.js'), because noobly/public is served at the root
       home.js               mountPath /         (/, /home/approvals, …)
-      product.js            mountPath /product  (pages only; its API is nooblyjs-ai-product at /product/api/v1)
       platform.js           mountPath /platform
       dev.js                mountPath /dev      (no rail item; only when NOOBLY_DEV_LOGIN=true)
     pages/
@@ -604,11 +602,6 @@ data/
     items/<ITEM-ID>.md    IDEA-018, PRD-031, slots-api-482 … (stage, status, owner, work, history)
     approvals/<apr_id>.md · handoffs/<hof_id>.md
     approval-rules.yaml (Who approves what) · readiness.yaml (checks per stage)
-  product/                (owned by nooblyjs-ai-product)
-    signals/<id>.md · ideas/<OPP-ID>.md · specs/<PRD-ID>.md · roadmap.yaml
-    architecture/<PRD-ID>/  diagram.md · adrs/ADR-014.md · quality-attributes.md
-    ux/<PRD-ID>/            journey.md · flows/<flow>.md · research/<study>.md
-    ui/<PRD-ID>/            screens/<screen>.md · handoff.md
   chat/
     threads/<thread-id>.md                   scope (item | repo | channel), participants, Teams mirror
     messages/<thread-id>/YYYY-MM-DD.yaml     append-only
@@ -618,11 +611,6 @@ data/
   teams/links.yaml                           which NooblyJS team and item a Teams conversation belongs to
   teams/scripts.yaml                         teammates' introductions and scripted answers in a meeting
   teams/sim/                                 the Teams simulator: meetings.yaml and each meeting's transcript (development)
-  infrastructure/         (owned by nooblyjs-ai-infrastructure)
-    designs/<id>.md · designs/<id>/versions/vN.md   a design, and each approved version kept as it was
-    environments/<name>.md · runs/<id>.md · drift/<id>.md   (a destroyed environment keeps its file)
-    blueprints.yaml · policies.yaml · apply-rules.yaml · promotion-paths.yaml · budget.yaml · agent.yaml
-    cost/ledger.yaml · sweep.yaml            the cloud cost ledger; when the drift sweep last ran
   factory/                (owned by nooblyjs-ai-factory)
     events/YYYY/MM/YYYY-MM-DD.yaml           the event log, one event a line; events/HEAD is the last sequence number
     leases.yaml · config.json                who is working which run; the operator's settings
@@ -631,6 +619,16 @@ data/
     scripts/<work-item-title>.json           scripted agents for the seed story (used when no model is configured)
     intake/<handoff-id>/<work-item-id>.md    each work item as an issue file
     forge/ · artifacts/ · workspaces/        PR files with their evidence, run artefacts, git worktrees
+    product/              the Product section (was data/product/ until 2026-10-19)
+      signals/<id>.md · ideas/<OPP-ID>.md · specs/<PRD-ID>.md · roadmap.yaml
+      architecture/<PRD-ID>/  diagram.md · adrs/ADR-014.md · quality-attributes.md
+      ux/<PRD-ID>/            journey.md · flows/<flow>.md · research/<study>.md
+      ui/<PRD-ID>/            screens/<screen>.md · handoff.md
+    infrastructure/       the Infrastructure section (was data/infrastructure/)
+      designs/<id>.md · designs/<id>/versions/vN.md   a design, and each approved version kept as it was
+      environments/<name>.md · runs/<id>.md · drift/<id>.md   (a destroyed environment keeps its file)
+      blueprints.yaml · policies.yaml · apply-rules.yaml · promotion-paths.yaml · budget.yaml · agent.yaml
+      cost/ledger.yaml · sweep.yaml            the cloud cost ledger; when the drift sweep last ran
   teammates/              (owned by nooblyjs-ai-teammate: <slug>/TEAMMATE.md, memory/, timesheets/)
   wiki/                   (owned by nooblyjs-ai-knowledge, the Wiki Platform; JSON records, its own layout)
     spaces/spaces.json · spaces/<slug>/files/…   the spaces and their pages (Markdown). A process-model page carries

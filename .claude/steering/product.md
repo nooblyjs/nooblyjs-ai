@@ -39,18 +39,18 @@ Eight projects, over 370 test files, all offline by default. Phases 0–11 of th
 
 | Part of the SDLC | What exists | Project | Maturity |
 | --- | --- | --- | --- |
-| Business and strategy | Strategic themes, portfolios, value streams and their documents from templates; products as labels | `nooblyjs-ai-product` | Partly built: portfolio epics, epics, features and requirements are **not** built |
-| Discover | Signals clustered into themes, ideas scored with RICE, the Product board, the quarter roadmap | `nooblyjs-ai-product` | Built (signals are seeded; no live connector) |
-| Requirements | Spec: problem, goals (measure / today / target), user stories, Given/When/Then criteria, out of scope, readiness checks, reviewers, versions | `nooblyjs-ai-product`, lifecycle engine | Built. **No elicitation**: requirements arrive already written, by an agent or a person |
-| Architecture | Container view as code, ADRs, standards check, quality attributes that become gates | `nooblyjs-ai-product` | Built |
-| UX and UI design | Journeys, flows, research, screens, design-system reuse, accessibility checks, handoff preview | `nooblyjs-ai-product` | Built |
+| Business and strategy | Strategic themes, portfolios, value streams and their documents from templates; products as labels | `nooblyjs-ai-factory/product` | Partly built: portfolio epics, epics, features and requirements are **not** built |
+| Discover | Signals clustered into themes, ideas scored with RICE, the Product board, the quarter roadmap | `nooblyjs-ai-factory/product` | Built (signals are seeded; no live connector) |
+| Requirements | Spec: problem, goals (measure / today / target), user stories, Given/When/Then criteria, out of scope, readiness checks, reviewers, versions | `nooblyjs-ai-factory/product`, lifecycle engine | Built. **No elicitation**: requirements arrive already written, by an agent or a person |
+| Architecture | Container view as code, ADRs, standards check, quality attributes that become gates | `nooblyjs-ai-factory/product` | Built |
+| UX and UI design | Journeys, flows, research, screens, design-system reuse, accessibility checks, handoff preview | `nooblyjs-ai-factory/product` | Built |
 | Lifecycle and approvals | Items, 7 stages, readiness, approvals with target times and escalation, send-back, handoffs, Activity, audit | `nooblyjs-ai-host` (`src/lifecycle/`) | Built |
 | Build | Line of stations (triage → spec → approve → build → verify → review → repair → deliver), gates, PR evidence, "a run is asking you", campaigns, bench, hash-chained audit export, secret scan, agent-environment scrubbing | `nooblyjs-ai-factory` | Built; runs on a local demo repository; PRs on real repositories wait for Phase 13's review |
-| Testing | Gates per PR from quality attributes; "Testing in environments" screen; e2e results per environment (seeded) | `nooblyjs-ai-factory`, `nooblyjs-ai-infrastructure` | **Thin.** No test strategy, test plan, test cases or test runs as things of their own |
+| Testing | Gates per PR from quality attributes; "Testing in environments" screen; e2e results per environment (seeded) | `nooblyjs-ai-factory`, `nooblyjs-ai-factory/infrastructure` | **Thin.** No test strategy, test plan, test cases or test runs as things of their own |
 | Security | Governance enforced in services; secret scan and env scrubbing in the Factory; sandboxes (Linux, macOS); base-image CVE status (typed in, not scanned); a code-reading security review (Phase 13) | spread across | **Thin.** No threat model, no scanning pipeline, no findings, no security testing in environments |
-| Infrastructure | Designs from architecture, environments, provisioning runs, drift, cloud cost, blueprints, policies | `nooblyjs-ai-infrastructure` | Built on a **mock provisioner**; cloud, region and IaC tool undecided |
+| Infrastructure | Designs from architecture, environments, provisioning runs, drift, cloud cost, blueprints, policies | `nooblyjs-ai-factory/infrastructure` | Built on a **mock provisioner**; cloud, region and IaC tool undecided |
 | Release | Merge by a person; "production deploy needs two approvers" as a rule | lifecycle engine | **Not built** (Infrastructure I10, owner open) |
-| Operate and learn | Drift sweep, cloud cost | `nooblyjs-ai-infrastructure` | **Not built**: no SLOs, monitoring, incidents, or loop back to Discover |
+| Operate and learn | Drift sweep, cloud cost | `nooblyjs-ai-factory/infrastructure` | **Not built**: no SLOs, monitoring, incidents, or loop back to Discover |
 | Agents | Named teammates with skills, memory, rates, budgets, timesheets; the agent runtime with tools, sandbox, MCP, skills | `nooblyjs-ai-teammate`, `nooblyjs-ai-harness` | Built |
 | Knowledge | Wiki, spaces, sources, cited answers, PII redaction, process models, MCP | `nooblyjs-ai-knowledge` | Built (legacy wiki behind an adapter) |
 | Platform | Repositories and agent access, containers (simulated), model routing, budgets, guardrails, secrets as references, audit | `nooblyjs-ai-host` | Built; runtime and secret store simulated |
@@ -114,7 +114,7 @@ call a hired teammate to draft.
 Already built: strategic themes, portfolios, value streams, products, and their template documents. To add:
 
 1. **The work hierarchy**: portfolio epic → epic → feature → requirement, under a portfolio (and optionally a value
-   stream). How these map to ideas and specs, and to Jira, is open (`nooblyjs-ai-product` product.md §8). Proposed:
+   stream). How these map to ideas and specs, and to Jira, is open (`nooblyjs-ai-factory/product` product.md §8). Proposed:
    an **idea belongs to a feature**, and a spec's requirements are the feature's requirements `[CONFIRM]`.
 2. **Business case** on an idea or epic: the value hypothesis, who benefits, the measure that will show it, a cost
    estimate (agent cost, cloud cost and people's time, from the factory's own history) and a time horizon.
@@ -197,15 +197,19 @@ Quality, Operations. Every system is a hosted app in the one frame
 | System | Rail | Covers | Project | Status |
 | --- | --- | --- | --- | --- |
 | Home | Home | For you, Overview, Lifecycle, Approvals, Activity, Metrics, Teams & roles | `nooblyjs-ai-host` | Built |
-| Product Factory | Product | Strategy, Discover, Specify (with elicitation), Architect, UX, UI | `nooblyjs-ai-product` | Built; strategy and elicitation to extend |
-| Software Factory | Factory | Build | `nooblyjs-ai-factory` | Built |
+| Product Factory | Factory (Product section) | Strategy, Discover, Specify (with elicitation), Architect, UX, UI | `nooblyjs-ai-factory/product` | Built; strategy and elicitation to extend |
+| Software Factory | Factory (Build) | Build | `nooblyjs-ai-factory` | Built |
 | **Quality** | Quality | Test strategy, test cases, test runs, coverage, defects, evidence | `nooblyjs-ai-quality` (new) `[CONFIRM name]` | Decided; Phase 20 |
 | **Security** | Security | Threat models, scans, findings, risk acceptance, pen tests, compliance evidence | `nooblyjs-ai-security` (new) `[CONFIRM name]` | Decided; Phase 19 |
-| Infrastructure | Infra | Designs, environments, provisioning, drift, cloud cost | `nooblyjs-ai-infrastructure` | Built on a mock |
+| Infrastructure | Factory (Infrastructure section) | Designs, environments, provisioning, drift, cloud cost | `nooblyjs-ai-factory/infrastructure` | Built on a mock |
 | **Operations** | Ops | Releases, deployments, SLOs, incidents, post-incident reviews, outcome reviews | `nooblyjs-ai-operations` (new) `[CONFIRM name]` | Decided; Phases 22–23 |
 | Digital Teammates | Teammates | The agents | `nooblyjs-ai-teammate` | Built |
 | Knowledge | Knowledge | The memory every stage reads and writes | `nooblyjs-ai-knowledge` | Built |
 | Platform | Platform | Repos, containers, models, budgets, guardrails, secrets, audit | `nooblyjs-ai-host` | Built (runtime simulated) |
+
+**Since 2026-10-19 the Product Factory and Infrastructure are sections of the Software Factory** (one rail item,
+**Factory**, with its sidebar grouped Product · Build · Infrastructure), not apps of their own. Whether Quality, Security
+and Operations become sections of the Factory too, or stay apps of their own as decided, is open (§9).
 
 Alternatives considered: Quality inside the Factory and Infrastructure (where its pieces are today), and Security
 inside Platform. Both were rejected because testing and security each span four or more stages and need their own
@@ -310,8 +314,10 @@ system, agent vs people share) stay. Added, all computed from events:
 **Open**
 
 1. Who owns releases: Operations (proposed), Infrastructure, or the lifecycle engine? (Infrastructure I10.)
-2. The app names and mount paths (`nooblyjs-ai-quality`, `-security`, `-operations`).
-3. The work hierarchy (epic, feature, requirement) against ideas, specs and Jira (`nooblyjs-ai-product` §8).
+2. The app names and mount paths (`nooblyjs-ai-quality`, `-security`, `-operations`), or, now that Product and
+   Infrastructure are sections of the Software Factory (2026-10-19), whether Quality, Security and Operations should be
+   sections of it too (`/factory/quality`, …), which would keep the whole lifecycle in one app.
+3. The work hierarchy (epic, feature, requirement) against ideas, specs and Jira (`nooblyjs-ai-factory/product` §8).
 4. Which scanners, load-test and monitoring tools are approved (`stack.md` §6), and where they run.
 5. Fix-by days per finding severity, and who may accept which risk.
 6. Compliance regimes in scope `[PLACEHOLDER]`.

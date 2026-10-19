@@ -19,7 +19,7 @@ before(async () => {
   env = await startApp({
     env: { CHAT_MOCK_REPLY_MS: '0' },
     hostedApps: [
-      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
       { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
     ],
   });
@@ -124,7 +124,7 @@ test('step 3: Apply to spec is a person\'s action: the spec becomes v5 with a ro
   const res = await post(lerato, `/api/v1/chat/cards/${card.id}/apply`);
   assert.equal(res.status, 200);
   assert.equal((await res.json()).version, 5);
-  const spec = (await lerato.json('/product/api/v1/specs/PRD-031')).body;
+  const spec = (await lerato.json('/factory/product/api/v1/specs/PRD-031')).body;
   assert.equal(spec.version, 5);
   assert.match(JSON.stringify(spec), /Pilot in \[PLACEHOLDER: number\] stores behind a feature flag/);
   const readiness = (await stevie.json('/workflows/api/v1/approvals/apr_prd031spec')).body.approval.readiness;
@@ -187,7 +187,7 @@ test('governance: no agent action in chat can decide a card, apply a draft, or c
     const apply = await chat.applyCard(plan.id, agent).catch((err) => err);
     assert.equal(apply.code, 'people_only', `${agent.id} can't apply a draft`);
   }
-  const product = await import('nooblyjs-ai-product').catch(() => null);
+  const product = await import('nooblyjs-ai-factory').catch(() => null);
   assert.ok(product, 'the Product Factory is installed');
   await eventually(async () => {
     const refusals = (await today(env.store, 'audit')).filter((r) => r.action === 'access.refused' && /agents propose, people decide/.test(r.reason ?? ''));
@@ -196,7 +196,7 @@ test('governance: no agent action in chat can decide a card, apply a draft, or c
   // The replies themselves changed nothing: same stage, same approvals, same spec version, cards still open.
   const item = (await stevie.json('/workflows/api/v1/items/PRD-031')).body.item;
   assert.deepEqual({ stage: item.stage, status: item.status }, { stage: before.stage, status: before.status });
-  assert.equal((await lerato.json('/product/api/v1/specs/PRD-031')).body.version, 5);
+  assert.equal((await lerato.json('/factory/product/api/v1/specs/PRD-031')).body.version, 5);
   const still = (await threadOf(lerato)).messages.flatMap((m) => m.cards ?? []);
   assert.equal(still.find((c) => c.id === approval.id).status, 'open');
   assert.equal(still.find((c) => c.id === plan.id).status, 'open');

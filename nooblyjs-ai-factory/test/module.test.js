@@ -47,7 +47,9 @@ test('the route table covers every nav row, and every page keeps the frame\'s co
   assert.deepEqual(routes[0], { path: '/', redirect: '/line' });
   const pages = fs.readdirSync(path.join(PUBLIC, 'js', 'pages'));
   assert.deepEqual(pages.sort(), ['campaigns.js', 'inbox.js', 'line.js', 'metrics.js', 'run.js', 'runs.js']);
-  for (const route of routes.filter((r) => r.page)) {
+  // The sections' routes are checked in test/sections.test.js; these are the Factory's own.
+  const own = routes.filter((r) => !/^\/(product|infrastructure)(\/|$)/.test(r.path));
+  for (const route of own.filter((r) => r.page)) {
     assert.match(route.path, /^\/[a-z:/]*$/);
     const [, file] = /import\('\.\/pages\/([a-z]+\.js)'\)/.exec(String(route.page)) ?? [];
     assert.ok(pages.includes(file), `${route.path} loads a page that exists`);

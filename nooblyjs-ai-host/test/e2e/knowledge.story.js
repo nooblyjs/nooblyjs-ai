@@ -102,7 +102,7 @@ test('step 2: "How is slot capacity calculated?" is answered with 3 citations; A
   await actions.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(actions.getByRole('status')).toHaveText("Added 3 sources to PRD-031's linked knowledge.");
 
-  await lerato.goto('/product/specs/PRD-031');
+  await lerato.goto('/factory/product/specs/PRD-031');
   await expect(content(lerato).locator('h1')).toBeVisible();
   await expect(content(lerato)).toContainText('Runbook · Acme Space');
 });
@@ -126,7 +126,7 @@ test('step 3: This is wrong puts the documents on Needs review and marks them on
   await table.getByRole('button', { name: 'Mark Slot capacity model as reviewed' }).click();
   await expect(content(lerato).getByRole('table', { name: 'Documents that need review' }).locator('tbody tr')).toHaveCount(2);
 
-  await lerato.goto('/product/specs/PRD-031');
+  await lerato.goto('/factory/product/specs/PRD-031');
   await expect(content(lerato)).toContainText('Flagged: It leaves out the van cap.');
 });
 
@@ -155,7 +155,7 @@ test('step 4: Enterprise Space → L0 draws three bands from the imported pages;
 });
 
 test('Architecture · Knowledge: an architect searches Knowledge for a folder and a file, links them with what each is for, edits a note, removes one', async () => {
-  await lerato.goto('/product/architecture/PRD-031?tab=knowledge');
+  await lerato.goto('/factory/product/architecture/PRD-031?tab=knowledge');
   await expect(content(lerato).getByRole('tab', { name: 'Knowledge' })).toHaveAttribute('aria-selected', 'true');
   // Knowledge comes before Repositories.
   const tabs = await content(lerato).getByRole('tab').allInnerTexts();

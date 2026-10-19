@@ -16,6 +16,12 @@ inclusion: always
 > **Decided 2026-10-19:** nine lifecycle stages (Verify, Release and Operate replace Ship); three new apps, Quality,
 > Security and Operations, built in that order; this file is the one roadmap.
 >
+> **2026-10-19:** the Product Factory (`nooblyjs-ai-product`, at `/product`) and Infrastructure (`nooblyjs-ai-infrastructure`, at
+> `/infrastructure`) are **sections of the Software Factory** now: one package (`nooblyjs-ai-factory/product`,
+> `nooblyjs-ai-factory/infrastructure`), one rail item (Factory), at `/factory/product` and `/factory/infrastructure`, with
+> their data in `data/factory/product` and `data/factory/infrastructure`. Where a phase below names those projects or
+> paths, read the section. `host.service('product')` and `host.service('infrastructure')` did not change.
+>
 > **2026-10-10:** the lifecycle engine, built in Phase 2 as the hosted app `nooblyjs-ai-workflows`, is part of
 > `nooblyjs-ai-host` now (`src/lifecycle/`). Where an earlier phase names `nooblyjs-ai-workflows`, read "the lifecycle
 > engine". Its API address, its service name (`workflows`) and its data folder did not change.
@@ -892,8 +898,8 @@ time after release, or when its measure has data?
 ## Phase 16b — One shape for checks, and the trace
 
 **Goal:** every artefact can be traced, and every kind of check looks and behaves the same.
-**Repos:** `nooblyjs-ai-host` (trace, Home), `nooblyjs-ai-product`, `nooblyjs-ai-factory`, `nooblyjs-ai-infrastructure`
-(their `checksFor` and `trace` services).
+**Repos:** `nooblyjs-ai-host` (trace, Home), `nooblyjs-ai-factory` (the line and its Product and
+Infrastructure sections: their `checksFor` and `trace` services).
 
 **Decided before it starts (2026-10-19):** the id prefixes (`design.md` §4) and the check shape (`design.md` §5) as
 written.
@@ -920,7 +926,7 @@ written.
 
 **Goal:** work can be followed from a strategic theme to an item, each idea has a business case, and spend can be
 seen by value stream.
-**Repos:** `nooblyjs-ai-product`, `nooblyjs-ai-host` (Home, Platform budgets).
+**Repos:** `nooblyjs-ai-factory` (Product section), `nooblyjs-ai-host` (Home, Platform budgets).
 
 **Before you start**
 - `product.md` §9 Q4: how epics, features and requirements map onto ideas, specs and Jira.
@@ -950,7 +956,7 @@ seen by value stream.
 
 **Goal:** every requirement says where it came from and who accepted it, and non-functional requirements are asked
 for, not remembered.
-**Repos:** `nooblyjs-ai-product`, `nooblyjs-ai-host` (Teams meeting notes, chat).
+**Repos:** `nooblyjs-ai-factory` (Product section), `nooblyjs-ai-host` (Teams meeting notes, chat).
 
 **Before you start**
 - The NFR catalogue (categories and prompts) and who owns it.
@@ -983,7 +989,7 @@ for, not remembered.
 
 **Goal:** every item has a threat model accepted by an Architect, and every PR is scanned, with findings that have
 an owner and a fix-by date.
-**Repos:** `nooblyjs-ai-security` (new, `/security`), `nooblyjs-ai-factory` (scan gates), `nooblyjs-ai-product`
+**Repos:** `nooblyjs-ai-security` (new, `/security`), `nooblyjs-ai-factory` (scan gates), `nooblyjs-ai-factory` (Product section)
 (Architect), `nooblyjs-ai-host`.
 
 **Before you start**
@@ -1016,7 +1022,7 @@ an owner and a fix-by date.
 ## Phase 20 — Quality (new app: Quality)
 
 **Goal:** each item has a test strategy, every acceptance criterion has a test case, and coverage is a fact.
-**Repos:** `nooblyjs-ai-quality` (new, `/quality`), `nooblyjs-ai-product`, `nooblyjs-ai-factory`, `nooblyjs-ai-host`.
+**Repos:** `nooblyjs-ai-quality` (new, `/quality`), `nooblyjs-ai-factory` (Product section), `nooblyjs-ai-factory`, `nooblyjs-ai-host`.
 
 **Before you start**
 - Test levels and which are required per item kind; the defect workflow and severity scale.
@@ -1045,7 +1051,7 @@ an owner and a fix-by date.
 
 **Goal:** a merged change is deployed to previews and environments, tested there for function, performance,
 accessibility and security, and accepted as a release candidate by a person.
-**Repos:** `nooblyjs-ai-infrastructure` (I8: previews from PRs), `nooblyjs-ai-quality`, `nooblyjs-ai-security`,
+**Repos:** `nooblyjs-ai-factory` (Infrastructure section, I8: previews from PRs), `nooblyjs-ai-quality`, `nooblyjs-ai-security`,
 `nooblyjs-ai-host`.
 
 **Before you start**
@@ -1074,7 +1080,7 @@ accessibility and security, and accepted as a release candidate by a person.
 ## Phase 22 — Release (new app: Operations, part 1)
 
 **Goal:** production changes only through a release with evidence, two approvers, a rollout plan and a rollback.
-**Repos:** `nooblyjs-ai-operations` (new, `/operations`), `nooblyjs-ai-infrastructure` (I10), `nooblyjs-ai-host`,
+**Repos:** `nooblyjs-ai-operations` (new, `/operations`), `nooblyjs-ai-factory` (Infrastructure section, I10), `nooblyjs-ai-host`,
 devtools (Jira fix versions, Bitbucket tags through the write gate).
 
 **Before you start**
@@ -1104,7 +1110,7 @@ devtools (Jira fix versions, Bitbucket tags through the write gate).
 
 **Goal:** what runs in production is watched against SLOs, incidents are handled and learned from, and every item
 ends with an outcome review that feeds Discover.
-**Repos:** `nooblyjs-ai-operations`, `nooblyjs-ai-product`, `nooblyjs-ai-knowledge`, `nooblyjs-ai-host`.
+**Repos:** `nooblyjs-ai-operations`, `nooblyjs-ai-factory` (Product section), `nooblyjs-ai-knowledge`, `nooblyjs-ai-host`.
 
 **Before you start**
 - The monitoring platform `[PLACEHOLDER]`; on-call through Teams first; when the outcome review is due.
@@ -1134,11 +1140,11 @@ ends with an outcome review that feeds Discover.
 ## Hosted apps: open work
 
 This file is the only roadmap. The hosted apps used to keep their own; those are history now
-(`docs/roadmap-history.md` in `nooblyjs-ai-product`, `nooblyjs-ai-teammate` and `nooblyjs-ai-infrastructure`). This is what was
+(`docs/roadmap-history.md` in `nooblyjs-ai-factory/product`, `nooblyjs-ai-teammate` and `nooblyjs-ai-factory/infrastructure`). This is what was
 still open in them on 2026-10-11. Each item goes into a numbered phase above (or a new one) before it is built, with
 its spec in `nooblyjs-ai-host/.claude/specs/`.
 
-**Product Factory (`nooblyjs-ai-product`, its P8).** Drafts already run through `teammates.runTask()` by work type and
+**Product Factory (the Factory's Product section, `nooblyjs-ai-factory/product`, its P8).** Drafts already run through `teammates.runTask()` by work type and
 cite `knowledge.contextFor()`, and model routes are Platform's (Phases 6, 8 and 9).
 - [ ] Decide which stages draft automatically, now that real costs are known (D3).
 - [ ] An agent's edit of a spec from a chat thread, kept as a new spec version. A person's "Apply to spec" exists
@@ -1155,7 +1161,7 @@ check are in Phase 13 for all of NooblyJS.
 - Backlog: teammate templates and "save as template"; export and import a teammate; model A/B tests (rating against
   cost); ratings on work items feeding memory and reviews.
 
-**Infrastructure (`nooblyjs-ai-infrastructure`, its I2–I10).**
+**Infrastructure (the Factory's Infrastructure section, `nooblyjs-ai-factory/infrastructure`, its I2–I10).**
 - [ ] I2: a side-by-side check against the mockups at 1440px.
 - [ ] I3: confirm which access role is the "platform owner" (today `change-repo-access`, so Owner) `[CONFIRM]`.
 - [ ] I5: ask design for the screens with no mockup (`Infra-EnvDetail` is linked from both mockups), then match them.

@@ -33,16 +33,23 @@ nooblyjs-ai-factory/
                             For hosting: hosted.js (register, status card, the services other apps call §4; the
                             PRD-031 seed §5 is still to add) and to-express.js (route table → Express router)
     utils/                  clock · ids · paths · log · glob · frontmatter
+  product/                  the Product section (was nooblyjs-ai-product): index.js (its register(), called by
+                            src/services/sections.js) · src/ · test/ · docs/ · .claude/steering/ · CLAUDE.md
+  infrastructure/           the Infrastructure section (was nooblyjs-ai-infrastructure), laid out the same way
   public/                   static files only, served under /factory (no index.html)
+    product/, infrastructure/   each section's pages and CSS, served by the section at /factory/<section>/
+                            (js/module.js, js/pages/, css/<section>.css, scoped [data-module="<section>"])
     css/factory.css         only what the kit doesn't cover; every selector starts with [data-module="factory"]
     js/
-      module.js             route table (§2)
+      module.js             route table (§2), with the sections' routes added under /product and /infrastructure
+      sections.js           the sections in the browser: their routes moved under the section, and a ctx bound to it
       lib.js · parts.js     what the pages share: safe DOM, the page() runner, icons, pills, the inbox card
       pages/                line.js · runs.js · run.js · inbox.js · campaigns.js · metrics.js
     dashboard/              the F17 dashboard page, which `factory dashboard` still serves (not served when hosted)
   test/                     mirrors src/: test/<folder>/…/<module>.test.js. redteam.test.js and
                             structure.test.js stay at the top, because they cover the whole factory
     register.test.js        hosted-app contract (the hosted-app checklist in noobly roadmap.md)
+    sections.test.js        the sections in the Factory: paths, data, routes, provides, FACTORY_SECTIONS
     module.test.js          routes, render() exports, CSS scoping
     fixtures/host.js        stand-in host until nooblyjs-core ships createShell()/FsStore
 ```
@@ -51,6 +58,12 @@ nooblyjs-ai-factory/
 replace them.
 
 ## 2. What the shell shows
+
+> Since 2026-10-19 the sidebar is the Product section's rows (keys `product-…`, group Product), then the rows below
+> (group Build), then Infrastructure's (`infra-…`, group Infrastructure); `ui.styles` adds
+> `product/css/product.css` and `infrastructure/css/infrastructure.css`; the status card adds a line per section and
+> their badges (`product-reviews`, `infra-runs`); and the description carries `provides`. `test/register.test.js` has the
+> full list.
 
 ```js
 {

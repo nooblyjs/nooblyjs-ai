@@ -13,8 +13,45 @@ const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
 
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOUNT = /^\/[a-z0-9][a-z0-9-]{0,62}$/;
-// Paths NooblyJS keeps for itself. /product is allowed: nooblyjs-ai-product serves /product/api/v1 under it.
+// Paths NooblyJS keeps for itself.
 const RESERVED = new Set(['/api', '/services', '/ui', '/login', '/logout', '/healthz', '/onboarding', '/platform', '/home', '/dev', '/internal', '/workflows']);
+
+/**
+ * Apps that are part of another now. An older hosted-apps.yaml may still list them: the entry is skipped, and the data
+ * folder they had moves into the app that took them in, once (foldData). nooblyjs-ai-workflows became part of NooblyJS
+ * itself (src/lifecycle/) on 2026-10-10; Product and Infrastructure became sections of the Software Factory on 2026-10-19.
+ */
+export const FOLDED = {
+  'nooblyjs-ai-workflows': { into: 'NooblyJS (src/lifecycle/)' },
+  'nooblyjs-ai-product': { into: 'nooblyjs-ai-factory (its Product section, /factory/product)', from: 'product', to: ['factory', 'product'] },
+  'nooblyjs-ai-infrastructure': { into: 'nooblyjs-ai-factory (its Infrastructure section, /factory/infrastructure)', from: 'infrastructure', to: ['factory', 'infrastructure'] },
+};
+
+/**
+ * Moves the data folder of each folded app to where the app that took it in keeps it (data/product →
+ * data/factory/product), before any app is loaded. Only when the old folder exists and the new one doesn't: an
+ * install that has both is left for a person to look at, and said so in the log. Returns what moved.
+ */
+export async function foldData(dataDir, log) {
+  const moved = [];
+  for (const [name, fold] of Object.entries(FOLDED)) {
+    if (!fold.from) continue;
+    const from = path.join(dataDir, fold.from);
+    const to = path.join(dataDir, ...fold.to);
+    const has = async (dir) => Boolean(await fs.stat(dir).catch(() => null));
+    if (!(await has(from))) continue;
+    if (await has(to) && !(await isEmptyDir(to))) {
+      log.warn(`${name}: both ${from} and ${to} exist; nothing was moved. Keep one and remove the other.`);
+      continue;
+    }
+    await fs.mkdir(path.dirname(to), { recursive: true });
+    await fs.rm(to, { recursive: true, force: true }); // an empty folder only (checked above)
+    await fs.rename(from, to);
+    log.info(`${name} is part of ${fold.into}: moved its data from ${from} to ${to}`);
+    moved.push({ name, from, to });
+  }
+  return moved;
+}
 
 /** Checks one entry of hosted-apps.yaml. Returns the entry with its display name, or throws. */
 function checkEntry(entry, { production }) {
@@ -57,10 +94,9 @@ export async function loadHostedApps({ app, serverManager, config, store, shell,
   const seen = new Set();
 
   for (const raw of listed) {
-    // The lifecycle engine was the hosted app nooblyjs-ai-workflows until 2026-10-10. It is part of NooblyJS now (src/lifecycle/),
-    // so an entry left in an older hosted-apps.yaml is not an app to load.
-    if (raw?.package === 'nooblyjs-ai-workflows') {
-      log.info('hosted-apps.yaml: nooblyjs-ai-workflows is part of NooblyJS now (src/lifecycle/); its entry is ignored and can be removed');
+    // An app that is part of another now (FOLDED): an entry left in an older hosted-apps.yaml is not an app to load.
+    if (FOLDED[raw?.package]) {
+      log.info(`hosted-apps.yaml: ${raw.package} is part of ${FOLDED[raw.package].into} now; its entry is ignored and can be removed`);
       continue;
     }
     let entry;
@@ -86,9 +122,15 @@ export async function loadHostedApps({ app, serverManager, config, store, shell,
       const hosted = await mod.register(app, serverManager, { mountPath: entry.mountPath, dataDir: appDir, host: hostFor(appDir) });
       checkHosted(hosted, entry);
       if (hosted.services) services.set(hosted.name, hosted.services);
-      // An app may also be asked for by what it provides, not only by its name: the wiki is 'knowledge' to the
-      // Product Factory and Teammates (structure.md §2a). The first app to provide a name keeps it.
-      if (hosted.services) for (const alias of Array.isArray(hosted.provides) ? hosted.provides : []) if (typeof alias === 'string' && !services.has(alias)) services.set(alias, hosted.services);
+      // An app may also be asked for by what it provides, not only by its name (structure.md §2a). The first app to
+      // provide a name keeps it. As a list, each name is another name for its services: the wiki is 'knowledge' to
+      // the Product Factory and Teammates. As an object, each name has services of its own: the Software Factory
+      // provides 'product' and 'infrastructure', its sections.
+      if (Array.isArray(hosted.provides)) {
+        if (hosted.services) for (const alias of hosted.provides) if (typeof alias === 'string' && !services.has(alias)) services.set(alias, hosted.services);
+      } else if (hosted.provides && typeof hosted.provides === 'object') {
+        for (const [alias, provided] of Object.entries(hosted.provides)) if (provided && typeof provided === 'object' && !services.has(alias)) services.set(alias, provided);
+      }
       // A blank data folder asks each app for its system files only (host.sampleData is false).
       if (typeof hosted.seed === 'function' && firstStart) await hosted.seed({ reset: false, content: sampleData });
       shell.add(hosted, entry);

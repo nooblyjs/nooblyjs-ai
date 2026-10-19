@@ -21,7 +21,7 @@ async function expectNoAxeViolations(page, label) {
 
 test('Architecture · Repositories: search Platform\'s repositories, add them, remove one; the handoff then names them', async ({ page }) => {
   await signIn(page, 'priya-s');
-  await page.goto('/product/architecture/PRD-031');
+  await page.goto('/factory/product/architecture/PRD-031');
   await content(page).getByRole('tab', { name: 'Repositories' }).click();
   const mine = content(page).getByRole('region', { name: 'Repositories for PRD-031' });
   await expect(mine).toContainText('None yet');
@@ -52,12 +52,12 @@ test('Architecture · Repositories: search Platform\'s repositories, add them, r
   await expect(mine).toContainText('3 repositories, confirmed by');
 
   // design-system's work item is outside the three, so the handoff says so until it is added.
-  await page.goto('/product/ui/PRD-031');
+  await page.goto('/factory/product/ui/PRD-031');
   await expect(content(page)).toContainText('Built in slots-api, web-storefront, mobile-app (Architecture).');
   await expect(content(page)).toContainText("design-system is not among the item's repositories");
 
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto('/product/architecture/PRD-031');
+  await page.goto('/factory/product/architecture/PRD-031');
   await content(page).getByRole('tab', { name: 'Repositories' }).click();
   await expect(content(page).getByRole('region', { name: 'Add a repository' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
@@ -86,7 +86,7 @@ test('Integrations lists Bitbucket and Jira; at phone width the new screens do n
   await expectNoAxeViolations(page, 'Integrations');
 
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const path of ['/platform/settings', '/platform/repositories/acme__slots-api', '/home/lifecycle/PRD-031', '/product/architecture/PRD-031']) {
+  for (const path of ['/platform/settings', '/platform/repositories/acme__slots-api', '/home/lifecycle/PRD-031', '/factory/product/architecture/PRD-031']) {
     await page.goto(path);
     await expect(content(page).locator('h1')).toBeVisible();
     await page.waitForLoadState('networkidle');

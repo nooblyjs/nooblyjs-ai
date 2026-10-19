@@ -53,7 +53,7 @@ before(async () => {
           linked.push(...fresh.map((l) => ({ ...l, by: actor.id })));
           return { added: fresh.length, links: linked };
         },
-        adrFor: async (id) => (id === 'ADR-014' ? { id, title: 'Cache slot capacity in Redis', href: '/product/architecture/PRD-031' } : null),
+        adrFor: async (id) => (id === 'ADR-014' ? { id, title: 'Cache slot capacity in Redis', href: '/factory/product/architecture/PRD-031' } : null),
       },
       workflows: { item: async ({ itemId }) => (itemId === 'PRD-031' ? { id: itemId, title: 'Same-day delivery slots' } : null) },
       platform: { guardrail: async (key) => (key in guardrails ? { key, on: guardrails[key] } : null) },
@@ -268,7 +268,7 @@ test('step 4: the L0 model renders from the imported pages: three bands, Supply 
   ]);
   assert.deepEqual(l0.usedIn, [
     { id: 'PRD-031', title: 'Same-day delivery slots', href: '/home/lifecycle/PRD-031' },
-    { id: 'ADR-014', title: 'Cache slot capacity in Redis', href: '/product/architecture/PRD-031' },
+    { id: 'ADR-014', title: 'Cache slot capacity in Redis', href: '/factory/product/architecture/PRD-031' },
   ]);
   const supply = l0.bands[1].processes.find((p) => p.name === 'Supply');
   assert.deepEqual([supply.level, supply.code, supply.children, supply.href], ['L1', '[PLACEHOLDER VC-02]', 3, '/wiki/#/Enterprise%20Space/Business%20processes/L1/Supply.md']);

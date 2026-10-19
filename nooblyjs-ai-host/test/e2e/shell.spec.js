@@ -30,7 +30,8 @@ test('every rail and sidebar item goes somewhere, shows its active state, and pa
   test.setTimeout(240_000); // about 30 pages, each scanned by axe
   await signIn(page, 'stevie');
   const railNames = await page.locator('#noobly-rail .rail__item').evaluateAll((els) => els.map((e) => e.dataset.app));
-  expect(railNames).toEqual(['home', 'product', 'factory', 'infrastructure', 'teammates', 'wiki', 'hello-app', 'throwing-app', 'platform']);
+  // The Factory carries the Product section (and Infrastructure, in its own story): one rail item.
+  expect(railNames).toEqual(['home', 'factory', 'teammates', 'wiki', 'hello-app', 'throwing-app', 'platform']);
 
   const visited = [];
   for (const name of railNames) {
@@ -83,13 +84,13 @@ test('switching apps never reloads the page, and the sidebar follows', async ({ 
 
 test('a deep link loads the same screen after a refresh, with the chat slot for an item', async ({ page }) => {
   await signIn(page, 'lerato-m');
-  await page.goto('/product/specs/PRD-031');
-  // The Spec page (nooblyjs-ai-product) is titled with the spec's name, as in its mockup.
+  await page.goto('/factory/product/specs/PRD-031');
+  // The Spec page (the Factory's Product section) is titled with the spec's name, as in its mockup.
   await expect(page.locator('#noobly-content h1')).toHaveText('Same-day delivery slots');
   await expect(page.locator('#noobly-chat')).toBeVisible();
   await expect(page.locator('#noobly-chat')).toContainText('Team chat');
   await page.reload();
-  // The Spec page (nooblyjs-ai-product) is titled with the spec's name, as in its mockup.
+  // The Spec page (the Factory's Product section) is titled with the spec's name, as in its mockup.
   await expect(page.locator('#noobly-content h1')).toHaveText('Same-day delivery slots');
   await expect(page.locator('#noobly-sidebar [data-nav="specs"]')).toHaveAttribute('aria-current', 'page');
   await page.locator('#noobly-sidebar [data-nav="architecture"]').click();
@@ -112,7 +113,9 @@ test('a module that fails shows an error card, and the rest of NooblyJS keeps wo
   await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
   await page.getByRole('button', { name: 'Retry' }).click();
   await expect(page.getByRole('alert')).toBeVisible();
-  await page.locator('#noobly-rail [data-app="product"]').click();
+  // The Product Factory is the Factory's Product section: the rail opens the Factory, its sidebar the section.
+  await page.locator('#noobly-rail [data-app="factory"]').click();
+  await page.locator('#noobly-sidebar [data-nav="product-overview"]').click();
   await expect(page.locator('#noobly-content h1')).toHaveText('Product Factory');
   await expectNoAxeViolations(page, 'after the error');
 });
@@ -120,7 +123,7 @@ test('a module that fails shows an error card, and the rest of NooblyJS keeps wo
 test('at phone width there is no horizontal scroll and controls stay at least 44px', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await signIn(page, 'stevie');
-  for (const path of ['/', '/home/lifecycle', '/product/specs/PRD-031', '/product/architecture/PRD-031', '/product/ux/PRD-031', '/product/ui/PRD-031', '/platform/settings', '/dev/styleguide', '/factory']) {
+  for (const path of ['/', '/home/lifecycle', '/factory/product/specs/PRD-031', '/factory/product/architecture/PRD-031', '/factory/product/ux/PRD-031', '/factory/product/ui/PRD-031', '/platform/settings', '/dev/styleguide', '/factory']) {
     await page.goto(path);
     await expect(page.locator('#noobly-content h1')).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -177,7 +180,9 @@ test('Teammates loads into the frame: roster to profile and back with no reload,
   await expect(page.locator('#noobly-content h1')).toBeVisible();
   await page.goBack();
   await expect(page.locator('#noobly-content a.tmk-card').first()).toBeVisible();
-  await page.locator('#noobly-rail [data-app="product"]').click();
+  // The Product Factory is the Factory's Product section: the rail opens the Factory, its sidebar the section.
+  await page.locator('#noobly-rail [data-app="factory"]').click();
+  await page.locator('#noobly-sidebar [data-nav="product-overview"]').click();
   await expect(page.locator('#noobly-content h1')).toHaveText('Product Factory');
   expect(await page.evaluate(() => window.__nooblyNoReload)).toBe('still here');
   expect(await page.evaluate(() => performance.getEntriesByType('navigation').length)).toBe(1);

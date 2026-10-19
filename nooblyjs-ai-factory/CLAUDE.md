@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Since 2026-10-19 this package is the whole Software Factory app in NooblyJS**, at `/factory`, with three parts: the
+**Product section** (`product/`, pages in `public/product/`: signals → ideas → specs → architecture → UX → UI →
+handoff; it was `nooblyjs-ai-product`), the **line** (everything below: issues in, verified PRs out), and the
+**Infrastructure section** (`infrastructure/`, pages in `public/infrastructure/`: designs → environments → provisioning →
+drift → cost; it was `nooblyjs-ai-infrastructure`). The sections keep their own code, tests and docs, each with its own
+`CLAUDE.md`; how they sit in the Factory is `src/services/sections.js` and `public/js/sections.js` (below, "Sections").
+
 `factory` is an agentic software factory built on top of the `noobly` harness (`../nooblyjs-ai-harness`, linked as a `file:` dependency, so it must be checked out next to this repo). Shared AI building blocks (cost, tokens, frontmatter, SSE) come from the AI module `nooblyjs-ai-common`, which lives inside `nooblyjs-core` (`../../nooblyjs-core/src/aiservice/common`) and is linked the same way. Issues go in; verified PRs come out. It's a learning project built one concept per phase (F00–F25). Each phase has a plain-language doc in `.claude/docs/` explaining what it adds and why. `.claude/docs/reference.md` lists every command, config key, repo file, env var, station, status, event and endpoint. The plan lives in `.claude/steering/` (PRD, Architecture, Roadmap). Architecture §20 and PRD §16 describe what was actually built.
 
 ## Part of NooblyJS (read first)
@@ -18,7 +25,7 @@ pages, signs people in, stores data, emits events or calls models, read
 
 ```bash
 npm install                                   # links ../nooblyjs-ai-harness and nooblyjs-ai-common (../../nooblyjs-core/src/aiservice/common)
-npm test                                      # all tests: node --test "test/**/*.test.js" (offline)
+npm test                                      # all tests: the line's, then the sections' (product/test, infrastructure/test), offline
 node --test test/services/line/line.test.js   # one test file
 node --test --test-name-pattern="<regex>" test/services/line/line.test.js   # one test
 npm run check:examples                        # run every documented example (examples/examples.txt) against a fresh demo repo
@@ -48,9 +55,29 @@ One known flaky test: F05's multi-process database test fails about one full run
 - **Hosted in NooblyJS (F26).** `register()` (`src/services/hosted.js`, exported from the root `index.js`) mounts the same API route table on the host's Express through `toExpressRouter` (`src/services/to-express.js`) at `/factory/api/v1`, behind the host's sign-in, permissions (`PERMISSIONS`: every write must name one) and audit. The pages are a UI module for NooblyJS's frame: `public/js/module.js`, `lib.js`, `parts.js`, `pages/`, and `public/css/factory.css` (every selector under `[data-module="factory"]`). `public/dashboard/` is still what `factory dashboard` serves. Hosted, the log lives in the `dataDir` NooblyJS passes (`../nooblyjs-ai-host/data/factory/`). **NooblyJS Phase 7:** hosted, the scheduler runs inside the NooblyJS process (`register()` starts it, `close()` stops it); `handoff.created` becomes issues and queued runs (`src/services/intake/handoff.js`, repositories from `repos.yaml`, `src/config/repos-map.js`); a run carries what it is for in NooblyJS (`request.noobly`) and its PR evidence shows the item's quality attributes against the repository's gates (`intake/attributes.js`: by gate name only, nothing from a row is run); `FACTORY_HOSTED=noobly` makes the merge station refuse; answering an escalation sends the run back to repair; `seed()` writes a demo repository and scripted agents (`intake/demo-repo.js`, `examples/noobly/`). The page head, pills, stat tiles and notices on the pages are the NooblyJS UI kit's components (`kit()` in `public/js/lib.js`).
 - `src/routes/cli.js` maps command names to `src/controllers/cli/*.js`. `src/services/forge/` is the PR target: a local forge under `$FACTORY_HOME/forge/` or GitHub. The HTTP side is split the same way: route tables in `src/routes/` (`api.js`, `workers.js`, `webhooks.js`, and `http.js`, the router), handlers in `src/controllers/`, token, body and static-file handling in `src/middleware/`. SSE is `src/services/sse.js`, and the dashboard page is `public/dashboard/`.
 
+### Sections (2026-10-19)
+
+- **Server.** `register()` (`src/services/hosted.js`) first calls `mountSections()` (`src/services/sections.js`), which
+  calls each section's own `register()` (`product/index.js`, `infrastructure/index.js`) at `/factory/product` and
+  `/factory/infrastructure`, with the Factory's host and a store of its own (`data/factory/<section>/`). Sections mount
+  **before** the Factory's router, whose page fallback would otherwise answer their URLs. A new section folder is
+  seeded at once. `FACTORY_SECTIONS` (comma-separated keys) leaves a section out; `register({ sections: [] })` mounts
+  none (tests of the line alone).
+- **What NooblyJS sees.** One app: the sidebar is the Product rows (keys `product-…`), the Factory's own (group Build),
+  then Infrastructure's (`infra-…`); the status card has a line per section and their badges under prefixed keys; the
+  sections' stylesheets load with `css/factory.css`; and `provides: { product, infrastructure }` keeps
+  `host.service('product')` and `host.service('infrastructure')` working for every other app.
+- **Browser.** `public/js/module.js` adds each section's route table (imported from `../product/js/module.js`, the URL it
+  is served at) through `public/js/sections.js`, which moves the routes under the section's path, prefixes their nav
+  keys, and gives each page a `ctx` bound to the section (`ctx.api` at `/factory/<section>/api/v1`, links and
+  `navigate()` under `/factory/<section>`). The page draws inside `<div data-module="<section>">`, so the section's
+  stylesheet, scoped as it always was, still applies. `test/sections.test.js` checks the server and browser tables agree.
+- **A section's own rules** (its permissions, its approvals, its events and their `system: 'product' | 'infrastructure'`)
+  did not change. Its tests mount it on its own, at `/product` or `/infrastructure`, on its own fixture host.
+
 ### Layout
 
-`src/` holds only `config/ controllers/ middleware/ models/ roles/ routes/ services/ utils/`, the same folders as `nooblyjs-ai-teammate`. `test/` mirrors it (`test/services/line/fanout.test.js` tests `src/services/line/`). `test/structure.test.js` fails if a new top-level folder appears in either.
+`src/` holds only `config/ controllers/ middleware/ models/ roles/ routes/ services/ utils/`, the same folders as `nooblyjs-ai-teammate`. The sections are not in `src/`: each keeps its own layout in `product/` and `infrastructure/` (`src/`, `test/`, `docs/`, `.claude/steering/`), and its browser files in `public/product/` and `public/infrastructure/`. `test/` mirrors it (`test/services/line/fanout.test.js` tests `src/services/line/`). `test/structure.test.js` fails if a new top-level folder appears in either.
 
 | Folder | What goes there |
 | --- | --- |
@@ -68,7 +95,7 @@ The library's exports are in the root `index.js` (`"main"`).
 ## Conventions
 
 - Node ≥ 24, ES modules, `// @ts-check` + JSDoc types.
-- **Core code uses Node built-ins only.** The harness is the only dependency. Adding a new dependency requires a line in Architecture §17.
+- **Core code uses Node built-ins only.** In `src/`, the harness is the only dependency (`sections.js` also uses `nooblyjs-core`'s `FsStore`, which the sections brought with `js-yaml`). Adding a new dependency requires a line in Architecture §17.
 - **Import the harness only through `src/services/harness.js`**, and never copy harness code. Deep imports of harness internals are listed there.
 - Each file holds one concept and opens with a comment naming the phase that added it and explaining the idea in plain words. Keep modules under ~300 lines.
 - Anything that depends on time or randomness takes a `clock` (`src/utils/clock.js`) so tests never wait.

@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-007, CHG-005.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-007, CHG-006.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -160,6 +160,32 @@ know; "steps" can be one line.
   - Notes: the Teams app needs its manifest version bumped and the package uploaded again for the new icons. The
     Teams tab's `App.css` (the toolkit template) and the wiki's own "N" logo were left as they were.
   - Steering: nooblyjs-ai-host `.claude/steering/tech.md` (fonts), `structure.md` (fonts/)
+
+- [ ] CHG-005 — Product and Infrastructure become sections of the Software Factory: one package, one app at /factory · Rail, Factory, Product, Infrastructure · nooblyjs-ai-factory, nooblyjs-ai-host, monorepo root · Phase 16a+
+  - Asked: 2026-10-19 · Status: fixed
+  - What and why: asked for "one package, one app": `nooblyjs-ai-product` and `nooblyjs-ai-infrastructure` moved into
+    `nooblyjs-ai-factory` as `product/` and `infrastructure/` (`git mv`, history kept), their pages into
+    `public/product/` and `public/infrastructure/`. The Factory's `register()` mounts them at `/factory/product` and
+    `/factory/infrastructure` (`src/services/sections.js`), each with its own store in `data/factory/<section>/`, and
+    `provides: { product, infrastructure }` keeps `host.service('product')` and `host.service('infrastructure')`. Its UI
+    module adds their routes (`public/js/sections.js`: each page gets a ctx bound to its section and draws in its own
+    `data-module` scope). One rail item; the sidebar is grouped Product · Build · Infrastructure; the status card has a
+    line per section. `FACTORY_SECTIONS` leaves one out. The host skips their entries in an older `hosted-apps.yaml`,
+    moves `data/product` and `data/infrastructure` once (`foldData`), reads `provides` as an object, and links to the
+    new paths. The sections' standalone `server.js` and its tests are gone.
+  - Check: factory package 579 tests, 572 pass (the line's 3 known failures: `redteam` RT4, `intake/handoff` steps
+    2–3, the same before); Product section 157 (160 less the 3 standalone-server tests), Infrastructure 46; host 315,
+    122 pass, and no test that passed before fails (the rest fail on the missing sample story, BUG-006); knowledge
+    34/34. A blank install boots with the rail Home · Factory · Teammates · Wiki · Platform, both sections' APIs answer
+    under `/factory/…`, and `/product/api/v1` is gone. Not checked in a browser: Chromium here lacks system libraries
+    (`libatk`); `test/sections.test.js` renders a section page through the wrapper with the kit's API client instead.
+    The e2e specs were updated but not run (they sign in as the sample people, BUG-006).
+  - Notes: the e2e servers now always host the Factory (Product needs it); Infrastructure only for its story, through
+    `FACTORY_SECTIONS`. The learning notes in `.claude/learning/` and the dated audits still name the old projects.
+  - Steering: root `product.md` §4 and §9, `stack.md` §2–§3, `roadmap.md` (note at the top, Phases 16b–23, open work);
+    host `product.md` §5.1, §5.7a, §10, `structure.md` §1, §2a, §4, `tech.md` §1, §2, §8, §8b; the Factory's
+    `CLAUDE.md`, `.claude/steering/{product,structure,tech,Architecture}.md`; each section's `CLAUDE.md` and a note on
+    its steering files.
 
 ## Closed
 

@@ -18,7 +18,9 @@ inclusion: always
 | | |
 | --- | --- |
 | Entry | `index.js` (`"main"`, `"exports"`): re-exports the factory library (`src/index.js`) and `register()` from `src/services/hosted.js`, so library users are unaffected |
-| `register()` | default mount `/factory`, name `factory`, styles `css/factory.css`, data under `data/factory/` (its event log is daily YAML streams, `src/models/store/`) |
+| `register()` | default mount `/factory`, name `factory`, styles `css/factory.css` plus each section's, data under `data/factory/` (its event log is daily YAML streams, `src/models/store/`) |
+| Sections (2026-10-19) | The Product section at `/factory/product` (data `data/factory/product/`) and the Infrastructure section at `/factory/infrastructure` (data `data/factory/infrastructure/`), mounted by `src/services/sections.js` before the Factory's own router. `provides: { product, infrastructure }` answers `host.service('product')` and `host.service('infrastructure')`. `FACTORY_SECTIONS` (e.g. `product`) leaves one out; unset, both run. The sections' values are in `product/.claude/steering/tech.md` and `infrastructure/.claude/steering/stack.md` |
+| Dependencies | The harness and the AI module for the line; `nooblyjs-core` (`FsStore`, and the shell in tests) and `js-yaml` for the sections (Architecture §17) |
 | Standalone | No `server.js`: `npm start` is the CLI (`bin/factory.js`), which keeps working on its own `$FACTORY_HOME`. When NooblyJS hosts the factory, only the NooblyJS process writes `data/factory/` |
 | `host.development` | A demo repository's gate commands run unsandboxed only then, never when `NODE_ENV` is production, and never with the process's secrets |
 | `agent.action` | `system: 'factory'`; every agent step carries its cost; `run.finished` carries `workType: 'implementation'` |
