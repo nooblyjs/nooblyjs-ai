@@ -4,3 +4,5 @@ certs/
 .env
 .temp/
 node_modules/
+# The seed folders under src/ are source, not runtime data.
+!**/src/**/seed/data/

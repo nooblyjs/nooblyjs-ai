@@ -1,0 +1,8 @@
+# The child apps NooblyJS hosts (structure.md §2a). Each entry: package (or path, development only), mountPath,
+# enabled. An app that is listed but not enabled shows as "not installed".
+apps:
+  - { package: nooblyjs-ai-product, mountPath: /product, enabled: true }
+  - { package: nooblyjs-ai-factory, mountPath: /factory, enabled: true }
+  - { package: nooblyjs-ai-teammate, mountPath: /teammates, enabled: true }
+  - { package: nooblyjs-ai-knowledge, mountPath: /wiki, enabled: true }
+  - { package: nooblyjs-ai-infrastructure, mountPath: /infrastructure, enabled: true }

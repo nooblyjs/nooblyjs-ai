@@ -1,0 +1,9 @@
+# Job title (from the Microsoft profile) → the work role onboarding suggests. The first matching rule wins; `match`
+# is a case-insensitive regular expression. A work role shapes the home only, never a permission.
+rules:
+  - { match: 'platform|devops|site reliability|\bsre\b|infrastructure', workRole: platform-engineer }
+  - { match: 'engineering (lead|manager)|head of engineering|\bcto\b|tech(nical)? lead', workRole: engineering-lead }
+  - { match: 'architect', workRole: architect }
+  - { match: 'product (manager|owner|lead)|\bpm\b', workRole: product-manager }
+  - { match: 'design|\bux\b|\bui\b', workRole: designer }
+  - { match: 'developer|engineer|programmer', workRole: developer }

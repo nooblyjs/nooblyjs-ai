@@ -1,0 +1,4 @@
+cloud: "[PLACEHOLDER cloud]"
+region: "[PLACEHOLDER region]"
+# Environments are owned by Infrastructure; this list is what Platform shows when Infrastructure is not running.
+environments: []

@@ -1,0 +1,3 @@
+# Base images agents' sandboxes are built from. Listed here once an image registry is connected.
+registry: "[PLACEHOLDER image registry]"
+images: []

@@ -1,0 +1,7 @@
+cluster: { name: "[PLACEHOLDER cluster]", region: "[PLACEHOLDER region]", vcpu: 96, memoryGb: 256, computeDailyCap: 120, computeToday: 0 }
+pools:
+  - { id: factory, name: Factory stations, slots: 3, queued: 0, note: One per run }
+  - { id: teammate, name: Teammate sandboxes, slots: 8, queued: 0, note: One per teammate on a task }
+  - { id: preview, name: Preview environments, slots: 6, queued: 0, note: One per open PR · torn down on merge }
+  - { id: indexer, name: Knowledge indexers, slots: 2, queued: 0, note: Nightly full sync at 02:00 }
+samples: []

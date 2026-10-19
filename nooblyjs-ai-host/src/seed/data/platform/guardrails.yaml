@@ -1,0 +1,8 @@
+# Guardrails across every NooblyJS system (Platform · Settings · Guardrails). Changing one needs an Owner and a
+# reason. "Agents open PRs, people merge" is locked on.
+guardrails:
+  - { key: agents-open-prs, label: 'Agents open PRs, people merge', scope: Per-repo override in Repositories, on: true, locked: true, enforced: true }
+  - { key: prod-deploy-approval, label: Human approval for production deploys, scope: Two approvers for production, on: true }
+  - { key: dependency-adr, label: New dependency requires an ADR, scope: Checked at the Architecture stage and on PRs, on: true }
+  - { key: redact-on-ingest, label: Redact personal data on ingest, scope: Knowledge sources and agent logs, on: true, enforced: true }
+  - { key: sandbox-internet, label: Allow outbound internet from sandboxes, scope: Package registries are always allowed, on: false }

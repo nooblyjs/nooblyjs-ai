@@ -1,0 +1,99 @@
+# The work roles: onboarding copy and the layout of each "For you" home (product.md §5.8). A work role shapes the
+# home only; it is never read by a permission check. Rebuilt 2026-10-19 from product.md §5.8.
+#
+# Each role: key, name, initials, blurb (role card), promise (step 2), tasks [{ title, detail, where }], leadsWith
+# (what the home leads with), agent (the example teammate's id; its name in the copy is swapped for the teammate
+# actually hired), agents ("Name · what they do"), tools (step 3), home (where onboarding lands), and
+# firstWeek [{ key, text, short, done: { type, where: { <payload path>: value } } }]: the first three things,
+# ticked by events. The sample story's first-week tasks are not part of this rebuild, so each role's list is empty.
+common:
+  firstWeek:
+    - { key: pick-role-and-teams, text: Pick your role and teams, short: Role and teams, done: { type: profile.onboarded } }
+roles:
+  - key: product-manager
+    name: Product manager
+    initials: PM
+    blurb: Turn customer signals into specs and get them approved.
+    promise: Agents research and draft; you shape the problem and approve what moves on.
+    tasks:
+      - { title: Shape ideas from signals, detail: Ada Quill clusters signals into ideas with a RICE score., where: Product board }
+      - { title: Approve specs, detail: Specs come to you when their readiness checks pass., where: 'Specs, Approvals' }
+      - { title: Follow your items to production, detail: See where each item waits and who it waits on., where: Lifecycle }
+    leadsWith: [Specs waiting on you, Your items in flight, New signals]
+    agent: ada-quill
+    agents: Ada Quill · research and spec drafting
+    tools: [Jira Cloud, Zendesk]
+    home: /
+    firstWeek: []
+  - key: architect
+    name: Architect
+    initials: AR
+    blurb: Shape solutions and sign off the decisions that matter.
+    promise: The architect agent drafts container views and decisions; you own the trade-offs.
+    tasks:
+      - { title: Review generated designs, detail: Rhea Voss drafts container views from each approved spec., where: Architecture }
+      - { title: Accept or challenge decisions, detail: New dependencies need an ADR you accept., where: 'Decisions, Approvals' }
+      - { title: Keep standards current, detail: Standards are checked on every PR., where: Knowledge }
+    leadsWith: [Decisions awaiting you, Your Architecture queue, Standards broken on PRs]
+    agent: rhea-voss
+    agents: Rhea Voss · container views and decisions
+    tools: [GitHub, Enterprise Knowledge Repository]
+    home: /
+    firstWeek: []
+  - key: developer
+    name: Developer
+    initials: DV
+    blurb: Review, steer and merge what agents build.
+    promise: The Software Factory and engineering teammates write the code; you review, steer and merge.
+    tasks:
+      - { title: Review agent pull requests, detail: Agents open PRs; people merge., where: Software Factory }
+      - { title: Steer runs that get stuck, detail: A stuck run asks you a question., where: Factory · Runs }
+      - { title: Pair with engineering teammates, detail: Juno Park opens PRs on your repos. Juno never merges to main., where: Teammates }
+    leadsWith: [PRs waiting for you, Runs on your repos, Runs that need help]
+    agent: juno-park
+    agents: Juno Park · implementation and tests
+    tools: [GitHub, Jira Cloud]
+    home: /
+    firstWeek: []
+  - key: designer
+    name: Designer
+    initials: DS
+    blurb: Journeys, flows and screens built from the design system.
+    promise: Agents draft journeys and screens; you set the direction and hand off.
+    tasks:
+      - { title: Shape journeys and flows, detail: Agents draft journey maps and user flows from the spec., where: UX Design }
+      - { title: Approve screens, detail: Screens are built from design-system components., where: UI Design }
+      - { title: Hand off to build, detail: A UI handoff generates the work items., where: Approvals }
+    leadsWith: [Flows waiting on you, Screens to approve, Handoffs]
+    agents: Design agents · journeys, flows and screens
+    tools: [Figma, Jira Cloud]
+    home: /home/overview
+    firstWeek: []
+  - key: engineering-lead
+    name: Engineering lead
+    initials: EL
+    blurb: Flow, people, agents and budgets across your teams.
+    promise: See where work waits, who is overloaded and what it costs.
+    tasks:
+      - { title: Unblock the line, detail: See which items wait too long and on whom., where: Lifecycle }
+      - { title: Balance people and agents, detail: Teams mix people and agent teammates., where: Teams & roles }
+      - { title: Watch cost and speed, detail: Lead time, approvals and spend per system., where: Metrics }
+    leadsWith: [Where work waits, Who is overloaded, What it costs]
+    agents: Every agent teammate on your teams
+    tools: [Jira Cloud, GitHub]
+    home: /home/overview
+    firstWeek: []
+  - key: platform-engineer
+    name: Platform engineer
+    initials: PE
+    blurb: Repos, sandboxes, models and guardrails.
+    promise: Keep the factory floor safe, fast and affordable.
+    tasks:
+      - { title: Grant repo access, detail: Agents can only touch what is granted here., where: Repositories }
+      - { title: Run the sandboxes, detail: Every agent works in its own sandbox., where: Containers }
+      - { title: Set guardrails, detail: Models, budgets and guardrails for every system., where: Settings }
+    leadsWith: [Repositories and agent access, Containers, Model spend]
+    agents: Every agent teammate's sandbox
+    tools: [GitHub, Azure]
+    home: /platform/repositories
+    firstWeek: []

@@ -1,0 +1,12 @@
+# The readiness checks per stage (product.md §4). An item can't request approval until its stage's checks pass,
+# unless a person overrides with a reason. The Product Factory works out each check's result from the spec.
+waitingTooLongDays: 3
+stages:
+  specify:
+    - { key: problem-evidence, passed: Problem backed by evidence, failed: Problem needs evidence }
+    - { key: goals-measurable, passed: Goals are measurable, failed: Goals need measures }
+    - { key: criteria-testable, passed: Criteria are testable, failed: Criteria need to be testable }
+    - { key: dependencies-named, passed: Dependencies named, failed: Dependencies not named }
+    - { key: performance-targets, passed: Performance targets set, failed: Performance targets missing }
+    - { key: privacy-reviewed, passed: Privacy reviewed, failed: Privacy not reviewed }
+    - { key: rollout-plan, passed: Rollout plan ready, failed: Rollout plan missing }

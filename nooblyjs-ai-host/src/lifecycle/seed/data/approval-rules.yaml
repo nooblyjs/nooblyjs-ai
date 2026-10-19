@@ -1,0 +1,69 @@
+# Who approves what (product.md §4). Read on every use, so an edit applies without a restart. Each rule: key (the
+# approval type), decision, approver, permission (from access/roles.yaml), quorum (all · any · a number), target
+# ({ workingDays } · { hours } · { sameDay: true }), ifLate, remind, escalate, needsReadiness, tag, label, transition.
+# The infra-design and devtools-write rules are built in (src/lifecycle/config.js) unless listed here.
+# Rebuilt 2026-10-19 from product.md §4 and the Phase 2 design.
+rules:
+  - key: spec
+    decision: Spec → Architecture
+    approver: Product lead + Engineering
+    permission: approve
+    quorum: all
+    target: { workingDays: 1 }
+    targetText: 1 working day
+    ifLate: Remind, then escalate
+    remind: true
+    escalate: { afterWorkingDays: 1, to: Owner }
+    needsReadiness: true
+    tag: Spec
+    label: Spec approval
+    transition: Approve & send to Architecture
+  - key: adr
+    decision: New dependency (ADR)
+    approver: Architect
+    permission: accept-decisions
+    verb: accept
+    quorum: any
+    target: { workingDays: 1 }
+    targetText: 1 working day
+    ifLate: Remind
+    remind: true
+    tag: ADR
+    label: ADR acceptance
+    transition: Accept the decision
+  - key: ui-handoff
+    decision: UI → Software Factory
+    approver: Design lead
+    permission: approve
+    quorum: any
+    target: { hours: 4 }
+    targetText: 4 hours
+    ifLate: Remind
+    remind: true
+    tag: UI
+    label: UI handoff
+    transition: Approve & send to the Software Factory
+  - key: merge
+    decision: Merge to main
+    approver: Code owner of the repo
+    permission: merge
+    quorum: any
+    target: { hours: 4 }
+    targetText: 4 hours
+    ifLate: Remind
+    remind: true
+    tag: PR
+    label: Merge to main
+    transition: Approve the merge
+  - key: deploy
+    decision: Production deploy
+    approver: Two approvers
+    permission: approve
+    quorum: 2
+    target: { sameDay: true }
+    targetText: Same day
+    ifLate: Hold deploy
+    remind: false
+    tag: Deploy
+    label: Production deploy
+    transition: Approve the deploy

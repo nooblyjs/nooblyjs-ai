@@ -144,3 +144,5 @@ vite.config.ts.timestamp-*
 
 # Personal Claude Code settings
 **/.claude/settings.local.json
+# The seed folders under src/ are source, not runtime data.
+!**/src/**/seed/data/

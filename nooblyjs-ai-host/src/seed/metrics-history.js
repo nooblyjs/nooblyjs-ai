@@ -249,7 +249,8 @@ async function stageEntries(store, now) {
     items = await Promise.all(live.map(async (name) => front(await store.readText(['workflows', 'items', name]))));
   } else {
     shift = new Date(now).getTime() - new Date(STORY_ANCHOR).getTime();
-    const names = (await fs.readdir(STORY_ITEMS)).filter((n) => n.endsWith('.md')).sort();
+    // A checkout without the sample story's items has no stage history to add.
+    const names = (await fs.readdir(STORY_ITEMS).catch((err) => (err.code === 'ENOENT' ? [] : Promise.reject(err)))).filter((n) => n.endsWith('.md')).sort();
     items = await Promise.all(names.map(async (name) => front(await fs.readFile(path.join(STORY_ITEMS, name), 'utf8'))));
   }
   const events = [];

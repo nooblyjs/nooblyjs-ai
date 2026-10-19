@@ -1,0 +1,10 @@
+# Budgets per NooblyJS system (Platform · Settings · Budgets), in US dollars. Monthly per system; the Software
+# Factory has a daily cap. With pauseOnLimit, agents pause when a budget is reached.
+total: 11600
+pauseOnLimit: true
+systems:
+  teammates: { label: Digital Teammates, monthly: 9000 }
+  product: { label: Product Factory, monthly: 1500 }
+  knowledge: { label: Knowledge, monthly: 500 }
+  factory: { label: Software Factory, daily: 20 }
+  cloud: { label: Cloud (Infrastructure), monthly: 6000, source: infrastructure }

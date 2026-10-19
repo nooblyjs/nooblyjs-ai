@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-006, CHG-005.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-007, CHG-005.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -80,6 +80,22 @@ know; "steps" can be one line.
   - Cause: `productManager()` reads `listed` (the work role as written, before `withTeammate()` clears its `agent`), but
     `listed` is a local of `build()` and was never passed in. It is only read when nobody is hired, which the seed never is.
   - Fix: `build()` passes `listed` in the layout's `ctx`. Test: `test/services/for-you.test.js`.
+
+- [ ] BUG-006 — NooblyJS fails to start: `ENOENT … scandir 'src/seed/data'` · S1 · Seed · nooblyjs-ai-host · Phase 0
+  - Found: 2026-10-19 · Status: fixed
+  - Steps: 1. Clone the monorepo. 2. `npm start` in nooblyjs-ai-host.
+  - Expected: NooblyJS seeds an empty `data/` and starts.
+  - Actual: `NooblyJS failed to start: Error: ENOENT: no such file or directory, scandir '…/nooblyjs-ai-host/src/seed/data'`.
+  - Cause: the host's `.gitignore` (and the root one) ignore `data/` unanchored, which also matched `src/seed/data/` and
+    `src/lifecycle/seed/data/`, so the migration (M4) never committed them. No copy survived.
+  - Fix: both `.gitignore` files keep `**/src/**/seed/data/`. The system files are rebuilt from product.md §4–§6, §5.7,
+    §5.8 and the phase 0, 2, 3 and 9 designs: access roles and job titles, hosted apps, organisation and settings
+    (`[PLACEHOLDER]`s), work roles (without the sample first-week tasks), budgets, guardrails, model routes, the blank
+    Platform/chat/Teams files, the approval rules and readiness checks. `seedMetricsHistory` treats a missing story
+    `items/` folder as no items. Check: a fresh `DATA_DIR` seeds 69 files, every app mounts, `/healthz` is 200.
+  - Notes: the PRD-031 sample story (people, teams, items, approvals) is not rebuilt, so a new data folder has no
+    sample people. Tests that sign in as the sample people (`seed`, most of `platform`, `hosted-apps`, the
+    `--reset` case in `blank`) fail until it is.
 
 ## Changes
 

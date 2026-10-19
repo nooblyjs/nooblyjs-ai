@@ -1,0 +1,5 @@
+# Facts about the organisation, shown read-only in Platform · Settings · Organisation. Fill in the placeholders.
+name: "[PLACEHOLDER organisation]"
+dataRegion: "[CONFIRM REGION]"
+cloud: "[PLACEHOLDER cloud]"
+timezone: UTC

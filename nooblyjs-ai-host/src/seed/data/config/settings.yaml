@@ -1,0 +1,3 @@
+# NooblyJS settings (phase-00 design): the organisation's display name and the public URL people reach NooblyJS on.
+organisationName: "[PLACEHOLDER organisation]"
+publicBaseUrl: ""

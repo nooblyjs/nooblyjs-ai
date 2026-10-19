@@ -1,0 +1,24 @@
+# Which model does which kind of work (Platform · Settings · Models). Features ask for a work type, never a model.
+# A work type with no route uses the teammate's own model. Providers: bedrock, vertex, azure (anthropic: development only).
+routes:
+  - id: specs-architecture-review
+    label: Specs, architecture, review
+    workTypes: [spec-drafting, architecture-drafting, ux-drafting, ux-research, ui-drafting, review]
+    systems: [Product Factory, Factory review station]
+    model: claude-opus-5-5
+    fallback: claude-sonnet-5-5
+    provider: bedrock
+  - id: implementation-tests
+    label: Implementation & tests
+    workTypes: [implementation, build, chat.reply, meeting.answer, board-reply]
+    systems: [Software Factory, Digital Teammates]
+    model: claude-sonnet-5-5
+    fallback: claude-haiku-4-5
+    provider: bedrock
+  - id: indexing-triage
+    label: Indexing, triage, clean-up
+    workTypes: [triage, indexing, board-digest]
+    systems: [Knowledge, Product Factory]
+    model: claude-haiku-4-5
+    fallback: null
+    provider: bedrock

@@ -1,0 +1,20 @@
+# Who may do what (product.md §6). Permissions come only from the access role. Every restricted route checks this
+# matrix; a permission not listed here is refused. Rebuilt 2026-10-19 from product.md §6 (the original was never committed).
+# The access roles, lowest first.
+roles: [Viewer, Contributor, Approver, Architect, Owner]
+# The access role a person gets when NooblyJS creates their record on first sign-in (NOOBLY_OWNERS start as Owner).
+newPersonRole: Viewer
+# Agents are always capped at Contributor.
+agentCap: Contributor
+permissions:
+  read: [Viewer, Contributor, Approver, Architect, Owner]
+  draft: [Contributor, Approver, Architect, Owner]
+  approve: [Approver, Architect, Owner]
+  accept-decisions: [Architect, Owner]
+  merge: [Approver, Architect, Owner]
+  hire-teammates: [Owner]
+  set-budgets: [Owner]
+  change-guardrails: [Owner]
+  change-repo-access: [Owner]
+  manage-members: [Owner]
+  read-audit: [Approver, Architect, Owner]
