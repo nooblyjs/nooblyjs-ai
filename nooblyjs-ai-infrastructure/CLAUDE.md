@@ -4,7 +4,7 @@ Guidance for Claude Code in this repository.
 
 `nooblyjs-ai-infrastructure` is NooblyJS's **Infrastructure** module: its screens (a UI module in the NooblyJS frame), its API
 at `/infrastructure/api/v1`, infrastructure designs, environments, provisioning runs, drift and cloud cost.
-Progress is tracked in NooblyJS's one roadmap, `../nooblyjs-ai-host/.claude/steering/roadmap.md` ("Hosted apps: open work"): update its checkboxes in the same change as the work. How I0–I6 were built is `docs/roadmap-history.md`.
+Progress is tracked in NooblyJS's one roadmap, `../.claude/steering/roadmap.md` ("Hosted apps: open work"): update its checkboxes in the same change as the work. How I0–I6 were built is `docs/roadmap-history.md`.
 
 ## Part of NooblyJS (read first)
 

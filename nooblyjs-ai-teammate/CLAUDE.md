@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-`nooblyjs-ai-teammate` is **Digital Teammates**: hire, configure, budget and bill named AI agents. It is the source of agents across NooblyJS. It runs **hosted** (NooblyJS AI imports `index.js` and calls `register()`) or **standalone** (`server.js`: the same `register()` on `src/services/standalone-host.js`, with nooblyjs-core's sign-in, the shell's frame and the host's CSRF check). The app's own architecture is in `.claude/steering/structure.md` (§1 onwards) and its scope in `.claude/steering/product.md`. Its phase history is `docs/roadmap-history.md`; what is open is in `../nooblyjs-ai-host/.claude/steering/roadmap.md` ("Hosted apps: open work"). Older specs and the UI design brief are in `.claude/specs/`.
+`nooblyjs-ai-teammate` is **Digital Teammates**: hire, configure, budget and bill named AI agents. It is the source of agents across NooblyJS. It runs **hosted** (NooblyJS AI imports `index.js` and calls `register()`) or **standalone** (`server.js`: the same `register()` on `src/services/standalone-host.js`, with nooblyjs-core's sign-in, the shell's frame and the host's CSRF check). The app's own architecture is in `.claude/steering/structure.md` (§1 onwards) and its scope in `.claude/steering/product.md`. Its phase history is `docs/roadmap-history.md`; what is open is in `../.claude/steering/roadmap.md` ("Hosted apps: open work"). Older specs and the UI design brief are in `.claude/specs/`.
 
 ## Part of NooblyJS (read first)
 

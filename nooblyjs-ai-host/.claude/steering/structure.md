@@ -44,8 +44,9 @@ nooblyjs-ai-host ──► nooblyjs-ai-product, nooblyjs-ai-knowledge, nooblyjs-
 
 ## 1a. Steering: nooblyjs-ai-host owns everything shared
 
-**`nooblyjs-ai-host` owns everything shared: the product, the lifecycle, governance rules, the hosted-app contract, the
-cross-app services, and the single roadmap.** Each other repo owns only what is true of itself. A rule is written
+**`nooblyjs-ai-host` owns everything shared: the product, the lifecycle, governance rules, the hosted-app contract and the
+cross-app services.** The single roadmap, and the whole-factory view across the SDLC, live in the monorepo root's
+`.claude/steering/` (decided 2026-10-19). Each other repo owns only what is true of itself. A rule is written
 once, in the repo that owns it; other repos link to it and never copy it, because copies drift.
 
 | Topic | Owner | Where |
@@ -55,7 +56,8 @@ once, in the repo that owns it; other repos link to it and never copy it, becaus
 | The lifecycle engine (items, stages, approvals, handoffs) | nooblyjs-ai-host | `tech.md`, `src/lifecycle/` |
 | The hosted-app contract (`register()`, `options.host`, the UI module, standalone mode) | nooblyjs-ai-host | this file, §2a |
 | The cross-app services (`host.service(name)`: who provides what, who calls it) | nooblyjs-ai-host | `tech.md` §8b |
-| The roadmap: every phase for every repo, the hosted-app checklist, the hosted apps' open work | nooblyjs-ai-host | `roadmap.md` |
+| The roadmap: every phase for every repo, the hosted-app checklist, the hosted apps' open work | monorepo root | `../.claude/steering/roadmap.md` |
+| The whole factory across the SDLC: stages, systems, trace, checks, target stack | monorepo root | `../.claude/steering/{product,design,stack}.md` |
 | The shared rules in brief, loaded in every other repo | nooblyjs-ai-host | `docs/steering/nooblyjs-ai-shared-rules.md`, copied as `.claude/steering/nooblyjs-ai.md` |
 | What an app does: its screens, capabilities, data and open points | that repo | its `product.md` |
 | Where its code and data live, the `services` it returns and the events it emits | that repo | its `structure.md` |
@@ -71,9 +73,10 @@ How it works:
 - **A repo's own `tech.md`** starts by pointing at `NOOBLY.md` and then gives only its values (mount path, entry,
   name, which `host` members it relies on) and where it differs from §2a (Teammates has no standalone server,
   the wiki mounts at `/wiki` from `index.mjs`). It does not restate the contract.
-- **One roadmap.** Work in any repo is a phase (or part of one) in `roadmap.md`, with its spec in this repo's
-  `.claude/specs/`. The hosted apps' old roadmaps are history in their `docs/roadmap-history.md`; what was still
-  open in them is in `roadmap.md`, "Hosted apps: open work".
+- **One roadmap.** Work in any repo is a phase (or part of one) in the root `../.claude/steering/roadmap.md`, with
+  its spec in this repo's `.claude/specs/`. The hosted apps' old roadmaps are history in their
+  `docs/roadmap-history.md`; what was still open in them is in the root roadmap, "Hosted apps: open work". This repo's
+  `roadmap.md` is only a pointer (phases 0–15 moved to the root on 2026-10-19).
 - **Changing a shared rule** is one change in nooblyjs-ai-host: edit the owning doc (and `nooblyjs-ai-shared-rules.md` if the brief
   changes), run `npm run steering:sync`, and commit the copies in each repo with it.
 
@@ -147,7 +150,7 @@ noobly/
     adr/                    ADR-NNN-<slug>.md (decisions about NooblyJS itself, e.g. ADR-001-host-owned-shell.md)
     phases/                 phase-NN-summary.md written at the end of each roadmap phase
   .claude/
-    steering/               product.md · tech.md · structure.md · roadmap.md · brief/ (design input, read-only)
+    steering/               product.md · tech.md · structure.md · roadmap.md (a pointer to the root) · brief/ (design input, read-only)
     specs/                  per-feature Kiro specs (requirements, design, tasks)
     style/                  brand assets
 ```

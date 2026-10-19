@@ -7,7 +7,7 @@ inclusion: always
 > **Read `NOOBLY.md` first** (in this folder; generated from noobly). noobly owns everything shared, and this file does not
 > repeat it: the hosted-app contract is `../nooblyjs-ai-host/.claude/steering/structure.md` §2a, the cross-app services are
 > `../nooblyjs-ai-host/.claude/steering/tech.md` §8b, governance and the permissions matrix are `../nooblyjs-ai-host/.claude/steering/product.md`,
-> and the one roadmap is `../nooblyjs-ai-host/.claude/steering/roadmap.md` (with the hosted-app checklist this repo must pass).
+> and the one roadmap is `../.claude/steering/roadmap.md` (with the hosted-app checklist this repo must pass).
 > If this file and noobly disagree, **noobly wins**: follow it and fix this file in the same change.
 >
 > NooblyJS mounts this repo at **`/product`**. This file gives only this repo's values for the contract, where it
@@ -48,4 +48,4 @@ system: 'product', workType, teammateId, itemId })`: at the budget it is refused
 
 Built in NooblyJS Phase 5 (the engine, its screens and the hosted-app contract) and wired to real teammate drafting,
 Knowledge context and Platform routes in Phases 6, 8 and 9. The phase history is `docs/roadmap-history.md`; what is
-still open is in `../nooblyjs-ai-host/.claude/steering/roadmap.md`, "Hosted apps: open work".
+still open is in `../.claude/steering/roadmap.md`, "Hosted apps: open work".

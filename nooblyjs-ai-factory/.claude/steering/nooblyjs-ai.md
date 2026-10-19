@@ -20,17 +20,18 @@ disagree with it, nooblyjs-ai-host wins, so fix this repo's docs in the same cha
 
 | Shared topic | Where it lives (in `../nooblyjs-ai-host/`) |
 | --- | --- |
-| The product: the 7-stage lifecycle, every screen, roles and the permissions matrix, governance rules | `.claude/steering/product.md` |
+| The product: the 9-stage lifecycle, every screen, roles and the permissions matrix, governance rules | `.claude/steering/product.md` |
 | Stack, storage, API conventions, agents and model routing, events, config, commands | `.claude/steering/tech.md` |
 | **The hosted-app contract** (`register()`, `options.host`, the UI module and `ctx`, CSS scoping, standalone mode) | `.claude/steering/structure.md` §2a |
 | **The cross-app services** (`host.service('workflows' / 'teammates' / 'knowledge' / 'product' / 'factory' / 'platform' / 'devtools' …)`) | `.claude/steering/tech.md` §8b |
-| **The one roadmap**: every phase for every repo, the hosted-app checklist, and the hosted apps' open work | `.claude/steering/roadmap.md` |
+| **The one roadmap**: every phase for every repo, the hosted-app checklist, and the hosted apps' open work | **`../.claude/steering/roadmap.md`**, in the monorepo root, not in nooblyjs-ai-host |
+| **The whole factory across the SDLC**: the nine stages, the new systems, the trace, checks, the target stack | `../.claude/steering/{product,design,stack}.md`, in the monorepo root |
 | Why the host owns the shell | `docs/adr/ADR-001-host-owned-shell.md` |
 | Porting an app with its own UI into the frame | `docs/hosted-apps/porting-an-app.md` |
 
 **This project owns only itself:** what it does and its screens (`product.md`), where its code and data live and the
 `services` and events it offers (`structure.md`), and its own values for the contract and how it differs from the
-default (`tech.md`). Work for this repo is planned as a phase in the nooblyjs-ai-host roadmap, with its spec in
+default (`tech.md`). Work for this repo is planned as a phase in the one roadmap (the monorepo root's `.claude/steering/roadmap.md`), with its spec in
 `../nooblyjs-ai-host/.claude/specs/`. There is no roadmap here. Bugs and small changes in this project are logged in the one log,
 `../nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`, and fixed here.
 

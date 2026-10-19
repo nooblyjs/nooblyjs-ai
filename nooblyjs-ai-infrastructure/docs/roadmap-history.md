@@ -1,4 +1,4 @@
-> **History, not a plan (2026-10-11).** NooblyJS keeps one roadmap: `../nooblyjs-ai-host/.claude/steering/roadmap.md`. This file is
+> **History, not a plan (2026-10-11).** NooblyJS keeps one roadmap: `../.claude/steering/roadmap.md`. This file is
 > how this repo was built before that; what was still open here is in that roadmap under "Hosted apps: open work".
 
 # Infrastructure — Roadmap

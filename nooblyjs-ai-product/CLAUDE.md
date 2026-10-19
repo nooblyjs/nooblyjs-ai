@@ -2,7 +2,7 @@
 
 Guidance for Claude Code in this repository.
 
-`nooblyjs-ai-product` is NooblyJS's **Product Factory**: its screens (a UI module in the NooblyJS frame, like Teammates), its API at `/product/api/v1`, the artefacts (signals, ideas, specs, architecture, UX and UI) and the drafting agents. It is built in NooblyJS Phase 5 (its sub-phases are history in `docs/roadmap-history.md`; what is open is in `../nooblyjs-ai-host/.claude/steering/roadmap.md` ("Hosted apps: open work")). Start from `.claude/steering/structure.md`.
+`nooblyjs-ai-product` is NooblyJS's **Product Factory**: its screens (a UI module in the NooblyJS frame, like Teammates), its API at `/product/api/v1`, the artefacts (signals, ideas, specs, architecture, UX and UI) and the drafting agents. It is built in NooblyJS Phase 5 (its sub-phases are history in `docs/roadmap-history.md`; what is open is in `../.claude/steering/roadmap.md` ("Hosted apps: open work")). Start from `.claude/steering/structure.md`.
 
 ## Part of NooblyJS (read first)
 

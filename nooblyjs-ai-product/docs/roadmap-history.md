@@ -1,10 +1,10 @@
-> **History, not a plan (2026-10-11).** NooblyJS keeps one roadmap: `../nooblyjs-ai-host/.claude/steering/roadmap.md`. This file is
+> **History, not a plan (2026-10-11).** NooblyJS keeps one roadmap: `../.claude/steering/roadmap.md`. This file is
 > how this repo was built before that; what was still open here is in that roadmap under "Hosted apps: open work".
 
 # Product Factory engine: roadmap
 
 > The order `nooblyjs-ai-product` is built in. The whole repo is delivered inside **NooblyJS Phase 5
-> (Product Factory)**, `../nooblyjs-ai-host/.claude/steering/roadmap.md`, so the phases below are
+> (Product Factory)**, `../.claude/steering/roadmap.md`, so the phases below are
 > **sub-phases** of that one NooblyJS phase, plus a follow-on that lands with NooblyJS Phase 6.
 > Scope comes from `product.md`, the how from `tech.md`, the where from `structure.md`. If this
 > file disagrees with the NooblyJS roadmap, **NooblyJS wins**.

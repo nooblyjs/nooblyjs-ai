@@ -10,7 +10,7 @@ It is a **hosted app** (a micro-frontend) for NooblyJS. NooblyJS (`../nooblyjs-a
 - What it does and shows: `.claude/steering/product.md`
 - Platform rules and the `register()` contract: `.claude/steering/stack.md`
 - Layout, API, data and events: `.claude/steering/structure.md`
-- **Progress:** NooblyJS's roadmap, `../nooblyjs-ai-host/.claude/steering/roadmap.md` ("Hosted apps: open work"); history in `docs/roadmap-history.md`
+- **Progress:** NooblyJS's roadmap, `../.claude/steering/roadmap.md` ("Hosted apps: open work"); history in `docs/roadmap-history.md`
 
 ## Run it on its own
 
