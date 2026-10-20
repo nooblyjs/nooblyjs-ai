@@ -49,6 +49,12 @@ test('AUTH_METHOD=google without the Google settings falls back to local, and sa
   assert.equal(google.google.baseUrl, 'https://noobly.example');
 });
 
+test('trusts one proxy in a Codespace unless TRUST_PROXY says otherwise; none elsewhere', () => {
+  assert.equal(loadConfig({}).trustProxy, null);
+  assert.equal(loadConfig({ CODESPACES: 'true' }).trustProxy, '1');
+  assert.equal(loadConfig({ CODESPACES: 'true', TRUST_PROXY: 'loopback' }).trustProxy, 'loopback');
+});
+
 test('app.js refuses to start with dev login in production', () => {
   const run = spawnSync(process.execPath, ['app.js'], {
     cwd: fileURLToPath(new URL('..', import.meta.url)),

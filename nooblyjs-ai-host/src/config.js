@@ -89,7 +89,8 @@ export function loadConfig(env = process.env, { cwd = process.cwd() } = {}) {
     httpsEnabled,
     // Secure cookies over TLS. SameSite=None (needed for Entra's cross-site form_post) requires them.
     cookieSecure: flag(env.COOKIE_SECURE) || production || httpsEnabled,
-    trustProxy: env.TRUST_PROXY || null,
+    // A Codespace is always reached through GitHub's port forwarder, one proxy in front.
+    trustProxy: env.TRUST_PROXY || (env.CODESPACES === 'true' ? '1' : null),
     publicBaseUrl: env.PUBLIC_BASE_URL || '',
     // false: an empty data folder gets the system files only, no sample story (people, teams, items, history).
     sampleData: env.NOOBLY_SAMPLE_DATA !== 'false',
