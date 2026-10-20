@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-008, CHG-008.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-008, CHG-009.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -256,3 +256,36 @@ know; "steps" can be one line.
 ## Closed
 
 _Verified, won't fix, duplicates and changes moved to a phase, newest first._
+
+- [ ] CHG-008 — Sample content on the Design, Engineering, Build and Test pages: PRD-027's design and stories, application architecture, test analysis, test runs and defects · Factory, Design, lifecycle seed · nooblyjs-ai-factory, nooblyjs-ai-host · Phase 16c+
+  - Asked: 2026-10-20 ("Can you seed the rest of the pages, solution architecture, testing, application architecture please") · Status: fixed
+  - What and why: on a fresh seed every Design page but PRD-031's said "nothing yet", and Engineering, Pull requests and
+    Test said which phase brings them. Now:
+    - **Design:** PRD-027 (in Design since Wednesday) has a whole design in the Design section's seed: six business
+      requirements quoting its spec (which gained goals, user stories and criteria), four impacted systems (one new,
+      with no owner yet), seven NFRs, three features with their dependencies, five interfaces (one with a side missing),
+      four technical requirements and three stories. The lifecycle seed has the stories as items: STORY-027-1 in
+      Engineer, handed off on Thursday by Thabo with an override (ADR-015 still proposed); the other two in Design,
+      held by ADR-015 and the push interface. PRD-025 (not started), PRD-028 (whole-item handoff) and PRD-031 (the test
+      script) are as they were.
+    - **Engineering** (Application architecture, Test analysis, Engineering sign-off): the lifecycle's stories in Engineer
+      with STORY-027-1's sample application architecture (per system: flow, objects, NFRs per component, changes; one
+      accepted, one proposed) and test analysis (five cases, one a draft; an interface with no integration test), and
+      what the sign-off still needs, in words.
+    - **Build · Pull requests** and **Test · Test approvals**: live from the lifecycle (each pull request's Build and
+      Test approvals, what is in Test, what was given), with the last sample test run.
+    - **Test runs, Coverage, Defects**: the sample's seven runs, coverage per story and per pull request, three defects.
+    The sample files are `examples/noobly/samples/` (copied into `data/factory/engineering/` and `data/factory/testing/`
+    on the Factory's first start, times moved to now) and `design/src/seed/data/items/PRD-027/`. Every page that shows
+    sample data says so; Phases 16d, 16e and 20 replace it with the real thing. The lifecycle's new `approvals({ type })`
+    service feeds the Factory's pages. The Product card and the PM's home count items, not stories.
+  - Check: Factory 4 new tests (`test/services/engineering/views.test.js`, `test/pages.test.js`, which draws each page in
+    a stand-in DOM and found a misplaced bracket and two YAML values cut at a comma); host `test/samples.test.js` (a
+    fresh seed fills every page); the seed counts move from 12 to 15 items in flight and 4 to 5 decided this week.
+    Host 340 of 340; Factory 557 of 561 (4 skipped, none failing).
+  - To see it in an existing data folder: `npm run seed -- --reset` in nooblyjs-ai-host, then start NooblyJS (the
+    Factory and the Design section seed themselves on a first start). This wipes `data/`: a person record made by
+    signing in is made again at the next sign-in.
+  - Steering: root `roadmap.md` (Phases 16d, 16e, 20: the pages they replace); host `tech.md` §8b (`approvals`);
+    the Factory's `CLAUDE.md`.
+

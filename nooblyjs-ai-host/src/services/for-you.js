@@ -80,7 +80,8 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
 
   function productManager({ person, role, listed, snapshot, items, active, mine, at, nameFor }) {
     const specs = mine.filter((a) => a.type === 'spec');
-    const work = active.filter((i) => i.type !== 'pr');
+    // Items, not their stories (Phase 16c): a PM follows the item; its stories are Design's and Engineering's unit.
+    const work = active.filter((i) => i.type !== 'pr' && i.type !== 'story');
     const stages = new Set(work.map((i) => i.stage)).size;
     const month = at.slice(0, 7);
     const shipped = items.filter((i) => i.status === 'completed' && (i.completedAt ?? '').startsWith(month));

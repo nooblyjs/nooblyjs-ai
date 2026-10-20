@@ -332,6 +332,7 @@ item's page for it, with tabs for the five parts. Root `product.md` §3.2a says 
   reason when a check fails. The story moves to Engineer with one work item per impacted system; the item stays in
   Design until its last story goes, then follows its stories. The item itself can't be handed off, signed off or moved
   on as a whole once it has stories.
+- **Sample:** a fresh seed has PRD-027's whole design, with STORY-027-1 handed off and two stories held in Design (CHG-008).
 - Agents draft every part (each a teammate task); people accept, edit, merge, split and hand off. Agents are refused
   every acceptance and handoff, and the refusal is audited. A Viewer reads everything and changes nothing.
 
@@ -349,6 +350,13 @@ queued, spend today against the daily cap, and **Stop all runs**.
 Line, Runs, Inbox and Campaigns come from the existing repo. The existing line is triage →
 spec → approve → build → verify → review → repair → deliver → merge, with every step an
 event.
+
+**Engineering, Pull requests and Test** (the sidebar's other rows, CHG-008): Application architecture, Test analysis and
+Engineering sign-off list the stories in Engineer, each with its architecture per system, its test cases and what the
+sign-off still needs, in words; Pull requests shows each one's Build and Test approvals; Test approvals what waits on a
+tester, what is in Test and what was given; Test runs, Coverage and Defects. The stories, pull requests and approvals
+are the lifecycle's, live. The architecture, test analysis, runs and defects are the seed story's sample (STORY-027-1 and
+the seed's pull requests), said so on each page, until Phases 16d, 16e and 20 build them.
 
 ### 5.5 Digital Teammates (`teammates`): existing, restyle to NooblyJS
 

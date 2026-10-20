@@ -1028,6 +1028,10 @@ Design handoff per story), `nooblyjs-ai-knowledge` (context for impacted systems
 
 ## Phase 16d — Engineering: application architecture from the code, and test analysis
 
+> **Until it is built** the Engineering pages show the lifecycle's stories in Engineer with the seed story's sample
+> application architecture and test analysis of STORY-027-1 (CHG-008, `nooblyjs-ai-factory/src/services/engineering/`);
+> this phase replaces the sample with drafts from the code and the criteria, edits, and the sign-off's readiness.
+
 **Goal:** before anything is built, each story has an application architecture drawn from the real code and a test
 analysis, signed off in one approval.
 **Repos:** `nooblyjs-ai-factory` (Engineering: application architecture in the Factory's own code; the new Test
@@ -1071,6 +1075,9 @@ before the first line is written?
 ---
 
 ## Phase 16e — Build and Test: the AI builds and tests, engineers and testers approve
+
+> **Until it is built** Build · Pull requests and Test · Test approvals show the lifecycle's pull requests and approvals
+> with the sample's last test run (CHG-008).
 
 **Goal:** the AI writes the code and the automated tests the test analysis asked for; an engineer gives the Build
 approval; a human tester verifies the pull request and gives the Test approval; only then does it merge. A feature
@@ -1238,6 +1245,9 @@ architecture), `nooblyjs-ai-host`.
 ---
 
 ## Phase 20 — Quality (the Factory's Test section)
+
+> **Until it is built** Test runs, Coverage and Defects show the seed story's sample (CHG-008, `data/factory/testing/`);
+> this phase records them from the line and the environments, in the Test section.
 
 **Goal:** quality is a fact across an item: coverage over all its stories and features, test runs recorded against
 requirements, and defects as items of their own.

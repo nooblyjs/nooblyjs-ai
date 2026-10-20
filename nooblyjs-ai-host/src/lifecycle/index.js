@@ -102,6 +102,8 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       handoffOf: async ({ handoffId } = {}) => repos.handoffs.get(handoffId),
       /** One item, as the lifecycle sees it (null when unknown). */
       item: async ({ itemId } = {}) => repos.items.get(itemId),
+      /** Approvals, optionally of one type (the Factory's Pull requests and Test approvals pages). */
+      approvals: async ({ type = null } = {}) => (await repos.approvals.list()).filter((a) => !type || a.type === type),
       /** Items, optionally those in one stage (the Design section's lists, Phase 16c). */
       items: async ({ stage = null } = {}) => (await repos.items.list()).filter((i) => !stage || i.stage === stage),
       /** Approvals waiting on this person (Home, For you). */

@@ -102,7 +102,7 @@ test('the lifecycle engine is always there, with no hosted app at all: Overview 
   await c.signIn('stevie');
   const { status, body } = await c.json('/api/v1/home/overview');
   assert.equal(status, 200);
-  assert.equal(body.lifecycle.summary, '12 items in flight across 2 systems. Four are waiting on you.');
+  assert.equal(body.lifecycle.summary, '15 items in flight across 2 systems. Four are waiting on you.');
   assert.equal(body.systems.length, 5);
   const items = await c.json('/workflows/api/v1/items');
   assert.equal(items.status, 200);

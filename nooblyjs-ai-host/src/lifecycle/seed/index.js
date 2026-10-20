@@ -1,9 +1,10 @@
 // The seed story: the lifecycle side of PRD-031 "Same-day delivery slots" (NooblyJS roadmap Phase 2), in lifecycle v3's
-// eight stages (rebuilt 2026-10-20, BUG-006). Thirteen items: twelve in flight (three ideas in Discover; PRD-031 and
-// three more specs in Product; PRD-027, PRD-025 and the slot picker screens in Design; a pull request in Build and one
-// in Test) and a pull request merged this week. Four approvals wait on Stevie (PRD-031's Product handoff, ADR-014, the
-// slot picker's Design handoff and the Build approval of slots-api #482), two on others, and four were decided this
-// week. Everything is sample data.
+// eight stages (rebuilt 2026-10-20, BUG-006). Sixteen items: fifteen in flight (three ideas in Discover; PRD-031 and
+// three more specs in Product; PRD-027, PRD-025, the slot picker screens and two of PRD-027's stories in Design; its
+// first story, STORY-027-1, in Engineer; a pull request in Build and one in Test) and a pull request merged this week.
+// PRD-027's stories (Phase 16c) match its design in the Factory's Design section. Four approvals wait on Stevie
+// (PRD-031's Product handoff, ADR-014, the slot picker's Design handoff and the Build approval of slots-api #482), two on
+// others, and five were decided this week. Everything is sample data.
 //
 // The story is kept as plain files in src/seed/data/, laid out exactly like data/workflows/. Its times are written
 // as if "now" were ANCHOR; seeding moves every time by the same amount, so "26 h · due today" is true whenever the

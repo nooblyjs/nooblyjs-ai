@@ -63,13 +63,13 @@ test('it is API only: no UI, a services object, and nothing outside its API', as
   assert.equal((await get('stevie', '/nope')).status, 404);
 });
 
-test('step 1: Overview counts the seed: 12 in flight, the eight-stage strip, 4 waiting on Stevie', async () => {
+test('step 1: Overview counts the seed: 15 in flight (PRD-027\'s three stories among them), the eight-stage strip, 4 waiting on Stevie', async () => {
   const { body } = await get('stevie', '/overview');
-  assert.equal(body.inFlight, 12);
+  assert.equal(body.inFlight, 15);
   assert.equal(body.waitingOnYou, 4);
-  assert.match(body.summary, /^12 items in flight across 2 systems\. Four are waiting on you\.$/);
+  assert.match(body.summary, /^15 items in flight across 2 systems\. Four are waiting on you\.$/);
   assert.deepEqual(body.stages.map((s) => s.label), ['Discover', 'Product', 'Design', 'Engineer', 'Build', 'Test', 'Release', 'Operate']);
-  assert.deepEqual(body.stages.map((s) => s.count), [3, 4, 3, 0, 1, 1, 0, 0]);
+  assert.deepEqual(body.stages.map((s) => s.count), [3, 4, 5, 1, 1, 1, 0, 0]);
   assert.equal(body.stages[1].note, 'specs, UX and UI · 2 in review');
   assert.equal(body.stages[2].note, '2 ADRs proposed · 1 awaiting handoff');
   assert.equal(body.stages[4].note, 'on the line · 1 PR awaiting the Build approval');
@@ -81,7 +81,7 @@ test('step 1: Overview counts the seed: 12 in flight, the eight-stage strip, 4 w
 
 test('step 2: the PRD-031 Product handoff says 6 of 7, rollout plan missing, Lerato approved, 26 h and due today', async () => {
   const queue = (await get('stevie', '/approvals')).body;
-  assert.deepEqual(queue.counts, { mine: 4, others: 2, done: 4 });
+  assert.deepEqual(queue.counts, { mine: 4, others: 2, done: 5 });
   assert.equal(queue.summary, 'Four are waiting on you; the oldest for 26 hours.');
   assert.equal(queue.rows[0].id, 'apr_prd031spec');
   assert.equal(queue.rows[0].age, '26 h');
@@ -214,7 +214,7 @@ test('the Build approval moves slots-api #482 to Test; the Test approval, to Rel
   const tested = await post('lerato-m', '/items/slots-api-482/advance', {});
   assert.equal(tested.status, 200);
   assert.deepEqual([tested.body.approval.type, tested.body.approval.subject, tested.body.item.stage], ['test-approval', 'slots-api #482', 'release']);
-  assert.equal((await get('stevie', '/overview')).body.inFlight, 12, 'released, not done: it is done after Operate');
+  assert.equal((await get('stevie', '/overview')).body.inFlight, 15, 'released, not done: it is done after Operate');
 });
 
 test('reassign hands the reviewer slot to someone who may approve, and refuses someone who may not', async () => {

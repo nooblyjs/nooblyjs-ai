@@ -83,9 +83,9 @@ export async function register(app, serverManager, { mountPath = '/design', data
       /** A person's acceptance of a business requirement, relayed by another app; an agent is refused and audited. */
       acceptRequirement: ({ itemId, requirementId, actor }) => design.acceptRequirement(itemId, requirementId, actor),
     },
-    /** Writes the NFR catalogue; `reset` removes what is there first. */
-    seed: async ({ reset = false, content = true } = {}) => {
-      await seedCatalogue(host.store, { reset, content });
+    /** Writes the NFR catalogue and, with sample content, the sample designs; `reset` removes what is there first. */
+    seed: async ({ reset = false, content = host.sampleData !== false } = {}) => {
+      await seedCatalogue(host.store, { reset, content, now: () => new Date(host.clock?.now?.() ?? Date.now()).toISOString() });
     },
     close: async () => {},
   };

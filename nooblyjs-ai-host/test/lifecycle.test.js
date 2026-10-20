@@ -67,10 +67,10 @@ test('the lifecycle engine is part of NooblyJS: not an app on the list, signed i
   assert.doesNotMatch(seedConfig, /nooblyjs-ai-workflows/);
 });
 
-test('step 1: Overview says 12 in flight and four waiting on Stevie, with a card per system and the seeded activity', async () => {
+test('step 1: Overview says 15 in flight and four waiting on Stevie, with a card per system and the seeded activity', async () => {
   const { body } = await stevie.json('/api/v1/home/overview');
-  assert.equal(body.lifecycle.summary, '12 items in flight across 2 systems. Four are waiting on you.');
-  assert.deepEqual(body.lifecycle.stages.map((s) => s.count), [3, 4, 3, 0, 1, 1, 0, 0]);
+  assert.equal(body.lifecycle.summary, '15 items in flight across 2 systems. Four are waiting on you.');
+  assert.deepEqual(body.lifecycle.stages.map((s) => s.count), [3, 4, 5, 1, 1, 1, 0, 0]);
   assert.deepEqual(body.systems.map((s) => s.key), ['product', 'factory', 'teammates', 'knowledge', 'platform']);
   assert.deepEqual(body.systems[0].stats, ['10 items in design', '5 approvals pending']);
   assert.deepEqual(body.systems[1].stats, ['0 of 3 slots · 0 queued', '$0 of $20 spent today'], 'the Factory hosts Product, so it is installed');
@@ -79,7 +79,7 @@ test('step 1: Overview says 12 in flight and four waiting on Stevie, with a card
   assert.deepEqual(body.recent[0].actor, { id: 'ada-quill', name: 'Ada Quill', kind: 'agent' });
   const status = (await stevie.json('/api/v1/shell/status')).body.home;
   assert.equal(status.badges.approvals, 4);
-  assert.equal(status.card.items[0].value, '2 agents · 12 items in flight');
+  assert.equal(status.card.items[0].value, '2 agents · 15 items in flight');
   assert.equal((await lerato.json('/api/v1/shell/status')).body.home.badges.approvals, 1);
 });
 

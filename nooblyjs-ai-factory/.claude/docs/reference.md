@@ -199,7 +199,7 @@ All bind to `127.0.0.1` unless told otherwise.
 | Server | Port | Auth | Endpoints |
 |---|---|---|---|
 | dashboard (F17) | 11203 | token (the link's `#token=`) as `Authorization: Bearer` or `X-Factory-Token` (the dashboard's own; survives proxies like Cloud Shell's web preview); POSTs header-only | `GET /api/status` `/api/runs` `/api/runs/:id` `/api/inbox` `/api/metrics` `/api/campaigns` `/api/events` (SSE) · `POST /api/inbox/:id` `/api/runs/:id/{cancel,pause,resume,retry}` `/api/stop-all` `/api/resume-all` |
-| hosted in NooblyJS (F26) | NooblyJS's | the NooblyJS session; reads need the `read` permission, run actions `draft`, the inbox and the kill switch `approve`; every write is audited by the host | under `/factory/api/v1`: the dashboard's endpoints without the `/api` prefix (`GET /factory/api/v1/status`, `POST /factory/api/v1/runs/:id/retry`…), except `/events`. Errors are `{ "error": { "code", "message" } }`. `/factory/js/…` and `/factory/css/…` are the UI module; every other `/factory/…` URL is NooblyJS's frame page |
+| hosted in NooblyJS (F26) | NooblyJS's | the NooblyJS session; reads need the `read` permission, run actions `draft`, the inbox and the kill switch `approve`; every write is audited by the host | under `/factory/api/v1`: the dashboard's endpoints without the `/api` prefix (`GET /factory/api/v1/status`, `POST /factory/api/v1/runs/:id/retry`…), except `/events`; and, hosted only, read-only `GET /factory/api/v1/engineering` `/engineering/architecture/:id` `/engineering/test-analysis/:id` `/pull-requests` `/test/approvals` `/test/runs` `/test/coverage` `/test/defects` (the Engineering, Pull requests and Test pages, CHG-008: the lifecycle's stories and approvals with the seed story's sample). Errors are `{ "error": { "code", "message" } }`. `/factory/js/…` and `/factory/css/…` are the UI module; every other `/factory/…` URL is NooblyJS's frame page |
 | webhooks (F15, F18) | 8787 | HMAC signature | `POST /webhooks/github` (issues, pull_request, pull_request_review, issue_comment) |
 | workers (F23) | 8790 | enrollment token, then per-worker tokens | `POST /worker/register` `/worker/lease` `/worker/heartbeat` `/worker/events` `/worker/complete` `/worker/fail` |
 
@@ -216,4 +216,6 @@ All bind to `127.0.0.1` unless told otherwise.
   campaigns/<id>/issue.md   a campaign's spec
   secret · dashboard-token  made on first use (0600)
   notify-cursor.json        the notifier's place in the log
+  engineering/              hosted, sample (CHG-008): architecture/<story>.md, test-analysis/<story>.md
+  testing/                  hosted, sample (CHG-008): runs.yaml, defects/<id>.md
 ```

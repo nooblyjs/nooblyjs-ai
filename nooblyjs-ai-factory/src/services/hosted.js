@@ -28,6 +28,8 @@ import { answerable } from '../controllers/api.js';
 import { createIntake } from './intake/handoff.js';
 import { setHostDevtools } from './forge/index.js';
 import { seedDemo } from './intake/demo-repo.js';
+import { seedSamples } from './engineering/samples.js';
+import { engineeringRoutes } from './engineering/views.js';
 import { executeRun } from './job/run-job.js';
 import { workerName } from './scheduler/leases.js';
 import { createScheduler } from './scheduler/scheduler.js';
@@ -61,7 +63,8 @@ export const NAV = [
 
 /**
  * The Engineering group (Phase 16b): each story's application architecture, from the code, and its test analysis,
- * signed off before anything is built. The pages say which phase brings them (16d).
+ * signed off before anything is built. Until Phase 16d the pages show the lifecycle's stories in Engineer with the seed
+ * story's sample architecture and test analysis (CHG-008, src/services/engineering/).
  */
 export const ENGINEERING_NAV = [
   { key: 'app-architecture', label: 'Application architecture', path: '/engineering/architecture', icon: 'layers' },
@@ -69,7 +72,8 @@ export const ENGINEERING_NAV = [
   { key: 'engineering-signoff', label: 'Engineering sign-off', path: '/engineering/sign-off', icon: 'approve' },
 ];
 
-/** The Test group (Phase 16b): testers verify each pull request and give the Test approval (16e, Phase 20). */
+/** The Test group (Phase 16b): testers verify each pull request and give the Test approval (16e, Phase 20). Until then the
+ * pages show the lifecycle's Test approvals and the seed story's sample test runs, coverage and defects (CHG-008). */
 export const TEST_NAV = [
   { key: 'test-approvals', label: 'Test approvals', path: '/test/approvals', icon: 'approve' },
   { key: 'test-runs', label: 'Test runs', path: '/test/runs', icon: 'pulse' },
@@ -191,7 +195,9 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
   let router;
   try {
     router = host.express.Router();
-    const routes = apiRoutes({ store, env }).filter(([, pattern]) => pattern !== '/api/events'); // live updates are the host's stream
+    // The Engineering, Pull requests and Test pages read the lifecycle and the seed story's sample (CHG-008).
+    const extra = engineeringRoutes({ home: dataDir, host });
+    const routes = apiRoutes({ store, env, extra }).filter(([, pattern]) => pattern !== '/api/events'); // live updates are the host's stream
     const before = (method, pattern) => {
       if (method === 'GET') return [host.requireRole('read')];
       const permission = PERMISSIONS[`${method} ${pattern}`];
@@ -382,6 +388,9 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       if (!content) return;
       const made = seedDemo(env);
       if (made.created || made.wrote.length) log.info?.(`factory: seeded the demo repository (${made.repo})`);
+      // The seed story's application architecture, test analysis, test runs and defects (CHG-008), until 16d–20.
+      const samples = seedSamples(dataDir, { now: () => Number(host.clock?.now?.() ?? Date.now()) });
+      if (samples.length) log.info?.(`factory: seeded ${samples.length} sample engineering and test file(s)`);
     },
     /** Stops the scheduler (interrupting what runs here; it is requeued at the next start), then closes the log. */
     async close() {

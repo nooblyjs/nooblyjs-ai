@@ -46,8 +46,8 @@ test('the route table covers every nav row, and every page keeps the frame\'s co
   for (const row of [...ENGINEERING_NAV, ...NAV, ...TEST_NAV]) assert.ok(routes.some((r) => r.path === row.path && r.nav === row.key), `a route for ${row.key}`);
   assert.deepEqual(routes[0], { path: '/', redirect: '/line' });
   const pages = fs.readdirSync(path.join(PUBLIC, 'js', 'pages'));
-  // coming.js: the Engineering, Build and Test rows a later phase brings (Phase 16b); moved.js: old Architecture links.
-  assert.deepEqual(pages.sort(), ['campaigns.js', 'coming.js', 'inbox.js', 'line.js', 'metrics.js', 'moved.js', 'run.js', 'runs.js']);
+  // engineering.js and testing.js: the Engineering, Pull requests and Test rows (CHG-008); moved.js: old Architecture links.
+  assert.deepEqual(pages.sort(), ['campaigns.js', 'engineering.js', 'inbox.js', 'line.js', 'metrics.js', 'moved.js', 'run.js', 'runs.js', 'testing.js']);
   // The sections' routes are checked in test/sections.test.js; these are the Factory's own.
   const own = routes.filter((r) => !/^\/(product|design)(\/|$)/.test(r.path) || r.path === '/product/architecture/:id');
   for (const route of own.filter((r) => r.page)) {

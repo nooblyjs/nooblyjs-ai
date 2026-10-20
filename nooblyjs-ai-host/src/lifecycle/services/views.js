@@ -170,7 +170,8 @@ export function createViews({ repos, host, engine }) {
       waitingOnYou: mine.length, oldestHours: Math.round(oldestHours),
       waiting: waitingRows.map((r) => ({ ...r, context: r.context })),
       productStats: {
-        inDesign: active.filter((i) => ['discover', 'product', 'design'].includes(i.stage)).length,
+        // The Product Factory's items: stories (Phase 16c) are the Design section's, not the Product card's.
+        inDesign: active.filter((i) => i.type !== 'story' && ['discover', 'product', 'design'].includes(i.stage)).length,
         approvalsPending: open.filter((a) => ['spec', 'adr', 'design-handoff'].includes(a.type)).length,
       },
     };

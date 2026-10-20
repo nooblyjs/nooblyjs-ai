@@ -169,19 +169,21 @@ test('homes: the Solution Architect sees the stories still to hand off; the Func
   const sa = (await thabo.json('/api/v1/home/for-you?scope=all')).body;
   assert.equal(sa.layout, 'solution-architect');
   assert.match(sa.summary, /items? (is|are) in Design\. Two stories are ready for your Design handoff\./);
-  // PRD-025, PRD-027, PRD-028 and PRD-031 are in Design; ADR-015 waits on Thabo.
-  assert.deepEqual(sa.tiles.map((t) => [t.key, t.value]), [['in-design', 4], ['decisions', 1], ['ready', 2], ['handed-off', 1]]);
+  // PRD-025, PRD-027, PRD-028 and PRD-031 are in Design; ADR-015 waits on Thabo. The seed's STORY-027-1 and STORY-031-1
+  // are handed off; PRD-027's other two wait on ADR-015 and a side of an interface, so only PRD-031's are ready.
+  assert.deepEqual(sa.tiles.map((t) => [t.key, t.value]), [['in-design', 4], ['decisions', 1], ['ready', 2], ['handed-off', 2]]);
   const handoffs = sa.panels.lists.find((l) => l.key === 'handoffs');
-  assert.deepEqual(handoffs.rows.map((r) => r.id), ['STORY-031-2', 'STORY-031-4']);
-  assert.equal(handoffs.rows[0].action.href, '/factory/design/handoff/PRD-031');
+  assert.deepEqual(handoffs.rows.map((r) => [r.id, r.late]), [['STORY-027-2', true], ['STORY-027-3', true], ['STORY-031-2', false], ['STORY-031-4', false]]);
+  assert.equal(handoffs.rows[2].action.href, '/factory/design/handoff/PRD-031');
 
   await role('priya-s', 'functional-analyst');
   await post(priya, `${design}/items/PRD-031/interfaces`, { name: 'Planner → Slot API', kind: 'api', to: 'Slot API' });
   const fa = (await priya.json('/api/v1/home/for-you?scope=all')).body;
   assert.equal(fa.layout, 'functional-analyst');
-  assert.equal(fa.summary, 'One interface has a side missing, which holds the Design handoff.');
+  assert.equal(fa.summary, 'Two interfaces have a side missing, which holds the Design handoff.');
   const oneSided = fa.panels.lists.find((l) => l.key === 'interfaces');
-  assert.match(oneSided.rows[0].text, /no "from" side → Slot API/);
+  assert.deepEqual(oneSided.rows.map((r) => r.id), ['IF-027-05', 'IF-031-09']);
+  assert.match(oneSided.rows[1].text, /no "from" side → Slot API/);
   assert.ok(fa.panels.lists.find((l) => l.key === 'stories').rows.every((r) => /no acceptance criteria|no business requirement/.test(r.text)));
   assert.equal((await priya.get('/js/pages/home/for-you-design.js')).status, 200);
 });
