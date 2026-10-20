@@ -10,7 +10,11 @@
 //
 // Each notification, sent or not, is audited (notify.approval_sent / notify.approval_skipped / notify.failed).
 const PEOPLE_DIR = ['teams', 'people'];
-const KIND_WORDS = { spec: 'Spec review', adr: 'Architecture decision', 'ui-handoff': 'Handoff to the Software Factory', merge: 'Merge', stage: 'Move to the next stage', 'infra-design': 'Infrastructure design' };
+const KIND_WORDS = {
+  spec: 'Product handoff', adr: 'Architecture decision', 'design-handoff': 'Design handoff', 'engineering-signoff': 'Engineering sign-off',
+  'build-approval': 'Build approval', 'test-approval': 'Test approval', deploy: 'Production deploy', 'outcome-review': 'Outcome review',
+  'ui-handoff': 'Handoff to the Software Factory', merge: 'Merge', stage: 'Move to the next stage', 'infra-design': 'Infrastructure design',
+};
 const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /**

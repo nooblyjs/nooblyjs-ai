@@ -5,7 +5,7 @@ import { createApi } from '/ui/js/api.js';
 import { button, statusPill, swimlane, meter } from '/ui/js/components/index.js';
 import { initials } from '/ui/js/format.js';
 
-const STAGES = [['discover', 'Disc.'], ['specify', 'Spec'], ['architect', 'Arch.'], ['ux', 'UX'], ['ui', 'UI'], ['build', 'Build'], ['verify', 'Verify'], ['release', 'Rel.'], ['operate', 'Ops']].map(([key, label]) => ({ key, label }));
+const STAGES = [['discover', 'Disc.'], ['product', 'Product'], ['design', 'Design'], ['engineer', 'Eng.'], ['build', 'Build'], ['test', 'Test'], ['release', 'Rel.'], ['operate', 'Ops']].map(([key, label]) => ({ key, label }));
 
 function waiting(rows) {
   const row = (w) => {

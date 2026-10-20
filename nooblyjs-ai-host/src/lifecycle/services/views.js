@@ -9,13 +9,26 @@ import { notFound } from '../errors.js';
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
 
-const GATE_LABELS = { adr: 'Architecture sign-off', spec: 'Spec approval', merge: 'PR review & merge', 'ui-handoff': 'UI handoff', 'release-candidate': 'Release candidate', deploy: 'Production deploy', 'outcome-review': 'Outcome review' };
-const TAG_TONES = { spec: 'info', adr: 'warning', 'ui-handoff': 'success', merge: 'neutral', deploy: 'navy', stage: 'neutral', 'infra-design': 'navy', 'release-candidate': 'info', 'outcome-review': 'success', 'threat-model': 'warning', 'risk-acceptance': 'danger' };
-// What Approve & move says on an item's page, for the stages whose exit is a named decision (Phase 16a).
+// The gates Where work waits counts, in lifecycle v3 (Phase 16b), and the ones from before, whose history still counts.
+const GATE_LABELS = {
+  spec: 'Product handoff', adr: 'Architecture sign-off', 'design-handoff': 'Design handoff', 'engineering-signoff': 'Engineering sign-off',
+  'build-approval': 'Build approval', 'test-approval': 'Test approval', deploy: 'Production deploy', 'outcome-review': 'Outcome review',
+  merge: 'PR review & merge', 'ui-handoff': 'UI handoff', 'release-candidate': 'Release candidate',
+};
+const TAG_TONES = {
+  spec: 'info', adr: 'warning', 'design-handoff': 'success', 'engineering-signoff': 'success', 'build-approval': 'neutral', 'test-approval': 'info',
+  'ui-handoff': 'success', merge: 'neutral', deploy: 'navy', stage: 'neutral', 'infra-design': 'navy', 'release-candidate': 'info',
+  'outcome-review': 'success', 'threat-model': 'warning', 'risk-acceptance': 'danger',
+};
+// The approvals on a pull request: their title is the item, and their line names no requester.
+const PR_TYPES = new Set(['build-approval', 'test-approval', 'merge']);
+// What Approve & move says on an item's page, for the stages whose exit is a named decision (Phases 16a, 16b).
 const ADVANCE_LABELS = {
-  ui: 'Approve & send to the Software Factory',
-  build: 'Approve the merge',
-  verify: 'Accept the release candidate',
+  product: 'Approve & hand off to Design',
+  design: 'Approve & hand off to Engineering',
+  engineer: 'Sign off & send to Build',
+  build: 'Give the Build approval',
+  test: 'Give the Test approval',
   release: 'Approve the production deploy',
   operate: 'Close with the outcome review',
 };
@@ -72,7 +85,7 @@ export function createViews({ repos, host, engine }) {
   /** What the swimlane's current cell says for this person: "Your review", "Rhea drafting", "Waiting 4 d", "RICE 42". */
   function nowText(item, w, personId, nameOf) {
     const mine = w.open.find((a) => waitingOn(a, personId));
-    if (mine) return mine.type === 'merge' ? 'Your merge' : 'Your review';
+    if (mine) return mine.type === 'build-approval' || mine.type === 'merge' ? 'Your Build approval' : mine.type === 'test-approval' ? 'Your Test approval' : 'Your review';
     if (w.since && w.late) return `Waiting ${w.days} d`;
     if (item.work?.text) return item.work.text;
     if (w.open.length) {
@@ -136,12 +149,11 @@ export function createViews({ repos, host, engine }) {
     const count = (type) => open.filter((a) => a.type === type).length;
     const notes = {
       discover: () => 'ideas',
-      specify: () => `specs · ${count('spec')} in review`,
-      architect: () => `${plural(count('adr'), 'ADR')} proposed`,
-      ux: () => 'flows in progress',
-      ui: () => `${count('ui-handoff')} awaiting handoff`,
-      build: () => `on the line · ${plural(count('merge'), 'PR')} awaiting merge`,
-      verify: () => `${plural(count('release-candidate'), 'release candidate')} in review`,
+      product: () => `specs, UX and UI · ${count('spec')} in review`,
+      design: () => `${plural(count('adr'), 'ADR')} proposed · ${count('design-handoff')} awaiting handoff`,
+      engineer: () => `${count('engineering-signoff')} awaiting sign-off`,
+      build: () => `on the line · ${plural(count('build-approval'), 'PR')} awaiting the Build approval`,
+      test: () => `${plural(count('test-approval'), 'PR')} awaiting the Test approval`,
       release: () => `${plural(count('deploy'), 'deploy')} awaiting approval`,
       operate: () => `${plural(count('outcome-review'), 'outcome review')} due`,
     };
@@ -158,8 +170,8 @@ export function createViews({ repos, host, engine }) {
       waitingOnYou: mine.length, oldestHours: Math.round(oldestHours),
       waiting: waitingRows.map((r) => ({ ...r, context: r.context })),
       productStats: {
-        inDesign: active.filter((i) => ['discover', 'specify', 'architect', 'ux', 'ui'].includes(i.stage)).length,
-        approvalsPending: open.filter((a) => ['spec', 'adr', 'ui-handoff'].includes(a.type)).length,
+        inDesign: active.filter((i) => ['discover', 'product', 'design'].includes(i.stage)).length,
+        approvalsPending: open.filter((a) => ['spec', 'adr', 'design-handoff'].includes(a.type)).length,
       },
     };
   }
@@ -236,6 +248,8 @@ export function createViews({ repos, host, engine }) {
     const approvals = ctx.approvals.filter((a) => a.itemId === id).sort((a, b) => ms(b.requestedAt) - ms(a.requestedAt));
     const readiness = await engine.readinessOf(found);
     const canApprove = await host.can(person.accessRole, 'approve');
+    // Any person but a Viewer may give an approval, on their own behalf or another's (Phase 16b).
+    const mayApprove = person.accessRole !== 'Viewer';
     const blocking = approvals.filter((a) => isOpen(a) && a.from === found.stage);
     const next = STAGES[stageIndex(found.stage) + 1] ?? null;
     return {
@@ -254,7 +268,7 @@ export function createViews({ repos, host, engine }) {
       actions: {
         canSendBack: canApprove && found.status === 'active' && stageIndex(found.stage) > 0,
         sendBackTo: STAGES.slice(0, Math.max(0, stageIndex(found.stage))).map((s) => ({ key: s.key, label: s.label })),
-        canAdvance: canApprove && found.status === 'active' && !blocking.length,
+        canAdvance: mayApprove && found.status === 'active' && !blocking.length,
         advanceLabel: ADVANCE_LABELS[found.stage] ?? `Approve & move to ${next?.label}`,
         blockedBy: blocking.map((a) => a.id),
       },
@@ -278,10 +292,10 @@ export function createViews({ repos, host, engine }) {
       const readiness = await engine.readinessOf(item);
       context = `Drafted by ${requester} · readiness ${readiness.passed} of ${readiness.total} checks`;
     }
-    const line = a.line ?? `${rule.transition ?? rule.label ?? a.type}${a.type === 'merge' ? '' : ` · from ${requester}`}`;
+    const line = a.line ?? `${rule.transition ?? rule.label ?? a.type}${PR_TYPES.has(a.type) ? '' : ` · from ${requester}`}`;
     return {
       id: a.id, type: a.type, tag: rule.tag ?? a.type, tone: TAG_TONES[a.type] ?? 'neutral',
-      title: a.type === 'infra-design' ? `${a.subject ?? a.title} · Approve & provision ${a.ref?.kindLabel ?? a.ref?.kind ?? ''}`.trim() : a.type === 'adr' && a.subject ? `${a.subject} · ${a.title}` : a.type === 'merge' && item ? `${item.ref} · ${item.title}` : `${a.title} — ${a.itemId}`,
+      title: a.type === 'infra-design' ? `${a.subject ?? a.title} · Approve & provision ${a.ref?.kindLabel ?? a.ref?.kind ?? ''}`.trim() : a.type === 'adr' && a.subject ? `${a.subject} · ${a.title}` : PR_TYPES.has(a.type) && item ? `${item.ref} · ${item.title}` : `${a.title} — ${a.itemId}`,
       shortTitle: a.title, itemId: a.itemId, itemRef: item?.ref ?? a.itemId, subject: a.subject ?? null,
       age: hoursText(hours), ageHours: Math.round(hours), due, line, context,
       status: a.status, overdue: overdue(a, ctx.at),
@@ -324,7 +338,6 @@ export function createViews({ repos, host, engine }) {
     const readiness = item && rule.needsReadiness ? await engine.readinessOf(item) : null;
     const others = (a.reviewers ?? []).filter((r) => r.id !== person.id);
     const mineWaiting = waitingOn(a, person.id);
-    const canByRole = await host.can(person.accessRole, rule.permission);
     const everyone = await host.people.list();
     const eligible = [];
     if (mineWaiting) {
@@ -333,10 +346,15 @@ export function createViews({ repos, host, engine }) {
       }
     }
     const next = a.to ? stageLabel(a.to) : null;
+    // Whom this person may decide for: their own place when it is still waiting, else anyone it waits on (Phase 16b).
+    const waitingRows = (a.reviewers ?? []).filter((r) => r.status === 'waiting');
+    const multi = Number.isInteger(rule.quorum) && rule.quorum > 1;
+    const alreadyGave = multi && (a.reviewers ?? []).some((r) => r.status === 'approved' && (r.by ?? r.id) === person.id);
     let cannot = null;
     if (!isOpen(a)) cannot = `This approval is ${a.status === 'approved' ? 'approved' : a.status === 'withdrawn' ? 'withdrawn' : 'back with the requester for changes'}.`;
-    else if (!canByRole) cannot = `You can't approve this: ${rule.label ?? 'it'} needs the "${rule.permission}" permission, and your access role is ${person.accessRole}.`;
-    else if (!mineWaiting) cannot = `This is waiting on ${(a.reviewers ?? []).filter((r) => r.status === 'waiting').map((r) => nameOf(r.id)).join(', ') || 'no one'}, not you.`;
+    else if (person.accessRole === 'Viewer') cannot = `Viewers can't approve, for themselves or on anyone's behalf. Your access role is ${person.accessRole}.`;
+    else if (!waitingRows.length) cannot = 'Nobody is still waiting on this approval.';
+    else if (alreadyGave) cannot = `You already gave one of the ${rule.quorum} approvals ${rule.label ?? 'this'} needs: another person must give the next.`;
     return {
       at: ctx.at,
       row: await queueRow(a, ctx, nameOf),
@@ -350,22 +368,25 @@ export function createViews({ repos, host, engine }) {
         summary: a.body || null, next: a.next ?? null, cost: a.cost ?? null,
         readiness,
         others: { approved: others.filter((r) => r.status === 'approved').length, total: others.length, names: others.map((r) => `${nameOf(r.id)}${r.status === 'waiting' ? ' (waiting)' : r.status === 'changes-requested' ? ' (asked for changes)' : ''}`) },
-        reviewers: (a.reviewers ?? []).map((r) => ({ ...r, name: nameOf(r.id) })),
+        reviewers: (a.reviewers ?? []).map((r) => ({ ...r, name: nameOf(r.id), ...(r.by ? { byName: nameOf(r.by) } : {}) })),
         reminders: (a.reminders ?? []).map((r) => ({ at: r.at, toNames: (r.to ?? []).map(nameOf) })),
         escalated: a.escalated ? { at: a.escalated.at, toNames: (a.escalated.to ?? []).map(nameOf) } : null,
         override: a.override ? { ...a.override, byName: nameOf(a.override.by) } : null,
         workItems: a.workItems?.length ?? null,
         links: {
           artefact: a.link ?? (item?.system === 'product' && item.inProduct !== false
-            ? (a.type === 'adr' ? `/factory/product/architecture/${encodeURIComponent(a.itemId)}` : `/factory/product/specs/${encodeURIComponent(a.itemId)}`)
+            ? (a.type === 'adr' ? `/factory/design/architecture/${encodeURIComponent(a.itemId)}` : `/factory/product/specs/${encodeURIComponent(a.itemId)}`)
             : null),
           artefactLabel: a.type === 'infra-design' ? `Open ${a.subject ?? 'the design'}` : a.type === 'adr' ? `Read ${a.subject ?? 'the decision'}` : 'Read the full spec',
           item: `/home/lifecycle/${encodeURIComponent(a.itemId)}`,
         },
         decide: {
           can: !cannot, cannot, needsReadiness: Boolean(rule.needsReadiness),
-          approveLabel: a.type === 'infra-design' ? `Approve & provision ${a.ref?.kindLabel ?? a.ref?.kind ?? ''}`.trim() : a.type === 'spec' ? `Approve & send to ${rule.toLabel ?? next ?? 'the next stage'}` : a.type === 'ui-handoff' ? 'Approve & send to the Software Factory' : a.type === 'merge' ? 'Approve the merge' : a.type === 'adr' ? 'Accept the decision' : rule.transition ?? 'Approve',
+          approveLabel: a.type === 'infra-design' ? `Approve & provision ${a.ref?.kindLabel ?? a.ref?.kind ?? ''}`.trim() : a.type === 'adr' ? 'Accept the decision' : rule.transition ?? 'Approve',
           eligible,
+          // The places this person may decide: their own when it waits on them, else on behalf of whoever it waits on.
+          mine: mineWaiting,
+          for: (mineWaiting ? waitingRows.filter((r) => r.id === person.id) : waitingRows).map((r) => ({ id: r.id, name: nameOf(r.id), role: r.role ?? null })),
         },
       },
     };
@@ -374,7 +395,7 @@ export function createViews({ repos, host, engine }) {
   /** The Who approves what table (the rules marked listed). */
   async function rulesTable() {
     const rules = await engine.rules();
-    return { rules: [...rules.values()].filter((r) => r.listed !== false).map((r) => ({ key: r.key, decision: r.decision, approver: r.approver, target: r.targetText, ifLate: r.ifLate })) };
+    return { rules: [...rules.values()].filter((r) => r.listed !== false && !r.retired).map((r) => ({ key: r.key, decision: r.decision, approver: r.approver, target: r.targetText, ifLate: r.ifLate })) };
   }
 
   /** Counts for status cards and badges. */
@@ -420,7 +441,8 @@ export function createViews({ repos, host, engine }) {
         summary: a.body || null, requestedAt: a.requestedAt, dueAt: a.dueAt ?? null, targetText: rule.targetText ?? null,
         requestedByName: a.requestedBy?.name ?? nameOf(a.requestedBy?.id), version: a.artefactVersion ?? null,
         waitingOn: waitingIds, waitingOnNames: waitingIds.map(nameOf), mine: waitingOn(a, person.id),
-        canDecide: waitingOn(a, person.id) && await host.can(person.accessRole, rule.permission),
+        // Waiting on them, and they may approve (anyone but a Viewer, Phase 16b).
+        canDecide: waitingOn(a, person.id) && person.accessRole !== 'Viewer',
         team: ctx.items.find((i) => i.id === a.itemId)?.team ?? null,
       });
     }

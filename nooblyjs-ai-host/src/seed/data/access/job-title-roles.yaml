@@ -3,6 +3,11 @@
 rules:
   - { match: 'platform|devops|site reliability|\bsre\b|infrastructure', workRole: platform-engineer }
   - { match: 'engineering (lead|manager)|head of engineering|\bcto\b|tech(nical)? lead', workRole: engineering-lead }
+  # Lifecycle v3 (Phase 16b): the Design and Engineer stages' people and the testers, before the broader rules.
+  - { match: 'solution architect', workRole: solution-architect }
+  - { match: '(application|software) architect', workRole: application-architect }
+  - { match: 'functional analyst|business systems analyst', workRole: functional-analyst }
+  - { match: '\btest|\bqa\b|quality (assurance|engineer)', workRole: test-analyst }
   - { match: 'architect', workRole: architect }
   - { match: 'product (manager|owner|lead)|\bpm\b', workRole: product-manager }
   - { match: 'design|\bux\b|\bui\b', workRole: designer }

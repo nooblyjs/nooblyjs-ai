@@ -479,7 +479,7 @@ export function createChat({ store, events, auditLog, people, agents, roles, ser
       return append(t, {
         author: SYSTEM, kind: 'facts',
         text: adrs.length ? `${adrs.length} decision${adrs.length === 1 ? ' is' : 's are'} waiting for sign-off on ${t.scope.id}.` : `No decisions are waiting for sign-off on ${t.scope.id}. Accepted ones are on its Architecture page.`,
-        cards: adrs.length ? [{ id: newId('card', 10), type: 'facts', title: 'Decisions awaiting sign-off', rows: adrs.map((a) => ({ label: a.subject ?? 'ADR', value: `${a.shortTitle} · waiting on ${a.waitingOnNames.join(', ')}` })), link: { label: 'Open Architecture', href: `/factory/product/architecture/${encodeURIComponent(t.scope.id)}` } }] : [],
+        cards: adrs.length ? [{ id: newId('card', 10), type: 'facts', title: 'Decisions awaiting sign-off', rows: adrs.map((a) => ({ label: a.subject ?? 'ADR', value: `${a.shortTitle} · waiting on ${a.waitingOnNames.join(', ')}` })), link: { label: 'Open Architecture', href: `/factory/design/architecture/${encodeURIComponent(t.scope.id)}` } }] : [],
       });
     }
     return append(t, { author: SYSTEM, kind: 'facts', text: 'Gate results come from the Software Factory, which joins NooblyJS in Phase 7. Until then there are no gates to explain.' });

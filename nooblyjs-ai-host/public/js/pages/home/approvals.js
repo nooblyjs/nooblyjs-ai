@@ -30,7 +30,14 @@ function detail(a, now, message) {
     a.override ? `Readiness overridden by ${a.override.byName}: ${a.override.reason}` : null,
   ].filter(Boolean);
   const failing = a.readiness?.failing.length > 0;
+  // Not waiting on you: you decide on behalf of someone it waits on, and the record says so (Phase 16b).
+  const onBehalf = !a.decide.mine && a.decide.for?.length
+    ? (a.decide.for.length === 1
+      ? html`<p class="note">You are deciding on behalf of ${a.decide.for[0].name}${a.decide.for[0].role ? ` (${a.decide.for[0].role})` : ''}; the record says you gave it, for them.</p><input type="hidden" name="for" value="${a.decide.for[0].id}">`
+      : html`<label class="field">On behalf of<select name="for">${a.decide.for.map((r) => html`<option value="${r.id}">${r.name}${r.role ? ` · ${r.role}` : ''}</option>`)}</select></label>`)
+    : '';
   const form = a.decide.can ? html`<form class="form" data-form="decide">
+      ${onBehalf}
       <label class="field">Comment (optional)<textarea name="comment" rows="3" maxlength="2000" placeholder="Add a note for the next stage"></textarea></label>
       ${failing && a.decide.needsReadiness ? html`<label class="field field--warning">Readiness is ${a.readiness.passed} of ${a.readiness.total} (${a.readiness.failing.map((c) => c.text).join(', ')}). To approve anyway, say why<textarea name="override" rows="2" maxlength="2000"></textarea></label>` : ''}
       <div class="actions">
@@ -158,7 +165,7 @@ export async function render(view, { ctx, query }) {
       else {
         if (decision === 'request-changes' && !fields.comment?.trim()) throw new Error('Say what needs to change in the comment, then request changes.');
         result = await api.post(`approvals/${id}/decision`, {
-          decision, comment: fields.comment || undefined,
+          decision, comment: fields.comment || undefined, ...(fields.for ? { for: fields.for } : {}),
           ...(decision === 'approve' && fields.override?.trim() ? { override: { reason: fields.override } } : {}),
         });
       }

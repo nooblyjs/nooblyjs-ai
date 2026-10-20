@@ -47,8 +47,9 @@ async function startApp({ sections, host: change = (h) => h } = {}) {
   };
 }
 
-test('the server and the browser name the same sections, at the same paths, with the same prefixes', () => {
-  assert.deepEqual(SECTIONS.map(({ key, path: p, prefix }) => ({ key, path: p, prefix })), BROWSER_SECTIONS);
+test('the server and the browser name the same sections, at the same paths, with the same prefixes and scope', () => {
+  const pick = ({ key, path: p, prefix, scope }) => ({ key, path: p, prefix, ...(scope ? { scope } : {}) });
+  assert.deepEqual(SECTIONS.map(pick), BROWSER_SECTIONS.map(pick));
 });
 
 test('FACTORY_SECTIONS chooses the sections; unset means all, and a name that is not a section is refused', () => {
@@ -59,7 +60,7 @@ test('FACTORY_SECTIONS chooses the sections; unset means all, and a name that is
   assert.deepEqual(sectionsFromEnv(''), []);
   assert.throws(() => sectionsFromEnv('product,prodcut'), /FACTORY_SECTIONS names prodcut, which is not a section/);
   // Infrastructure is a hosted app of its own again (CHG-007), not a section.
-  assert.throws(() => sectionsFromEnv('product,infrastructure'), /FACTORY_SECTIONS names infrastructure, which is not a section \(product\)/);
+  assert.throws(() => sectionsFromEnv('product,infrastructure'), /FACTORY_SECTIONS names infrastructure, which is not a section \(product, design\)/);
 });
 
 test('every section row in the sidebar has its page in the Factory\'s route table', async () => {
@@ -118,8 +119,9 @@ test('other apps still reach the section by the name they always used', async ()
 test('without sections the Factory is the line alone; a section that cannot start stops the Factory starting', async () => {
   const t = await startApp({ sections: [] });
   try {
-    assert.deepEqual([...new Set(t.hosted.nav.map((n) => n.group))], ['Build']);
-    assert.deepEqual(t.hosted.groups.map((g) => g.name), ['Build']);
+    // The Factory's own groups stay (lifecycle v3): Engineering, Build and Test.
+    assert.deepEqual([...new Set(t.hosted.nav.map((n) => n.group))], ['Engineering', 'Build', 'Test']);
+    assert.deepEqual(t.hosted.groups.map((g) => g.name), ['Engineering', 'Build', 'Test']);
     assert.deepEqual(t.hosted.provides, {});
     assert.equal((await t.get('/factory/product/api/v1/specs', { as: 'naledi-k' })).text, FRAME, 'nothing mounted there: the Factory\'s page fallback answers');
   } finally {
@@ -172,4 +174,36 @@ test('in the browser, a section\'s page draws in its own scope, with a ctx bound
   assert.deepEqual(navigated, [['/product/specs/PRD-032', { replace: false }], ['/product', { replace: true }], ['/teammates/hire', { replace: false }]]);
   wrapped.destroy();
   assert.equal(seen.destroyed, true);
+});
+
+test('lifecycle v3: Architecture is the Design section\'s, and its old addresses move on', async () => {
+  const { routes } = await import('../public/js/module.js');
+  assert.ok(routes.some((r) => r.path === '/design/architecture/:id' && r.nav === 'design-architecture' && typeof r.page === 'function'));
+  assert.equal(routes.some((r) => r.path === '/product/architecture/:id' && r.nav === 'product-architecture'), false, 'no longer a Product page');
+  assert.deepEqual(routes.find((r) => r.path === '/product/architecture'), { path: '/product/architecture', redirect: '/design/architecture' });
+  const moved = routes.find((r) => r.path === '/product/architecture/:id');
+  assert.equal(moved.meta.to, '/design/architecture');
+  const navigated = [];
+  const page = await moved.page();
+  page.render({}, { params: { id: 'PRD-031' }, ctx: { navigate: (to, options) => navigated.push([to, options]) }, route: moved });
+  assert.deepEqual(navigated, [['/design/architecture/PRD-031', { replace: true }]]);
+});
+
+test('in the browser, the Design section\'s pages are the Product section\'s: its API, links and scope, under /design', async () => {
+  const kitApi = pathToFileURL(createRequire(import.meta.url).resolve('nooblyjs-core/public/ui/js/api.js')).href;
+  const { createApi } = await import(kitApi);
+  const element = () => ({ dataset: {}, className: '', children: [], append(child) { this.children.push(child); } });
+  const seen = {};
+  const design = BROWSER_SECTIONS.find((s) => s.key === 'design');
+  const [route] = sectionRoutes(design, [{ path: '/architecture/:id', nav: 'architecture', title: 'Architecture', page: async () => ({ render: (root, args) => Object.assign(seen, { root, args }) }) }], { api: async () => createApi, doc: () => ({ createElement: element }) });
+  assert.deepEqual([route.path, route.nav], ['/design/architecture/:id', 'design-architecture']);
+  const navigated = [];
+  const view = element();
+  await (await route.page()).render(view, { params: { id: 'PRD-031' }, ctx: { app: { name: 'factory', mountPath: '/factory' }, signal: new AbortController().signal, navigate: (p, o) => navigated.push([p, o]) } });
+  assert.equal(seen.root.dataset.module, 'product', 'the Product section\'s stylesheet applies');
+  assert.equal(seen.args.ctx.api.base, '/factory/product/api/v1');
+  assert.equal(seen.args.ctx.app.mountPath, '/factory/product', 'links to specs stay the Product section\'s');
+  assert.equal(seen.args.ctx.app.section, 'design');
+  seen.args.ctx.navigate('/architecture/PRD-032');
+  assert.deepEqual(navigated, [['/design/architecture/PRD-032', { replace: false }]]);
 });

@@ -6,19 +6,20 @@ import { ID } from '../util/ids.js';
 import { BUILT_IN_PERMISSIONS } from '../middleware/roles.js';
 
 // The matrix rows of product.md §6, each naming the permissions it stands for. A role has the row when it has all.
+// Since Phase 16b an approval's permission says whom it waits on; anyone but a Viewer may give it on their behalf.
 export const MATRIX_ROWS = [
   { label: 'Read specs, models and runs', permissions: ['read'] },
   { label: 'Draft specs, ADRs, designs, PRs', permissions: ['draft'] },
-  { label: 'Approve specs and UI handoffs', permissions: ['approve'] },
-  { label: 'Accept architecture decisions', permissions: ['accept-decisions'] },
-  { label: 'Merge to main (as code owner)', permissions: ['merge'] },
+  { label: 'Approve specs (the Product handoff)', permissions: ['approve'] },
+  { label: 'Accept architecture decisions and the Design handoff', permissions: ['accept-decisions'] },
+  { label: 'Give the Build approval (as code owner)', permissions: ['merge'] },
+  { label: 'Give the Test approval, sign off test analysis', permissions: ['sign-off-tests'] },
   { label: 'Hire teammates, set budgets', permissions: ['hire-teammates', 'set-budgets'] },
   { label: 'Change guardrails and repo access', permissions: ['change-guardrails', 'change-repo-access'] },
-  // The nine stages (root product.md §5, Phase 16a).
+  // The nine stages (root product.md §5, Phase 16a); the release candidate went with Verify (Phase 16b).
   { label: 'Accept requirements', permissions: ['accept-requirement'] },
   { label: 'Accept threat models', permissions: ['accept-threat-model'] },
   { label: 'Accept a security risk', permissions: ['accept-risk'] },
-  { label: 'Accept a release candidate', permissions: ['accept-release-candidate'] },
   { label: 'Approve a production deploy (one of two)', permissions: ['deploy-production'] },
   { label: 'Declare an incident', permissions: ['declare-incident'] },
 ];

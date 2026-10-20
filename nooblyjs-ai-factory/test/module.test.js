@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { NAV } from '../index.js';
+import { NAV, ENGINEERING_NAV, TEST_NAV } from '../index.js';
 
 const PUBLIC = path.resolve(import.meta.dirname, '..', 'public');
 const KIT = path.resolve(import.meta.dirname, '..', '..', '..', 'nooblyjs-core', 'public', 'ui');
@@ -43,18 +43,20 @@ test('kit class names the factory also uses are reverted inside its pages, so th
 
 test('the route table covers every nav row, and every page keeps the frame\'s contract', async () => {
   const { routes } = await import('../public/js/module.js');
-  for (const row of NAV) assert.ok(routes.some((r) => r.path === row.path && r.nav === row.key), `a route for ${row.key}`);
+  for (const row of [...ENGINEERING_NAV, ...NAV, ...TEST_NAV]) assert.ok(routes.some((r) => r.path === row.path && r.nav === row.key), `a route for ${row.key}`);
   assert.deepEqual(routes[0], { path: '/', redirect: '/line' });
   const pages = fs.readdirSync(path.join(PUBLIC, 'js', 'pages'));
-  assert.deepEqual(pages.sort(), ['campaigns.js', 'inbox.js', 'line.js', 'metrics.js', 'run.js', 'runs.js']);
+  // coming.js: the Engineering, Build and Test rows a later phase brings (Phase 16b); moved.js: old Architecture links.
+  assert.deepEqual(pages.sort(), ['campaigns.js', 'coming.js', 'inbox.js', 'line.js', 'metrics.js', 'moved.js', 'run.js', 'runs.js']);
   // The sections' routes are checked in test/sections.test.js; these are the Factory's own.
-  const own = routes.filter((r) => !/^\/product(\/|$)/.test(r.path));
+  const own = routes.filter((r) => !/^\/(product|design)(\/|$)/.test(r.path) || r.path === '/product/architecture/:id');
   for (const route of own.filter((r) => r.page)) {
-    assert.match(route.path, /^\/[a-z:/]*$/);
+    assert.match(route.path, /^\/[a-z:/-]*$/);
     const [, file] = /import\('\.\/pages\/([a-z]+\.js)'\)/.exec(String(route.page)) ?? [];
     assert.ok(pages.includes(file), `${route.path} loads a page that exists`);
   }
-  for (const file of pages) assert.match(read('js', 'pages', file), /^export const render = page\(\w+\);$/m, `${file} exports render()`);
+  // A page draws through page(), or (needing its route's meta) exports render() itself.
+  for (const file of pages) assert.match(read('js', 'pages', file), /^export (const render = page\(\w+\);$|function render\()/m, `${file} exports render()`);
 });
 
 test('the module draws no shell and shares the page politely', () => {

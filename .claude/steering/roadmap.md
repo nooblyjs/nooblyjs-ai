@@ -91,7 +91,7 @@ inclusion: always
 | 14 | NooblyJS in the browser: the Edge extension (agent chat beside Jira) | ☐ (skeleton in `apps/edge`) |
 | 15 | No mocks: everything real | ☐ blocked on the cloud, runtime and model decisions (`stack.md` §5) |
 | 16a | Nine stages: Verify, Release and Operate replace Ship | ☐ built, waiting for review |
-| 16b | Eight stages, and the Factory's five groups | ☐ next |
+| 16b | Eight stages, and the Factory's five groups | ☐ built, waiting for review |
 | 16c | The Design section: business requirements, solution architecture, functional analysis, stories | ☐ |
 | 16d | Engineering: application architecture from the code, and test analysis | ☐ |
 | 16e | Build and Test: the AI builds and tests, engineers and testers approve | ☐ |
@@ -917,8 +917,8 @@ time after release, or when its measure has data?
 
 ## Phase 16b — Eight stages, and the Factory's five groups
 
-> Spec: `nooblyjs-ai-host/.claude/specs/phase-16b-product-design-build/` (rewritten 2026-10-20 for lifecycle v3). Only
-> the stage list was started (`src/lifecycle/stages.js`, seven stages from the first draft): this phase replaces it.
+> **Built 2026-10-20, waiting for review.** Spec: `nooblyjs-ai-host/.claude/specs/phase-16b-product-design-build/`.
+> Summary: `nooblyjs-ai-host/docs/phases/phase-16b-summary.md`.
 
 **Goal:** the lifecycle has the eight stages of version 3, every handoff between them is a person's decision with its
 own permission, and the Software Factory's sidebar follows the work.

@@ -47,14 +47,34 @@ const STATIC = { index: false, redirect: false };
 
 /**
  * The Factory's own sidebar rows (the Build group): `path` is relative to the mount path, `icon` names a NooblyJS UI
- * kit icon. register() puts the Product section's rows before them (sections.js).
+ * kit icon. register() puts the Product and Design sections' rows before them, and Engineering's before and Test's
+ * after (lifecycle v3, Phase 16b; sections.js).
  */
 export const NAV = [
   { key: 'line', label: 'Line', path: '/line', icon: 'flow' },
   { key: 'runs', label: 'Runs', path: '/runs', icon: 'list' },
+  { key: 'pull-requests', label: 'Pull requests', path: '/pull-requests', icon: 'repo' },
   { key: 'inbox', label: 'Inbox', path: '/inbox', icon: 'inbox', badge: 'inbox' },
   { key: 'campaigns', label: 'Campaigns', path: '/campaigns', icon: 'layers' },
   { key: 'metrics', label: 'Metrics', path: '/metrics', icon: 'chart' },
+];
+
+/**
+ * The Engineering group (Phase 16b): each story's application architecture, from the code, and its test analysis,
+ * signed off before anything is built. The pages say which phase brings them (16d).
+ */
+export const ENGINEERING_NAV = [
+  { key: 'app-architecture', label: 'Application architecture', path: '/engineering/architecture', icon: 'layers' },
+  { key: 'test-analysis', label: 'Test analysis', path: '/engineering/test-analysis', icon: 'list' },
+  { key: 'engineering-signoff', label: 'Engineering sign-off', path: '/engineering/sign-off', icon: 'approve' },
+];
+
+/** The Test group (Phase 16b): testers verify each pull request and give the Test approval (16e, Phase 20). */
+export const TEST_NAV = [
+  { key: 'test-approvals', label: 'Test approvals', path: '/test/approvals', icon: 'approve' },
+  { key: 'test-runs', label: 'Test runs', path: '/test/runs', icon: 'pulse' },
+  { key: 'coverage', label: 'Coverage', path: '/test/coverage', icon: 'chart' },
+  { key: 'defects', label: 'Defects', path: '/test/defects', icon: 'alert' },
 ];
 
 /**
@@ -284,8 +304,14 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     icon: 'factory',
     mountPath,
     ui: { entry: 'js/module.js', styles: ['css/factory.css', ...sections.styles] },
-    // Product, then the Factory's own rows (Build): the order work moves in.
-    nav: [...sections.nav('before'), ...NAV.map((row) => ({ ...row, group: 'Build' })), ...sections.nav('after')],
+    // Product, Design, then the Factory's own Engineering, Build and Test: the order work moves in (lifecycle v3).
+    nav: [
+      ...sections.nav('before'),
+      ...ENGINEERING_NAV.map((row) => ({ ...row, group: 'Engineering' })),
+      ...NAV.map((row) => ({ ...row, group: 'Build' })),
+      ...TEST_NAV.map((row) => ({ ...row, group: 'Test' })),
+      ...sections.nav('after'),
+    ],
     // The sidebar's group headers: an icon and a line saying what each part of the Factory does.
     groups: sections.groups(),
     /**

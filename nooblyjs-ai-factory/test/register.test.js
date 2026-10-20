@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import express from 'express';
-import { register, NAV, PERMISSIONS } from '../index.js';
+import { register, NAV, ENGINEERING_NAV, TEST_NAV, PERMISSIONS } from '../index.js';
 import { openStore } from '../src/models/store/events.js';
 import { createHost, createTestServerManager, FRAME } from './fixtures/host.js';
 import { tmpDir } from './helpers.js';
@@ -56,15 +56,21 @@ test('register() describes the factory at its mount path, with a route for every
     assert.equal(hosted.name, 'factory');
     assert.equal(hosted.mountPath, '/factory');
     assert.deepEqual(hosted.ui, { entry: 'js/module.js', styles: ['css/factory.css', 'product/css/product.css'] });
-    // Product's rows, then the Factory's own (Build): the order work moves in (sections.js).
+    // Product's rows, Design's, then the Factory's own Engineering, Build and Test: the order work moves in (lifecycle
+    // v3, Phase 16b; sections.js). Architecture is the Design section's now.
     assert.deepEqual(hosted.nav.map((n) => n.key), [
-      'product-overview', 'product-portfolios', 'product-board', 'product-specs', 'product-architecture', 'product-ux', 'product-ui', 'product-reviews', 'product-handoffs', 'product-settings',
-      'line', 'runs', 'inbox', 'campaigns', 'metrics',
+      'product-overview', 'product-portfolios', 'product-board', 'product-specs', 'product-ux', 'product-ui', 'product-reviews', 'product-handoffs', 'product-settings',
+      'design-architecture',
+      'app-architecture', 'test-analysis', 'engineering-signoff',
+      'line', 'runs', 'pull-requests', 'inbox', 'campaigns', 'metrics',
+      'test-approvals', 'test-runs', 'coverage', 'defects',
     ]);
     assert.deepEqual(hosted.nav.filter((n) => n.group === 'Build').map(({ group, ...row }) => row), NAV);
-    assert.deepEqual([...new Set(hosted.nav.map((n) => n.group))], ['Product', 'Build']);
+    assert.deepEqual(hosted.nav.filter((n) => n.group === 'Engineering').map(({ group, ...row }) => row), ENGINEERING_NAV);
+    assert.deepEqual(hosted.nav.filter((n) => n.group === 'Test').map(({ group, ...row }) => row), TEST_NAV);
+    assert.deepEqual([...new Set(hosted.nav.map((n) => n.group))], ['Product', 'Design', 'Engineering', 'Build', 'Test']);
     // Each group has a header: an icon and a line saying what that part of the Factory does.
-    assert.deepEqual(hosted.groups.map((g) => g.name), ['Product', 'Build']);
+    assert.deepEqual(hosted.groups.map((g) => g.name), ['Product', 'Design', 'Engineering', 'Build', 'Test']);
     assert.ok(hosted.groups.every((g) => g.icon && g.hint));
     for (const key of ['status', 'close']) assert.equal(typeof hosted[key], 'function');
     assert.equal(typeof hosted.services.status, 'function');

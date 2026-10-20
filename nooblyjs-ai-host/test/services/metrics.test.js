@@ -65,8 +65,8 @@ test('an empty period says so: no value, never a measured zero', () => {
   assert.deepEqual(m.weeks.rows.map((r) => r.totalDays), [null, null, null, null, null, null]);
   assert.equal(m.weeks.sentence, 'No stage visit ended in the last six weeks.');
   assert.deepEqual([m.spend.totalUsd, m.spend.rows], [0, []]);
-  // Seven groups since the nine stages (Phase 16a); Ship, from before, shows only in a period that has a visit to it.
-  assert.deepEqual(m.stages.map((s) => s.key), ['product', 'architecture', 'design', 'build', 'verify', 'release', 'operate']);
+  // Seven groups since lifecycle v3 (Phase 16b); Ship, from before, shows only in a period that has a visit to it.
+  assert.deepEqual(m.stages.map((s) => s.key), ['product', 'design', 'engineer', 'build', 'test', 'release', 'operate']);
   assert.deepEqual(m.stages.map((s) => [s.visits, s.medianDays, s.agentPct, s.sentBackPct, s.slowest]), Array(7).fill([0, null, null, null, false]));
 });
 
@@ -103,7 +103,7 @@ test('pull requests: merged, from how many items, first pass, changed by a perso
 
 test('stage visits: length from entering a group to leaving it, sent back, who worked, and a visit with no beginning is left out', () => {
   const events = [
-    // A: Product for 4 days (Discover → Specify is the same visit), then Architecture for 2, sent back.
+    // A: Product for 4 days (Discover → Specify is the same visit), then Design (Architect, from before) for 2, sent back.
     ev(20, 'item.created', 'ada-quill', { itemId: 'A', stage: 'discover' }),
     ev(19, 'item.stage_changed', 'stevie', { itemId: 'A', from: 'discover', to: 'specify' }),
     ev(18, 'spec.updated', 'ada-quill', { specId: 'A' }),
@@ -112,8 +112,8 @@ test('stage visits: length from entering a group to leaving it, sent back, who w
     ev(15.5, 'approval.requested', 'ada-quill', { itemId: 'A', approvalId: 'apr_a' }),
     ev(14, 'approval.decided', 'stevie', { itemId: 'A', approvalId: 'apr_a', outcome: 'changes-requested' }),
     ev(14, 'item.sent_back', 'stevie', { itemId: 'A', from: 'architect', to: 'specify' }),
-    // B: Product for 2 days. C: we only see it leave Architecture, so that visit's length is unknown; its Design
-    // visit, which begins there, is counted.
+    // B: Product for 2 days. C: we only see it leave Architect (Design), so that visit's length is unknown; its UX and
+    // UI visit, which begins there, is Product's since lifecycle v3 (Phase 16b), and is counted: 3 days.
     ev(12, 'item.created', 'stevie', { itemId: 'B', stage: 'specify' }),
     ev(10, 'item.stage_changed', 'stevie', { itemId: 'B', from: 'specify', to: 'architect' }),
     ev(9, 'item.stage_changed', 'stevie', { itemId: 'C', from: 'architect', to: 'ux' }),
@@ -123,17 +123,17 @@ test('stage visits: length from entering a group to leaving it, sent back, who w
     ev(4.5, 'item.completed', 'stevie', { itemId: 'C' }),
   ];
   const by = Object.fromEntries(metrics(events).stages.map((s) => [s.key, s]));
-  assert.deepEqual([by.product.visits, by.product.medianDays, by.product.p90Days, by.product.sentBackPct], [2, 3, 4, 0]);
+  assert.deepEqual([by.product.visits, by.product.medianDays, by.product.p90Days, by.product.sentBackPct], [3, 3, 4, 0]);
   // During A's Product visit: opened and two edits by an agent, two moves by a person. B: opened and moved by a person.
-  assert.deepEqual([by.product.agentPct, by.product.peoplePct], [43, 57]);
-  assert.deepEqual([by.architecture.visits, by.architecture.medianDays, by.architecture.sentBackPct], [1, 2, 100]);
-  assert.deepEqual([by.design.visits, by.design.medianDays], [1, 3]);
+  // C: two moves by a person (the move into it counts for the visit it left, which is not counted).
+  assert.deepEqual([by.product.agentPct, by.product.peoplePct], [33, 67]);
+  assert.deepEqual([by.design.visits, by.design.medianDays, by.design.sentBackPct], [1, 2, 100]);
   assert.deepEqual([by.build.visits, by.build.medianDays, by.build.agentPct], [1, 1, null]);
   assert.deepEqual([by.ship.visits, by.ship.medianDays, by.ship.peoplePct], [1, 0.5, 100]);
   assert.deepEqual(Object.values(by).filter((s) => s.slowest).map((s) => s.key), ['product']);
 });
 
-test('the weekly chart: six complete weeks, Build to release drawn together (Ship, from before the nine stages, too), and a sentence that is computed', () => {
+test('the weekly chart: six complete weeks, Build and Test to release drawn together (Ship, from before, too), and a sentence that is computed', () => {
   const monday = weekStart(NOW);
   const visit = (id, stage, next, endsDaysBeforeMonday, days, { ask = false } = {}) => {
     const end = monday - endsDaysBeforeMonday * DAY;
@@ -156,13 +156,14 @@ test('the weekly chart: six complete weeks, Build to release drawn together (Shi
   ];
   const { rows, parts, sentence } = metrics(events).weeks;
   assert.deepEqual(rows.map((r) => r.label), ['W35', 'W36', 'W37', 'W38', 'W39', 'W40']);
-  assert.deepEqual(parts.map((p) => p.label), ['Product', 'Architecture', 'UX & UI design', 'Build to release']);
-  assert.deepEqual(rows[5], { label: 'W40', start: '2026-09-28T00:00:00.000Z', parts: { product: 3, architecture: 5, design: null, buildShip: 1.5 }, totalDays: 9.5 });
-  assert.deepEqual([rows[4].parts.architecture, rows[4].totalDays, rows[3].totalDays], [3, 3, null]);
-  // Architecture leads both weeks; 3.75 of its 8 days had an approval open, so it is not "waiting for sign-off".
-  assert.equal(sentence, 'Architecture is the largest share every week.');
+  assert.deepEqual(parts.map((p) => p.label), ['Product', 'Design', 'Engineer', 'Build and Test to release']);
+  // Architect visits, from before, are Design's since lifecycle v3 (Phase 16b).
+  assert.deepEqual(rows[5], { label: 'W40', start: '2026-09-28T00:00:00.000Z', parts: { product: 3, design: 5, engineer: null, buildShip: 1.5 }, totalDays: 9.5 });
+  assert.deepEqual([rows[4].parts.design, rows[4].totalDays, rows[3].totalDays], [3, 3, null]);
+  // Design leads both weeks; 3.75 of its 8 days had an approval open, so it is not "waiting for sign-off".
+  assert.equal(sentence, 'Design is the largest share every week.');
   const waiting = metrics([...events, ...visit('A4', 'architect', 'ux', 4, 20, { ask: true })]).weeks.sentence;
-  assert.equal(waiting, 'Architecture is the largest share every week — it’s waiting for sign-off, not drafting time.');
+  assert.equal(waiting, 'Design is the largest share every week — it’s waiting for sign-off, not drafting time.');
 });
 
 test('spend by system, largest first, only what was spent in the period', () => {

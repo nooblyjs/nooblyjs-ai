@@ -448,11 +448,14 @@ export function createArchitectureService({ repos, host, log }) {
     return out;
   }
 
-  /** item.stage_changed into Architecture: nothing drafts by itself (D3); the item now shows on the Architecture list. */
+  /**
+   * item.stage_changed into Architecture (the lifecycle's Design stage since Phase 16b): nothing drafts by itself (D3);
+   * the item now shows on the Architecture list.
+   */
   async function onStageChanged(event) {
     const p = event?.payload ?? {};
     const to = String(p.to ?? p.stage ?? '').toLowerCase();
-    if (!p.itemId || !['architecture', 'architect', '3'].includes(to)) return;
+    if (!p.itemId || !['architecture', 'design', 'architect', '3'].includes(to)) return;
     try {
       if (!(await repos.specs.get(p.itemId))) return;
       await A.update(['architecture', p.itemId, 'stage.md'], (current) => (current ? null : { itemId: p.itemId, enteredAt: event.at ?? now(), body: '' }));

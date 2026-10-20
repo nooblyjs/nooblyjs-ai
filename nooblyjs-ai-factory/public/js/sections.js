@@ -6,8 +6,13 @@
 // own, so each gets a ctx bound to the section instead: its API client calls /factory/<section>/api/v1, its links and
 // navigate() stay under /factory/<section>, and it draws inside an element scoped like its own app was
 // (data-module="product"), so its stylesheet applies as it always did. Everything else in ctx is the frame's.
+//
+// A section may show another's pages (`scope`, Phase 16b): the Design section's Architecture pages are still the
+// Product section's code, so they call its API, build their links under it and draw in its scope, while their routes
+// and navigation are the Design section's (/design).
 export const SECTIONS = [
   { key: 'product', path: '/product', prefix: 'product' },
+  { key: 'design', path: '/design', prefix: 'design', scope: 'product' },
 ];
 
 const under = (base, path) => `${base}${path === '/' ? '' : path}`;
@@ -15,9 +20,12 @@ const under = (base, path) => `${base}${path === '/' ? '' : path}`;
 /** The kit's API client. It is only there in the browser; tests pass their own (sectionRoutes' `deps`). */
 const kitApi = async () => (await import('/ui/js/api.js')).createApi;
 
-/** The ctx a section's page gets: the frame's, bound to the section. */
+/** The section whose pages, API and scope a section's routes use: its own, or the one it names in `scope`. */
+const ownerOf = (section) => (section.scope ? SECTIONS.find((s) => s.key === section.scope) ?? section : section);
+
+/** The ctx a section's page gets: the frame's, bound to the section (its API and links to the section it shows). */
 export function sectionContext(ctx, section, createApi) {
-  const mountPath = under(ctx.app.mountPath === '/' ? '' : ctx.app.mountPath, section.path);
+  const mountPath = under(ctx.app.mountPath === '/' ? '' : ctx.app.mountPath, ownerOf(section).path);
   return {
     ...ctx,
     app: { ...ctx.app, section: section.key, mountPath },
@@ -33,7 +41,7 @@ function wrapPage(load, section, { api = kitApi, doc = () => document } = {}) {
     return {
       async render(view, args) {
         const root = doc().createElement('div');
-        root.dataset.module = section.key;
+        root.dataset.module = ownerOf(section).key;
         root.className = 'factory-section';
         view.append(root);
         return page.render(root, { ...args, ctx: sectionContext(args.ctx, section, await api()) });

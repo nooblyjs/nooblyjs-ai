@@ -287,7 +287,7 @@ export async function register(app, serverManager, options = {}) { … }
 ```
 
 `NavItem.path` is relative to the mount path (`/runs`). `group` gives the sidebar sections
-(Platform's *Build* / *Govern*; the Factory's *Product* / *Build*): each is drawn as its own block
+(Platform's *Build* / *Govern*; the Factory's *Product* / *Design* / *Engineering* / *Build* / *Test*): each is drawn as its own block
 (`role="group"`, named by its header) with a divider above it, and `groups` may give each one a kit icon and a
 one-line `hint` under its name (2026-10-19, CHG-006). A group with no entry in `groups` shows its name only. `badge` names a key in `AppStatus.badges`. `requires` names a
 permission from the matrix (`product.md` §6). The host leaves out rows the person can't use,

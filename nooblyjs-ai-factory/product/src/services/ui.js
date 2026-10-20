@@ -194,7 +194,8 @@ export function createUiService({ repos, host, log, flow }) {
     await flow?.record({ itemId, kind: 'handoff', from: 'ui', to: 'build', by: actor.id, at, note: `${preview.count} work items · ${preview.repoCount} repos` });
     return {
       itemId, sent: true, workItems: preview.count, repoCount: preview.repoCount,
-      text: `Sent ${preview.count} work items across ${preview.repoCount} repos to the Software Factory. The NooblyJS lifecycle engine creates them.`,
+      // The lifecycle's Design handoff (Phase 16b): the work items reach the Software Factory with the Engineering sign-off.
+      text: `Sent ${preview.count} work items across ${preview.repoCount} repos on to Engineering. The Software Factory starts them once Engineering signs off.`,
       openChecks: a11y.checks.filter((c) => c.passed === false).map((c) => c.text),
       workflows: result ?? null,
     };

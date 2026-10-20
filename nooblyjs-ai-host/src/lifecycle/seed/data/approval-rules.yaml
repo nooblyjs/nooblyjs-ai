@@ -1,13 +1,15 @@
 # Who approves what (product.md §4). Read on every use, so an edit applies without a restart. Each rule: key (the
-# approval type), decision, approver, permission (from access/roles.yaml), quorum (all · any · a number), target
-# ({ workingDays } · { hours } · { sameDay: true }), ifLate, remind, escalate, needsReadiness, tag, label, transition.
-# The infra-design, devtools-write, release-candidate, outcome-review, threat-model and risk-acceptance rules are built in
-# (src/lifecycle/config.js) unless listed here. Since Phase 16a (nine stages) merge moves an item Build → Verify and
-# deploy moves it Release → Operate.
-# Rebuilt 2026-10-19 from product.md §4 and the Phase 2 design.
+# approval type), decision, approver, permission (from access/roles.yaml: whom the approval waits on), quorum (all ·
+# any · a number), target ({ workingDays } · { hours } · { sameDay: true }), ifLate, remind, escalate, needsReadiness,
+# tag, label, transition. A rule may name `slots` instead of one permission: one reviewer for each.
+# Any person whose access role is not Viewer may give an approval on behalf of someone it waits on; who gave it, and
+# for whom, is recorded (Phase 16b). A rule whose quorum is a number needs that many different people giving it.
+# The infra-design, devtools-write, outcome-review, threat-model and risk-acceptance rules are built in
+# (src/lifecycle/config.js) unless listed here, and so are the lifecycle v3 rules for a data folder from before.
+# Lifecycle v3 (Phase 16b, 2026-10-20): Product → Design → Engineer → Build → Test → Release → Operate.
 rules:
   - key: spec
-    decision: Spec → Architecture
+    decision: Product → Design (spec, UX and UI)
     approver: Product lead + Engineering
     permission: approve
     quorum: all
@@ -17,9 +19,10 @@ rules:
     remind: true
     escalate: { afterWorkingDays: 1, to: Owner }
     needsReadiness: true
-    tag: Spec
-    label: Spec approval
-    transition: Approve & send to Architecture
+    tag: Product
+    label: Product handoff
+    transition: Approve & hand off to Design
+    toLabel: Design
   - key: adr
     decision: New dependency (ADR)
     approver: Architect
@@ -33,21 +36,42 @@ rules:
     tag: ADR
     label: ADR acceptance
     transition: Accept the decision
-  - key: ui-handoff
-    decision: UI → Software Factory
-    approver: Design lead
-    permission: approve
+  - key: design-handoff
+    decision: Design → Engineering (Design handoff)
+    approver: Solution Architect
+    permission: accept-decisions
     quorum: any
-    target: { hours: 4 }
-    targetText: 4 hours
-    ifLate: Remind
+    target: { workingDays: 1 }
+    targetText: 1 working day
+    ifLate: Remind, then escalate
     remind: true
-    tag: UI
-    label: UI handoff
-    transition: Approve & send to the Software Factory
-  - key: merge
-    decision: Merge to main (Build → Verify)
-    approver: Code owner of the repo
+    escalate: { afterWorkingDays: 1, to: Owner }
+    needsReadiness: true
+    tag: Design
+    label: Design handoff
+    transition: Approve & hand off to Engineering
+    toLabel: Engineer
+  - key: engineering-signoff
+    decision: Engineering → Build (Engineering sign-off)
+    approver: Application Architect and a test lead
+    permission: accept-decisions
+    slots:
+      - { permission: accept-decisions, role: Application Architect }
+      - { permission: sign-off-tests, role: Test lead }
+    quorum: all
+    target: { workingDays: 1 }
+    targetText: 1 working day
+    ifLate: Remind, then escalate
+    remind: true
+    escalate: { afterWorkingDays: 1, to: Owner }
+    needsReadiness: true
+    tag: Engineering
+    label: Engineering sign-off
+    transition: Sign off & send to Build
+    toLabel: Build
+  - key: build-approval
+    decision: Build → Test (Build approval)
+    approver: Engineer (code owner of the repo)
     permission: merge
     quorum: any
     target: { hours: 4 }
@@ -55,8 +79,23 @@ rules:
     ifLate: Remind
     remind: true
     tag: PR
-    label: Merge to main
-    transition: Approve the merge
+    label: Build approval
+    transition: Give the Build approval
+    toLabel: Test
+  - key: test-approval
+    decision: Test → Release (Test approval; then the PR may merge)
+    approver: Tester
+    permission: sign-off-tests
+    quorum: any
+    target: { hours: 4 }
+    targetText: 4 hours
+    ifLate: Remind
+    remind: true
+    needsReadiness: true
+    tag: Test
+    label: Test approval
+    transition: Give the Test approval
+    toLabel: Release
   - key: deploy
     decision: Release → Operate (production deploy)
     approver: Two approvers

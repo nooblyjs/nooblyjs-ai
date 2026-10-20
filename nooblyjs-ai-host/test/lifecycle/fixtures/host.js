@@ -35,6 +35,8 @@ export const MATRIX = {
   'accept-release-candidate': ['Approver', 'Architect', 'Owner'],
   'deploy-production': ['Approver', 'Architect', 'Owner'],
   'declare-incident': ['Contributor', 'Approver', 'Architect', 'Owner'],
+  // Lifecycle v3 (Phase 16b): whom the Test approval and the Engineering sign-off's test part wait on.
+  'sign-off-tests': ['Approver', 'Architect', 'Owner'],
 };
 
 export const PERSON_HEADER = 'x-dev-person';

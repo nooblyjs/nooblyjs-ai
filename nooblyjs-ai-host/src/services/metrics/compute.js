@@ -13,27 +13,29 @@ export const RANGES = {
 export const LOOKBACK_DAYS = 120;
 export const CHART_WEEKS = 6;
 
-// A stage visit is the time an item spends in one of these groups, from entering it to leaving it. The nine stages
-// (Phase 16a) replaced Ship with Verify, Release and Operate; Ship stays as a legacy group so visits from before still
-// count, and its row is shown only in a period that has one.
+// A stage visit is the time an item spends in one of these groups, from entering it to leaving it. Lifecycle v3
+// (Phase 16b) has eight stages; the keys from before still land in the group they belong to now (Specify, UX and UI in
+// Product, Architect in Design, Verify in Test), so visits from before still count. Ship stays a legacy group, shown
+// only in a period that has one.
 export const GROUPS = [
-  { key: 'product', label: 'Product', stages: ['discover', 'specify'] },
-  { key: 'architecture', label: 'Architecture', stages: ['architect'] },
-  { key: 'design', label: 'UX & UI design', stages: ['ux', 'ui'] },
+  { key: 'product', label: 'Product', stages: ['discover', 'product', 'specify', 'ux', 'ui'] },
+  { key: 'design', label: 'Design', stages: ['design', 'architect'] },
+  { key: 'engineer', label: 'Engineer', stages: ['engineer'] },
   { key: 'build', label: 'Build', stages: ['build'] },
-  { key: 'verify', label: 'Verify', stages: ['verify'] },
+  { key: 'test', label: 'Test', stages: ['test', 'verify'] },
   { key: 'release', label: 'Release', stages: ['release'] },
   { key: 'operate', label: 'Operate', stages: ['operate'] },
   { key: 'ship', label: 'Ship (before nine stages)', stages: ['ship'], legacy: true },
 ];
 const GROUP_OF = Object.fromEntries(GROUPS.flatMap((g) => g.stages.map((s) => [s, g.key])));
-// The chart's last part is Build to release: the mean Build, Ship (history), Verify and Release visits, added up.
-// Operate is the time after release, not lead time, so the chart leaves it out. The key stays `buildShip` (its colour).
+// The chart's last part is Build and Test to release: the mean Build, Ship (history), Test and Release visits, added
+// up. Operate is the time after release, not lead time, so the chart leaves it out. The key stays `buildShip` (its
+// colour).
 export const CHART_PARTS = [
   { key: 'product', label: 'Product', groups: ['product'] },
-  { key: 'architecture', label: 'Architecture', groups: ['architecture'] },
-  { key: 'design', label: 'UX & UI design', groups: ['design'] },
-  { key: 'buildShip', label: 'Build to release', groups: ['build', 'ship', 'verify', 'release'] },
+  { key: 'design', label: 'Design', groups: ['design'] },
+  { key: 'engineer', label: 'Engineer', groups: ['engineer'] },
+  { key: 'buildShip', label: 'Build and Test to release', groups: ['build', 'ship', 'test', 'release'] },
 ];
 const SPEND_LABELS = { teammates: 'Digital Teammates', compute: 'Platform compute', product: 'Product Factory', factory: 'Software Factory', knowledge: 'Knowledge', cloud: 'Cloud (Infrastructure)' };
 

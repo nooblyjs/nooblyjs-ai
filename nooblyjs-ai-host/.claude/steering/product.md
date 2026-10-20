@@ -80,27 +80,39 @@ These are company governance rules, so they are not optional:
 ## 4. The lifecycle (core concept)
 
 Every piece of work is an **Item** (e.g. `IDEA-018`, `PRD-031`, or a PR such as
-`slots-api #482`) that moves through nine stages (since Phase 16a, 2026-10-19; the whole-SDLC view is the monorepo
-root's `.claude/steering/product.md` §3):
+`slots-api #482`) that moves through eight stages (lifecycle v3, since Phase 16b, 2026-10-20; the whole-SDLC view is
+the monorepo root's `.claude/steering/product.md` §3):
 
 ```
-1 Discover → 2 Specify → 3 Architect → 4 UX design → 5 UI design → 6 Build → 7 Verify → 8 Release → 9 Operate
+1 Discover → 2 Product → 3 Design → 4 Engineer → 5 Build → 6 Test → 7 Release → 8 Operate
 ```
 
-Ship, the seventh stage until 2026-10-19, was replaced by Verify, Release and Operate. Items that were in Ship moved to
-Verify once, on record (`lifecycle.stages_migrated` in the audit log), and history written before still says Ship.
+Requirements, UX and UI are one **Product** stage, worked on together. **Design** does the solution architecture (the
+Architecture pages, at `/factory/design`); **Engineer** the application architecture and test analysis, signed off
+before anything is built; in **Build** the AI builds and tests and an engineer gives the Build approval; in **Test** a
+person verifies the pull request and gives the Test approval. Items that were in a stage from before moved once, on
+record (`lifecycle.stages_migrated` in the audit log): Specify, UX and UI to Product, Architect to Design, Verify (Phase
+16a) and Ship (before it) to Test. History written before still says what it said.
 
 | Stage | Main artifact | Default agent | Exit gate (a person approves) |
 | --- | --- | --- | --- |
 | Discover | Signal clusters, Idea with RICE score | Research agent (e.g. Ada Quill) | Idea accepted |
-| Specify | Spec/PRD: problem, goals, user stories, acceptance criteria, readiness checks | Product agent | **Spec approval** (Product lead + Engineering) |
-| Architect | Container diagram, ADRs, standards check, quality attributes | Architect agent (e.g. Rhea Voss) | **ADR acceptance** when a new dependency is added (Architect) |
-| UX design | Journey map, user flows, research findings | Design agent | Flow approved |
-| UI design | Screens, design-system components, accessibility checks | UI agent | **UI handoff** (Design lead), which generates Work Items |
-| Build | Work items → Software Factory runs → PRs | Factory stations / engineering teammates | Gates pass (tests, contracts, quality attributes); **merge** (code owner), or a person's merge in Bitbucket |
-| Verify | The deployed system tested in environments (the Quality and Security apps, root roadmap Phases 19–21) | Test agent, security agent | **Release candidate accepted** (QA lead, `accept-release-candidate`) |
+| Product | Spec/PRD (problem, goals, user stories, acceptance criteria, readiness checks), journeys and flows, screens | Product, design and UI agents | **Product handoff** (Product lead + Engineering) |
+| Design | Container diagram, ADRs, standards check, quality attributes (business requirements, impacted systems, functional analysis and stories in Phase 16c) | Architect agent (e.g. Rhea Voss) | **Design handoff** (Solution Architect, `accept-decisions`), with the planned work items; ADR acceptance when a new dependency is added |
+| Engineer | Application architecture and test analysis (Phase 16d) | Application architect agent, test agent | **Engineering sign-off** (an Application Architect and a test lead, one approval): the work items go to the Software Factory |
+| Build | Work items → Software Factory runs → PRs | Factory stations / engineering teammates | Gates pass (tests, contracts, quality attributes); **Build approval** (an engineer, the code owner) |
+| Test | The pull request verified by a person (tests in environments: root roadmap Phases 19–21) | Test agent, security agent | **Test approval** (a tester, `sign-off-tests`); then the PR may merge |
 | Release | Release, rollout and rollback plans (the Operations app, Phase 22) | Release agent | **Production deploy** (two different people, `deploy-production`) |
 | Operate | SLOs, incidents, the outcome review (Operations, Phase 23) | SRE agent | **Outcome review** (Product lead): the item is done |
+
+A pull request merged in Bitbucket before its Build and Test approvals moves nothing: it is flagged on the item and in
+the audit log (`item.merged_before_approval`), not counted as done.
+
+**Approving on someone's behalf** (Phase 16b). A rule's permission says whom an approval waits on. Any person whose
+access role is not Viewer may give it, for themselves or on behalf of someone it waits on; the approval, Activity and
+the audit log (`approval.on_behalf`) record who gave it and for whom ("Lerato for Naledi"). Agents and Viewers are
+refused, and the refusal is audited. A rule that needs a number of people (the production deploy needs two) needs that
+many different people giving it.
 
 **Rules**
 
@@ -119,13 +131,14 @@ Verify once, on record (`lifecycle.stages_migrated` in the audit log), and histo
 
 ### Approval rules ("Who approves what")
 
-| Decision | Approver | Target time | If late |
+| Decision | Approver (whom it waits on) | Target time | If late |
 | --- | --- | --- | --- |
-| Spec → Architecture | Product lead + Engineering | 1 working day | Remind, then escalate |
+| Product → Design (Product handoff: spec, UX and UI) | Product lead + Engineering | 1 working day | Remind, then escalate |
 | New dependency (ADR) | Architect | 1 working day | Remind |
-| UI → Software Factory | Design lead | 4 hours | Remind |
-| Merge to main (Build → Verify) | Code owner of the repo | 4 hours | Remind |
-| Release candidate (Verify → Release) | QA lead | 4 hours | Remind |
+| Design → Engineering (Design handoff) | Solution Architect | 1 working day | Remind, then escalate |
+| Engineering → Build (Engineering sign-off) | Application Architect and a test lead | 1 working day | Remind, then escalate |
+| Build → Test (Build approval) | Engineer (code owner of the repo) | 4 hours | Remind |
+| Test → Release (Test approval; then the PR may merge) | Tester | 4 hours | Remind |
 | Production deploy (Release → Operate) | Two approvers | Same day | Hold deploy |
 | Outcome review (Operate → done) | Product lead | 5 working days `[CONFIRM]` | Remind |
 | Threat model accepted (the Security app, Phase 19) | Architect | 1 working day | Remind, then escalate |
@@ -134,11 +147,13 @@ Verify once, on record (`lifecycle.stages_migrated` in the audit log), and histo
 | Write to Jira or Bitbucket (only for a kind of write an Owner set to "needs approval", Phase 13) | Approver | 1 working day | Remind |
 
 Rules are editable in **Teams & roles** (Phase 3; until then they are the file
-`data/workflows/approval-rules.yaml`). As built in Phase 2: a spec needs **every** named reviewer,
-an ADR, a UI handoff and a merge need **one** of theirs, and a production deploy needs two different people (Phase 16a:
-Approve & move on an item in Release records one and waits on the others who may decide it). Release candidate,
-outcome review, threat model and risk acceptance are built-in rules (`src/lifecycle/config.js`); threat model and risk
-acceptance are decided by the Security app and are refused until it runs.
+`data/workflows/approval-rules.yaml`). A spec needs **every** named reviewer, the Engineering sign-off one in each of
+its two places (`slots`), the others **one** of theirs, and a production deploy two different people (Approve & move
+on an item in Release records one and waits on the others who may decide it). Outcome review, threat model and risk
+acceptance, and the lifecycle v3 rules for a data folder from before, are built in (`src/lifecycle/config.js`); threat
+model and risk acceptance are decided by the Security app and are refused until it runs. The UI handoff, the merge and
+the release candidate are retired (Phase 16b): an older file's rules are kept for history and not listed, and their
+open approvals were withdrawn (the merge became the Build approval).
 "1 working day" means by the end of the next working day (Monday to Friday). An escalation goes
 to the Owners one working day after the target `[CONFIRM]`.
 
@@ -147,7 +162,8 @@ to the Owners one working day after the target `[CONFIRM]`.
 ### 5.1 Shell (every screen)
 
 - **Suite rail** (84px, navy): Home, Factory, Infra, Teammates, Knowledge, Platform. Since 2026-10-19 Product is a
-  section of the Factory, not a rail item: its sidebar is grouped **Product · Build** (§10). Infra was a section too
+  section of the Factory, not a rail item: its sidebar is grouped **Product · Design · Engineering · Build · Test** (§10;
+  lifecycle v3, Phase 16b). Infra was a section too
   from 2026-10-19 to 2026-10-20 and is its own rail item again (CHG-007).
 - **Module sidebar** (260px): the module name in lowercase (`nooblyjs-ai-host`, `product factory`,
   `factory`, `teammates`, `knowledge`, `platform`), nav rows with badges, and a **status
@@ -169,11 +185,10 @@ Nav: For you, Overview, Lifecycle, Approvals (badge), Activity, Metrics, Teams &
 0. **For you** (the default landing page after onboarding): see §5.8.
 1. **Overview** (`noobly-platform-home`; the landing page for Designer and Engineering lead until their own "For you" layouts are designed): eyebrow "NooblyJS · Engineering lifecycle", title "From idea to merged code", and a summary in words ("14 items in flight across five systems. Four are waiting on you."),
    with a **New idea** action.
-   - **The line, end to end**: the nine stages, each with a count of what is in it.
-     Discover: ideas. Specify: specs (and how many are in review). Architect: ADRs
-     proposed. UX design: flows in progress. UI design: ready for handoff. Build: on the line and
-     PRs awaiting merge. Verify: release candidates in review. Release: deploys awaiting approval. Operate: outcome
-     reviews due. Above the strip sits the median idea → merge over the
+   - **The line, end to end**: the eight stages, each with a count of what is in it.
+     Discover: ideas. Product: specs, UX and UI (and how many are in review). Design: ADRs proposed and Design
+     handoffs waiting. Engineer: sign-offs waiting. Build: on the line and PRs awaiting the Build approval. Test: PRs
+     awaiting the Test approval. Release: deploys awaiting approval. Operate: outcome reviews due. Above the strip sits the median idea → merge over the
      last 30 days. Under it are two bands: **Knowledge Repository** ("every stage reads
      context in and writes decisions back") and **Platform** ("repos, containers, models,
      budgets and guardrails underneath").
@@ -182,7 +197,7 @@ Nav: For you, Overview, Lifecycle, Approvals (badge), Activity, Metrics, Teams &
      today against the daily cap. Digital Teammates: teammates on a task (n of m), % of the
      month's budget. Knowledge: documents and sources, pages needing review. Platform: repos
      and live containers, vCPU in use.
-   - **Waiting on you** (**All approvals** link): spec, ADR, UI handoff and PR approvals, each
+   - **Waiting on you** (**All approvals** link): spec, ADR, handoff and PR approvals, each
      with a type tag, a line of context ("Drafted by Ada Quill · readiness 6 of 7 checks",
      "Adds a new dependency · needs an architect's sign-off", "4 screens · will create 6 work
      items", "All gates passed first time · $3.80 to produce") and a **Review** action.
@@ -286,8 +301,9 @@ portfolios and value streams, and opens each document.
     not shown by colour alone, screen-reader labels). **Handoff preview**: the generated work
     items per repo, the repo count and the cost estimate range.
 
-> The Product Factory numbers its own stages 1–4 (Product, Architecture, UX, UI). These map
-> to lifecycle stages 1–5 (Discover + Specify = "Product").
+> The Product Factory numbers its own stages 1–4 (Product, Architecture, UX, UI). In lifecycle v3 (Phase 16b) its
+> Product, UX and UI are the Product stage (with Discover before it), and its Architecture the Design stage, whose
+> pages the Factory shows in its Design section (`/factory/design/architecture`).
 
 ### 5.4 Software Factory (`factory`): existing, restyle to NooblyJS
 
@@ -566,9 +582,10 @@ How it sits in NooblyJS:
 | --- | :-: | :-: | :-: | :-: | :-: |
 | Read specs, models and runs | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Draft specs, ADRs, designs, PRs | — | ✓ | ✓ | ✓ | ✓ |
-| Approve specs and UI handoffs | — | — | ✓ | ✓ | ✓ |
-| Accept architecture decisions | — | — | — | ✓ | ✓ |
-| Merge to main (as code owner) | — | — | ✓ | ✓ | ✓ |
+| Approve specs (the Product handoff) | — | — | ✓ | ✓ | ✓ |
+| Accept architecture decisions and the Design handoff | — | — | — | ✓ | ✓ |
+| Give the Build approval (as code owner) | — | — | ✓ | ✓ | ✓ |
+| Give the Test approval, sign off test analysis (`sign-off-tests`) | — | — | ✓ | ✓ | ✓ |
 | Hire teammates, set budgets | — | — | — | — | ✓ |
 | Change guardrails and repo access | — | — | — | — | ✓ |
 | Change a person's access role (`manage-members`) | — | — | — | — | ✓ |
@@ -576,13 +593,17 @@ How it sits in NooblyJS:
 | Accept requirements (`accept-requirement`) | — | — | ✓ | ✓ | ✓ |
 | Accept threat models (`accept-threat-model`) | — | — | — | ✓ | ✓ |
 | Accept a security risk (`accept-risk`) | — | — | — | ✓ | ✓ |
-| Accept a release candidate (`accept-release-candidate`) | — | — | ✓ | ✓ | ✓ |
 | Approve a production deploy, one of two (`deploy-production`) | — | — | ✓ | ✓ | ✓ |
 | Declare an incident (`declare-incident`) | — | ✓ | ✓ | ✓ | ✓ |
 
-The last six rows were added in Phase 16a; a data folder from before gets them built in (`src/middleware/roles.js`
-`BUILT_IN_PERMISSIONS`), and a row its `roles.yaml` lists wins. Nothing uses `accept-requirement` or `declare-incident` yet
-(Phases 18 and 23).
+The last five rows were added in Phase 16a, `sign-off-tests` in Phase 16b; a data folder from before gets them built in
+(`src/middleware/roles.js` `BUILT_IN_PERMISSIONS`), and a row its `roles.yaml` lists wins. `accept-release-candidate`
+went with Verify (Phase 16b) and is no longer shown. Nothing uses `accept-requirement` or `declare-incident` yet (Phases
+18 and 23).
+
+**Since Phase 16b an approval's permission says whom it waits on**: any person but a Viewer may give any approval on
+behalf of one of them, and who gave it, for whom, is recorded (§4). The matrix still decides everything else (drafting,
+budgets, guardrails, repo access, members, the audit log).
 
 **Agents are always capped at Contributor.** Teams mix people and agents. Sign-in is
 Microsoft Entra ID (SSO).
@@ -635,8 +656,10 @@ Microsoft Entra ID (SSO).
 | Sent-back rate | % of those visits in which the item was sent back from that stage |
 | Spend by system | Agent cost by system (Teammates, Product Factory, Software Factory, Knowledge) plus Platform compute |
 
-A **stage visit** is the time an item spends in one group, from entering it to leaving it (Discover and Specify are
-one visit, as are UX and UI). A visit whose beginning is not in the event log is left out. Periods are 7 days, 30
+A **stage visit** is the time an item spends in one group, from entering it to leaving it. The groups (Phase 16b) are
+Product (Discover and Product, and history's Specify, UX and UI: one visit), Design (and history's Architect),
+Engineer, Build, Test (and history's Verify), Release and Operate, with Ship kept for history. The chart's last part is
+Build and Test to release. A visit whose beginning is not in the event log is left out. Periods are 7 days, 30
 days and a quarter (90 days), ending now on the business clock.
 
 Metrics must reconcile with the event log: every number is computed from events, and `npm run metrics:reconcile`

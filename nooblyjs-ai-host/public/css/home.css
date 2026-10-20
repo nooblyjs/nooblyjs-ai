@@ -254,8 +254,8 @@
 [data-module="home"] .leadtime__col .leadtime__part:first-child { border-radius: 0 0 6px 6px; }
 [data-module="home"] .leadtime__col .leadtime__part:last-child { border-radius: 6px 6px 0 0; }
 [data-module="home"] .leadtime__part--product { background: var(--navy-900); }
-[data-module="home"] .leadtime__part--architecture { background: var(--warning-600); }
-[data-module="home"] .leadtime__part--design { background: var(--blue-600); }
+[data-module="home"] .leadtime__part--design { background: var(--warning-600); }
+[data-module="home"] .leadtime__part--engineer { background: var(--blue-600); }
 [data-module="home"] .leadtime__part--buildShip { background: var(--rail-dot); }
 [data-module="home"] .leadtime__labels { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; font-size: var(--text-eyebrow); color: var(--text-subtle); text-align: center; }
 [data-module="home"] .leadtime__sentence { margin: 0; font-size: var(--text-small); color: var(--text-muted); }

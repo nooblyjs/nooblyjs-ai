@@ -22,6 +22,7 @@ permissions:
   accept-requirement: [Approver, Architect, Owner]
   accept-threat-model: [Architect, Owner]
   accept-risk: [Architect, Owner]
-  accept-release-candidate: [Approver, Architect, Owner]
   deploy-production: [Approver, Architect, Owner]
   declare-incident: [Contributor, Approver, Architect, Owner]
+  # Lifecycle v3 (Phase 16b): whom the Test approval and the Engineering sign-off's test part wait on.
+  sign-off-tests: [Approver, Architect, Owner]

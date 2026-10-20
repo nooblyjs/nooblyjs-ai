@@ -40,10 +40,69 @@ roles:
     tools: [GitHub, Enterprise Knowledge Repository]
     home: /
     firstWeek: []
+  # Lifecycle v3 (Phase 16b, root product.md §5): the Design and Engineer stages' people and the testers. Their homes
+  # come with Phases 16c–16e; until then onboarding lands on Overview.
+  - key: solution-architect
+    name: Solution Architect
+    initials: SA
+    blurb: Fit each change into the estate and hand its stories to Engineering.
+    promise: Agents draft the feature landscape, impacted systems and NFRs; you own the solution and the Design handoff.
+    tasks:
+      - { title: Shape the solution architecture, detail: 'Feature landscape, impacted systems and NFRs for each item.', where: Design }
+      - { title: Accept or challenge decisions, detail: New dependencies need an ADR you accept., where: 'Architecture, Approvals' }
+      - { title: Hand stories to Engineering, detail: Each story goes on with your Design handoff., where: Approvals }
+    leadsWith: [Items in Design, Decisions awaiting you, Design handoffs waiting]
+    agent: rhea-voss
+    agents: Rhea Voss · solution architecture and decisions
+    tools: [Jira Cloud, Enterprise Knowledge Repository]
+    home: /home/overview
+    firstWeek: []
+  - key: functional-analyst
+    name: Functional Analyst
+    initials: FA
+    blurb: Write the interface and technical requirements, and shape the stories.
+    promise: Agents draft the functional analysis and the stories; you make each interface whole.
+    tasks:
+      - { title: Write the functional analysis, detail: Interface and technical requirements for each impacted system., where: Design }
+      - { title: Shape the stories, detail: 'Split, merge and finish the stories that build a feature.', where: Design }
+      - { title: Close the gaps, detail: An interface with one side missing holds the Design handoff., where: Design }
+    leadsWith: [Interfaces with one side missing, Stories to finish, Items in Design]
+    agents: Analyst agents · functional analysis and stories
+    tools: [Jira Cloud, Confluence]
+    home: /home/overview
+    firstWeek: []
+  - key: application-architect
+    name: Application Architect
+    initials: AA
+    blurb: Own each system's application architecture, drawn from its code, and sign off Engineering.
+    promise: An agent reads the code and drafts the application flow and objects; you accept it before anything is built.
+    tasks:
+      - { title: Accept the application architecture, detail: 'Application flow, objects and NFRs per component, from the code.', where: Engineering }
+      - { title: Sign off Engineering, detail: Nothing is built before your sign-off., where: Approvals }
+      - { title: Watch for drift, detail: The picture is marked stale when the code moves., where: Engineering }
+    leadsWith: [Stories in Engineer, Architecture to accept, Engineering sign-offs waiting]
+    agents: Application architect agent · application flow and objects
+    tools: [Bitbucket, Jira Cloud]
+    home: /home/overview
+    firstWeek: []
+  - key: test-analyst
+    name: Test analyst
+    initials: TA
+    blurb: Write the test analysis, then verify each pull request and give the Test approval.
+    promise: The AI writes and runs the automated tests; you decide what must be tested and sign it off.
+    tasks:
+      - { title: Write the test analysis, detail: 'Test cases, automated testing requirements, integration and E2E tests.', where: Engineering }
+      - { title: Verify pull requests, detail: Check the AI's test evidence and give the Test approval., where: 'Test, Approvals' }
+      - { title: Close coverage gaps, detail: Every acceptance criterion needs a ready test case., where: Engineering }
+    leadsWith: [Pull requests waiting on a Test approval, Test analysis to finish, Coverage gaps]
+    agents: Test agent · test cases and automated tests
+    tools: [Jira Cloud, Bitbucket]
+    home: /home/overview
+    firstWeek: []
   - key: developer
     name: Developer
     initials: DV
-    blurb: Review, steer and merge what agents build.
+    blurb: Review, steer and approve what agents build.
     promise: The Software Factory and engineering teammates write the code; you review, steer and merge.
     tasks:
       - { title: Review agent pull requests, detail: Agents open PRs; people merge., where: Software Factory }

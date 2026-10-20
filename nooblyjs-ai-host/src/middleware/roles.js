@@ -3,8 +3,9 @@
 import { sendError, wantsJson } from '../util/errors.js';
 
 /**
- * Permissions added after a data folder was made (the nine stages, Phase 16a). A folder from before keeps working: a
- * permission it doesn't list is used from here, and one it lists (edited or not) wins.
+ * Permissions added after a data folder was made (the nine stages, Phase 16a; lifecycle v3, Phase 16b). A folder from
+ * before keeps working: a permission it doesn't list is used from here, and one it lists (edited or not) wins.
+ * `accept-release-candidate` went with Verify (Phase 16b): kept so an older check still answers, no longer shown.
  */
 export const BUILT_IN_PERMISSIONS = {
   'accept-requirement': ['Approver', 'Architect', 'Owner'],
@@ -13,6 +14,8 @@ export const BUILT_IN_PERMISSIONS = {
   'accept-release-candidate': ['Approver', 'Architect', 'Owner'],
   'deploy-production': ['Approver', 'Architect', 'Owner'],
   'declare-incident': ['Contributor', 'Approver', 'Architect', 'Owner'],
+  // The testers and test leads the Test approval and the Engineering sign-off's test part wait on (Phase 16b).
+  'sign-off-tests': ['Approver', 'Architect', 'Owner'],
 };
 
 export function createRoles({ store }) {

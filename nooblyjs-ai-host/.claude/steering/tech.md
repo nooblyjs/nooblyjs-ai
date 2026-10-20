@@ -510,7 +510,8 @@ address. Permissions are only `sidePanel` and `storage`, localhost, and any othe
 memory at start. It used SQLite before Phase 7; an old `factory.db` is ignored.
 
 **Software Factory in NooblyJS (Phase 7).** `handoff.created` → the Factory's intake turns each work item into an
-issue and a queued run, once (idempotency key `handoff:<handoffId>:<workItemId>`). A work item whose repository
+issue and a queued run (since Phase 16b the lifecycle emits it on the Engineering sign-off, with the work items the
+Design handoff planned, so nothing is built before Engineering signs off), once (idempotency key `handoff:<handoffId>:<workItemId>`). A work item whose repository
 is not in `data/factory/repos.yaml`, or that has neither a script nor a model, waits with the reason. The Factory
 tells NooblyJS what happens through `host.events` (`run.started`, `run.finished`, `pr.opened`, `gate.failed`,
 `run.asked`, `run.answered`, `run.waiting`, `merge.refused`), each with the lifecycle `itemId`. Other apps read it
@@ -578,9 +579,10 @@ makes real GET requests.
   no token: it asks `host.service('devtools').forge.pushBranch` / `openOrUpdatePullRequest`, which go through the
   gate and add the repository's default reviewers. Intake picks it when Platform's record says the repository came
   from Bitbucket. Recorded only: nothing is pushed or opened, and the run's PR file on disk is the record.
-- **A person's merge moves the item to Ship:** when every work item of the item's handoff has a pull request merged
-  by a person, `workflows.movedByMerge` moves Build → Ship, recorded as "merged in Bitbucket by …"
-  (`item.merged`, audit `item.moved_by_merge`). A merge by NooblyJS's own Bitbucket account is ignored and audited
+- **A person's merge is recorded, not counted early:** when every work item of the item's handoff has a pull request
+  merged by a person, `workflows.movedByMerge` is told. Since Phase 16b the Build and Test approvals move the item, so
+  a merge made while the item is still in Build or Test, before them, moves nothing: it is flagged on the item
+  (`mergedEarly`) as "merged in Bitbucket by …" (`item.merged`, audit `item.merged_before_approval`). A merge by NooblyJS's own Bitbucket account is ignored and audited
   (`devtools.merge_ignored`); NooblyJS never merges.
 - **API** (`src/routes/devtools.js`): `GET /api/v1/devtools/writes` (modes, rules, outbox), `PATCH …/writes/mode`
   and `…/writes/rules`, `POST …/writes/:id/send` and `/discard` (all four `change-guardrails`, Owner),

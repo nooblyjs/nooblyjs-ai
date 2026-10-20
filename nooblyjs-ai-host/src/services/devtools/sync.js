@@ -221,21 +221,24 @@ export function createSync({ store, config, jira, bitbucket, writes, links, serv
     await maybeShip(entry.itemId);
   }
 
-  /** When people merged every work item's pull request for an item, the item moves Build → Ship. */
+  /**
+   * When people merged every work item's pull request for an item still in Build or Test, the lifecycle engine is told
+   * (since Phase 16b it flags a merge made before the Build and Test approvals; those approvals move the item).
+   */
   async function maybeShip(itemId) {
     if (!itemId) return { moved: false };
     const doc = await read();
     const mine = Object.values(doc).filter((e) => e.itemId === itemId);
     const item = await workflows()?.item?.({ itemId });
-    if (!item || item.stage !== 'build' || item.status !== 'active') return { moved: false };
+    if (!item || !['build', 'test'].includes(item.stage) || item.status !== 'active') return { moved: false };
     // Every work item of the item's latest handoff must have a pull request a person merged.
     const latest = mine.reduce((h, e) => (!h || String(e.handoffId) > String(h) ? e.handoffId : h), null);
     const scope = mine.filter((e) => e.handoffId === latest);
     if (!scope.length || !scope.every((e) => e.pr?.state === 'MERGED' && e.pr.mergedBy && !e.pr.mergeIgnored)) return { moved: false, waiting: scope.filter((e) => e.pr?.state !== 'MERGED').map((e) => e.id) };
     const moved = await workflows()?.movedByMerge?.({
       itemId, mergedBy: scope.map((e) => ({ name: e.pr.mergedBy, kind: 'person' })), pullRequests: scope.map((e) => ({ repo: e.pr.slug, id: e.pr.id, url: e.pr.url ?? null })),
-    }).catch((err) => { log?.warn?.(`devtools sync: ${itemId} did not move to Ship: ${err.message}`); return null; });
-    return { moved: Boolean(moved?.moved) };
+    }).catch((err) => { log?.warn?.(`devtools sync: ${itemId}: the merge was not recorded: ${err.message}`); return null; });
+    return { moved: Boolean(moved?.moved), flagged: Boolean(moved?.flagged) };
   }
 
   /** One pass: read the linked issues and the open pull requests. Two passes never overlap. */

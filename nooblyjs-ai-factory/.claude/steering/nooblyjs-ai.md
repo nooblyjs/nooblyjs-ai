@@ -20,12 +20,12 @@ disagree with it, nooblyjs-ai-host wins, so fix this repo's docs in the same cha
 
 | Shared topic | Where it lives (in `../nooblyjs-ai-host/`) |
 | --- | --- |
-| The product: the 9-stage lifecycle, every screen, roles and the permissions matrix, governance rules | `.claude/steering/product.md` |
+| The product: the 8-stage lifecycle, every screen, roles and the permissions matrix, governance rules | `.claude/steering/product.md` |
 | Stack, storage, API conventions, agents and model routing, events, config, commands | `.claude/steering/tech.md` |
 | **The hosted-app contract** (`register()`, `options.host`, the UI module and `ctx`, CSS scoping, standalone mode) | `.claude/steering/structure.md` §2a |
 | **The cross-app services** (`host.service('workflows' / 'teammates' / 'knowledge' / 'product' / 'factory' / 'platform' / 'devtools' …)`) | `.claude/steering/tech.md` §8b |
 | **The one roadmap**: every phase for every repo, the hosted-app checklist, and the hosted apps' open work | **`../.claude/steering/roadmap.md`**, in the monorepo root, not in nooblyjs-ai-host |
-| **The whole factory across the SDLC**: the nine stages, the new systems, the trace, checks, the target stack | `../.claude/steering/{product,design,stack}.md`, in the monorepo root |
+| **The whole factory across the SDLC**: the eight stages, the new systems, the trace, checks, the target stack | `../.claude/steering/{product,design,stack}.md`, in the monorepo root |
 | Why the host owns the shell | `docs/adr/ADR-001-host-owned-shell.md` |
 | Porting an app with its own UI into the frame | `docs/hosted-apps/porting-an-app.md` |
 

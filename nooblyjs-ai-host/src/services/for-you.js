@@ -126,13 +126,14 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const decisions = base.scope === 'all' ? all : all.filter((a) => a.mine);
     const yours = mine.filter((a) => a.type === 'adr');
     const past = yours.filter((a) => a.overdue).length;
-    const inArch = active.filter((i) => i.stage === 'architect');
-    const stage = snapshot.stages.find((s) => s.key === 'architect');
-    const arriving = active.filter((i) => i.stage === 'specify' && snapshot.approvals.some((a) => a.itemId === i.id && a.type === 'spec'));
+    // Architecture is the Design stage's work since lifecycle v3 (Phase 16b); its pages are the Factory's Design section.
+    const inArch = active.filter((i) => i.stage === 'design');
+    const stage = snapshot.stages.find((s) => s.key === 'design');
+    const arriving = active.filter((i) => i.stage === 'product' && snapshot.approvals.some((a) => a.itemId === i.id && a.type === 'spec'));
     const queue = [
       ...inArch.map((i) => (typeof i.work?.progress === 'number'
-        ? { id: i.id, title: `${i.title} · ${i.ref}`, text: `${i.work.text}${i.work.task ? ` · ${i.work.task}` : ''} · ${Math.round(i.work.progress * 100)}%`, action: { label: 'Watch', href: `/factory/product/architecture/${encodeURIComponent(i.id)}` } }
-        : { id: i.id, title: `${i.title} · ${i.ref}`, late: i.late, text: i.waitingSince ? `Waiting ${Math.floor((new Date(at) - new Date(i.waitingSince)) / DAY)} days · no draft requested yet` : `In Architecture for ${i.waitingDays || 0} d`, action: { label: role.teammate ? `Ask ${firstName(role.teammate.name)} to draft` : 'Ask a teammate to draft', href: `/factory/product/architecture/${encodeURIComponent(i.id)}` } })),
+        ? { id: i.id, title: `${i.title} · ${i.ref}`, text: `${i.work.text}${i.work.task ? ` · ${i.work.task}` : ''} · ${Math.round(i.work.progress * 100)}%`, action: { label: 'Watch', href: `/factory/design/architecture/${encodeURIComponent(i.id)}` } }
+        : { id: i.id, title: `${i.title} · ${i.ref}`, late: i.late, text: i.waitingSince ? `Waiting ${Math.floor((new Date(at) - new Date(i.waitingSince)) / DAY)} days · no draft requested yet` : `In Design for ${i.waitingDays || 0} d`, action: { label: role.teammate ? `Ask ${firstName(role.teammate.name)} to draft` : 'Ask a teammate to draft', href: `/factory/design/architecture/${encodeURIComponent(i.id)}` } })),
       ...arriving.map((i) => {
         const a = snapshot.approvals.find((x) => x.itemId === i.id && x.type === 'spec');
         return { id: i.id, title: `${i.title} · ${i.ref}`, text: `Arrives when ${a.waitingOnNames.join(' and ')} ${plural(a.waitingOnNames.length, 'approves', 'approve')} the spec${a.due?.text === 'due today' ? ' · expected today' : ''}`, action: { label: 'Preview spec', href: i.specHref ?? i.href } };
@@ -140,12 +141,12 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     ];
     const slowest = snapshot.stages.find((s) => s.slowest);
     return {
-      summary: `${yours.length ? `${words(yours.length)} ${plural(yours.length, 'decision needs', 'decisions need')} your sign-off.` : 'No decisions are waiting on you.'}${slowest?.key === 'architect' ? ` Architecture is the slowest stage (median ${slowest.medianDays} d).` : ''}`,
+      summary: `${yours.length ? `${words(yours.length)} ${plural(yours.length, 'decision needs', 'decisions need')} your sign-off.` : 'No decisions are waiting on you.'}${slowest?.key === 'design' ? ` Design is the slowest stage (median ${slowest.medianDays} d).` : ''}`,
       filters: { what: 'Architecture work' },
-      action: { label: 'Open Architecture', href: '/factory/product/architecture' },
+      action: { label: 'Open Architecture', href: '/factory/design/architecture' },
       tiles: [
         { key: 'decisions', label: 'Decisions awaiting you', value: yours.length, note: past ? `${past} past ${plural(past, 'its', 'their')} target` : yours.length ? 'All within target' : 'Nothing waiting', tone: past ? 'warning' : null },
-        { key: 'in-architecture', label: 'In Architecture', value: inArch.length, note: stage?.medianDays === null || !stage ? 'no moves in 30 days' : `median ${stage.medianDays} d · target 1 d` },
+        { key: 'in-architecture', label: 'In Design', value: inArch.length, note: stage?.medianDays === null || !stage ? 'no moves in 30 days' : `median ${stage.medianDays} d · target 1 d` },
         { key: 'standards', label: 'Standards broken on PRs', value: 0, note: 'Checked on pull requests from Phase 7' },
         { key: 'models', label: 'Models to review', value: 0, note: 'From the Knowledge Repository (Phase 8)' },
       ],
@@ -153,7 +154,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         decisions: decisions.map((a) => ({
           id: a.id, eyebrow: `${a.subject ?? 'ADR'} · ${a.itemRef}`, age: `${a.age}${a.due ? ` · ${a.due.text}` : ''}`, overdue: a.overdue,
           title: a.shortTitle, summary: a.summary, context: a.context, canDecide: a.canDecide, waitingOn: a.waitingOnNames,
-          discussHref: `/factory/product/architecture/${encodeURIComponent(a.itemId)}`, approvalHref: a.href,
+          discussHref: `/factory/design/architecture/${encodeURIComponent(a.itemId)}`, approvalHref: a.href,
         })),
         queue,
         standards: { unavailable: later(7, 'Standards are checked on every pull request once the Software Factory joins NooblyJS.') },
@@ -168,7 +169,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const prs = active.filter((i) => i.type === 'pr').sort((a, b) => b.ageDays - a.ageDays);
     const merged = items.filter((i) => i.type === 'pr' && i.status === 'completed' && (i.completedAt ?? '') >= snapshot.weekStart);
     const rows = prs.map((i) => {
-      const a = snapshot.approvals.find((x) => x.itemId === i.id && x.type === 'merge');
+      const a = snapshot.approvals.find((x) => x.itemId === i.id && ['build-approval', 'merge'].includes(x.type));
       return { id: i.id, ref: i.ref, title: i.title, context: a ? `${a.context ?? a.line} · waiting on ${a.waitingOnNames.join(', ')}` : i.now, stage: i.stageLabel, href: i.href, age: i.age };
     });
     const team = person.teams?.[0] ?? null;

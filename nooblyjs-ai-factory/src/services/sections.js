@@ -9,6 +9,11 @@
 // Infrastructure was a section too, from 2026-10-19 to 2026-10-20 (CHG-007): provisioning is not part of the factory,
 // so it is the hosted app nooblyjs-ai-infrastructure at /infrastructure again.
 //
+// Lifecycle v3 (Phase 16b, 2026-10-20): the sidebar follows the work, Product · Design · Engineering · Build · Test.
+// The Design section (/factory/design) starts with Architecture, whose code is still the Product section's: it has no
+// server part of its own yet (16c gives it one), only its rows, and its pages are the Product section's (`scope`).
+// Engineering, Build and Test are the Factory's own groups (FACTORY_GROUPS).
+//
 // A section's register() takes what a hosted app's does, so its tests still mount it on its own. Here it is given
 // the Factory's host with a store of its own (data/factory/<section>), so it writes only inside the Factory's
 // folder. Other NooblyJS apps still ask for host.service('product'): the Factory returns it under `provides`.
@@ -27,23 +32,34 @@ const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
  * The browser side has the same table (public/js/sections.js); test/sections.test.js checks the two agree.
  */
 export const SECTIONS = [
-  { key: 'product', label: 'Product', group: 'Product', icon: 'product', hint: 'From signal to handoff', place: 'before', path: '/product', prefix: 'product', register: registerProduct, nav: PRODUCT_NAV, styles: 'product/css/product.css' },
+  { key: 'product', label: 'Product', group: 'Product', icon: 'product', hint: 'Requirements, UX and UI, together', place: 'before', path: '/product', prefix: 'product', register: registerProduct, nav: PRODUCT_NAV, omit: ['architecture'], styles: 'product/css/product.css' },
+  { key: 'design', label: 'Design', group: 'Design', icon: 'pen', hint: 'Solution architecture, then the stories', place: 'before', path: '/design', prefix: 'design', register: null, nav: PRODUCT_NAV.filter((row) => row.key === 'architecture'), styles: null, scope: 'product' },
 ];
 
-/** The Factory's own group, after the sections that come 'before' it: the line. */
-export const BUILD_GROUP = { name: 'Build', icon: 'factory', hint: 'Issues in, reviewed pull requests out' };
+/** The Factory's own group for the line, after the sections that come 'before' it. */
+export const BUILD_GROUP = { name: 'Build', icon: 'factory', hint: 'The AI builds and tests; engineers approve' };
+
+/** The Factory's own groups, in their order (Phase 16b): what each part of the work after Design does. */
+export const FACTORY_GROUPS = [
+  { name: 'Engineering', icon: 'grid', hint: 'Application architecture and test analysis, signed off' },
+  BUILD_GROUP,
+  { name: 'Test', icon: 'approve', hint: 'Testers verify pull requests and approve' },
+];
 
 // Rows whose own label would read oddly inside a group named after the section ("Product › Product").
 const RELABEL = { 'product:board': 'Product board' };
 
-/** A section's sidebar rows, as rows of the Factory's sidebar: prefixed keys and badges, paths under the section. */
+/**
+ * A section's sidebar rows, as rows of the Factory's sidebar: prefixed keys and badges, paths under the section. Rows it
+ * leaves to another section (`omit`) are left out; a row may name the Factory group it goes in (`factoryGroup`).
+ */
 export function sectionNav(section) {
-  return section.nav.map((row) => ({
+  return section.nav.filter((row) => !section.omit?.includes(row.key)).map(({ factoryGroup, ...row }) => ({
     ...row,
     key: `${section.prefix}-${row.key}`,
     label: RELABEL[`${section.key}:${row.key}`] ?? row.label,
     path: `${section.path}${row.path === '/' ? '' : row.path}`,
-    group: section.group,
+    group: factoryGroup ?? section.group,
     ...(row.badge ? { badge: `${section.prefix}-${row.badge}` } : {}),
   }));
 }
@@ -73,6 +89,11 @@ export async function mountSections({ app, serverManager, mountPath, dataDir, ho
   const mounted = [];
   try {
     for (const section of SECTIONS.filter((s) => !only || only.includes(s.key))) {
+      // A section with no server part yet (Design, until 16c): its rows only.
+      if (!section.register) {
+        mounted.push({ section, hosted: null });
+        continue;
+      }
       const dir = path.join(dataDir, section.key);
       const fresh = isEmpty(dir);
       fs.mkdirSync(dir, { recursive: true });
@@ -84,7 +105,7 @@ export async function mountSections({ app, serverManager, mountPath, dataDir, ho
     }
   } catch (error) {
     // A section that fails stops the Factory starting, like any part of it would: close what was mounted first.
-    for (const { hosted } of mounted.reverse()) await hosted.close?.().catch(() => {});
+    for (const { hosted } of mounted.reverse()) await hosted?.close?.().catch(() => {});
     throw error;
   }
 
@@ -99,17 +120,17 @@ export async function mountSections({ app, serverManager, mountPath, dataDir, ho
      */
     groups: () => [
       ...mounted.filter(({ section }) => section.place === 'before').map(({ section }) => ({ name: section.group, icon: section.icon, hint: section.hint })),
-      BUILD_GROUP,
+      ...FACTORY_GROUPS,
       ...mounted.filter(({ section }) => section.place === 'after').map(({ section }) => ({ name: section.group, icon: section.icon, hint: section.hint })),
     ],
     /** Stylesheets the frame loads with the Factory's module. */
-    styles: mounted.map(({ section }) => section.styles),
+    styles: mounted.map(({ section }) => section.styles).filter(Boolean),
     /** What other apps ask of each section, by the name they ask for (host.service('product')). */
-    provides: Object.fromEntries(mounted.filter(({ hosted }) => hosted.services).map(({ section, hosted }) => [section.key, hosted.services])),
+    provides: Object.fromEntries(mounted.filter(({ hosted }) => hosted?.services).map(({ section, hosted }) => [section.key, hosted.services])),
     /** Each section's status card and badges, with the badges' keys prefixed. A section that fails says so. */
     async status() {
       const out = [];
-      for (const { section, hosted } of mounted) {
+      for (const { section, hosted } of mounted.filter((m) => m.hosted)) {
         try {
           const s = (await hosted.status?.()) ?? {};
           out.push({
@@ -126,13 +147,13 @@ export async function mountSections({ app, serverManager, mountPath, dataDir, ho
     },
     /** Rewrites every section's seed (`reset`), or seeds them again where they have nothing. */
     async seed({ reset = false, content = true } = {}) {
-      for (const { hosted } of mounted) await hosted.seed?.({ reset, content });
+      for (const { hosted } of mounted) await hosted?.seed?.({ reset, content });
     },
     /** Closes the sections, last mounted first. One failing close doesn't stop the others. */
     async close() {
       for (const { section, hosted } of [...mounted].reverse()) {
         try {
-          await hosted.close?.();
+          await hosted?.close?.();
         } catch (error) {
           log.warn?.(`factory: closing ${section.key}: ${error.message}`);
         }

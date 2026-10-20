@@ -148,5 +148,5 @@ export { createCampaign, campaignStatus, campaignStartsToday } from './src/servi
 export { parseCron, cronMatches, runSchedules } from './src/services/campaign/schedule.js';
 
 // Phase F26: hosted in NooblyJS. NooblyJS imports this file and calls register().
-export { register, NAV, PERMISSIONS } from './src/services/hosted.js';
+export { register, NAV, ENGINEERING_NAV, TEST_NAV, PERMISSIONS } from './src/services/hosted.js';
 export { toExpressRouter } from './src/services/to-express.js';

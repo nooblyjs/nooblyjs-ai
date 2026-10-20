@@ -18,7 +18,9 @@ everywhere, and the Teams simulator), 7 (Software Factory integration), 8 (Knowl
 Repository), 9 (Platform and governance), 9a (Infrastructure joins NooblyJS), 10 (Metrics) and 11 (Development tools:
 Bitbucket and Jira, read-only) are done** (`docs/phases/phase-0N-summary.md`; Phase 11: `src/services/devtools/`,
 tech.md §8a). **Phase 16a (nine stages: Verify, Release and Operate replace Ship) is built and waiting for review**
-(`.claude/specs/phase-16a-nine-stages/`; the root roadmap `../.claude/steering/roadmap.md` holds every phase). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and waiting for review**
+(`.claude/specs/phase-16a-nine-stages/`), and so is **Phase 16b (lifecycle v3: eight stages, Discover · Product · Design ·
+Engineer · Build · Test · Release · Operate; approvals given on someone's behalf; the Factory's five sidebar groups)**
+(`.claude/specs/phase-16b-product-design-build/`; the root roadmap `../.claude/steering/roadmap.md` holds every phase). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and waiting for review**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, waiting for
 review)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent
@@ -72,7 +74,7 @@ Read the relevant one before changing anything:
 
 | File | Answers |
 | --- | --- |
-| `.claude/steering/product.md` | What NooblyJS does: systems, the 9-stage lifecycle, every screen, roles, governance rules |
+| `.claude/steering/product.md` | What NooblyJS does: systems, the 8-stage lifecycle, every screen, roles, governance rules |
 | `.claude/steering/tech.md` | How it's built: stack, storage, API conventions, agents, Teams bot, config, commands |
 | `.claude/steering/structure.md` | Where things live: sibling repos, the hosted-app `register()` contract, `public/`, `data/` |
 | `../.claude/steering/roadmap.md` | **The one roadmap** (monorepo root): every phase, each with a manual test script, and a stop for review. The root's `product.md`, `design.md` and `stack.md` give the whole factory across the SDLC |

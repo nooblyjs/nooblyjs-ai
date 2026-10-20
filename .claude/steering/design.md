@@ -40,8 +40,8 @@ inclusion: always
 │ Outlook · CLI (factory, noobly) · Desktop (standalone)                                 │
 └──────────────────────────────────────┬──────────────────────────────────────────────┘
 ┌──────────────────────────────── Systems (hosted apps) ──────────────────────────────┐
-│ Home  Factory (Product · Build · Test*)  Security*  Infra  Operations*  Teammates     │
-│ Knowledge   Platform                                       (* proposed)              │
+│ Home  Factory (Product · Design · Engineering · Build · Test)  Security*  Infra       │
+│ Operations*  Teammates  Knowledge  Platform                (* proposed)              │
 └──────────────────────────────────────┬──────────────────────────────────────────────┘
 ┌──────────────────────────────── Spine (in the host) ────────────────────────────────┐
 │ Lifecycle engine: items · stages · checks · approvals · handoffs · releases*        │

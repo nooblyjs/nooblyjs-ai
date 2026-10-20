@@ -64,7 +64,7 @@ test('step 6: the Design lead sends PRD-031 to the Software Factory; the NooblyJ
   try {
     const res = await t.post(`${API}/ui/PRD-031/handoff`, { as: 'lerato-m', body: { note: 'Timer label follows in the first PR.' } });
     assert.equal(res.status, 202);
-    assert.equal(res.json.text, 'Sent 6 work items across 4 repos to the Software Factory. The NooblyJS lifecycle engine creates them.');
+    assert.equal(res.json.text, 'Sent 6 work items across 4 repos on to Engineering. The Software Factory starts them once Engineering signs off.');
     assert.deepEqual(res.json.openChecks, ['Timer needs a screen-reader label']);
     assert.equal(workflows.calls[0].workItems.length, 6);
     assert.deepEqual(workflows.calls[0].estimate, { lowUsd: 18, highUsd: 26 });

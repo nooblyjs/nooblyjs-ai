@@ -6,15 +6,16 @@ import { pageHead, card, button, checklist, statusPill, notice, dataTable } from
 import { ApiError } from '/ui/js/api.js';
 import { workflowsApi, onChange, engineMissing, isMissing, dayLabel, timeText } from './lib.js';
 
-const STAGES = ['discover', 'specify', 'architect', 'ux', 'ui', 'build', 'verify', 'release', 'operate'];
+// Lifecycle v3 (Phase 16b): the eight stages and their names.
+const STAGES = [['discover', 'Discover'], ['product', 'Product'], ['design', 'Design'], ['engineer', 'Engineer'], ['build', 'Build'], ['test', 'Test'], ['release', 'Release'], ['operate', 'Operate']];
 
 function tracker(item) {
-  const at = STAGES.indexOf(item.stage);
-  return html`<ol class="tracker" aria-label="Stages">${STAGES.map((key, i) => {
+  const at = STAGES.findIndex(([key]) => key === item.stage);
+  return html`<ol class="tracker" aria-label="Stages">${STAGES.map(([key, label], i) => {
     const cell = item.cells[key];
     const state = item.status === 'completed' ? 'done' : i < at ? 'done' : i === at ? (item.late ? 'waiting' : 'now') : 'todo';
     const words = { done: 'done', now: 'now', waiting: 'waiting too long', todo: 'not reached' }[state];
-    return html`<li class="tracker__stage tracker__stage--${state}"><span class="tracker__name">${i + 1} · ${key === 'ux' ? 'UX design' : key === 'ui' ? 'UI design' : key[0].toUpperCase() + key.slice(1)}</span><span class="tracker__state">${state === 'now' || state === 'waiting' ? cell?.text ?? words : words}</span></li>`;
+    return html`<li class="tracker__stage tracker__stage--${state}"><span class="tracker__name">${i + 1} · ${label}</span><span class="tracker__state">${state === 'now' || state === 'waiting' ? cell?.text ?? words : words}</span></li>`;
   })}</ol>`;
 }
 

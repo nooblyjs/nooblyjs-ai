@@ -1,4 +1,4 @@
-// The lifecycle engine (product.md §4): items, the nine stages, readiness, approvals with target times and
+// The lifecycle engine (product.md §4): items, the eight stages (lifecycle v3), readiness, approvals with target times and
 // escalation, handoffs and send-back. It was the hosted app nooblyjs-ai-workflows until 2026-10-10 and is part of NooblyJS
 // now: src/noobly.js mounts it at start, before any hosted app, so it is always there.
 //
@@ -46,12 +46,12 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
   const views = createViews({ repos, host, engine });
   const about = { name: NAME, version: VERSION, mountPath };
 
-  // The nine stages replaced Ship (Phase 16a): items still in Ship move to Verify once, on record. A failure here is
-  // logged and NooblyJS starts anyway; the next start tries again.
+  // Lifecycle v3 (Phase 16b): items in a stage from before (Specify, UX, UI, Architect, Verify, Ship) move to where it
+  // belongs now, once, on record. A failure here is logged and NooblyJS starts anyway; the next start tries again.
   try {
-    await engine.migrateShip();
+    await engine.migrateStages();
   } catch (err) {
-    log.error(`moving items from Ship to Verify failed: ${err.message}`);
+    log.error(`moving items to the lifecycle v3 stages failed: ${err.message}`);
   }
 
   const router = host.express.Router();
@@ -86,11 +86,11 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       closeAppApproval: (input) => engine.closeAppApproval(input),
       /** The app's artefact no longer waits for this approval. */
       withdrawAppApprovals: (input) => engine.withdrawAppApprovals(input),
-      /** A person merged the item's pull requests in Bitbucket: Build → Verify, recorded as their decision (Phases 13, 16a). */
+      /** A person merged the item's pull requests in Bitbucket: before its Build and Test approvals, it is flagged (Phase 16b). */
       movedByMerge: (input) => engine.movedByMerge(input),
       /** Send an item back to an earlier stage, with a reason. */
       sendBack: ({ itemId, to, reason, actor }) => engine.sendBack(itemId, { to, reason }, actor),
-      /** The UI → Software Factory handoff: creates the work items and moves the item to Build. */
+      /** The Design handoff (Design → Engineering) with the planned work items; they go to the Software Factory on the Engineering sign-off. */
       handoff: (input) => engine.handoff(input),
       /** One handoff with its work items ({ id, itemId, workItems: [{ id, repo, title, status }], … }), or null. The Software Factory reads it. */
       handoffOf: async ({ handoffId } = {}) => repos.handoffs.get(handoffId),

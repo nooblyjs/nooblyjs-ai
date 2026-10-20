@@ -2,7 +2,7 @@
 # unless a person overrides with a reason. The Product Factory works out each check's result from the spec.
 waitingTooLongDays: 3
 stages:
-  specify:
+  product:
     - { key: problem-evidence, passed: Problem backed by evidence, failed: Problem needs evidence }
     - { key: goals-measurable, passed: Goals are measurable, failed: Goals need measures }
     - { key: criteria-testable, passed: Criteria are testable, failed: Criteria need to be testable }
