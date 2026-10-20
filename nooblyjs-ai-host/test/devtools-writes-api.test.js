@@ -68,17 +68,18 @@ test('step 2: pull requests the Factory opens show their checks and reviewers, a
   for (const key of all.slice(0, 5)) open.fetch.merge(...key.split('#').map((v, i) => (i ? Number(v) : v)));
   await post(open.priya, '/api/v1/devtools/sync');
   assert.equal((await open.priya.json('/workflows/api/v1/items/PRD-028')).body.item.stage, 'build');
-  // The last one merged by a person: Verify.
+  // The last one merged by a person, before the Build and Test approvals (lifecycle v3, Phase 16b): the merge is
+  // flagged on the item and in the audit log, not counted, and the item stays in Build.
   open.fetch.merge(...all[5].split('#').map((v, i) => (i ? Number(v) : v)), { display_name: 'Naledi Khumalo', uuid: '{aaaaaaaa-0000-4000-8000-000000000002}' });
   await post(open.priya, '/api/v1/devtools/sync');
   const item = (await open.priya.json('/workflows/api/v1/items/PRD-028')).body.item;
-  assert.equal(item.stage, 'verify');
+  assert.equal(item.stage, 'build');
   const events = await today(open.app.store, 'events');
   const merged = events.find((e) => e.type === 'item.merged');
-  assert.match(merged.payload.summary, /moved to Verify: its pull requests were merged in Bitbucket by .*Naledi Khumalo/);
+  assert.match(merged.payload.summary, /merged in Bitbucket by .*Naledi Khumalo.* before the Build approval and the Test approval; it stays in Build/);
   assert.equal(events.filter((e) => e.type === 'pr.merged').length, 6);
   const audit = await today(open.app.store, 'audit');
-  assert.ok(audit.some((a) => a.action === 'item.moved_by_merge' && a.target === 'PRD-028' && a.actor === 'bitbucket'));
+  assert.ok(audit.some((a) => a.action === 'item.merged_before_approval' && a.target === 'PRD-028' && a.actor === 'bitbucket'));
   // Every issue NooblyJS made is Done in Jira, and NooblyJS never sent a merge.
   assert.ok([...open.fetch.state.issues.values()].every((i) => i.status === 'Done'));
   assert.ok(open.fetch.writes().every((c) => !/merge|decline|approve/.test(c.path)));

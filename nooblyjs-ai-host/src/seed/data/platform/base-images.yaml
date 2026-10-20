@@ -1,3 +1,7 @@
-# Base images agents' sandboxes are built from. Listed here once an image registry is connected.
+# Base images agents' sandboxes are built from: how many repositories use each, when it was last rolled, and the CVEs
+# the registry's scanner reports. Sample data for the PRD-031 story.
 registry: "[PLACEHOLDER image registry]"
-images: []
+images:
+  - { image: 'node-22:22.11', repos: 14, rolled: Yesterday 17:40, cves: {} }
+  - { image: temurin-21, repos: 4, rolled: 9 days ago, cves: { medium: 2 } }
+  - { image: 'python-3.13', repos: 2, rolled: 3 weeks ago, cves: { low: 1 } }

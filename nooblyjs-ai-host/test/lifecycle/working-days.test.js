@@ -18,18 +18,22 @@ test('due times follow the rule: end of the working day, clock hours, or the end
   assert.equal(daysBetween('2026-10-05T10:00:00.000Z', '2026-10-09T10:00:00.000Z'), 4);
 });
 
-test('stages: the Product Factory\'s names map onto the lifecycle\'s, and handoffs are named by area', () => {
-  assert.equal(stageKey('product'), 'specify');
-  assert.equal(stageKey('Architecture'), 'architect');
-  // Ship was replaced by Verify, Release and Operate (Phase 16a): an old name still lands, and history still reads.
-  assert.equal(stageKey('ship'), 'verify');
+test('stages: the Product Factory\'s names and the names from before map onto lifecycle v3\'s, and handoffs are named by area', () => {
+  assert.equal(stageKey('product'), 'product');
+  assert.equal(stageKey('Architecture'), 'design');
+  assert.equal(stageKey('specify'), 'product');
+  // Ship was replaced by Verify (Phase 16a), and Verify by Test (Phase 16b): an old name still lands, and history still reads.
+  assert.equal(stageKey('ship'), 'test');
+  assert.equal(stageKey('verify'), 'test');
   assert.equal(stageLabel('ship'), 'Ship');
   assert.equal(stageKey('nowhere'), null);
-  assert.equal(nextStage('ui'), 'build');
-  assert.equal(nextStage('build'), 'verify');
+  assert.equal(nextStage('engineer'), 'build');
+  assert.equal(nextStage('build'), 'test');
   assert.equal(nextStage('operate'), null);
-  assert.equal(handoffLabel('specify', 'architect'), 'Product → Architecture');
-  assert.equal(handoffLabel('discover', 'specify'), 'Discover → Specify');
-  assert.equal(handoffLabel('build', 'verify'), 'Software Factory → Verify');
+  assert.equal(handoffLabel('product', 'design'), 'Product → Design');
+  assert.equal(handoffLabel('discover', 'product'), 'Discover → Product');
+  assert.equal(handoffLabel('engineer', 'build'), 'Engineering → Build');
   assert.equal(handoffLabel('release', 'operate'), 'Release → Operate');
+  // History from before reads with its own labels.
+  assert.equal(handoffLabel('specify', 'architect'), 'Specify → Architect');
 });

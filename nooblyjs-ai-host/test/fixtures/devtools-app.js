@@ -22,10 +22,15 @@ export async function start(env = {}) {
   await stevie.signIn('stevie');
   await priya.signIn('priya-s');
   await viewer.signIn('naledi-k');
-  /** Stevie approves the seed's UI handoff of PRD-028: six work items across four repositories. */
+  /**
+   * Stevie gives the seed's Design handoff of PRD-028 (six work items across four repositories), then the Engineering
+   * sign-off, which sends the work to the Software Factory (lifecycle v3, Phase 16b).
+   */
   const approveHandoff = async () => {
-    const res = await post(stevie, '/workflows/api/v1/approvals/apr_slotpickerui/decision', { decision: 'approve' });
+    const res = await post(stevie, '/workflows/api/v1/approvals/apr_slotpickerdesign/decision', { decision: 'approve' });
     assert.equal(res.status, 200);
+    const signed = await post(stevie, '/workflows/api/v1/items/PRD-028/advance', {});
+    assert.equal(signed.status, 200);
     await app.noobly.syncSettled();
   };
   return { app, fetch, stevie, priya, viewer, approveHandoff, writes: async (c = stevie) => (await c.json('/api/v1/devtools/writes')).body, work: async () => (await priya.json('/api/v1/devtools/work/PRD-028')).body };

@@ -22,7 +22,8 @@ test('step 3: a backup of a used NooblyJS restores into a fresh install: every f
     // Use it: sign in, approve a handoff (lifecycle files, events, audit records), change a guardrail-level setting.
     const stevie = first.client();
     await stevie.signIn('stevie');
-    assert.equal((await post(stevie, '/workflows/api/v1/approvals/apr_slotpickerui/decision', { decision: 'approve' })).status, 200);
+    assert.equal((await post(stevie, '/workflows/api/v1/approvals/apr_slotpickerdesign/decision', { decision: 'approve' })).status, 200);
+    assert.equal((await post(stevie, '/workflows/api/v1/items/PRD-028/advance', {})).status, 200, 'the Engineering sign-off');
     await first.noobly.syncSettled();
     // Things a backup leaves out: a log, a secret made at start, a write caught half way.
     await fs.mkdir(path.join(first.dataDir, 'logs'), { recursive: true });
@@ -63,7 +64,7 @@ test('step 3: a backup of a used NooblyJS restores into a fresh install: every f
     const item = (await stevie.json('/workflows/api/v1/items/PRD-028')).body.item;
     assert.deepEqual(item, before.item, "the item is exactly as it was: its stage, its history, who owns it");
     const audit = (await stevie.json('/api/v1/platform/audit?limit=200')).body;
-    assert.ok(JSON.stringify(audit).includes('apr_slotpickerui'), 'the approval is in the restored audit log');
+    assert.ok(JSON.stringify(audit).includes('apr_slotpickerdesign'), 'the approval is in the restored audit log');
   } finally {
     server.closeAllConnections?.();
     await new Promise((resolve) => server.close(resolve));

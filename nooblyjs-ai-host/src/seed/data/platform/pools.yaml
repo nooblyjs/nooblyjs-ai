@@ -4,4 +4,12 @@ pools:
   - { id: teammate, name: Teammate sandboxes, slots: 8, queued: 0, note: One per teammate on a task }
   - { id: preview, name: Preview environments, slots: 6, queued: 0, note: One per open PR · torn down on merge }
   - { id: indexer, name: Knowledge indexers, slots: 2, queued: 0, note: Nightly full sync at 02:00 }
-samples: []
+# Sample workloads (the PRD-031 story): simulated, no process runs. uptimeMin is how long each has been running when
+# NooblyJS starts.
+samples:
+  - { id: wl_smpotis, pool: teammate, title: Otis Fern · CRM dedupe, image: 'node-22:22.11', cpu: 1, memoryGb: 2, uptimeMin: 123 }
+  - { id: wl_smpindex, pool: indexer, title: Knowledge indexer · Acme Space, image: 'python-3.13', cpu: 2, memoryGb: 4, uptimeMin: 55 }
+  - { id: wl_smprun213, pool: factory, title: 'Run 213 · slots-api #482', repo: acme/slots-api, image: 'node-22:22.11', cpu: 2, memoryGb: 4, uptimeMin: 42 }
+  - { id: wl_smppr481, pool: preview, title: 'PR #481 preview', repo: acme/web-storefront, image: 'node-22:22.11', cpu: 1, memoryGb: 2, uptimeMin: 30, preview: true }
+  - { id: wl_smprun214, pool: factory, title: 'Run 214 · web-storefront #481', repo: acme/web-storefront, image: 'node-22:22.11', cpu: 2, memoryGb: 4, uptimeMin: 21 }
+  - { id: wl_smpada, pool: teammate, title: Ada Quill · PRD-032 draft, image: 'node-22:22.11', cpu: 1, memoryGb: 2, uptimeMin: 9 }

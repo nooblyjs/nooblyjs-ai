@@ -1,5 +1,42 @@
-intros: []
+# What agent teammates say in a Teams meeting when no model is configured (sample data for the PRD-031 story, rebuilt
+# 2026-10-20, BUG-006). intros: by teammate, then `default`. answers: the first whose teammate and `match` fit.
+# {item}, {itemTitle}, {itemId}, {stage}, {waitingOn}, {readiness}, {team} and {first} are filled from NooblyJS as it is.
+# A card's links only open NooblyJS: nothing is decided in Teams.
+intros:
+  ada-quill: "Hi all, I'm Ada. I've loaded {item} and the {team}'s latest activity from NooblyJS. Mention @Ada to ask me where things stand."
+  rhea-voss: "Hi, Rhea here. I drafted the slot architecture and ADR-014. Ask me about trade-offs; decisions stay with Thabo."
+  default: "Hi, {first} here. Mention @{first} to ask me something."
 fallback:
-  text: "No model is configured, and there is no scripted answer for that."
+  text: "I don't have a scripted answer for that yet, and no model is configured."
   costUsd: 0
-answers: []
+answers:
+  - teammate: ada-quill
+    match: block|stand|status
+    text: "Here is where {item} stands. It is in {stage}. Waiting on: {waitingOn}."
+    costUsd: 0.06
+    card:
+      title: "{item} · {itemTitle}"
+      rows:
+        - { label: Stage, value: "{stage}" }
+        - { label: Readiness, value: "{readiness}" }
+        - { label: Waiting on, value: "{waitingOn}" }
+        - { label: Pilot stores, value: "[PLACEHOLDER: pilot stores]" }
+      primary: { label: Open in NooblyJS, href: "/home/lifecycle/{itemId}" }
+      secondary: { label: Ask Thabo to decide, href: /home/approvals }
+      sources: ["{item}", ADR-014]
+  - teammate: rhea-voss
+    match: 300 ?ms|redis|cache
+    text: "Not at the 18:00 peak: a read replica gets the slot list to about 450 ms at p95. Redis with a 30-second TTL gets it under 300 ms."
+    costUsd: 0.08
+    card:
+      title: ADR-014 · Cache slot availability
+      rows:
+        - { label: Redis (30 s TTL), value: about 120 ms at p95 }
+        - { label: Postgres read replica, value: about 450 ms at p95 }
+        - { label: Decision, value: Waiting on Thabo N. }
+      primary: { label: Read ADR-014, href: /factory/design/architecture/PRD-031 }
+      sources: [ADR-014]
+  - teammate: juno-park
+    match: picker|screen|ready
+    text: "The slot picker screens are planned in the Design handoff for PRD-028; nothing is built before Engineering signs it off. I'll say here when the pull requests are open."
+    costUsd: 0.04

@@ -21,15 +21,16 @@ const DAY = 86_400_000;
 const TENTH = DAY / 10;
 const HOUR = 3_600_000;
 
-// Per stage group: `weeks` are the mean visit lengths (tenths of a day) for the six charted weeks, oldest first;
-// the last four are in the 30 days and hold `n` visits with this median, p90 and number sent back. `agents` is the
-// share of the events during those visits that agents caused. The mockup's "Build & ship" part is build + ship.
+// Per stage group (lifecycle v3's, Phase 16b): `weeks` are the mean visit lengths (tenths of a day) for the six
+// charted weeks, oldest first; the last four are in the 30 days and hold `n` visits with this median, p90 and number
+// sent back. `agents` is the share of the events during those visits that agents caused. Build, Test and Release make
+// the chart's last part. Nothing has ended in Release or Operate yet.
 const STAGES = [
-  { key: 'product', first: 'specify', next: 'architect', n: 50, median: 14, p90: 30, back: 4, agents: 78, weeks: [30, 28, 27, 26, 25, 24] },
-  { key: 'architecture', first: 'architect', next: 'ux', prev: 'specify', n: 42, median: 26, p90: 58, back: 5, agents: 62, weeks: [34, 31, 30, 29, 27, 26], approval: true },
-  { key: 'design', first: 'ui', next: 'build', prev: 'architect', n: 48, median: 21, p90: 42, back: 3, agents: 55, weeks: [20, 19, 18, 17, 17, 16] },
-  { key: 'build', first: 'build', next: 'ship', prev: 'ui', n: 50, median: 6, p90: 14, back: 9, agents: 91, weeks: [16, 15, 14, 12, 12, 11], movedBySystem: true },
-  { key: 'ship', first: 'ship', next: null, prev: 'build', n: 40, median: 4, p90: 11, back: 1, agents: 35, weeks: [12, 11, 10, 9, 8, 8], openedBySystem: true },
+  { key: 'product', first: 'product', next: 'design', n: 50, median: 14, p90: 30, back: 4, agents: 78, weeks: [30, 28, 27, 26, 25, 24] },
+  { key: 'design', first: 'design', next: 'engineer', prev: 'product', n: 42, median: 26, p90: 58, back: 5, agents: 62, weeks: [34, 31, 30, 29, 27, 26], approval: true },
+  { key: 'engineer', first: 'engineer', next: 'build', prev: 'design', n: 48, median: 21, p90: 42, back: 3, agents: 55, weeks: [20, 19, 18, 17, 17, 16] },
+  { key: 'build', first: 'build', next: 'test', prev: 'engineer', n: 50, median: 6, p90: 14, back: 9, agents: 91, weeks: [16, 15, 14, 12, 12, 11] },
+  { key: 'test', first: 'test', next: null, prev: 'build', n: 40, median: 4, p90: 11, back: 1, agents: 35, weeks: [12, 11, 10, 9, 8, 8], openedBySystem: true },
 ];
 
 // Pull requests. In the 30 days: 11 items with 37 merged PRs (the seed story's PR #476 is the 38th, from a 12th),
@@ -162,10 +163,10 @@ export function sampleHistory(now) {
         tally(PERSON);
       }
       if (v.back && !stage.prev) {
-        // Product has nothing before it: a spec is sent back from Specify to Discover, and comes forward again.
-        say(v.start + (v.end - v.start) / 2, 'item.sent_back', PERSON, { ...item, from: 'specify', to: 'discover', reason: 'sample' });
-        say(v.start + ((v.end - v.start) * 3) / 4, 'item.stage_changed', PERSON, { ...item, from: 'discover', to: 'specify' });
-        say(v.end, 'item.stage_changed', PERSON, { ...item, from: 'specify', to: stage.next });
+        // Product has nothing before it: a spec is sent back from Product to Discover, and comes forward again.
+        say(v.start + (v.end - v.start) / 2, 'item.sent_back', PERSON, { ...item, from: 'product', to: 'discover', reason: 'sample' });
+        say(v.start + ((v.end - v.start) * 3) / 4, 'item.stage_changed', PERSON, { ...item, from: 'discover', to: 'product' });
+        say(v.end, 'item.stage_changed', PERSON, { ...item, from: 'product', to: stage.next });
         tally(PERSON); tally(PERSON); tally(PERSON);
       } else if (v.back) {
         say(v.end, 'item.sent_back', PERSON, { ...item, from: stage.first, to: stage.prev, reason: 'sample' });
@@ -207,7 +208,7 @@ export function sampleHistory(now) {
   MERGES_PER_ITEM.forEach((merges, j) => {
     const itemId = `SMP-PR-${String(j + 1).padStart(2, '0')}`;
     const last = M - (1 + 2 * j) * DAY + 10 * HOUR;
-    say(last - LEAD[j] * TENTH, 'item.created', PERSON, { itemId, system: 'product', stage: 'specify' });
+    say(last - LEAD[j] * TENTH, 'item.created', PERSON, { itemId, system: 'product', stage: 'product' });
     for (let k = merges - 1; k >= 0; k--) {
       pullRequest(itemId, last - k * 6 * HOUR, { cents: costs[nth], gate: [1, 4, 7].includes(nth % 10), edit: nth % 5 === 2 });
       nth += 1;
@@ -216,7 +217,7 @@ export function sampleHistory(now) {
   LEAD_BEFORE.forEach((lead, j) => {
     const itemId = `SMP-PR-B${j + 1}`;
     const mergedAt = M - BEFORE_DAYS_BACK[j] * DAY;
-    say(mergedAt - lead * TENTH, 'item.created', PERSON, { itemId, system: 'product', stage: 'specify' });
+    say(mergedAt - lead * TENTH, 'item.created', PERSON, { itemId, system: 'product', stage: 'product' });
     pullRequest(itemId, mergedAt, { cents: 640 });
   });
 

@@ -109,3 +109,17 @@ rules:
     label: Production deploy
     transition: Approve the deploy
     toLabel: Operate
+  # A stage move with no named decision (Discover → Product): kept on record, not listed in Who approves what.
+  - key: stage
+    decision: Move to the next stage
+    approver: Approver
+    permission: approve
+    quorum: any
+    target: { workingDays: 1 }
+    targetText: 1 working day
+    ifLate: Remind
+    remind: false
+    tag: Stage
+    label: Stage move
+    transition: Approve & move
+    listed: false

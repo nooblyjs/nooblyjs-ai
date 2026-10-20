@@ -1,20 +1,25 @@
-# The Activity history of the PRD-031 seed story (roadmap Phase 2): sample events from the mockups, written as if
-# "now" were `anchor` (a Friday). Seeding moves every time by the same amount, so "12 min ago" stays true, and
-# appends them to data/events/. `summary` is the Activity sentence without the actor. All of it is sample data.
+# The Activity history of the PRD-031 seed story (roadmap Phase 2; lifecycle v3 since 2026-10-20, BUG-006): sample
+# events written as if "now" were `anchor` (a Friday). Seeding moves every time by the same amount, so "12 min ago"
+# stays true, and appends them to data/events/. `summary` is the Activity sentence without the actor. It agrees with
+# the story's items and approvals (src/lifecycle/seed/data/). All of it is sample data.
 anchor: 2026-10-09T10:00:00.000Z
 events:
-  - { at: 2026-10-07T11:05:00.000Z, type: approval.decided, actor: stevie, payload: { itemId: PRD-027, type: spec, system: product, decision: approve, outcome: approved, summary: approved PRD-027 · Live order tracking map } }
-  - { at: 2026-10-07T11:05:01.000Z, type: item.stage_changed, actor: stevie, payload: { itemId: PRD-027, system: product, from: specify, to: architect, summary: moved PRD-027 · Live order tracking map to Architect } }
-  - { at: 2026-10-08T08:00:00.000Z, type: approval.requested, actor: ada-quill, payload: { itemId: PRD-031, type: spec, system: product, summary: asked for review of PRD-031 · Same-day delivery slots (v4) } }
-  - { at: 2026-10-08T09:00:00.000Z, type: approval.requested, actor: rhea-voss, payload: { itemId: PRD-027, type: adr, system: product, costUsd: 1.6, summary: proposed ADR-015 · Live courier positions over server-sent events } }
+  - { at: 2026-10-07T11:05:00.000Z, type: approval.decided, actor: stevie, payload: { itemId: PRD-027, approvalId: apr_prd027spec, type: spec, system: product, decision: approve, outcome: approved, summary: approved PRD-027 · Live order tracking map } }
+  - { at: 2026-10-07T11:05:01.000Z, type: item.stage_changed, actor: stevie, payload: { itemId: PRD-027, system: product, from: product, to: design, summary: moved PRD-027 · Live order tracking map to Design } }
+  - { at: 2026-10-07T15:30:00.000Z, type: approval.decided, actor: stevie, payload: { itemId: PRD-031, approvalId: apr_adr013, type: adr, subject: ADR-013, system: product, decision: approve, outcome: approved, summary: 'accepted ADR-013 · Release expired holds through events, not polling' } }
+  - { at: 2026-10-08T08:00:00.000Z, type: approval.requested, actor: ada-quill, payload: { itemId: PRD-031, approvalId: apr_prd031spec, type: spec, system: product, summary: asked for review of PRD-031 · Same-day delivery slots (v4) } }
+  - { at: 2026-10-08T09:22:00.000Z, type: pr.opened, actor: juno-park, payload: { itemId: web-storefront-481, system: factory, costUsd: 2.1, detail: on web-storefront · checkout focus order, summary: 'opened PR #481' } }
+  - { at: 2026-10-08T10:40:00.000Z, type: approval.decided, actor: lerato-m, payload: { itemId: web-storefront-476, approvalId: apr_wsf476test, type: test-approval, system: factory, decision: approve, outcome: approved, summary: 'gave the Test approval on web-storefront #476 · Checkout keyboard traps fixed' } }
+  - { at: 2026-10-08T11:00:00.000Z, type: approval.requested, actor: rhea-voss, payload: { itemId: PRD-027, approvalId: apr_adr015, type: adr, system: product, costUsd: 1.6, summary: proposed ADR-015 · Map tiles from the approved maps provider } }
   - { at: 2026-10-08T11:03:00.000Z, type: pr.merged, actor: thabo-n, payload: { itemId: web-storefront-476, system: factory, costUsd: 4.2, costNote: total, summary: 'merged PR #476 · checkout keyboard traps fixed' } }
-  - { at: 2026-10-08T16:20:00.000Z, type: approval.requested, actor: ada-quill, payload: { itemId: PRD-029, type: spec, system: product, summary: asked for review of PRD-029 · Checkout accessibility (v2) } }
+  - { at: 2026-10-08T16:00:00.000Z, type: approval.requested, actor: rhea-voss, payload: { itemId: PRD-031, approvalId: apr_adr014, type: adr, system: product, costUsd: 1.95, summary: proposed ADR-014 · Cache slot availability in Redis } }
+  - { at: 2026-10-08T16:20:00.000Z, type: approval.requested, actor: ada-quill, payload: { itemId: PRD-029, approvalId: apr_prd029spec, type: spec, system: product, summary: asked for review of PRD-029 · Checkout accessibility (v2) } }
+  - { at: 2026-10-08T17:10:00.000Z, type: approval.decided, actor: thabo-n, payload: { itemId: web-storefront-481, approvalId: apr_wsf481build, type: build-approval, system: factory, decision: approve, outcome: approved, summary: 'gave the Build approval on web-storefront #481 · Checkout focus order' } }
+  - { at: 2026-10-08T17:10:01.000Z, type: item.stage_changed, actor: thabo-n, payload: { itemId: web-storefront-481, system: factory, from: build, to: test, summary: 'moved web-storefront #481 · Checkout focus order to Test' } }
   - { at: 2026-10-08T17:40:00.000Z, type: image.rolled, actor: system, payload: { system: platform, actorName: Platform, summary: rolled base image node-22 to 22.11.0 across 14 repos } }
-  - { at: 2026-10-09T01:00:00.000Z, type: approval.requested, actor: rhea-voss, payload: { itemId: PRD-031, type: adr, system: product, costUsd: 1.95, summary: proposed ADR-014 · Cache slot availability in Redis } }
-  - { at: 2026-10-09T06:30:00.000Z, type: approval.requested, actor: ui-agent, payload: { itemId: PRD-028, type: ui-handoff, system: product, actorKind: agent, actorName: UI agent, summary: asked for the UI handoff of Slot picker screens · 6 work items } }
-  - { at: 2026-10-09T07:40:00.000Z, type: approval.decided, actor: lerato-m, payload: { itemId: PRD-031, type: spec, system: product, decision: approve, outcome: pending, summary: approved PRD-031 and left 2 comments } }
+  - { at: 2026-10-09T06:30:00.000Z, type: approval.requested, actor: rhea-voss, payload: { itemId: PRD-028, approvalId: apr_slotpickerdesign, type: design-handoff, system: product, summary: asked for the Design handoff of Slot picker screens · 6 work items across 4 repos } }
+  - { at: 2026-10-09T07:40:00.000Z, type: approval.decided, actor: lerato-m, payload: { itemId: PRD-031, approvalId: apr_prd031spec, type: spec, system: product, decision: approve, outcome: pending, summary: approved PRD-031 and left 2 comments } }
   - { at: 2026-10-09T08:00:00.000Z, type: knowledge.indexed, actor: otis-fern, payload: { system: knowledge, costUsd: 0.31, summary: re-indexed 3 repositories into Knowledge } }
-  - { at: 2026-10-09T09:00:00.000Z, type: approval.decided, actor: stevie, payload: { itemId: PRD-031, type: adr, system: product, decision: approve, outcome: approved, summary: accepted ADR-013 · Event-driven slot release } }
+  - { at: 2026-10-09T08:30:00.000Z, type: approval.requested, actor: juno-park, payload: { itemId: slots-api-482, approvalId: apr_slotsapi482, type: build-approval, system: factory, summary: 'asked for the Build approval of slots-api #482 · Slot hold & release endpoints' } }
   - { at: 2026-10-09T09:08:00.000Z, type: gate.retried, actor: system, payload: { system: factory, actorName: Run 213, outcome: passed on retry, summary: failed the contract-test gate on slots-api and retried } }
-  - { at: 2026-10-09T09:22:00.000Z, type: pr.opened, actor: juno-park, payload: { itemId: web-storefront-481, system: factory, costUsd: 2.1, detail: on web-storefront · checkout focus order, summary: 'opened PR #481' } }
   - { at: 2026-10-09T09:48:00.000Z, type: agent.action, actor: ada-quill, payload: { system: product, costUsd: 0.84, summary: clustered 412 support tickets into 5 themes } }

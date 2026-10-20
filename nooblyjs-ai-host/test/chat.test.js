@@ -110,7 +110,7 @@ test('step 2: the message and the reply reach the event stream, and Activity cou
   await reading;
   const facts = (await threadOf(lerato)).messages.at(-1).cards[0];
   assert.equal(facts.type, 'facts');
-  assert.deepEqual(facts.rows.slice(0, 2), [{ label: 'Stage', value: 'Specify' }, { label: 'Waiting on', value: 'Stevie, Thabo N.' }]);
+  assert.deepEqual(facts.rows.slice(0, 2), [{ label: 'Stage', value: 'Product' }, { label: 'Waiting on', value: 'Stevie, Thabo N.' }]);
   const activity = (await stevie.json('/api/v1/activity?filter=agents')).body.rows;
   assert.ok(activity.some((r) => r.type === 'chat.message_posted' && r.actor.name === 'Ada Quill' && r.costUsd === 0.42));
   assert.ok(!activity.some((r) => r.type === 'chat.agent_working'));

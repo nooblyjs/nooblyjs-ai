@@ -1,1 +1,4 @@
-conversations: {}
+# Which NooblyJS team and item a Teams conversation belongs to: who pays for a teammate's time there, and where what
+# is said is kept. Sample: the simulator's Slot rollout sync is the Delivery squad's, about PRD-031.
+conversations:
+  sim-slot-rollout-sync: { teamId: delivery-squad, itemId: PRD-031 }

@@ -54,5 +54,5 @@ test('live: Ada answers a new question in the PRD-031 thread with a real model, 
   assert.deepEqual([entry.costCentre, entry.caller, entry.hours > 0], ['Delivery squad', 'Lerato M.', true]);
   // Nothing about the item changed because an agent spoke.
   const item = (await lerato.json('/workflows/api/v1/items/PRD-031')).body;
-  assert.equal((item.item ?? item).stage, 'specify');
+  assert.equal((item.item ?? item).stage, 'product');
 });

@@ -36,3 +36,18 @@ test('runCommand runs the command (sandboxed when possible) and refuses without 
     assert.deepEqual([result.code, result.output.trim(), result.sandboxed], [3, 'hi', false]);
   }
 });
+
+// BUG-007: in the sandbox, the repository's own commands got this process's whole environment: the factory's secrets,
+// and NODE_TEST_CONTEXT, under which a failing `node --test` gate exits 0 (and passes) when a test runner started us.
+test('a command gets the scrubbed environment, sandboxed or not: no secrets, and not a child of a test runner', async () => {
+  const cwd = tmpDir();
+  const saved = { GITHUB_TOKEN: process.env.GITHUB_TOKEN, NODE_TEST_CONTEXT: process.env.NODE_TEST_CONTEXT };
+  process.env.GITHUB_TOKEN = 'ghp_not_for_the_repo';
+  process.env.NODE_TEST_CONTEXT = 'child-v8';
+  try {
+    const result = await runCommand('echo "token=${GITHUB_TOKEN:-none} context=${NODE_TEST_CONTEXT:-none}"', { cwd, allowUnsandboxed: true });
+    assert.match(result.output, /token=none context=none/);
+  } finally {
+    for (const [k, v] of Object.entries(saved)) if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
+});

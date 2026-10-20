@@ -1,4 +1,63 @@
+# What agent teammates say in team chat when no model is configured (sample data for the PRD-031 story, rebuilt
+# 2026-10-20 with it, BUG-006). The first reply whose agent, scope (the thread's kind: item, repo, channel) and
+# `match` (a case-insensitive regular expression on the message) fit is played; else the fallback. {item}, {stage},
+# {waitingOn} and {readiness} are filled from NooblyJS as it is now. `then` adds further messages, each with its cost.
+# Only a script can carry an approval card or an "Apply to spec" action; answering either is a person's action.
 fallback:
-  text: "No model is configured, and there is no scripted answer for that."
+  text: "I don't have a scripted answer for that yet, and no model is configured. Ask a person here, or ask again once a model is set up in Platform · Settings."
   costUsd: 0
-replies: []
+replies:
+  - agent: ada-quill
+    scope: item
+    match: rollout
+    text: "Here's a rollout plan for {item}, built on the slot capacity model and the pilot in the spec. It is a draft: apply it to the spec if it is right."
+    costUsd: 0.42
+    cards:
+      - type: plan
+        title: Rollout plan
+        steps:
+          - "Pilot in [PLACEHOLDER: number] stores behind a feature flag, evening slots only."
+          - Watch hold expiry and the 18:00 slot-list latency (p95 under 300 ms) for one week.
+          - Open to every store in the pilot region once both hold for a week.
+          - Roll back by turning the flag off; holds release through slot.released (ADR-013).
+        apply: { label: Apply to spec, section: rolloutPlan }
+    citations:
+      - { n: 1, title: Slot capacity model, source: Knowledge · runbook, href: /wiki }
+      - { n: 2, title: ADR-013 · Event-driven slot release, source: Decision, href: /factory/design/architecture/PRD-031 }
+      - { n: 3, title: September support themes, source: Customer insight · 412 tickets, href: /factory/product/specs/PRD-031 }
+  - agent: ada-quill
+    scope: item
+    match: block|status|stand|waiting
+    text: "{item} is in {stage}. It is waiting on {waitingOn}, and its readiness is {readiness}."
+    costUsd: 0.18
+    cards:
+      - type: facts
+        title: "{item} · where it stands"
+        rows:
+          - { label: Stage, value: "{stage}" }
+          - { label: Waiting on, value: "{waitingOn}" }
+          - { label: Readiness, value: "{readiness}" }
+  - agent: rhea-voss
+    scope: item
+    match: 300 ?ms|redis|cache
+    text: "Not at the 18:00 peak. A Postgres read replica gets the slot list to about 450 ms at p95; Redis with a 30-second TTL gets it under 300 ms, which is why ADR-014 proposes it."
+    costUsd: 0.31
+    cards:
+      - type: comparison
+        title: Slot list at the 18:00 peak
+        columns: [Redis with a 30-second TTL, Postgres read replica]
+        rows:
+          - { label: p95 latency, values: [about 120 ms, about 450 ms] }
+          - { label: New dependency, values: [Yes (ADR-014), No] }
+          - { label: Staleness, values: [Up to 30 s; holds still check Postgres, Replication lag only] }
+          - { label: "Cost a month", values: ["[PLACEHOLDER: Redis cost]", "[PLACEHOLDER: replica cost]"] }
+    citations:
+      - { n: 1, title: ADR-014 · Cache slot availability in Redis, source: Decision, href: /factory/design/architecture/PRD-031 }
+    then:
+      - text: To check the capacity numbers against the planner I need read access to delivery-planner. A person decides.
+        costUsd: 0
+        cards:
+          - type: approval
+            title: Read access to delivery-planner
+            requires: change-repo-access
+            resource: delivery-planner

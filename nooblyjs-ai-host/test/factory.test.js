@@ -24,8 +24,12 @@ test('the shell lists Factory as ready, with its UI module, kit icons and nav', 
   assert.equal(app.state, 'ready');
   assert.equal(app.rail, true);
   assert.equal(app.label, 'Factory');
-  assert.deepEqual(app.ui, { entry: 'js/module.js', styles: ['css/factory.css'] });
-  assert.deepEqual(app.nav.map((n) => [n.key, n.path]), [['line', '/line'], ['runs', '/runs'], ['inbox', '/inbox'], ['campaigns', '/campaigns'], ['metrics', '/metrics']]);
+  // The Product section's styles load with the Factory (CHG-005), and the sidebar follows the work (Phase 16b).
+  assert.deepEqual(app.ui, { entry: 'js/module.js', styles: ['css/factory.css', 'product/css/product.css'] });
+  assert.deepEqual([...new Set(app.nav.map((n) => n.group))], ['Product', 'Design', 'Engineering', 'Build', 'Test']);
+  assert.deepEqual(app.nav.filter((n) => n.group === 'Build').map((n) => [n.key, n.path]), [
+    ['line', '/line'], ['runs', '/runs'], ['pull-requests', '/pull-requests'], ['inbox', '/inbox'], ['campaigns', '/campaigns'], ['metrics', '/metrics'],
+  ]);
   const kitIcons = await fs.readFile(require.resolve('nooblyjs-core/public/ui/js/icons.js'), 'utf8');
   for (const name of [app.icon, ...app.nav.map((n) => n.icon)]) assert.match(kitIcons, new RegExp(`\\b${name}:`), `kit icon ${name}`);
 });

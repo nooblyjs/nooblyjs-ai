@@ -153,12 +153,12 @@ test('step 6: Lerato asks @Ada what is blocking: an answer card with the facts, 
   assert.deepEqual([answer.kind, answer.as.name, v.working], ['answer', 'Ada Quill', null]);
   const lines = textOf(answer.card.body);
   assert.deepEqual(lines.slice(0, 3), ['AQ', 'Ada Quill', 'NooblyJS teammate']);
-  assert.match(lines[3], /^Here is where PRD-031 stands\. It is in Specify\. Waiting on: /);
+  assert.match(lines[3], /^Here is where PRD-031 stands\. It is in Product\. Waiting on: /);
   assert.ok(lines.includes('PRD-031 · Same-day delivery slots'));
   // The facts are NooblyJS as it is now, not a second seeded state.
   const facts = answer.card.body.find((b) => b.type === 'Container').items.find((i) => i.type === 'FactSet').facts;
   assert.deepEqual(facts.map((f) => f.title), ['Stage', 'Readiness', 'Waiting on', 'Pilot stores']);
-  assert.deepEqual([facts[0].value, facts[1].value], ['Specify', '6 of 7 checks']);
+  assert.deepEqual([facts[0].value, facts[1].value], ['Product', '6 of 7 checks']);
   assert.match(facts[3].value, /^\[PLACEHOLDER/);
   assert.equal(lines.at(-1), 'Sources: PRD-031, ADR-014 · this answer cost $0.06 · billed to Delivery squad');
   // Both actions open NooblyJS. "Ask Thabo to decide" goes to Approvals: the decision is taken there, by a person.
@@ -276,7 +276,7 @@ test('governance: no card template can decide anything. Submit only chooses who 
   assert.deepEqual(await (await press(stevie, { noobly: 'approve', approvalId: 'apr_1' })).json(), { did: 'ignored', reason: 'unknown card action' });
   // And nothing about the item changed because of the meeting.
   const item = (await stevie.json('/workflows/api/v1/items/PRD-031')).body;
-  assert.equal((item.item ?? item).stage, 'specify');
+  assert.equal((item.item ?? item).stage, 'product');
 });
 
 test('activities are read as Teams sends them: mentions, card data, and conversation ids that are not file names', () => {

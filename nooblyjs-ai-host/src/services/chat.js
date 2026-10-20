@@ -17,6 +17,7 @@ import { HttpError } from '../util/errors.js';
 import { daySegments } from '../util/dates.js';
 import { newId } from '../util/ids.js';
 import { REPLY_RULES, readReply } from './chat-reply.js';
+import { stageLabel } from '../lifecycle/stages.js';
 
 const SCOPE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}$/;
 const THREAD_ID = /^thr_[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/;
@@ -33,7 +34,6 @@ const CHIPS = {
   channel: [{ action: 'summarise', label: 'Summarise thread' }],
 };
 const SYSTEM = { id: 'system', name: 'NooblyJS', kind: 'system' };
-const STAGE_LABELS = { discover: 'Discover', specify: 'Specify', architect: 'Architect', ux: 'UX design', ui: 'UI design', build: 'Build', verify: 'Verify', release: 'Release', operate: 'Operate', ship: 'Ship' };
 
 const forbidden = (code, message) => new HttpError(403, code, message);
 const short = (text, max = 90) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
@@ -208,7 +208,7 @@ export function createChat({ store, events, auditLog, people, agents, roles, ser
     } catch { /* the Product Factory isn't running here */ }
     return {
       item: item ? `${item.ref ?? item.id}` : t.scope.id, itemId: t.scope.id, title: item?.title ?? null, team: item?.team ?? null,
-      stage: STAGE_LABELS[item?.stage] ?? 'Not in the lifecycle', waitingOn, readiness,
+      stage: item?.stage ? stageLabel(item.stage) : 'Not in the lifecycle', waitingOn, readiness,
     };
   }
 

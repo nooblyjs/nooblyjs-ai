@@ -74,11 +74,12 @@ test('an app opens an approval on its artefact; it waits on the people with the 
   assert.deepEqual([detail.decide.approveLabel, detail.links.artefact, detail.links.artefactLabel], ['Approve & provision Test', '/infrastructure/designs/INF-031', 'Open INF-031 v2']);
 });
 
-test('deciding it: an agent and a Contributor are refused; the app\'s refusal is the answer; then the app carries it out and no stage moves', async () => {
+test('deciding it: an agent and a Viewer are refused; the app\'s refusal is the answer; then the app carries it out and no stage moves', async () => {
   const approval = (await call('stevie', 'GET', '/approvals')).body.rows.find((r) => r.type === 'infra-design');
   const before = (await hosted.services.item({ itemId: 'PRD-031' })).stage;
   assert.equal((await call('ada-quill', 'POST', `/approvals/${approval.id}/decision`, { decision: 'approve' })).status, 403);
-  assert.equal((await call('priya-s', 'POST', `/approvals/${approval.id}/decision`, { decision: 'approve' })).status, 403);
+  // Since Phase 16b anyone but a Viewer may give an approval on someone's behalf: Naledi (a Viewer) is refused.
+  assert.equal((await call('naledi-k', 'POST', `/approvals/${approval.id}/decision`, { decision: 'approve' })).status, 403);
   refuseNext = 'A policy check is failing: encryption at rest.';
   const refused = await call('stevie', 'POST', `/approvals/${approval.id}/decision`, { decision: 'approve' });
   assert.deepEqual([refused.status, refused.body.error.message], [422, 'A policy check is failing: encryption at rest.']);

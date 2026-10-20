@@ -86,9 +86,9 @@ inclusion: always
 | 9a | Infrastructure joins NooblyJS | ✅ |
 | 10 | Metrics | ✅ |
 | 11 | Development tools: Bitbucket and Jira, read-only | ✅ |
-| 12 | Microsoft 365: SSO, notifications, the real Teams bot | ☐ built, waiting for review and the tenant run |
-| 13 | Writing to Bitbucket and Jira and production readiness | ☐ built, waiting for review and the pilot |
-| 14 | NooblyJS in the browser: the Edge extension (agent chat beside Jira) | ☐ (skeleton in `apps/edge`) |
+| 12 | Microsoft 365: SSO, notifications, the real Teams bot | ✅ (reviewed 2026-10-20; the tenant run is still to do) |
+| 13 | Writing to Bitbucket and Jira and production readiness | ✅ (reviewed 2026-10-20; the pilot is still to do) |
+| 14 | NooblyJS in the browser: the Edge extension (agent chat beside Jira) | ✅ (reviewed 2026-10-20 as the skeleton in `apps/edge`; its Build list is not built) |
 | 15 | No mocks: everything real | ☐ blocked on the cloud, runtime and model decisions (`stack.md` §5) |
 | 16a | Nine stages: Verify, Release and Operate replace Ship | ☐ built, waiting for review |
 | 16b | Eight stages, and the Factory's five groups | ☐ built, waiting for review |
@@ -719,7 +719,7 @@ the first slice: the repository `nooblyjs-ai-harness`, then Digital Commerce.
 **Goal:** people sign in with Microsoft, get approvals in Teams and Outlook, and can bring teammates into real Teams meetings.
 **Repos:** `nooblyjs-ai-host`, `nooblyjs-core` (the Entra sign-in reads the job title).
 
-> **Built 2026-10-11, waiting for review.** Spec: `.claude/specs/phase-12-microsoft-365/`; summary:
+> **Built 2026-10-11, reviewed 2026-10-20.** Spec: `.claude/specs/phase-12-microsoft-365/`; summary:
 > `docs/phases/phase-12-summary.md`. Steps 1–6 pass offline (a test signing key plays the Bot Framework) and steps
 > 3–5 in the Agents Playground; the tenant run waits for the bot's registration.
 
@@ -750,7 +750,7 @@ who may add teammates to meetings (`product.md` §12 Q10).
 **Goal:** NooblyJS syncs with the systems teams already use and is ready for a pilot squad.
 **Repos:** all.
 
-> **Built 2026-10-11, waiting for review.** Spec: `.claude/specs/phase-13-writing-and-readiness/`; summary:
+> **Built 2026-10-11, reviewed 2026-10-20.** Spec: `.claude/specs/phase-13-writing-and-readiness/`; summary:
 > `docs/phases/phase-13-summary.md`. Steps 1 and 2 pass offline against a fake Jira and Bitbucket; steps 3 and 4 pass
 > for real on this machine. **Nothing has been written to the real Jira or Bitbucket**: NooblyJS records writes until a
 > deployment, an Owner and a write token allow them. The run against real systems and the pilot's sign-off are open.
@@ -783,7 +783,7 @@ acceptance criteria, sub-tasks, comments) that they put into Jira themselves and
 (teammates), 11 (reading Jira, issue links) and 12 (Entra sign-in). It does not need Phase 13: the extension never
 writes to Jira itself, so it can come before it `[CONFIRM order]`.
 
-**Already there (skeleton, 2026-10-11):** the side panel, signing in from the NooblyJS session (`/api/v1/shell`), the
+**Reviewed 2026-10-20 as the skeleton below; the Build list is not built yet.** **Already there (skeleton, 2026-10-11):** the side panel, signing in from the NooblyJS session (`/api/v1/shell`), the
 NooblyJS status check, the Jira issue reader, settings, icons, `npm run test:edge`.
 
 **Before you start:** `product.md` §12 Q14 (is "Put in the field" the person's write?), which draft kinds come

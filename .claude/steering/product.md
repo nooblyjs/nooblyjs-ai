@@ -43,7 +43,7 @@ worked.*
 ## 2. What we have built (review, 2026-10-19)
 
 Eight projects, over 370 test files, all offline by default. Phases 0–11 of the host roadmap are signed off;
-12 and 13 are built and waiting for review; 14 and 15 are open.
+12, 13 and 14 (the Edge extension's skeleton) were reviewed on 2026-10-20; 15 is open.
 
 | Part of the SDLC | What exists | Project | Maturity |
 | --- | --- | --- | --- |

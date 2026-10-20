@@ -20,6 +20,14 @@ export const BUILT_IN_RULES = [
     quorum: 'any', target: { workingDays: 1 }, targetText: '1 working day', ifLate: 'Remind', remind: true,
     tag: 'Write', label: 'Write to Jira or Bitbucket', transition: 'Approve & send',
   },
+  // A stage move with no named decision (Discover → Product, an idea taken up as a spec): a person with the approve
+  // permission, and it is on record like any approval. Not in the Who approves what table. The seed's approval-rules.yaml
+  // lost it when it was rebuilt (BUG-006), so a data folder made since has it from here.
+  {
+    key: 'stage', decision: 'Move to the next stage', approver: 'Approver', permission: 'approve',
+    quorum: 'any', target: { workingDays: 1 }, targetText: '1 working day', ifLate: 'Remind', remind: false,
+    tag: 'Stage', label: 'Stage move', transition: 'Approve & move', listed: false,
+  },
   // Lifecycle v3 (Phase 16b): the handoffs between Design, Engineer, Build and Test, for a data folder from before. The
   // seed's approval-rules.yaml lists them too, so they can be edited there.
   {

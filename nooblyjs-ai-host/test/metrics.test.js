@@ -44,12 +44,12 @@ test('step 1: on the seeded data, 30 days shows the numbers of the mockup story'
   assert.equal(t.costPerPr.usd, 6.1);
 
   assert.deepEqual(m.weeks.rows.map((r) => r.totalDays), [11.2, 10.4, 9.9, 9.3, 8.9, 8.5]);
-  // The mockup's columns: Product, Architecture, UX & UI design, Build & ship (its heights at 20 px a day). Since the
-  // nine stages the last column is Build to release; the seed's history is from before, so it is Build + Ship.
-  assert.deepEqual(m.weeks.rows.map((r) => [r.parts.product, r.parts.architecture, r.parts.design, r.parts.buildShip]), [
+  // The mockup's four columns, in lifecycle v3's groups (Phase 16b): Product, Design, Engineer, and Build and Test to
+  // release (the key stays buildShip). Its heights are at 20 px a day.
+  assert.deepEqual(m.weeks.rows.map((r) => [r.parts.product, r.parts.design, r.parts.engineer, r.parts.buildShip]), [
     [3.0, 3.4, 2.0, 2.8], [2.8, 3.1, 1.9, 2.6], [2.7, 3.0, 1.8, 2.4], [2.6, 2.9, 1.7, 2.1], [2.5, 2.7, 1.7, 2.0], [2.4, 2.6, 1.6, 1.9],
   ]);
-  assert.equal(m.weeks.sentence, 'Architecture is the largest share every week — it’s waiting for sign-off, not drafting time.');
+  assert.equal(m.weeks.sentence, 'Design is the largest share every week — it’s waiting for sign-off, not drafting time.');
 
   assert.equal(m.spend.totalUsd, 3782);
   assert.deepEqual(m.spend.rows.map((r) => [r.label, r.usd, Math.round(r.ratio * 100)]), [
@@ -58,16 +58,15 @@ test('step 1: on the seeded data, 30 days shows the numbers of the mockup story'
 
   assert.deepEqual(m.stages.map((s) => [s.label, s.agentPct, s.peoplePct, s.medianDays, s.p90Days, s.sentBackPct]), [
     ['Product', 78, 22, 1.4, 3.0, 8],
-    ['Architecture', 62, 38, 2.6, 5.8, 12],
-    ['UX & UI design', 55, 45, 2.1, 4.2, 6],
+    ['Design', 62, 38, 2.6, 5.8, 12],
+    ['Engineer', 55, 45, 2.1, 4.2, 6],
     ['Build', 91, 9, 0.6, 1.4, 18],
-    // The nine stages (Phase 16a): no visit has ended in Verify, Release or Operate yet, and Ship is history.
-    ['Verify', null, null, null, null, null],
+    ['Test', 35, 65, 0.4, 1.1, 3],
+    // No visit has ended in Release or Operate yet; Ship, from before the nine stages, has no visits, so it isn't shown.
     ['Release', null, null, null, null, null],
     ['Operate', null, null, null, null, null],
-    ['Ship (before nine stages)', 35, 65, 0.4, 1.1, 3],
   ]);
-  assert.deepEqual(m.stages.filter((s) => s.slowest).map((s) => s.key), ['architecture']);
+  assert.deepEqual(m.stages.filter((s) => s.slowest).map((s) => s.key), ['design']);
 });
 
 test('the other ranges are computed too, a range that does not exist is refused, and Metrics needs a sign-in', async () => {
@@ -112,18 +111,18 @@ test('step 2: npm run metrics:reconcile recomputes every number from the raw eve
 
 test('step 3: approving a spec and sending an item back move the stage numbers on refresh', async () => {
   const before = await metrics();
-  assert.deepEqual([stage(before, 'product').visits, stage(before, 'architecture').visits], [50, 42]);
+  assert.deepEqual([stage(before, 'product').visits, stage(before, 'design').visits], [50, 42]);
 
-  // PRD-031's spec is approved (with a readiness override): it leaves Specify, which ends its Product visit.
+  // PRD-031's Product handoff is approved (with a readiness override): it leaves Product, which ends its Product visit.
   const approved = await post(stevie, `${workflows}/approvals/apr_prd031spec/decision`, { decision: 'approve', override: { reason: 'Rollout plan follows in the pilot review' } });
   assert.equal(approved.status, 200, await approved.clone().text());
-  // PRD-027 is sent back from Architect: its Architecture visit ends, sent back.
-  const sent = await post(stevie, `${workflows}/items/PRD-027/send-back`, { to: 'specify', reason: 'Needs the courier privacy review first' });
+  // PRD-027 is sent back from Design: its Design visit ends, sent back.
+  const sent = await post(stevie, `${workflows}/items/PRD-027/send-back`, { to: 'product', reason: 'Needs the courier privacy review first' });
   assert.equal(sent.status, 200, await sent.clone().text());
 
   const after = await metrics();
   assert.equal(stage(after, 'product').visits, 51);
-  assert.deepEqual([stage(after, 'architecture').visits, stage(after, 'architecture').sentBackPct], [43, 14]);
+  assert.deepEqual([stage(after, 'design').visits, stage(after, 'design').sentBackPct], [43, 14]);
   assert.notDeepEqual(after.stages, before.stages);
   // Nothing was merged, so the tiles stay.
   assert.deepEqual(after.tiles, before.tiles);

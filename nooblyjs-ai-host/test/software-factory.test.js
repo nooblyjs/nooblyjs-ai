@@ -44,11 +44,16 @@ test('a fresh Factory has its demo repository, no database, and nothing running;
   assert.deepEqual(home.tiles.find((t) => t.key === 'runs').note, 'Nothing in flight');
 });
 
-test('step 1: the Design lead approves the handoff; two work items become runs on the demo repo, and four wait for a repository', async () => {
+test('step 1: the Design handoff and the Engineering sign-off; two work items become runs on the demo repo, and four wait for a repository', async () => {
   // Someone tries to configure an agent merge first (step 4): the operator's config asks for autonomy L3.
   await fs.writeFile(path.join(env.dataDir, 'factory', 'config.json'), JSON.stringify({ autonomy: 'L3' }));
-  const res = await post(stevie, '/workflows/api/v1/approvals/apr_slotpickerui/decision', { decision: 'approve' });
+  const res = await post(stevie, '/workflows/api/v1/approvals/apr_slotpickerdesign/decision', { decision: 'approve' });
   assert.equal(res.status, 200);
+  // Lifecycle v3 (Phase 16b): nothing is built before the Engineering sign-off.
+  assert.equal((await res.json()).item.stage, 'engineer');
+  assert.deepEqual((await work()).runs, []);
+  const signed = await post(stevie, '/workflows/api/v1/items/PRD-028/advance', {});
+  assert.equal(signed.status, 200);
   await until(async () => assert.equal((await work()).runs.length, 2));
   const w = await work();
   assert.deepEqual(w.runs.map((r) => [r.title, r.repo, r.itemId]).sort(), [

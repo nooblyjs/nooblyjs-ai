@@ -79,7 +79,7 @@ export async function runCommand(command, { cwd, network = 'none', allowUnsandbo
       throw new Error(`Refusing to run "${command}" without a sandbox (${sandbox.reason}). It is the repository's own code. Install bubblewrap (sudo apt install bubblewrap), or pass --allow-unsandboxed.`);
     }
     const child = sandbox.active
-      ? await sandbox.spawn(command, { cwd, env: /** @type {Record<string,string>} */ (process.env) })
+      ? await sandbox.spawn(command, { cwd, env: commandEnv() })
       : Object.assign(spawn('bash', ['-c', command], { cwd, env: commandEnv(), stdio: ['ignore', 'pipe', 'pipe'], detached: true }), {
           killGroup(/** @type {NodeJS.Signals} */ signal) {
             process.kill(-(/** @type {number} */ (this.pid)), signal);
@@ -103,9 +103,9 @@ export async function runCommand(command, { cwd, network = 'none', allowUnsandbo
 }
 
 /**
- * NooblyJS Phase 7: the environment of a command that runs WITHOUT a sandbox (development only).
- * It is the repository's own code, so it gets none of this process's secrets (the same scrub an
- * agent's environment gets). And it is not a child of a test runner: `node --test` under
+ * NooblyJS Phase 7: the environment of a command the factory runs, in the sandbox or not (BUG-007: the sandbox got
+ * this process's whole environment). It is the repository's own code, so it gets none of this process's secrets (the
+ * same scrub an agent's environment gets). And it is not a child of a test runner: `node --test` under
  * NODE_TEST_CONTEXT reports to its parent and exits 0 whatever failed, which would pass a gate.
  */
 export function commandEnv(env = process.env) {

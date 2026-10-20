@@ -19,8 +19,11 @@ test('a write that needs approval is on Home · Approvals; an Approver sends it,
     // A Viewer cannot decide it.
     assert.equal((await post(t.viewer, `/workflows/api/v1/approvals/${waiting[0].approvalId}/decision`, { decision: 'approve' })).status, 403);
     assert.equal(t.fetch.writes().length, 0);
-    // The Owner is not one of this approval's reviewers (the item team's Approvers are), so even he is refused.
-    assert.equal((await post(t.stevie, `/workflows/api/v1/approvals/${waiting[0].approvalId}/decision`, { decision: 'approve' })).status, 403);
+    // The Owner is not one of this approval's reviewers (the item team's Approvers are). Since Phase 16b he may give it on
+    // one of their behalf, so he must say whose: without that nothing is decided, and nothing is sent.
+    const which = await post(t.stevie, `/workflows/api/v1/approvals/${waiting[0].approvalId}/decision`, { decision: 'approve' });
+    assert.equal(which.status, 400);
+    assert.match((await which.json()).error.message, /Say whom you are deciding for/);
     assert.equal(t.fetch.writes().length, 0);
     const reviewer = t.app.client();
     await reviewer.signIn(approval.reviewers[0].id);

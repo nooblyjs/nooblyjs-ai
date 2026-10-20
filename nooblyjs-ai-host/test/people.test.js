@@ -31,7 +31,12 @@ test('step 1: Naledi (no profile) is sent to onboarding from any page, with Prod
   assert.match(await page.text(), /Set up NooblyJS around the work you actually do\./);
   const { body } = await c.json('/api/v1/me/onboarding');
   assert.deepEqual(body.suggested, { role: 'product-manager', jobTitle: 'Product Manager, Digital' });
-  assert.deepEqual(body.roles.map((r) => r.name), ['Product manager', 'Architect', 'Developer', 'Designer', 'Engineering lead', 'Platform engineer']);
+  assert.deepEqual(body.roles.map((r) => r.name), [
+    'Product manager', 'Architect',
+    // Lifecycle v3's Design and Engineer people and the testers (Phase 16b).
+    'Solution Architect', 'Functional Analyst', 'Application Architect', 'Test analyst',
+    'Developer', 'Designer', 'Engineering lead', 'Platform engineer',
+  ]);
   const pm = body.roles[0];
   assert.equal(pm.tasks.length, 3);
   assert.deepEqual(pm.tools.map((t) => t.name), ['Jira Cloud', 'Zendesk']);
@@ -94,7 +99,7 @@ test('step 5: Lerato starts at 2 of 4 (she approved PRD-031 in the seed story), 
   const kinds = home.panels.waiting.map((w) => `${w.kind}:${w.title}`);
   assert.ok(kinds.includes('review:Checkout accessibility — PRD-029'));
   assert.ok(kinds.includes('preview:Mobile promo code fix — PRD-032'));
-  assert.ok(home.panels.waiting.some((w) => w.kind === 'nudge' && /Store pickup lockers — waiting 4 days in Architect/.test(w.title)));
+  assert.ok(home.panels.waiting.some((w) => w.kind === 'nudge' && /Store pickup lockers — waiting 4 days in Design/.test(w.title)));
   assert.equal(home.panels.agent.title, 'Ada Quill is working for you');
   // Nudge goes through the engine, once.
   const nudge = await post(c, `${wf}/items/PRD-025/nudge`);
@@ -109,7 +114,7 @@ test('step 6: Thabo\'s Architect home has ADR-014 and ADR-015; accepting ADR-014
   assert.deepEqual(home.panels.decisions.map((d) => d.eyebrow).sort(), ['ADR-014 · PRD-031', 'ADR-015 · PRD-027']);
   assert.ok(home.panels.decisions.every((d) => d.canDecide));
   assert.equal(home.tiles[0].value, 2);
-  assert.equal(home.tiles[1].label, 'In Architecture');
+  assert.equal(home.tiles[1].label, 'In Design');
   assert.equal(home.panels.standards.unavailable.phase, 7);
   assert.equal(home.panels.models.unavailable.phase, 8);
   assert.ok(home.panels.queue.some((q) => /Store pickup lockers/.test(q.title) && q.action.label === 'Ask Rhea to draft'));
@@ -143,10 +148,12 @@ test('step 7: Priya\'s Developer home has her pull requests; runs and their ques
   assert.match(home.panels.teammate.text, /Juno never merges to main\./);
 });
 
-test('step 8: Priya changes role to Architect: the home changes, but accepting an ADR is still refused', async () => {
-  const c = await signedIn('priya-s');
+test('step 8: a work role never grants a decision: Naledi (a Viewer) as an Architect gets the home, and accepting an ADR is still refused', async () => {
+  // Since Phase 16b anyone but a Viewer may give an approval on someone's behalf, so the access role that refuses here is
+  // the Viewer's. (The roadmap's script used Priya, a Contributor, who may now accept on Thabo's behalf.)
+  const c = await signedIn('naledi-k');
   const before = (await c.json('/api/v1/me/onboarding')).body.profile;
-  assert.equal(before.workRole, 'developer');
+  assert.equal(before.workRole, 'product-manager');
   const res = await post(c, '/api/v1/me/onboarding', { workRole: 'architect', teams: before.teams });
   assert.equal(res.status, 200);
   const home = (await c.json('/api/v1/home/for-you?scope=all')).body;
@@ -155,10 +162,10 @@ test('step 8: Priya changes role to Architect: the home changes, but accepting a
   assert.ok(home.panels.decisions.every((d) => d.canDecide === false), 'the work role does not make her a decider');
   const refused = await post(c, `${wf}/approvals/apr_adr015/decision`, { decision: 'approve' });
   assert.equal(refused.status, 403);
-  assert.match((await refused.json()).error.message, /your access role is Contributor/);
-  assert.equal((await c.json('/api/v1/shell')).body.person.accessRole, 'Contributor');
+  assert.match((await refused.json()).error.message, /Your access role is Viewer/);
+  assert.equal((await c.json('/api/v1/shell')).body.person.accessRole, 'Viewer');
   await eventually(async () => {
-    assert.ok((await today(env.store, 'audit')).some((r) => r.actor === 'priya-s' && r.action === 'access.refused' && r.target === 'apr_adr015'));
+    assert.ok((await today(env.store, 'audit')).some((r) => r.actor === 'naledi-k' && r.action === 'access.refused' && /apr_adr015/.test(r.target)));
   });
 });
 
@@ -187,9 +194,9 @@ test('Teams & roles: the teams, the matrix from roles.yaml, the members, and Inv
   const { body } = await stevie.json('/api/v1/home/teams');
   assert.deepEqual(body.teams.map((t) => t.name), ['Checkout squad', 'Delivery squad', 'Platform team']);
   assert.deepEqual(body.matrix.roles, ['Viewer', 'Contributor', 'Approver', 'Architect', 'Owner']);
-  assert.equal(body.matrix.rows.length, 7);
+  assert.equal(body.matrix.rows.length, 13); // product.md §6, the nine stages (16a) and lifecycle v3 (16b)
   const row = (label) => body.matrix.rows.find((r) => r.label === label).allowed;
-  assert.deepEqual(row('Accept architecture decisions'), { Viewer: false, Contributor: false, Approver: false, Architect: true, Owner: true });
+  assert.deepEqual(row('Accept architecture decisions and the Design handoff'), { Viewer: false, Contributor: false, Approver: false, Architect: true, Owner: true });
   assert.deepEqual(row('Hire teammates, set budgets'), { Viewer: false, Contributor: false, Approver: false, Architect: false, Owner: true });
   assert.equal(body.matrix.agentCap, 'Contributor');
   const thabo = body.members.rows.find((m) => m.id === 'thabo-n');
@@ -197,7 +204,12 @@ test('Teams & roles: the teams, the matrix from roles.yaml, the members, and Inv
   assert.ok(thabo.approvals >= 1, 'he accepted ADR-014 above');
   const ada = body.members.rows.find((m) => m.id === 'ada-quill');
   assert.deepEqual({ kind: ada.kind, accessRole: ada.accessRole, approvals: ada.approvals }, { kind: 'agent', accessRole: 'Contributor', approvals: null });
-  assert.equal(body.rules.length, 7); // the five from product.md §4, the infrastructure design (9a), and a write to Jira or Bitbucket (13)
+  // Lifecycle v3's handoffs (Phase 16b), the infrastructure design (9a), a write to Jira or Bitbucket (13), the outcome
+  // review (16a) and the Security app's two (19).
+  assert.deepEqual(body.rules.map((r) => r.key), [
+    'spec', 'adr', 'design-handoff', 'engineering-signoff', 'build-approval', 'test-approval', 'deploy',
+    'infra-design', 'devtools-write', 'outcome-review', 'threat-model', 'risk-acceptance',
+  ]);
 
   const lerato = await signedIn('lerato-m');
   const invite = { name: 'Kagiso D.', email: 'kagiso-d@noobly.local', jobTitle: 'Senior Software Engineer', accessRole: 'Contributor', team: 'delivery-squad' };

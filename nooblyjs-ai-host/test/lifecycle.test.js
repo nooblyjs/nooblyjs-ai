@@ -1,7 +1,8 @@
 // Phase 2 in the real app: the lifecycle engine (src/lifecycle/, part of NooblyJS since 2026-10-10; before that the hosted
 // app nooblyjs-ai-workflows) at /workflows next to the Product Factory, with NooblyJS's sessions,
 // CSRF, permissions matrix, audit log, event stream and dev clock. The steps follow the roadmap's Phase 2 test
-// script and run in order on one data folder.
+// script and run in order on one data folder, on lifecycle v3's eight stages (Phase 16b): the Product handoff moves an
+// item to Design, and any person but a Viewer may give an approval, for themselves or on someone's behalf.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -12,6 +13,7 @@ let env;
 let stevie;
 let lerato;
 let priya;
+let naledi;
 const api = '/workflows/api/v1';
 const post = (c, url, json = {}) => c.request(url, { method: 'POST', json });
 
@@ -21,10 +23,11 @@ before(async () => {
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
     ],
   });
-  [stevie, lerato, priya] = [env.client(), env.client(), env.client()];
+  [stevie, lerato, priya, naledi] = [env.client(), env.client(), env.client(), env.client()];
   await stevie.signIn('stevie');
   await lerato.signIn('lerato-m');
   await priya.signIn('priya-s');
+  await naledi.signIn('naledi-k');
 });
 after(async () => { await env?.stop(); });
 
@@ -67,10 +70,10 @@ test('the lifecycle engine is part of NooblyJS: not an app on the list, signed i
 test('step 1: Overview says 12 in flight and four waiting on Stevie, with a card per system and the seeded activity', async () => {
   const { body } = await stevie.json('/api/v1/home/overview');
   assert.equal(body.lifecycle.summary, '12 items in flight across 2 systems. Four are waiting on you.');
-  assert.deepEqual(body.lifecycle.stages.map((s) => s.count), [3, 4, 2, 0, 1, 1, 1]);
+  assert.deepEqual(body.lifecycle.stages.map((s) => s.count), [3, 4, 3, 0, 1, 1, 0, 0]);
   assert.deepEqual(body.systems.map((s) => s.key), ['product', 'factory', 'teammates', 'knowledge', 'platform']);
   assert.deepEqual(body.systems[0].stats, ['10 items in design', '5 approvals pending']);
-  assert.deepEqual(body.systems[1].stats, ['Not installed yet']);
+  assert.deepEqual(body.systems[1].stats, ['0 of 3 slots · 0 queued', '$0 of $20 spent today'], 'the Factory hosts Product, so it is installed');
   assert.equal(body.recent.length, 5);
   assert.equal(body.recent[0].action, 'clustered 412 support tickets into 5 themes');
   assert.deepEqual(body.recent[0].actor, { id: 'ada-quill', name: 'Ada Quill', kind: 'agent' });
@@ -89,7 +92,7 @@ test('step 2: the PRD-031 approval reads 6 of 7 from the Product Factory\'s own 
   assert.equal(approval.links.artefact, '/factory/product/specs/PRD-031');
 });
 
-test('steps 3 to 5: refused without an override; with one PRD-031 moves to Architect, Lerato sees it live, and it is in the files', async () => {
+test('steps 3 to 5: refused without an override; with one PRD-031 moves to Design, Lerato sees it live, and it is in the files', async () => {
   const stream = await listen(lerato);
   assert.equal(stream.res.status, 200);
   assert.match(stream.res.headers.get('content-type'), /text\/event-stream/);
@@ -103,7 +106,7 @@ test('steps 3 to 5: refused without an override; with one PRD-031 moves to Archi
 
   const ok = await post(stevie, `${api}/approvals/apr_prd031spec/decision`, { decision: 'approve', override: { reason: 'Rollout plan follows in the pilot review' } });
   assert.equal(ok.status, 200);
-  assert.equal((await ok.json()).item.stage, 'architect');
+  assert.equal((await ok.json()).item.stage, 'design');
 
   // Step 4: Lerato's browser gets the approval and the move without refreshing.
   await eventually(() => {
@@ -116,12 +119,12 @@ test('steps 3 to 5: refused without an override; with one PRD-031 moves to Archi
   assert.equal(decided.topic, 'approval.decided');
   await stream.stop();
   const activity = (await lerato.json('/api/v1/activity')).body;
-  assert.equal(activity.rows.find((r) => r.type === 'item.stage_changed').action, 'moved PRD-031 · Same-day delivery slots to Architect');
+  assert.equal(activity.rows.find((r) => r.type === 'item.stage_changed').action, 'moved PRD-031 · Same-day delivery slots to Design');
   assert.equal(activity.today.humanDecisions >= 2, true);
 
   // Step 5: the files.
   const item = await fs.readFile(path.join(env.dataDir, 'workflows', 'items', 'PRD-031.md'), 'utf8');
-  assert.match(item, /^stage: architect$/m);
+  assert.match(item, /^stage: design$/m);
   await eventually(async () => {
     const audit = await today(env.store, 'audit');
     const approval = audit.find((r) => r.action === 'approval.decided' && r.status === 200);
@@ -137,15 +140,20 @@ test('steps 3 to 5: refused without an override; with one PRD-031 moves to Archi
   });
 });
 
-test('step 6: Priya (Contributor) cannot approve the ADR; she is told why and the refusal is audited', async () => {
-  const res = await post(priya, `${api}/approvals/apr_adr014/decision`, { decision: 'approve' });
+test('step 6: Naledi (Viewer) cannot approve the ADR; she is told why and the refusal is audited', async () => {
+  const res = await post(naledi, `${api}/approvals/apr_adr014/decision`, { decision: 'approve' });
   assert.equal(res.status, 403);
-  assert.match((await res.json()).error.message, /^You can't accept this: it needs the "accept-decisions" permission, and your access role is Contributor\.$/);
+  assert.equal((await res.json()).error.message, "Viewers can't approve, for themselves or on anyone's behalf. Your access role is Viewer.");
   await eventually(async () => {
-    const refusal = (await today(env.store, 'audit')).find((r) => r.actor === 'priya-s' && r.action === 'access.refused');
-    assert.equal(refusal.target, 'apr_adr014');
-    assert.equal(refusal.status, 403);
+    const refusal = (await today(env.store, 'audit')).find((r) => r.actor === 'naledi-k' && r.action === 'access.refused');
+    assert.equal(refusal.target, 'approval apr_adr014');
   });
+});
+
+test('Priya (Contributor) may approve on someone\'s behalf, but must say for whom when it waits on two people', async () => {
+  const res = await post(priya, `${api}/approvals/apr_adr014/decision`, { decision: 'approve' });
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).error.message, 'Say whom you are deciding for: this approval is waiting on stevie, thabo-n.');
 });
 
 test('an ADR accepted in Approvals is accepted in the Product Factory too, and it never touches the spec\'s reviewers', async () => {
@@ -158,9 +166,9 @@ test('an ADR accepted in Approvals is accepted in the Product Factory too, and i
   });
 });
 
-test('the work role never grants permission: Priya as an "architect" is still refused', async () => {
-  await env.store.updateDoc(['people', 'priya-s', 'profile.md'], (doc) => ({ ...doc, data: { ...doc.data, workRole: 'architect' } }));
-  const res = await post(priya, `${api}/approvals/apr_adr015/decision`, { decision: 'approve' });
+test('the work role never grants permission: Naledi (Viewer) as an "architect" is still refused', async () => {
+  await env.store.updateDoc(['people', 'naledi-k', 'profile.md'], (doc) => ({ ...doc, data: { ...doc?.data, workRole: 'architect' } }));
+  const res = await post(naledi, `${api}/approvals/apr_adr015/decision`, { decision: 'approve' });
   assert.equal(res.status, 403);
 });
 
@@ -189,11 +197,11 @@ test('step 7: the dev clock moves working days on; ADR-015 is reminded, PRD-029 
   assert.equal((await env.client().get('/api/v1/dev/clock')).status, 401);
 });
 
-test('step 8: PRD-027 goes back to Specify with a reason, and Sent back for changes goes up by 1', async () => {
+test('step 8: PRD-027 goes back to Product with a reason, and Sent back for changes goes up by 1', async () => {
   const before = (await stevie.json(`${api}/flow`)).body.sentBack;
-  const res = await post(stevie, `${api}/items/PRD-027/send-back`, { to: 'specify', reason: 'Needs the courier privacy review first' });
+  const res = await post(stevie, `${api}/items/PRD-027/send-back`, { to: 'product', reason: 'Needs the courier privacy review first' });
   assert.equal(res.status, 200);
-  assert.equal((await stevie.json(`${api}/items/PRD-027`)).body.item.stage, 'specify');
+  assert.equal((await stevie.json(`${api}/items/PRD-027`)).body.item.stage, 'product');
   assert.equal((await stevie.json(`${api}/flow`)).body.sentBack, before + 1);
   // The Product Factory reopened the spec.
   await eventually(async () => {

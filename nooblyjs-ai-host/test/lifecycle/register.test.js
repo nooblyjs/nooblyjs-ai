@@ -48,8 +48,14 @@ test('the seed moves the story to now, works out due times from the rules, and i
   const spec = (await host.store.readDoc(['approvals', 'apr_prd031spec.md'])).data;
   assert.equal(spec.requestedAt, '2027-03-02T10:00:00.000Z', '26 hours before now');
   assert.equal(spec.dueAt, '2027-03-03T23:59:59.000Z', 'the end of the next working day: due today');
-  const ui = (await host.store.readDoc(['approvals', 'apr_slotpickerui.md'])).data;
-  assert.equal(ui.dueAt, '2027-03-03T12:30:00.000Z', 'four hours after it was asked for');
+  // The Design handoff, a working day like the spec; the Build approval, four clock hours.
+  const design = (await host.store.readDoc(['approvals', 'apr_slotpickerdesign.md'])).data;
+  assert.equal(design.dueAt, '2027-03-04T23:59:59.000Z', 'asked for this morning: due at the end of the next working day');
+  const build = (await host.store.readDoc(['approvals', 'apr_slotsapi482.md'])).data;
+  assert.equal(build.dueAt, '2027-03-03T14:30:00.000Z', 'four hours after it was asked for');
+  // The story is in lifecycle v3's stages.
+  assert.equal((await host.store.readDoc(['items', 'PRD-031.md'])).data.stage, 'product');
+  assert.equal((await host.store.readDoc(['items', 'PRD-028.md'])).data.stage, 'design');
   assert.equal((await seed(host.store, { now: '2028-01-01T00:00:00.000Z' })).seeded, false);
   assert.equal((await seed(host.store, { reset: true, now: '2028-01-03T10:00:00.000Z' })).seeded, true);
   await fs.rm(dir, { recursive: true, force: true });

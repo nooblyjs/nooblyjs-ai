@@ -1,0 +1,15 @@
+# The Teams simulator's meetings (/dev/teams, development only): sample data for the PRD-031 story. `earlier` is what
+# was said before anyone added a teammate; no teammate ever reads it.
+meetings:
+  - id: sim-slot-rollout-sync
+    title: Slot rollout sync
+    subtitle: Delivery squad · Fridays 10:00
+    people: [lerato-m, stevie, thabo-n, priya-s, naledi-k]
+    earlier:
+      - { from: lerato-m, time: '09:58', text: Morning all. Agenda is the slot pilot and what still blocks the spec. }
+      - { from: stevie, time: '09:59', text: I'll have the spec review done today. }
+  - id: sim-checkout-standup
+    title: Checkout stand-up
+    subtitle: Checkout squad · daily 09:15
+    people: [priya-s, lerato-m]
+    earlier: []

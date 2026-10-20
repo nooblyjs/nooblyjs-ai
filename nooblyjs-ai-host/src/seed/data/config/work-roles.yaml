@@ -1,18 +1,21 @@
 # The work roles: onboarding copy and the layout of each "For you" home (product.md §5.8). A work role shapes the
 # home only; it is never read by a permission check. Rebuilt 2026-10-19 from product.md §5.8.
 #
-# Each role: key, name, initials, blurb (role card), promise (step 2), tasks [{ title, detail, where }], leadsWith
-# (what the home leads with), agent (the example teammate's id; its name in the copy is swapped for the teammate
-# actually hired), agents ("Name · what they do"), tools (step 3), home (where onboarding lands), and
-# firstWeek [{ key, text, short, done: { type, where: { <payload path>: value } } }]: the first three things,
-# ticked by events. The sample story's first-week tasks are not part of this rebuild, so each role's list is empty.
+# Each role: key, name, initials, layout (the For you home it gets: product-manager, architect, developer; none shows
+# Overview), blurb (role card), promise (step 2), tasks [{ title, detail, where }], leadsWith (what the home leads
+# with), agent (the example teammate's id; its name in the copy is swapped for the teammate actually hired), agents
+# ("Name · what they do"), tools (step 3), home (where onboarding lands), and firstWeek [{ key, text, short, next,
+# done: { type, where: { <payload path>: value } } }]: the first three things, ticked by events (`next` is how the
+# Getting started card says it). They name the PRD-031 sample story's items; npm run seed:blank drops them.
+# The first-week tasks were rebuilt with the sample story on 2026-10-20 (BUG-006).
 common:
   firstWeek:
-    - { key: pick-role-and-teams, text: Pick your role and teams, short: Role and teams, done: { type: profile.onboarded } }
+    - { key: pick-role-and-teams, text: Pick your role and teams, short: Role and teams, next: pick your role and teams, done: { type: profile.onboarded } }
 roles:
   - key: product-manager
     name: Product manager
     initials: PM
+    layout: product-manager
     blurb: Turn customer signals into specs and get them approved.
     promise: Agents research and draft; you shape the problem and approve what moves on.
     tasks:
@@ -24,10 +27,14 @@ roles:
     agents: Ada Quill · research and spec drafting
     tools: [Jira Cloud, Zendesk]
     home: /
-    firstWeek: []
+    firstWeek:
+      - { key: review-first-spec, text: Review PRD-031 · Same-day delivery slots, short: First spec, next: review your first spec, done: { type: approval.decided, where: { type: spec } } }
+      - { key: score-substitutions, text: 'Score the "Smarter substitutions" idea', short: Score an idea, next: score an idea, done: { type: idea.scored, where: { ideaId: IDEA-018 } } }
+      - { key: pin-delivery-space, text: Pin the Delivery space in Knowledge, short: Pin a space, next: pin a Knowledge space, done: { type: knowledge.space_pinned } }
   - key: architect
     name: Architect
     initials: AR
+    layout: architect
     blurb: Shape solutions and sign off the decisions that matter.
     promise: The architect agent drafts container views and decisions; you own the trade-offs.
     tasks:
@@ -39,7 +46,10 @@ roles:
     agents: Rhea Voss · container views and decisions
     tools: [GitHub, Enterprise Knowledge Repository]
     home: /
-    firstWeek: []
+    firstWeek:
+      - { key: decide-adr-014, text: Accept or challenge ADR-014 · Cache slot availability in Redis, short: First decision, next: decide ADR-014, done: { type: approval.decided, where: { subject: ADR-014 } } }
+      - { key: review-container-view, text: Review the container view of PRD-031, short: Container view, next: review a container view, done: { type: architecture.diagram_updated, where: { itemId: PRD-031 } } }
+      - { key: give-design-handoff, text: Give your first Design handoff, short: Design handoff, next: give a Design handoff, done: { type: approval.decided, where: { type: design-handoff } } }
   # Lifecycle v3 (Phase 16b, root product.md §5): the Design and Engineer stages' people and the testers. Their homes
   # come with Phases 16c–16e; until then onboarding lands on Overview.
   - key: solution-architect
@@ -102,6 +112,7 @@ roles:
   - key: developer
     name: Developer
     initials: DV
+    layout: developer
     blurb: Review, steer and approve what agents build.
     promise: The Software Factory and engineering teammates write the code; you review, steer and merge.
     tasks:
@@ -113,7 +124,10 @@ roles:
     agents: Juno Park · implementation and tests
     tools: [GitHub, Jira Cloud]
     home: /
-    firstWeek: []
+    firstWeek:
+      - { key: review-first-pr, text: 'Give the Build approval on slots-api #482', short: First PR, next: review your first pull request, done: { type: approval.decided, where: { type: build-approval } } }
+      - { key: answer-a-run, text: Answer a question from a stuck run, short: Steer a run, next: steer a stuck run, done: { type: run.answered } }
+      - { key: pair-with-juno, text: Hand a ticket to Juno Park, short: Pair with Juno, next: hand a ticket to a teammate, done: { type: teammate.task_started, where: { teammateId: juno-park } } }
   - key: designer
     name: Designer
     initials: DS
@@ -122,12 +136,15 @@ roles:
     tasks:
       - { title: Shape journeys and flows, detail: Agents draft journey maps and user flows from the spec., where: UX Design }
       - { title: Approve screens, detail: Screens are built from design-system components., where: UI Design }
-      - { title: Hand off to build, detail: A UI handoff generates the work items., where: Approvals }
+      - { title: Hand screens to Design, detail: 'The Product handoff takes the spec, journeys and screens to Design.', where: Approvals }
     leadsWith: [Flows waiting on you, Screens to approve, Handoffs]
     agents: Design agents · journeys, flows and screens
     tools: [Figma, Jira Cloud]
     home: /home/overview
-    firstWeek: []
+    firstWeek:
+      - { key: review-slot-journey, text: Review the slot-booking journey of PRD-031, short: First journey, next: review a journey, done: { type: ux.updated, where: { itemId: PRD-031 } } }
+      - { key: approve-first-screen, text: Approve the slot picker screen, short: First screen, next: approve a screen, done: { type: ui.screen_updated, where: { itemId: PRD-031 } } }
+      - { key: give-product-handoff, text: Join a Product handoff, short: Product handoff, next: join a Product handoff, done: { type: approval.decided, where: { type: spec } } }
   - key: engineering-lead
     name: Engineering lead
     initials: EL
@@ -141,7 +158,10 @@ roles:
     agents: Every agent teammate on your teams
     tools: [Jira Cloud, GitHub]
     home: /home/overview
-    firstWeek: []
+    firstWeek:
+      - { key: unblock-an-item, text: Nudge the item that has waited longest, short: Unblock, next: unblock an item, done: { type: item.nudged } }
+      - { key: balance-a-team, text: Check who is on the Delivery squad, short: Your teams, next: look at your teams, done: { type: profile.updated } }
+      - { key: decide-a-gate, text: Decide an approval waiting on you, short: First decision, next: decide an approval, done: { type: approval.decided } }
   - key: platform-engineer
     name: Platform engineer
     initials: PE
@@ -155,4 +175,7 @@ roles:
     agents: Every agent teammate's sandbox
     tools: [GitHub, Azure]
     home: /platform/repositories
-    firstWeek: []
+    firstWeek:
+      - { key: grant-repo-access, text: Grant agent access to a repository, short: Repo access, next: grant repo access, done: { type: repo.access_changed } }
+      - { key: check-a-budget, text: Set a budget in Platform · Settings, short: Budgets, next: set a budget, done: { type: budget.changed } }
+      - { key: review-a-guardrail, text: Review a guardrail, short: Guardrails, next: review a guardrail, done: { type: guardrail.changed } }

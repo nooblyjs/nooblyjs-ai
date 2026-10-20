@@ -6,7 +6,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import { startApp, today, eventually } from './helpers.js';
+import { startApp, today, eventually, clockNow } from './helpers.js';
 
 const APP_ID = '11111111-2222-3333-4444-555555555555';
 const TENANT = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
@@ -86,6 +86,8 @@ async function post(body, authorization = token()) {
   return res;
 }
 const cardOf = (m) => m.body.attachments?.[0]?.content;
+/** A time after the teammate joined, on NooblyJS's clock: the tests run it on the story's Friday (helpers.js pinClock). */
+const later = async (ms) => new Date(await clockNow(env.store) + ms).toISOString();
 
 test('step 6: a forged, expired, misaddressed or missing token gets 401, and each refusal is logged', async () => {
   const cases = [
@@ -128,7 +130,7 @@ test('step 4: Stevie adds Ada; she answers @Ada with a card that has her sources
   await post(activity({ text: '', value: { noobly: 'add', teammateId: 'ada-quill' } }));
   assert.ok(sent.some((m) => m.body.text === 'Ada Quill joined the chat'));
   const before = sent.length;
-  await post(activity({ text: '@Ada what is blocking us?', timestamp: new Date(Date.now() + 1000).toISOString() }));
+  await post(activity({ text: '@Ada what is blocking us?', timestamp: await later(1000) }));
   const answer = sent.slice(before).find((m) => JSON.stringify(cardOf(m) ?? {}).includes('this answer cost'));
   assert.ok(answer, JSON.stringify(sent.slice(before).map((m) => m.body.text ?? m.body.attachments?.[0]?.contentType)));
   assert.match(JSON.stringify(cardOf(answer)), /NooblyJS teammate/);
@@ -142,7 +144,7 @@ test('step 4: Stevie adds Ada; she answers @Ada with a card that has her sources
 
 test('step 5: "@NooblyJS post meeting notes to PRD-031" puts the notes on the item and says so in the chat', async () => {
   const before = sent.length;
-  await post(activity({ ...mention('post meeting notes to PRD-031'), timestamp: new Date(Date.now() + 2000).toISOString() }));
+  await post(activity({ ...mention('post meeting notes to PRD-031'), timestamp: await later(2000) }));
   const confirmation = sent.slice(before).find((m) => /posted the meeting notes to PRD-031/.test(m.body.text ?? ''));
   assert.ok(confirmation, JSON.stringify(sent.slice(before).map((m) => m.body.text)));
   assert.match(confirmation.body.text, /https:\/\/noobly\.example\/home\/lifecycle\/PRD-031/);
@@ -154,7 +156,7 @@ test('step 5: "@NooblyJS post meeting notes to PRD-031" puts the notes on the it
   assert.equal(notes.author.id, 'ada-quill');
   assert.ok((await today(env.store, 'events')).some((e) => e.type === 'teams.meeting_notes_posted' && e.payload.itemId === 'PRD-031'));
   // Naming an item that doesn't exist is said in the chat, and nothing is posted.
-  await post(activity({ ...mention('post meeting notes to PRD-999'), timestamp: new Date(Date.now() + 3000).toISOString() }));
+  await post(activity({ ...mention('post meeting notes to PRD-999'), timestamp: await later(3000) }));
   assert.match(sent.at(-1).body.text, /There is no item PRD-999/);
 });
 
@@ -207,5 +209,6 @@ test('step 1: a Microsoft sign-in records the person\'s Entra id and job title f
   const priya = env.client();
   await priya.signIn('priya-s');
   const onboarding = (await priya.json('/api/v1/me/onboarding')).body;
-  assert.deepEqual([onboarding.person.jobTitle, onboarding.suggested?.role], ['Solution Architect', 'architect']);
+  // Lifecycle v3 (Phase 16b) has a Solution Architect work role of its own.
+  assert.deepEqual([onboarding.person.jobTitle, onboarding.suggested?.role], ['Solution Architect', 'solution-architect']);
 });

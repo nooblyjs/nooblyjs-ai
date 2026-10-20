@@ -28,7 +28,9 @@ test('the shell lists the Factory first after Home, with the Product section\'s 
   assert.equal(factory.state, 'ready');
   assert.ok(factory.ui.styles.includes('product/css/product.css'));
   const product = factory.nav.filter((n) => n.group === 'Product');
-  assert.deepEqual(product.map((n) => n.key), ['product-overview', 'product-portfolios', 'product-board', 'product-specs', 'product-architecture', 'product-ux', 'product-ui', 'product-reviews', 'product-handoffs', 'product-settings']);
+  assert.deepEqual(product.map((n) => n.key), ['product-overview', 'product-portfolios', 'product-board', 'product-specs', 'product-ux', 'product-ui', 'product-reviews', 'product-handoffs', 'product-settings']);
+  // Architecture moved to the Design section (Phase 16b).
+  assert.deepEqual(factory.nav.filter((n) => n.group === 'Design').map((n) => [n.key, n.path]), [['design-architecture', '/design/architecture']]);
   assert.deepEqual(factory.nav.slice(0, product.length), product, 'Product leads the sidebar');
   assert.ok(product.every((n) => n.path === '/product' || n.path.startsWith('/product/')));
   const kitIcons = await fs.readFile(require.resolve('nooblyjs-core/public/ui/js/icons.js'), 'utf8');
@@ -78,13 +80,13 @@ test('approving is for Approvers and up, and the refusal is audited with the Noo
   });
 });
 
-test('the status card says agents on duty and spend against the budget; Reviews has its badge', async () => {
+test('the Factory\'s status card carries the Product section: its agents on duty, and the Reviews badge', async () => {
   const c = env.client();
   await c.signIn('stevie');
-  const { product } = (await c.json('/api/v1/shell/status')).body;
-  assert.equal(product.badges.reviews, 2);
-  assert.match(product.card.pill.text, /agents? on duty$/);
-  assert.match(product.card.meter.value, /^\$\d+ of \$1,500$/);
+  const status = (await c.json('/api/v1/shell/status')).body;
+  assert.equal(status.product, undefined, 'the Product section is not an app of its own');
+  assert.equal(status.factory.badges['product-reviews'], 2);
+  assert.ok(status.factory.card.items.some((i) => i.label === 'Product' && /agents? on duty$/.test(i.value)));
 });
 
 test('accepting ADR-014 is for an Architect, through the NooblyJS session and CSRF token', async () => {

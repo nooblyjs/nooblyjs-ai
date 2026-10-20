@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-007, CHG-008.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-008, CHG-008.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -96,6 +96,31 @@ know; "steps" can be one line.
   - Notes: the PRD-031 sample story (people, teams, items, approvals) is not rebuilt, so a new data folder has no
     sample people. Tests that sign in as the sample people (`seed`, most of `platform`, `hosted-apps`, the
     `--reset` case in `blank`) fail until it is.
+  - Sample story (2026-10-20): rebuilt in lifecycle v3's eight stages. The five people (`src/seed/data/people/`), the
+    three teams, the seven Platform repositories, the thirteen items and eleven approvals of `src/lifecycle/seed/data/`
+    (four waiting on Stevie, two on others, four decided this week), the chat and Teams scripts, and the metrics
+    history. The `stage` rule (Discover → Product) is built in (`src/lifecycle/config.js`), as the rebuilt rules file
+    had lost it. `test/lifecycle.test.js` and `test/people.test.js` had never run on v3 (no sample people): they now
+    expect the eight stages, Design after the Product handoff, a Viewer (Naledi) as the one refused, an approval waiting
+    on two people asking whom it is for, the Factory installed (it hosts Product), and 16b's matrix row "Accept
+    architecture decisions and the Design handoff". Check: host 321 of 321 pass; Factory 533 of 537 (4 skipped, none
+    failing, with BUG-007).
+
+- [ ] BUG-007 — A failing gate passes in the sandbox, and the repository's commands there get the Factory's secrets · S1 · Line, security · nooblyjs-ai-factory · Phase 7
+  - Found: 2026-10-20 · Status: fixed
+  - Steps: 1. On a machine with bubblewrap, `npm test` in nooblyjs-ai-factory (or `test/software-factory.test.js` in
+    the host). 2. The "picker, nearby, basket" run writes `km < maxKm`, whose own test fails.
+  - Expected: the run's test gate fails, the fixers can't fix it, and the run asks a person.
+  - Actual: `verify (clean checkout …): test passed`, and the run is delivered. These were "the line's 3 known
+    failures" (`intake/handoff` steps 2 and 3, and the host's software-factory step 3).
+  - Cause: `runCommand()` (`src/services/exec/sandbox.js`) gave a sandboxed command this process's whole environment.
+    Only the unsandboxed path used `commandEnv()`. So under a test runner the gate's `node --test` saw
+    NODE_TEST_CONTEXT, reported to its parent and exited 0. Worse, in any run, a repository's own setup and gates in
+    the sandbox could read GITHUB_TOKEN, FACTORY_WEBHOOK_SECRET and the rest, which F24 had removed only from agents.
+  - Fix: the sandboxed path gets `commandEnv()` too (`test/services/exec/sandbox.test.js`, written failing first).
+    The third known failure, `redteam` RT4(a), was the test: with a sandbox the harness runs the agent's Bash inside it
+    (`autoAllow`, network off) instead of refusing it, so RT4 now checks that it ran sandboxed and reached nothing.
+  - Check: Factory 533 of 537 (4 skipped, none failing); host 321 of 321, `software-factory` step 3 included.
 
 ## Changes
 
