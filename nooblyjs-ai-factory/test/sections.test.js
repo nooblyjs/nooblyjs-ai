@@ -120,6 +120,7 @@ test('without sections the Factory is the line alone; a section that cannot star
   const t = await startApp({ sections: [] });
   try {
     assert.deepEqual([...new Set(t.hosted.nav.map((n) => n.group))], ['Build']);
+    assert.deepEqual(t.hosted.groups.map((g) => g.name), ['Build']);
     assert.deepEqual(t.hosted.provides, {});
     assert.equal((await t.get('/factory/product/api/v1/specs', { as: 'naledi-k' })).text, FRAME, 'nothing mounted there: the Factory\'s page fallback answers');
   } finally {

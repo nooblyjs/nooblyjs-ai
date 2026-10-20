@@ -108,7 +108,17 @@ test('shell renderers: rail order, current item, states, nav groups and badges, 
     { key: 'settings', label: 'Settings', path: '/settings', group: 'Govern', badge: 'pending' },
   ] };
   const nav = String(s.renderNav(app, { currentKey: 'settings', badges: { pending: 3 } }));
-  assert.match(nav, /nav__group">Build</);
+  // Each group is its own block, named by its header (a screen reader hears "Build, group").
+  assert.match(nav, /<div class="nav__section" role="group" aria-labelledby="nav-platform-build-0"><div class="nav__group" id="nav-platform-build-0"><span class="nav__group-text"><span class="nav__group-name">Build<\/span><\/span><\/div>/);
+  assert.equal((nav.match(/class="nav__section"/g) ?? []).length, 2);
+  assert.ok(nav.indexOf('data-nav="repos"') < nav.indexOf('nav-platform-govern-1'), 'each row is in its own group');
+  // An app may describe its groups: an icon and a line under the name.
+  const described = String(s.renderNav({ ...app, groups: [{ name: 'Build', icon: 'factory', hint: 'Issues in, reviewed pull requests out' }] }));
+  assert.match(described, /nav__group-icon" aria-hidden="true"><svg/);
+  assert.match(described, /nav__group-hint">Issues in, reviewed pull requests out</);
+  assert.doesNotMatch(described.slice(described.indexOf('nav-platform-govern-1')), /nav__group-hint/, 'a group it does not describe shows its name only');
+  // Rows without a group are not put in a block.
+  assert.doesNotMatch(String(s.renderNav({ ...app, nav: [{ key: 'a', label: 'A', path: '/a' }] })), /nav__section/);
   assert.match(nav, /href="\/platform\/settings" data-nav="settings" aria-current="page"/);
   assert.match(nav, /nav__badge">3/);
   assert.doesNotMatch(String(s.renderNav(app, { badges: { pending: 0 } })), /nav__badge/, 'a zero badge is hidden');

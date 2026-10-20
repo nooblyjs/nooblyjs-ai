@@ -271,6 +271,7 @@ export async function register(app, serverManager, options = {}) { … }
  *                                           relative to mountPath (an entry starting with '/' is used as is);
  *                                           omitted for an API-only app, which gets no rail item
  * @property {NavItem[]} [nav]               sidebar rows: { key, label, path, icon?, group?, badge?, requires? }
+ * @property {{ name: string, icon?: string, hint?: string }[]} [groups]   how the sidebar heads each `group`
  * @property {(req) => Promise<AppStatus>} [status]   this person's badges and sidebar status card
  * @property {object} [services]             server-side functions other apps may call via host.service(name)
  * @property {string[]} [provides]           other names the same services answer to: the wiki returns ['knowledge'], so
@@ -283,7 +284,9 @@ export async function register(app, serverManager, options = {}) { … }
 ```
 
 `NavItem.path` is relative to the mount path (`/runs`). `group` gives the sidebar sections
-(Platform's *Build* / *Govern*). `badge` names a key in `AppStatus.badges`. `requires` names a
+(Platform's *Build* / *Govern*; the Factory's *Product* / *Build* / *Infrastructure*): each is drawn as its own block
+(`role="group"`, named by its header) with a divider above it, and `groups` may give each one a kit icon and a
+one-line `hint` under its name (2026-10-19, CHG-006). A group with no entry in `groups` shows its name only. `badge` names a key in `AppStatus.badges`. `requires` names a
 permission from the matrix (`product.md` §6). The host leaves out rows the person can't use,
 but that only hides them: the API still enforces the permission. `AppStatus` is
 `{ badges?: { [badgeKey]: number }, card?: StatusCard }`, where every part of the card is optional:

@@ -286,6 +286,8 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     ui: { entry: 'js/module.js', styles: ['css/factory.css', ...sections.styles] },
     // Product, then the Factory's own rows (Build), then Infrastructure: the order work moves in.
     nav: [...sections.nav('before'), ...NAV.map((row) => ({ ...row, group: 'Build' })), ...sections.nav('after')],
+    // The sidebar's group headers: an icon and a line saying what each part of the Factory does.
+    groups: sections.groups(),
     /**
      * The sidebar's status card and badges: the line's (slots, today's spend, the Inbox badge), with one line per
      * section saying how it stands in words (the Product section's agents on duty, Infrastructure's drift).

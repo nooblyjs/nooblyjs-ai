@@ -28,9 +28,12 @@ const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
  * The browser side has the same table (public/js/sections.js); test/sections.test.js checks the two agree.
  */
 export const SECTIONS = [
-  { key: 'product', label: 'Product', group: 'Product', place: 'before', path: '/product', prefix: 'product', register: registerProduct, nav: PRODUCT_NAV, styles: 'product/css/product.css' },
-  { key: 'infrastructure', label: 'Infrastructure', group: 'Infrastructure', place: 'after', path: '/infrastructure', prefix: 'infra', register: registerInfrastructure, nav: INFRASTRUCTURE_NAV, styles: 'infrastructure/css/infrastructure.css' },
+  { key: 'product', label: 'Product', group: 'Product', icon: 'product', hint: 'From signal to handoff', place: 'before', path: '/product', prefix: 'product', register: registerProduct, nav: PRODUCT_NAV, styles: 'product/css/product.css' },
+  { key: 'infrastructure', label: 'Infrastructure', group: 'Infrastructure', icon: 'cube', hint: 'Designs, environments and cost', place: 'after', path: '/infrastructure', prefix: 'infra', register: registerInfrastructure, nav: INFRASTRUCTURE_NAV, styles: 'infrastructure/css/infrastructure.css' },
 ];
+
+/** The Factory's own group, between the two sections: the line. */
+export const BUILD_GROUP = { name: 'Build', icon: 'factory', hint: 'Issues in, reviewed pull requests out' };
 
 // Rows whose own label would read oddly inside a group named after the section ("Product › Product").
 const RELABEL = { 'product:board': 'Product board' };
@@ -92,6 +95,15 @@ export async function mountSections({ app, serverManager, mountPath, dataDir, ho
     list: mounted,
     /** Sidebar rows for one place in the sidebar ('before' the Factory's own rows, or 'after' them). */
     nav: (where) => mounted.filter(({ section }) => section.place === where).flatMap(({ section }) => sectionNav(section)),
+    /**
+     * How the sidebar names each group, in its order ({ name, icon, hint }): the sections' and the Factory's own,
+     * which the kit draws as a header with a divider above it.
+     */
+    groups: () => [
+      ...mounted.filter(({ section }) => section.place === 'before').map(({ section }) => ({ name: section.group, icon: section.icon, hint: section.hint })),
+      BUILD_GROUP,
+      ...mounted.filter(({ section }) => section.place === 'after').map(({ section }) => ({ name: section.group, icon: section.icon, hint: section.hint })),
+    ],
     /** Stylesheets the frame loads with the Factory's module. */
     styles: mounted.map(({ section }) => section.styles),
     /** What other apps ask of each section, by the name they ask for (host.service('product')). */

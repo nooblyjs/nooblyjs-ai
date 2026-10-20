@@ -64,6 +64,9 @@ test('register() describes the factory at its mount path, with a route for every
     ]);
     assert.deepEqual(hosted.nav.filter((n) => n.group === 'Build').map(({ group, ...row }) => row), NAV);
     assert.deepEqual([...new Set(hosted.nav.map((n) => n.group))], ['Product', 'Build', 'Infrastructure']);
+    // Each group has a header: an icon and a line saying what that part of the Factory does.
+    assert.deepEqual(hosted.groups.map((g) => g.name), ['Product', 'Build', 'Infrastructure']);
+    assert.ok(hosted.groups.every((g) => g.icon && g.hint));
     for (const key of ['status', 'close']) assert.equal(typeof hosted[key], 'function');
     assert.equal(typeof hosted.services.status, 'function');
   } finally {

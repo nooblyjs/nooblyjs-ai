@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-007, CHG-006.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-007, CHG-007.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -186,6 +186,22 @@ know; "steps" can be one line.
     host `product.md` §5.1, §5.7a, §10, `structure.md` §1, §2a, §4, `tech.md` §1, §2, §8, §8b; the Factory's
     `CLAUDE.md`, `.claude/steering/{product,structure,tech,Architecture}.md`; each section's `CLAUDE.md` and a note on
     its steering files.
+
+- [ ] CHG-006 — The sidebar's groups are clearer: a header with an icon and a line, and a divider between groups · UI kit, Factory · nooblyjs-core, nooblyjs-ai-factory · Phase 16a+
+  - Asked: 2026-10-19 · Status: fixed
+  - What and why: the Factory's Product, Build and Infrastructure groups were small grey captions and ran together.
+    The kit's `renderNav` now draws each group as its own block (`role="group"`, named by its header, so a screen reader
+    hears "Product, group") with a divider above every group after the first, and a header in ink: the name, and, when
+    the app describes it in its new `groups` field, a kit icon and a one-line hint. The Factory describes its three
+    (Product · From signal to handoff; Build · Issues in, reviewed pull requests out; Infrastructure · Designs,
+    environments and cost). Platform's Build and Govern get the clearer header without an icon or hint. At phone
+    width the groups still fold into the one scrolling strip.
+  - Check: host `kit.test.js` (the blocks, the header, the hint, a group with no entry, ungrouped rows: it found that a
+    sidebar whose first row has no group, like Home's, would have broken, fixed before this was logged); factory
+    `register.test.js` and `sections.test.js`; `/api/v1/shell` on a blank install carries the Factory's `groups`. Not
+    looked at in a browser here (no Chromium libraries): please check the sidebar at desktop and phone width, and
+    reload with the cache emptied, since `/ui/css/shell.css` may be cached.
+  - Steering: nooblyjs-ai-host `structure.md` §2a (`groups`)
 
 ## Closed
 
