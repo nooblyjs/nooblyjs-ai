@@ -51,7 +51,7 @@ Run in the real app by `test/design.test.js` (the Factory and Teammates hosted),
 - Changed to the new meaning: the Factory's sidebar rows and stylesheets (`test/register.test.js`,
   `test/sections.test.js`, the host's `factory.test.js` and `product.test.js`), the Design section's Architecture pages
   being the Product section's per route.
-- **Whole suites:** host 336 of 336 pass (321 before this phase, all passing). Factory 549 of 553 pass, 4 skipped, none
+- **Whole suites:** host 336 of 336 pass (321 before this phase, all passing). Factory 550 of 554 pass, 4 skipped, none
   failing (533 of 537 before). No test that passed before fails.
 
 ## Decisions taken while building
