@@ -56,8 +56,9 @@ export const DEV = {
 
 /** How the suite shows its child apps before they are installed (product.md §1, roadmap phases). */
 export const SUITE_APPS = {
-  // Product and Infrastructure are its sections since 2026-10-19 (nooblyjs-ai-factory/product, /infrastructure).
+  // Product is its section since 2026-10-19 (nooblyjs-ai-factory/product).
   'nooblyjs-ai-factory': { name: 'factory', label: 'Factory', icon: 'factory', phase: 7 },
+  'nooblyjs-ai-infrastructure': { name: 'infrastructure', label: 'Infra', title: 'infrastructure', icon: 'cube', phase: '9a' },
   'nooblyjs-ai-teammate': { name: 'teammates', label: 'Teammates', icon: 'team', phase: 6 },
   'nooblyjs-ai-knowledge': { name: 'wiki', label: 'Wiki', icon: 'book', phase: 8 },
 };

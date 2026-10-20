@@ -146,8 +146,9 @@ to the Owners one working day after the target `[CONFIRM]`.
 
 ### 5.1 Shell (every screen)
 
-- **Suite rail** (84px, navy): Home, Factory, Teammates, Knowledge, Platform. Since 2026-10-19 Product and Infra are
-  sections of the Factory, not rail items: its sidebar is grouped **Product · Build · Infrastructure** (§10).
+- **Suite rail** (84px, navy): Home, Factory, Infra, Teammates, Knowledge, Platform. Since 2026-10-19 Product is a
+  section of the Factory, not a rail item: its sidebar is grouped **Product · Build** (§10). Infra was a section too
+  from 2026-10-19 to 2026-10-20 and is its own rail item again (CHG-007).
 - **Module sidebar** (260px): the module name in lowercase (`nooblyjs-ai-host`, `product factory`,
   `factory`, `teammates`, `knowledge`, `platform`), nav rows with badges, and a **status
   card** at the bottom (e.g. "All systems healthy · 9 agents · 14 items in flight · Spent
@@ -393,18 +394,19 @@ Build them in the same patterns. The audit log lists actor, action, target, cost
 for every write.
 
 Built in Phase 9 (decisions in `.claude/specs/phase-09-platform-governance/requirements.md`):
-**Infrastructure (the Factory's Infrastructure section) owns environments and previews**, so Platform · Environments is a
+**Infrastructure (`nooblyjs-ai-infrastructure`) owns environments and previews**, so Platform · Environments is a
 read-only summary that links there; Platform keeps Secrets (references only). Containers run on a **simulated**
 runtime until §12 Q3 is decided. "Agents open PRs, people merge" is locked on, and an agent may never merge
 whatever a repository's toggles say. A guardrail change needs an Owner and a reason; policy history is the audit
 log's `guardrail.changed` records. Integrations show Connected or Not connected from NooblyJS's environment; Slack is
 dropped (§11).
 
-### 5.7a Infrastructure (the Factory's Infrastructure section, `/factory/infrastructure`)
+### 5.7a Infrastructure (`infrastructure`, rail label Infra)
 
-The Software Factory's Infrastructure section since 2026-10-19 (it was the hosted app `nooblyjs-ai-infrastructure` at
-`/infrastructure`, rail label Infra, from Phase 9a); its screens and rules are specified in
-`nooblyjs-ai-factory/infrastructure/.claude/steering/product.md`, from the mockups `noobly-infrastructure-environments` and
+Hosted from `nooblyjs-ai-infrastructure` at `/infrastructure` (Phase 9a; a section of the Software Factory at
+`/factory/infrastructure` from 2026-10-19 to 2026-10-20, CHG-005 and CHG-007: provisioning is not part of the
+factory); its screens and rules are specified in that repo's `.claude/steering/product.md`, from the mockups
+`noobly-infrastructure-environments` and
 `noobly-infrastructure-design-from-architecture`. Nav: Environments, Designs, Provisioning runs, Testing in
 environments · *Govern*: Blueprints, Cost, Policies. Status card: drift, live environments, cloud spend.
 
@@ -672,8 +674,8 @@ through events and APIs. Don't copy code from another slice.
 | **`nooblyjs-ai-common`** | Shared AI building blocks: provider adapters, model catalogue, tokens, **cost**, retry, SSE | The **model gateway** behind Model routing: work type → model → fallback → provider (Bedrock / Vertex / Azure); cost per call tagged with item, teammate and system |
 | **`nooblyjs-ai-harness`** | The agent runtime: agent loop, tools, permissions, sandboxing, hooks, MCP, skills, memory | What every agent runs in: factory stations, teammate tasks, Product Factory drafting agents. Enforces guardrails, no outbound internet, staging-only secrets |
 | **`nooblyjs-ai-factory`** · Product section (`product/`, `/factory/product`; it was `nooblyjs-ai-product` until 2026-10-19) | The **Product Factory** (with its own screens): signals, ideas, specs, architecture artefacts (diagram as code, ADRs, standards check, quality attributes), UX and UI artefacts, the roadmap, and the per-stage **drafting agents** | Owns the Product board, Spec, Architecture, UX Design and UI Design screens (a UI module in the frame), the handoff preview, and "ask the agent to draft" |
-| **`nooblyjs-ai-factory`** · Infrastructure section (`infrastructure/`, `/factory/infrastructure`; it was `nooblyjs-ai-infrastructure`) | **Infrastructure**: designs, environments, provisioning runs, drift, cloud cost | Environments, Design, Designs, Provisioning runs (and a run's page), Environment, Testing in environments, Blueprints, Cost, Policies. Asks the lifecycle engine for design approvals and Platform for the cloud budget; tells Platform its environments and previews |
-| **`nooblyjs-ai-factory`** · the line | **Software Factory**: queue, scheduler, line of stations, gates, PR delivery; one app at `/factory` that also mounts the two sections above and answers `host.service('product')` and `host.service('infrastructure')` for them | Line, Runs, Inbox, Campaigns, **Metrics**. Accepts handoff work items; applies quality attributes as gates; reports runs, PRs and gate results back to the Item |
+| **`nooblyjs-ai-infrastructure`** (`/infrastructure`; a section of the Software Factory from 2026-10-19 to 2026-10-20) | **Infrastructure**: designs, environments, provisioning runs, drift, cloud cost | Environments, Design, Designs, Provisioning runs (and a run's page), Environment, Testing in environments, Blueprints, Cost, Policies. Asks the lifecycle engine for design approvals and Platform for the cloud budget; tells Platform its environments and previews |
+| **`nooblyjs-ai-factory`** · the line | **Software Factory**: queue, scheduler, line of stations, gates, PR delivery; one app at `/factory` that also mounts the Product section above and answers `host.service('product')` for it | Line, Runs, Inbox, Campaigns, **Metrics**. Accepts handoff work items; applies quality attributes as gates; reports runs, PRs and gate results back to the Item |
 | **`nooblyjs-ai-teammate`** | **Digital Teammates**: hire, configure, budget and bill named agents | **Team roster**, Profiles, Work timeline, Billing & timesheets, Hire, Team memory. The source of agents across NooblyJS, including agents answering in chat and Teams meetings; every agent action bills to a timesheet and to the right team |
 | **`nooblyjs-ai-knowledge`** | **Knowledge Repository** (new): spaces, collections, source connectors, ingest with PII redaction, embeddings, cited answers, freshness, process models | **Ask & search**, **Spaces / process model** (L0 → L1 → L2), Sources, Needs review, Graph, backlinks into Items. Context provider for every agent |
 | **`nooblyjs-ai-host`** (`src/lifecycle/`) | The **lifecycle engine**, part of NooblyJS itself since 2026-10-10 (it was the hosted app `nooblyjs-ai-workflows`): Items, stages, readiness checks, approvals with target times and escalation, handoffs, send-back, and stage orchestration (which tells the Product section when an item enters a stage) | Backs Lifecycle, Approvals, the stage and approval parts of every Product Factory screen, and the UI → Factory handoff (generating Jira work items) |

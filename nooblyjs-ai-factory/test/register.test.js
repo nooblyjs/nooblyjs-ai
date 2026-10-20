@@ -55,17 +55,16 @@ test('register() describes the factory at its mount path, with a route for every
     const { hosted } = t;
     assert.equal(hosted.name, 'factory');
     assert.equal(hosted.mountPath, '/factory');
-    assert.deepEqual(hosted.ui, { entry: 'js/module.js', styles: ['css/factory.css', 'product/css/product.css', 'infrastructure/css/infrastructure.css'] });
-    // Product's rows, the Factory's own (Build), then Infrastructure's: the order work moves in (sections.js).
+    assert.deepEqual(hosted.ui, { entry: 'js/module.js', styles: ['css/factory.css', 'product/css/product.css'] });
+    // Product's rows, then the Factory's own (Build): the order work moves in (sections.js).
     assert.deepEqual(hosted.nav.map((n) => n.key), [
       'product-overview', 'product-portfolios', 'product-board', 'product-specs', 'product-architecture', 'product-ux', 'product-ui', 'product-reviews', 'product-handoffs', 'product-settings',
       'line', 'runs', 'inbox', 'campaigns', 'metrics',
-      'infra-environments', 'infra-designs', 'infra-runs', 'infra-testing', 'infra-blueprints', 'infra-cost', 'infra-policies',
     ]);
     assert.deepEqual(hosted.nav.filter((n) => n.group === 'Build').map(({ group, ...row }) => row), NAV);
-    assert.deepEqual([...new Set(hosted.nav.map((n) => n.group))], ['Product', 'Build', 'Infrastructure']);
+    assert.deepEqual([...new Set(hosted.nav.map((n) => n.group))], ['Product', 'Build']);
     // Each group has a header: an icon and a line saying what that part of the Factory does.
-    assert.deepEqual(hosted.groups.map((g) => g.name), ['Product', 'Build', 'Infrastructure']);
+    assert.deepEqual(hosted.groups.map((g) => g.name), ['Product', 'Build']);
     assert.ok(hosted.groups.every((g) => g.icon && g.hint));
     for (const key of ['status', 'close']) assert.equal(typeof hosted[key], 'function');
     assert.equal(typeof hosted.services.status, 'function');
@@ -189,12 +188,12 @@ test('the status card and badge come from the log, and new log events reach the 
   try {
     const status = await t.hosted.status();
     assert.equal(status.badges.inbox, 0);
-    // Each section's badges are there too, under their prefixed keys (the Product section's Reviews, Infrastructure's runs).
-    assert.deepEqual(Object.keys(status.badges).sort(), ['inbox', 'infra-runs', 'product-reviews']);
+    // The section's badges are there too, under their prefixed keys (the Product section's Reviews).
+    assert.deepEqual(Object.keys(status.badges).sort(), ['inbox', 'product-reviews']);
     assert.deepEqual(status.card.pill, { text: 'Accepting work', tone: 'ok' });
     assert.deepEqual(status.card.items[0], { label: 'Running now', value: '0 of 3 slots · 0 queued' });
     // One line per section, in words.
-    assert.deepEqual(status.card.items.slice(1).map((i) => i.label), ['Product', 'Infrastructure']);
+    assert.deepEqual(status.card.items.slice(1).map((i) => i.label), ['Product']);
     assert.ok(status.card.items.slice(1).every((i) => typeof i.value === 'string' && i.value.length));
     assert.deepEqual(status.card.meter, { label: 'Spent today', value: '$0 of $20', ratio: 0, tone: 'ok' });
     // Another process (factory submit, factory serve) appends to the same log.

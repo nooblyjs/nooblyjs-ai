@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import yaml from 'js-yaml';
 import { isEmptyDir } from './seed/index.js';
 import { SUITE_APPS } from './built-in-apps.js';
 
@@ -19,35 +20,75 @@ const RESERVED = new Set(['/api', '/services', '/ui', '/login', '/logout', '/hea
 /**
  * Apps that are part of another now. An older hosted-apps.yaml may still list them: the entry is skipped, and the data
  * folder they had moves into the app that took them in, once (foldData). nooblyjs-ai-workflows became part of NooblyJS
- * itself (src/lifecycle/) on 2026-10-10; Product and Infrastructure became sections of the Software Factory on 2026-10-19.
+ * itself (src/lifecycle/) on 2026-10-10; Product became a section of the Software Factory on 2026-10-19.
  */
 export const FOLDED = {
   'nooblyjs-ai-workflows': { into: 'NooblyJS (src/lifecycle/)' },
-  'nooblyjs-ai-product': { into: 'nooblyjs-ai-factory (its Product section, /factory/product)', from: 'product', to: ['factory', 'product'] },
-  'nooblyjs-ai-infrastructure': { into: 'nooblyjs-ai-factory (its Infrastructure section, /factory/infrastructure)', from: 'infrastructure', to: ['factory', 'infrastructure'] },
+  'nooblyjs-ai-product': { into: 'nooblyjs-ai-factory (its Product section, /factory/product)', from: ['product'], to: ['factory', 'product'] },
 };
 
 /**
+ * Apps that were part of another for a while and are apps of their own again. Their data moves back out, once
+ * (foldData), and an install that had them gets their entry in hosted-apps.yaml back. Infrastructure was a section of
+ * the Software Factory from 2026-10-19 to 2026-10-20 (CHG-007): provisioning is not part of the factory.
+ */
+export const UNFOLDED = {
+  'nooblyjs-ai-infrastructure': { was: 'a section of the Software Factory', from: ['factory', 'infrastructure'], to: ['infrastructure'], mountPath: '/infrastructure' },
+};
+
+const has = async (dir) => Boolean(await fs.stat(dir).catch(() => null));
+
+/**
+ * Moves one data folder. Only when the old folder exists and the new one is missing or empty: an install that has
+ * both is left for a person to look at, and said so in the log. True when it moved.
+ */
+async function moveData(name, from, to, log) {
+  if (!(await has(from))) return false;
+  if (await has(to) && !(await isEmptyDir(to))) {
+    log.warn(`${name}: both ${from} and ${to} exist; nothing was moved. Keep one and remove the other.`);
+    return false;
+  }
+  await fs.mkdir(path.dirname(to), { recursive: true });
+  await fs.rm(to, { recursive: true, force: true }); // an empty folder only (checked above)
+  await fs.rename(from, to);
+  return true;
+}
+
+/**
+ * Adds an app's entry to hosted-apps.yaml when it isn't listed, as a line at the end so the comments people wrote stay.
+ * An install seeded while the app was part of another has no entry for it.
+ */
+async function listApp(dataDir, name, mountPath, log) {
+  const file = path.join(dataDir, 'config', 'hosted-apps.yaml');
+  const text = await fs.readFile(file, 'utf8').catch(() => null);
+  if (text === null) return;
+  const listed = yaml.load(text)?.apps;
+  if (!Array.isArray(listed) || listed.some((a) => a?.package === name || a?.mountPath === mountPath)) return;
+  await fs.writeFile(file, `${text.replace(/\n*$/, '\n')}  - { package: ${name}, mountPath: ${mountPath}, enabled: true }\n`);
+  log.info(`hosted-apps.yaml: added ${name} at ${mountPath}`);
+}
+
+/**
  * Moves the data folder of each folded app to where the app that took it in keeps it (data/product →
- * data/factory/product), before any app is loaded. Only when the old folder exists and the new one doesn't: an
- * install that has both is left for a person to look at, and said so in the log. Returns what moved.
+ * data/factory/product), and of each unfolded app back to its own (data/factory/infrastructure → data/infrastructure),
+ * before any app is loaded. Returns what moved.
  */
 export async function foldData(dataDir, log) {
   const moved = [];
   for (const [name, fold] of Object.entries(FOLDED)) {
     if (!fold.from) continue;
-    const from = path.join(dataDir, fold.from);
+    const from = path.join(dataDir, ...fold.from);
     const to = path.join(dataDir, ...fold.to);
-    const has = async (dir) => Boolean(await fs.stat(dir).catch(() => null));
-    if (!(await has(from))) continue;
-    if (await has(to) && !(await isEmptyDir(to))) {
-      log.warn(`${name}: both ${from} and ${to} exist; nothing was moved. Keep one and remove the other.`);
-      continue;
-    }
-    await fs.mkdir(path.dirname(to), { recursive: true });
-    await fs.rm(to, { recursive: true, force: true }); // an empty folder only (checked above)
-    await fs.rename(from, to);
+    if (!(await moveData(name, from, to, log))) continue;
     log.info(`${name} is part of ${fold.into}: moved its data from ${from} to ${to}`);
+    moved.push({ name, from, to });
+  }
+  for (const [name, unfold] of Object.entries(UNFOLDED)) {
+    const from = path.join(dataDir, ...unfold.from);
+    const to = path.join(dataDir, ...unfold.to);
+    if (!(await moveData(name, from, to, log))) continue;
+    log.info(`${name} was ${unfold.was} and is an app of its own again: moved its data from ${from} to ${to}`);
+    await listApp(dataDir, name, unfold.mountPath, log);
     moved.push({ name, from, to });
   }
   return moved;
@@ -125,7 +166,7 @@ export async function loadHostedApps({ app, serverManager, config, store, shell,
       // An app may also be asked for by what it provides, not only by its name (structure.md §2a). The first app to
       // provide a name keeps it. As a list, each name is another name for its services: the wiki is 'knowledge' to
       // the Product Factory and Teammates. As an object, each name has services of its own: the Software Factory
-      // provides 'product' and 'infrastructure', its sections.
+      // provides 'product', its section.
       if (Array.isArray(hosted.provides)) {
         if (hosted.services) for (const alias of hosted.provides) if (typeof alias === 'string' && !services.has(alias)) services.set(alias, hosted.services);
       } else if (hosted.provides && typeof hosted.provides === 'object') {

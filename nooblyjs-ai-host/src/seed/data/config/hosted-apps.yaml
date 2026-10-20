@@ -1,7 +1,9 @@
 # The child apps NooblyJS hosts (structure.md §2a). Each entry: package (or path, development only), mountPath,
-# enabled. An app that is listed but not enabled shows as "not installed". The Software Factory has Product and
-# Infrastructure as sections since 2026-10-19 (/factory/product, /factory/infrastructure): they are not apps to list.
+# enabled. An app that is listed but not enabled shows as "not installed". The Software Factory has Product as a
+# section since 2026-10-19 (/factory/product): it is not an app to list. Infrastructure was a section too until
+# 2026-10-20 (CHG-007); it is an app of its own again.
 apps:
   - { package: nooblyjs-ai-factory, mountPath: /factory, enabled: true }
   - { package: nooblyjs-ai-teammate, mountPath: /teammates, enabled: true }
   - { package: nooblyjs-ai-knowledge, mountPath: /wiki, enabled: true }
+  - { package: nooblyjs-ai-infrastructure, mountPath: /infrastructure, enabled: true }

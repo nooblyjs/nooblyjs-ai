@@ -1,13 +1,7 @@
-> **History, not a plan (2026-10-11).** NooblyJS keeps one roadmap: `../../.claude/steering/roadmap.md`. This file is
+> **History, not a plan (2026-10-11).** NooblyJS keeps one roadmap: `../.claude/steering/roadmap.md`. This file is
 > how this repo was built before that; what was still open here is in that roadmap under "Hosted apps: open work".
 
 # Infrastructure — Roadmap
-
-> **Since 2026-10-19 this is the Software Factory's Infrastructure section** (`nooblyjs-ai-factory/infrastructure`, pages in
-> `nooblyjs-ai-factory/public/infrastructure`), not an app of its own with a rail item. Where this file says
-> `/infrastructure`, read `/factory/infrastructure`; `data/infrastructure`, read `data/factory/infrastructure`;
-> `nooblyjs-ai-infrastructure`, read the Factory's Infrastructure section. There is no `server.js` or standalone mode
-> any more. See the section's `CLAUDE.md`.
 
 > The order this module is built in, and where it stands. Scope comes from `product.md`, the rules from
 > `stack.md`, the layout from `structure.md`. Each phase ends with something you can run and judge.
@@ -82,7 +76,7 @@ Seeded people (the stand-in host's, the same as NooblyJS's): **Stevie** (Owner) 
 - [x] **Design**: breadcrumb, pills, Built from, resources by layer with the environment switch, the
       generated code, plan, cost estimate, policy checks, approvals
 - [x] `test/public/module.test.js`: CSS scoped, every nav row routed, pages leave history and `<body>` alone
-- [x] axe and 375px on every screen in NooblyJS's e2e suite (`../../nooblyjs-ai-host/test/e2e/infrastructure.story.js`)
+- [x] axe and 375px on every screen in NooblyJS's e2e suite (`../nooblyjs-ai-host/test/e2e/infrastructure.story.js`)
 - [ ] Side-by-side check against the mockups at 1440px
 
 **Test it:** `npm start`, sign in as Stevie, open `/infrastructure` next to
@@ -149,8 +143,8 @@ screens; they are **not** checked against a design, because none exists.
 - [x] In `../nooblyjs-ai-host`: the dependency, the entry in `hosted-apps.yaml` (and its seed), the rail icon `cube`
 - [x] NooblyJS's `product.md`, `structure.md`, `tech.md` and `roadmap.md` (Phase 9a) name it
 - [x] The host's `clock` everywhere a time is shown or compared (the sweep is tested by moving it)
-- [x] The **hosted-app checklist** (`../../nooblyjs-ai-host/test/infrastructure.test.js`, `test/register.test.js`)
-- [x] An e2e story over every screen in `../../nooblyjs-ai-host/test/e2e/infrastructure.story.js` (axe, 375px)
+- [x] The **hosted-app checklist** (`../nooblyjs-ai-host/test/infrastructure.test.js`, `test/register.test.js`)
+- [x] An e2e story over every screen in `../nooblyjs-ai-host/test/e2e/infrastructure.story.js` (axe, 375px)
 
 ## I7 — The drafting agent ☐
 

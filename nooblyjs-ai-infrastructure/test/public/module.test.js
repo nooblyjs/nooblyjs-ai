@@ -11,7 +11,7 @@ import { startApp } from '../helpers.js';
 
 const require = createRequire(import.meta.url);
 const { unscopedSelectors } = require('nooblyjs-core/src/shell/css-scope.js');
-const PUBLIC = new URL('../../../public/infrastructure/', import.meta.url);
+const PUBLIC = new URL('../../public/', import.meta.url);
 
 async function filesIn(dir) {
   const entries = await fs.readdir(dir, { recursive: true, withFileTypes: true });

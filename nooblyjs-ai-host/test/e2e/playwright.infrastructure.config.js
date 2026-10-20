@@ -1,4 +1,4 @@
-// Playwright for the Infrastructure story (roadmap Phase 9a: the Factory's Infrastructure section, at /factory/infrastructure).
+// Playwright for the Infrastructure story (roadmap Phase 9a: nooblyjs-ai-infrastructure hosted at /infrastructure).
 // It runs on its own fresh NooblyJS, because it approves a design, pauses provisioning and destroys an environment.
 // The mock provisioner takes about 3 seconds a run here, so progress can be seen moving. `npm run test:e2e` runs it last.
 import { defineConfig } from '@playwright/test';

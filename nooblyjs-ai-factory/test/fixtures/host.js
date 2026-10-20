@@ -80,7 +80,7 @@ export function createHost({ people = PEOPLE, now = () => Date.now() } = {}) {
   };
 }
 
-/** nooblyjs-core's memory queue, as far as the sections use it (the Product section's drafts, Infrastructure's runs). */
+/** nooblyjs-core's memory queue, as far as the sections use it (the Product section's drafts). */
 function memoryQueue() {
   const queues = new Map();
   const q = (name) => (queues.has(name) ? queues.get(name) : queues.set(name, []).get(name));

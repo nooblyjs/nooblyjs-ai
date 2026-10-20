@@ -40,7 +40,7 @@ inclusion: always
 │ Outlook · CLI (factory, noobly) · Desktop (standalone)                                 │
 └──────────────────────────────────────┬──────────────────────────────────────────────┘
 ┌──────────────────────────────── Systems (hosted apps) ──────────────────────────────┐
-│ Home   Product   Factory   Quality*   Security*   Infra   Operations*   Teammates     │
+│ Home  Factory (Product · Build · Test*)  Security*  Infra  Operations*  Teammates     │
 │ Knowledge   Platform                                       (* proposed)              │
 └──────────────────────────────────────┬──────────────────────────────────────────────┘
 ┌──────────────────────────────── Spine (in the host) ────────────────────────────────┐
@@ -54,26 +54,37 @@ inclusion: always
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 3. The lifecycle engine, version 2
+## 3. The lifecycle engine, version 3
 
-The engine in `nooblyjs-ai-host/src/lifecycle/` keeps its model and gains three stages.
+The engine in `nooblyjs-ai-host/src/lifecycle/` keeps its model. Version 2 (Phase 16a, 2026-10-19) added Verify,
+Release and Operate; version 3 (decided 2026-10-20, Phases 16b–16e, `product.md` §3.2) follows how the teams work.
 
-- **Stages** become `discover, specify, architect, ux, ui, build, verify, release, operate` (decided 2026-10-19, built
-  in Phase 16a). Items in `ship` move to **`verify`** once, on start, recorded in the audit log: an item entered Ship
-  when people merged its pull requests, and that waiting is Verify's now.
-- **Stage groups for Metrics**: Product (Discover + Specify), Architecture, UX & UI design, Build, **Verify**,
-  **Release**, **Operate**, with Ship kept as history. The chart's last part is "Build to release".
-- **Approval types** added: `release-candidate` (Verify → Release), `outcome-review` (Operate → done), and the app
-  approvals `threat-model` and `risk-acceptance`. The production deploy keeps its key `deploy` (now Release → Operate,
-  two different people) and the merge now leaves Build for Verify. Each one is a rule with its approver count, target
-  and escalation, like the existing ones (built in, so older data folders get them).
+- **Stages** are `discover, product, design, engineer, build, test, release, operate`. Older keys move once, on
+  start, recorded in the audit log: `specify`, `ux`, `ui` → `product`; `architect` → `design`; `verify` and `ship` →
+  `test`.
+- **Stories** are items of their own (type `story`, linked to their item and to the feature they build) from the Design
+  handoff on; each goes through Engineer, Build and Test on its own. A **feature** goes to Release on its own when all
+  its stories have passed Test; the item shows where its stories and features are.
+- **Handoffs**: the Product handoff (`spec`) → Design; the Design handoff (`design-handoff`, per story) → Engineer;
+  the Engineering sign-off (`engineering-signoff`, one approval by an Application Architect and a test lead) → Build,
+  before which the Factory starts no run; the **Build approval** (`build-approval`, waiting on an engineer) → Test; the
+  **Test approval** (`test-approval`, waiting on a human tester), after which the pull request may merge → Release. Any
+  person but a Viewer may give any approval on behalf of someone it waits on, recorded as `by` and `for`; agents
+  never; a rule that needs two people (the deploy) needs two different givers. The
+  production deploy (`deploy`, two different people, per feature) → Operate; the outcome review → done. The UI handoff
+  (`ui-handoff`) and the release candidate (`release-candidate`) are retired.
+- **Stage groups for Metrics**: Product (Discover, Product, and history's Specify, UX, UI), Design (and history's
+  Architect), Engineer, Build, **Test** (and history's Verify), **Release**, **Operate**, with Ship kept as history.
+  The chart's last part is "Build to release".
 - **App approvals** (the `infra-design` pattern from Phase 9a: `requestAppApproval` / `closeAppApproval`) are how
-  Quality, Security and Operations ask for decisions. Deciding on Home · Approvals or on the app's own screen is the
-  same decision.
+  Quality (from the Factory's Test section), Security and Operations ask for decisions. Deciding on Home · Approvals or
+  on the app's own screen is the same decision.
 - **Stage orchestration** tells the owning system when an item enters its stage (as it tells Product today):
-  `verify` → Quality and Security; `release` and `operate` → Operations.
-- **Readiness for the new stages** comes from checks (§5): an item can't request "release candidate accepted" until
-  the Verify checks pass, unless a person overrides with a reason.
+  `design` → the Design section; `engineer` → the Factory (application architecture) and Test (test analysis);
+  `test` → Quality (the tester's queue) and Security; `release` and `operate` → Operations.
+- **Readiness for the new stages** comes from checks (§5): a pull request can't be given its Test approval until the
+  Test stage's checks pass (the required automated tests present and passing), unless a person overrides with a
+  reason.
 
 ## 4. The trace
 
@@ -96,8 +107,12 @@ Theme ─ Portfolio ─ Value stream ─ Epic ─ Feature ─ Item
 
 - **Links live in the artefact that knows about them**, in its front matter: `links: [{ rel: 'verifies', to:
   'REQ-031-04' }]`. The owner of a record writes its links; nobody writes into another app's files.
+- **Lifecycle version 3 adds two links in the chain** (2026-10-20): Requirement ─ **Business requirement** (Design) ─
+  **Story** (Design's technical feature, which builds a Feature) ─ Test case and Work item (Engineer) ─ Run ─ PR, with
+  the Build and Test approvals on the PR, and a Feature's release once all its stories have passed Test.
 - **Ids are global and typed**: `PRD-031`, `REQ-031-04`, `AC-031-04-2`, `ADR-014`, `THR-031-3`, `TST-…`, `RUN-213`,
-  `slots-api#482`, `REL-slots-1.0`, `INC-…` (prefixes decided 2026-10-19). A requirement's id includes its item's number,
+  `slots-api#482`, `REL-slots-1.0`, `INC-…` (prefixes decided 2026-10-19), and `BR-031-01`, `STORY-031-1`,
+  `TC-031-1-1` (a test case) (proposed 2026-10-20). A requirement's id includes its item's number,
   as INF-031 already does.
 - **The trace index** is derived: the host reads links from every app's `trace()` service (§8) and from events, and
   keeps `data/trace/index.yaml` as a cache that can be deleted and rebuilt (`npm run trace:rebuild`), the way
@@ -189,7 +204,7 @@ Each app writes only under `data/<mount>/`. Shared records go through the host.
 | Trace (host) | `data/trace/` (derived) | `trace.of(ref)`, `trace.gaps(item)`, `trace.coverage(item)` | `trace.rebuilt` |
 | Product | as today + epics, features, requirements, elicitation sessions, business cases | as today + `requirementsFor`, `criteriaFor`, `businessCaseFor`, `trace` | as today + `requirement.accepted`, `elicitation.recorded` |
 | Factory | runs, gates, PRs | as today + `scansFor(pr)`, `trace` | as today + `scan.finished` |
-| **Quality** | test strategies, test cases, suites, test runs, defects | `strategyFor`, `coverageFor(item)`, `resultsFor(environment)`, `runSuite`, `trace` | `test_run.finished`, `defect.opened`, `check.recorded` |
+| **Quality** (the Factory's Test section) | test strategies, test cases, suites, test runs, defects | `strategyFor`, `coverageFor(item)`, `resultsFor(environment)`, `runSuite`, `trace` | `test_run.finished`, `defect.opened`, `check.recorded` |
 | **Security** | threat models, findings, risk acceptances, pen tests, policies | `threatModelFor`, `findingsFor(ref)`, `riskFor(release)`, `scan`, `trace` | `threat_model.accepted`, `finding.opened` / `closed`, `risk.accepted`, `check.recorded` |
 | Infrastructure | as today | as today + `apply(release)` | as today |
 | **Operations** | releases, deployments, SLOs, incidents, reviews | `releasesFor(item)`, `sloFor(service)`, `incidentsFor(ref)`, `trace` | `release.created`, `deploy.*`, `slo.burning`, `incident.*`, `outcome.reviewed`, `signal.raised` |
@@ -228,12 +243,14 @@ Kept short: each new app specifies its own screens in its `product.md` when its 
 
 | Where | What is added |
 | --- | --- |
-| Home · Overview | The line shows nine stages; a **Learn** arrow back to Discover with this month's signals from production |
-| Home · Approvals | Threat model, release candidate, risk acceptance, production deploy, outcome review |
+| Home · Overview | The line shows eight stages; a **Learn** arrow back to Discover with this month's signals from production |
+| Home · Approvals | Design handoff, Engineering sign-off, Build approval, Test approval, threat model, risk acceptance, production deploy, outcome review |
 | Item page | **Trace** tab; **Checks** panel (all kinds, one list, with overrides) |
 | For you | Business owner, Business analyst, QA, Security engineer, SRE homes |
-| Product · Specify | **Elicitation**: stakeholders, sessions, candidate requirements, questions |
-| Quality | Strategy, Coverage, Test runs (by environment), Defects |
+| Product · Specs | **Elicitation**: stakeholders, sessions, candidate requirements, questions |
+| Factory · Design | Business requirements, Solution architecture (feature landscape, impacted systems, NFRs), Functional analysis (interface and technical requirements), Stories, Handoff |
+| Factory · Engineering | Application architecture (from the code), Test analysis, Engineering sign-off |
+| Factory · Test (Quality) | Test approvals (pull requests waiting on a tester), Coverage, Test runs (by environment), Defects |
 | Security | Threat models, Findings (by age against fix-by), Risk register, Pen tests, Policies |
 | Operations | Releases, Deployments, SLOs, Incidents, Reviews |
 | Metrics | DORA tiles, requirement coverage, findings past fix-by, idea → outcome |
@@ -242,7 +259,7 @@ Kept short: each new app specifies its own screens in its `product.md` when its 
 
 | Risk | Mitigation |
 | --- | --- |
-| Three new apps add weight to one process | They are hosted, small, file-backed and lazy; the host's failure isolation (checklist steps 8–10) already keeps one bad app from taking down the rest |
+| Two new apps and a new Factory section add weight to one process | They are hosted, small, file-backed and lazy; the host's failure isolation (checklist steps 8–10) already keeps one bad app from taking down the rest |
 | The trace index drifts from the artefacts | It is derived only; `trace:rebuild` and a reconcile test, like `metrics:reconcile` |
 | One check shape forces changes into four existing apps | Adopt it at the edge first: each app maps its own records to the shape in its `checksFor` service, then migrates storage later if worth it |
 | Scanners and test tools need outbound access (rules, databases) | Their images are built with what they need; registries and rule feeds are allow-listed like package registries |

@@ -1,11 +1,10 @@
-// The Infrastructure section of the Software Factory (nooblyjs-ai-factory). It was the hosted app
-// nooblyjs-ai-infrastructure until 2026-10-19; now the Factory's register() (src/services/hosted.js) mounts it at
-// /factory/infrastructure, with its data in data/factory/infrastructure, and the Factory's UI module shows its pages
-// under /factory/infrastructure. register() here still takes the same arguments as a hosted app's, so the tests mount
-// it on their own (test/fixtures/host.js) at /infrastructure. Nothing here listens on a port.
+// NooblyJS Infrastructure as a hosted app (noobly structure.md §2a, ../nooblyjs-ai-host/.claude/steering/structure.md §2a). NooblyJS imports this
+// file and calls register() with its Express app, its nooblyjs-core serverManager and what it shares (`host`);
+// server.js does the same when the repo runs on its own, and the tests do it with test/fixtures/host.js. Nothing
+// here listens on a port.
 //
-// What it returns is a section, not an app: the Factory reads its nav, status and services, and NooblyJS draws the
-// rail and the sidebar from the Factory's description (../../nooblyjs-ai-host/.claude/steering/structure.md §2a).
+// The app owns its screens: the UI is a module (public/js/module.js) that the NooblyJS frame loads into its content
+// area, and NooblyJS draws the rail and the sidebar from the description register() returns.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,13 +24,10 @@ import { withWords } from './src/services/event-words.js';
 import { seed as seedStory } from './src/seed/index.js';
 
 const NAME = 'infrastructure';
-// One or more path segments: /infrastructure on its own, /factory/infrastructure inside the Software Factory.
-const MOUNT = /^(\/[a-z0-9][a-z0-9-]{0,62})+$/;
-const { version: VERSION } = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const MOUNT = /^\/[a-z0-9][a-z0-9-]{0,62}$/;
+const { version: VERSION } = JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 const NEEDS = ['express', 'auth', 'requireRole', 'can', 'audit', 'events', 'store', 'people', 'service', 'frame'];
-// The browser files live with the Factory's (public/infrastructure/), so the Factory's UI module can import this
-// section's route table at the same relative URL in the browser and on disk.
-const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'infrastructure');
+const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 
 /** Sidebar rows (product.md §5): `path` is relative to the mount path, `icon` names a UI kit icon. */
 export const NAV = [
@@ -55,12 +51,12 @@ export const NAV = [
  */
 export async function register(app, serverManager, { mountPath = '/infrastructure', dataDir, host, provisionStepMs, sweepEveryMs = Number(process.env.INFRA_SWEEP_CHECK_MS) || 60_000 } = {}) {
   // Check everything before mounting anything, so a failed start leaves nothing half-mounted (noobly structure.md §2a).
-  if (typeof app?.use !== 'function') throw new Error("The Infrastructure section needs the host's Express app.");
-  if (!serverManager?.initialized) throw new Error('The Infrastructure section needs an initialised serverManager (the host initialises it).');
+  if (typeof app?.use !== 'function') throw new Error("nooblyjs-ai-infrastructure needs the host's Express app.");
+  if (!serverManager?.initialized) throw new Error('nooblyjs-ai-infrastructure needs an initialised serverManager (the host initialises it).');
   if (!MOUNT.test(mountPath ?? '')) throw new Error(`mountPath must look like /infrastructure, not ${JSON.stringify(mountPath)}`);
-  if (!dataDir) throw new Error('The Infrastructure section needs a dataDir.');
+  if (!dataDir) throw new Error('nooblyjs-ai-infrastructure needs a dataDir.');
   const missing = NEEDS.filter((key) => !host?.[key]);
-  if (missing.length) throw new Error(`The Infrastructure section needs host.${missing.join(', host.')} from the host.`);
+  if (missing.length) throw new Error(`nooblyjs-ai-infrastructure needs host.${missing.join(', host.')} from the host.`);
   // Every event from here on carries `system: 'infrastructure'` and the sentence Activity shows (event-words.js).
   host = { ...host, events: withWords(host.events) };
   const provisioner = createProvisioner({

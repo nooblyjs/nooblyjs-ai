@@ -1,5 +1,5 @@
 // A stand-in for the NooblyJS host, with exactly the shape of the `host` NooblyJS hands to register() (noobly structure.md §2a,
-// ../../nooblyjs-ai-host/src/noobly.js hostFor()). The section's tests run on it.
+// ../nooblyjs-ai-host/src/noobly.js hostFor()). The tests run on it, and so does server.js (standalone mode, stack.md §5).
 //
 // Sign-in is for development only: the person is named by the X-Dev-Person header (tests, curl) or the
 // noobly.dev-person cookie (set by server.js's /login). Permissions come from the access role, through the same

@@ -94,7 +94,7 @@ export function createContainers({ files, clock, events, services, log }) {
       return {
         id: p.id, name: p.name, slots: p.slots, used, queued, full, stateText: full ? 'Full' : `${used} of ${p.slots} slots`,
         note: fromApp ? `${p.note ?? ''} · from Infrastructure`.replace(/^ · /, '') : p.note ?? '',
-        ...(fromApp ? { href: '/factory/infrastructure/environments' } : {}),
+        ...(fromApp ? { href: '/infrastructure/environments' } : {}),
       };
     });
   }

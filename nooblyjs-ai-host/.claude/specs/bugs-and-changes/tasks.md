@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-007, CHG-007.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-007, CHG-008.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -202,6 +202,31 @@ know; "steps" can be one line.
     looked at in a browser here (no Chromium libraries): please check the sidebar at desktop and phone width, and
     reload with the cache emptied, since `/ui/css/shell.css` may be cached.
   - Steering: nooblyjs-ai-host `structure.md` §2a (`groups`)
+
+- [ ] CHG-007 — Infrastructure is an app of its own again, not a section of the Software Factory · Rail, Factory, Infrastructure · nooblyjs-ai-infrastructure, nooblyjs-ai-factory, nooblyjs-ai-host, monorepo root · Phase 16a+
+  - Asked: 2026-10-20 · Status: fixed
+  - What and why: "Infrastructure is not part of the factory. The factory should be Product, Design, Build, Test but
+    provisioning of infrastructure is something different." This undoes the Infrastructure half of CHG-005; Product
+    stays a section. `nooblyjs-ai-infrastructure` is back at the monorepo root as it was before CHG-005 (`index.js`,
+    `server.js` standalone on :11008, its own `package.json`, tests, docs and pages in `public/`), hosted at
+    `/infrastructure` with the rail label Infra. The Factory's `SECTIONS` (server and browser) list Product only, its
+    sidebar is Product · Build, and `provides` is `{ product }`. The host lists it again (`SUITE_APPS`, the seeded
+    `hosted-apps.yaml`, its `package.json`), links to `/infrastructure` (Platform · Environments and Containers, the
+    perf script), and `src/hosted-apps.js` `UNFOLDED` + `foldData` move an install's `data/factory/infrastructure`
+    back to `data/infrastructure` once, adding its `hosted-apps.yaml` entry (a line at the end) when it was missing. The
+    monorepo scripts (`each.js`, `start:infrastructure`) and the steering sync have it again. CHG-006's Infrastructure
+    group header goes with it: the Factory describes two groups now.
+  - Check: Infrastructure 46/46; factory package 534, 527 pass (the line's 3 known failures, as in CHG-005); the
+    Factory's `sections`, `register` and `module` tests 22/22; host 317, 122 pass, against 316 and 121 for the same tree
+    without this change: no test that passed fails, and the new `foldData` test passes (the rest fail on the missing
+    sample story, BUG-006). Not checked in a browser; the e2e specs were updated but not run (BUG-006).
+  - Notes: the history notes in docs/phases, `.claude/learning/` and the dated audits still describe it as they were.
+    Decided the same day: Quality is the Factory's Test section, not a separate app (root `product.md` §4, §9;
+    `roadmap.md` Phase 20; `stack.md` §2; `design.md`).
+  - Steering: root `product.md` §2, §4, §9, `stack.md` §2–§3, `roadmap.md` (note at the top, Phase 16b and later,
+    open work); host `product.md` §5.1, §5.7, §5.7a, §10, `structure.md` §1, §2a, §4, `tech.md` (intro), §8, §8b,
+    `CLAUDE.md`, `docs/mocking-audit.md`; the Factory's `CLAUDE.md` and `.claude/steering/{product,structure,tech,
+    Architecture}.md`; `nooblyjs-ai-infrastructure/CLAUDE.md`.
 
 ## Closed
 

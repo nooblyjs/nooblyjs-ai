@@ -22,10 +22,11 @@ const arg = (name, fallback) => { const i = process.argv.indexOf(`--${name}`); r
 const TIMES = Math.max(Number(arg('times', 10)) || 10, 1);
 const TARGET_MS = Math.max(Number(arg('target', 1000)) || 1000, 1);
 const KEEP = process.argv.includes('--keep');
-// The Software Factory brings its Product and Infrastructure sections (/factory/product, /factory/infrastructure).
+// The Software Factory brings its Product section (/factory/product).
 const HOSTED = [
   { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
   { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
+  { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true },
 ];
 /** The APIs behind the pages people open most (product.md §5.2, §5.3, §5.7). */
 const PAGES = [
@@ -42,7 +43,7 @@ const PAGES = [
   ['Platform · Audit log', '/api/v1/platform/audit'],
   ['Platform · Settings', '/api/v1/platform/settings'],
   ['Teammates', '/teammates/api/v1/teammates'],
-  ['Infrastructure · Environments', '/factory/infrastructure/api/v1/environments'],
+  ['Infrastructure · Environments', '/infrastructure/api/v1/environments'],
 ];
 const ENTITY_DIRS = ['workflows/items', 'workflows/approvals', 'factory/product/specs', 'factory/product/ideas', 'factory/product/signals'];
 const STREAM_DIRS = ['events', 'audit'];

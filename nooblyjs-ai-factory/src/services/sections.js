@@ -1,22 +1,21 @@
 // @ts-check
-// The Software Factory's SECTIONS (2026-10-19). Product (signals → ideas → specs → architecture → UX → UI → handoff) and
-// Infrastructure (designs → environments → provisioning → drift → cloud cost) were hosted apps of their own,
-// nooblyjs-ai-product at /product and nooblyjs-ai-infrastructure at /infrastructure. They are part of this app now: one
-// rail item, one sidebar, one package. Each section keeps its own code (product/, infrastructure/), its own pages
-// (public/product/, public/infrastructure/) and its own data, and is mounted here under the Factory's path:
+// The Software Factory's SECTIONS (2026-10-19). Product (signals → ideas → specs → architecture → UX → UI → handoff) was
+// a hosted app of its own, nooblyjs-ai-product at /product. It is part of this app now: one rail item, one sidebar, one
+// package. A section keeps its own code (product/), its own pages (public/product/) and its own data, and is mounted
+// here under the Factory's path:
 //
 //   /factory/product/…          the Product section: its API at /factory/product/api/v1, its pages, its files
-//   /factory/infrastructure/…   the Infrastructure section, the same way
+//
+// Infrastructure was a section too, from 2026-10-19 to 2026-10-20 (CHG-007): provisioning is not part of the factory,
+// so it is the hosted app nooblyjs-ai-infrastructure at /infrastructure again.
 //
 // A section's register() takes what a hosted app's does, so its tests still mount it on its own. Here it is given
 // the Factory's host with a store of its own (data/factory/<section>), so it writes only inside the Factory's
-// folder. Other NooblyJS apps still ask for host.service('product') and host.service('infrastructure'): the Factory
-// returns both under `provides`.
+// folder. Other NooblyJS apps still ask for host.service('product'): the Factory returns it under `provides`.
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { register as registerProduct, NAV as PRODUCT_NAV } from '../../product/index.js';
-import { register as registerInfrastructure, NAV as INFRASTRUCTURE_NAV } from '../../infrastructure/index.js';
 
 const require = createRequire(import.meta.url);
 const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
@@ -29,10 +28,9 @@ const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
  */
 export const SECTIONS = [
   { key: 'product', label: 'Product', group: 'Product', icon: 'product', hint: 'From signal to handoff', place: 'before', path: '/product', prefix: 'product', register: registerProduct, nav: PRODUCT_NAV, styles: 'product/css/product.css' },
-  { key: 'infrastructure', label: 'Infrastructure', group: 'Infrastructure', icon: 'cube', hint: 'Designs, environments and cost', place: 'after', path: '/infrastructure', prefix: 'infra', register: registerInfrastructure, nav: INFRASTRUCTURE_NAV, styles: 'infrastructure/css/infrastructure.css' },
 ];
 
-/** The Factory's own group, between the two sections: the line. */
+/** The Factory's own group, after the sections that come 'before' it: the line. */
 export const BUILD_GROUP = { name: 'Build', icon: 'factory', hint: 'Issues in, reviewed pull requests out' };
 
 // Rows whose own label would read oddly inside a group named after the section ("Product › Product").

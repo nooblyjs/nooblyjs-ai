@@ -52,8 +52,8 @@ an answer can be added to an item, saved or reported as wrong (`/wiki/datasource
 **Platform** is real (`src/services/platform/`, `/api/v1/platform/…`, `public/js/pages/platform/`): repositories and
 agent access, model routes, budgets with a spend ledger, guardrails, a simulated container runtime, secrets (references
 only), members and the audit log. `host.service('platform').checkAgentWork()` runs before every agent action
-(Teammates' `runTask`, Product drafts, Factory intake). **Infrastructure** (the Software Factory's Infrastructure
-section since 2026-10-19, at `/factory/infrastructure`) owns environments and previews: designs, provisioning runs (a mock provisioner),
+(Teammates' `runTask`, Product drafts, Factory intake). **Infrastructure** (`nooblyjs-ai-infrastructure`, at
+`/infrastructure`, rail label Infra) owns environments and previews: designs, provisioning runs (a mock provisioner),
 drift and cloud cost. Its design approvals are `infra-design` approvals in the lifecycle engine, shown on Home ·
 Approvals; it asks Platform's **cloud** budget before provisioning; Platform · Environments lists its environments.
 Home's **Metrics** is real (`src/services/metrics/`, `GET /api/v1/home/metrics`, `public/js/pages/home/metrics.js`):
@@ -106,11 +106,12 @@ initialises nooblyjs-core's `ServiceRegistry` (the **`serverManager`**) once, th
   answers to `host.service('knowledge')`).
   Each one serves a UI module (`public/js/module.js`, a route table) and its API under
   `<mountPath>/api/v1`, and returns its rail entry and nav as data from `register()`.
-- Since 2026-10-19 `nooblyjs-ai-factory` carries two **sections**: Product (`/factory/product`, was `nooblyjs-ai-product`)
-  and Infrastructure (`/factory/infrastructure`, was `nooblyjs-ai-infrastructure`: designs, environments, provisioning
-  runs, drift, cloud cost). One rail item; the Factory's `provides` keeps `host.service('product')` and
-  `host.service('infrastructure')`. Their data is `data/factory/product` and `data/factory/infrastructure` (moved from
-  `data/product` and `data/infrastructure` on the first start: `src/hosted-apps.js` `foldData`).
+- `nooblyjs-ai-infrastructure` → `/infrastructure` (designs, environments, provisioning runs, drift, cloud cost).
+- Since 2026-10-19 `nooblyjs-ai-factory` carries a **section**: Product (`/factory/product`, was `nooblyjs-ai-product`).
+  One rail item; the Factory's `provides` keeps `host.service('product')`. Its data is `data/factory/product` (moved
+  from `data/product` on the first start: `src/hosted-apps.js` `foldData`). Infrastructure was a section too from
+  2026-10-19 to 2026-10-20; it is an app of its own again (CHG-007), and `foldData` moves an install's
+  `data/factory/infrastructure` back to `data/infrastructure`.
 - **The lifecycle engine is part of `nooblyjs-ai-host` itself** (`src/lifecycle/`: items, stages, approvals, handoffs). It was the
   hosted app `nooblyjs-ai-workflows` until 2026-10-10. `src/noobly.js` mounts it before any hosted app; it still answers at
   `/workflows/api/v1`, keeps its files in `data/workflows/`, and is `host.service('workflows')` to the children.

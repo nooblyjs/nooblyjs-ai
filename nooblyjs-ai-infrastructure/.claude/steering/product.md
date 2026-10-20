@@ -4,12 +4,6 @@ inclusion: always
 
 # Infrastructure (`nooblyjs-ai-infrastructure`)
 
-> **Since 2026-10-19 this is the Software Factory's Infrastructure section** (`nooblyjs-ai-factory/infrastructure`, pages in
-> `nooblyjs-ai-factory/public/infrastructure`), not an app of its own with a rail item. Where this file says
-> `/infrastructure`, read `/factory/infrastructure`; `data/infrastructure`, read `data/factory/infrastructure`;
-> `nooblyjs-ai-infrastructure`, read the Factory's Infrastructure section. There is no `server.js` or standalone mode
-> any more. See the section's `CLAUDE.md`.
-
 > **What this repo is:** NooblyJS's Infrastructure module. It owns **infrastructure designs** (drafted by
 > an agent from an approved architecture), the **environments** built from them, the **provisioning
 > runs** that build them, drift, and what the environments cost. It owns its **screens** (a UI module
@@ -17,7 +11,7 @@ inclusion: always
 >
 > **Source of truth:** the two mockups in `.claude/steering/ui/` (`noobly-infrastructure-environments`,
 > `noobly-infrastructure-design-from-architecture`) for what this module shows, and the NooblyJS product
-> definition (`../../nooblyjs-ai-host/.claude/steering/product.md`) for governance, roles, the lifecycle and the shell.
+> definition (`../nooblyjs-ai-host/.claude/steering/product.md`) for governance, roles, the lifecycle and the shell.
 > If this file disagrees with the NooblyJS `product.md`, **NooblyJS wins**. `stack.md` has the platform rules,
 > `structure.md` the layout, API and data.
 >
@@ -221,7 +215,7 @@ agent is **Ines Tau**. Budget $6,000 a month, $2,140 spent in October. All sampl
 > owner is, automatic apply as a Platform guardrail, releases, cloud and region, the IaC tool, Ines Tau.
 
 - **Infrastructure is not in the NooblyJS steering files.** Adding it means updating
-  `../../nooblyjs-ai-host/.claude/steering/product.md` (§1 systems, §5.1 rail, §10 child projects), `structure.md`
+  `../nooblyjs-ai-host/.claude/steering/product.md` (§1 systems, §5.1 rail, §10 child projects), `structure.md`
   §2a (mount table, `hosted-apps.yaml`) and `roadmap.md` (a phase). The mockups put **Infra** on the
   rail between Factory and Teammates.
 - **Overlap with Platform.** Platform's nav has **Environments** and **Secrets**, and Platform ·

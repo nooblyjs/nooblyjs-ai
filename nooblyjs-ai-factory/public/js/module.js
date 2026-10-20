@@ -3,13 +3,12 @@
 // register()'s `nav`, src/services/hosted.js), the signed-in person and the chat. This app
 // draws the content area only. Old dashboard links map one to one: #/run/<id> → /runs/<id>.
 //
-// Since 2026-10-19 the Product and Infrastructure sections' pages are here too, under /product and /infrastructure
-// (sections.js). Their route tables are imported at the same relative URL they are served from.
+// Since 2026-10-19 the Product section's pages are here too, under /product (sections.js). Its route table is imported
+// at the same relative URL it is served from.
 import { SECTIONS, sectionRoutes } from './sections.js';
 import { routes as productRoutes } from '../product/js/module.js';
-import { routes as infrastructureRoutes } from '../infrastructure/js/module.js';
 
-const OWN = { product: productRoutes, infrastructure: infrastructureRoutes };
+const OWN = { product: productRoutes };
 
 export const routes = [
   { path: '/', redirect: '/line' },

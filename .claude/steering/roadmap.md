@@ -16,11 +16,23 @@ inclusion: always
 > **Decided 2026-10-19:** nine lifecycle stages (Verify, Release and Operate replace Ship); three new apps, Quality,
 > Security and Operations, built in that order; this file is the one roadmap.
 >
-> **2026-10-19:** the Product Factory (`nooblyjs-ai-product`, at `/product`) and Infrastructure (`nooblyjs-ai-infrastructure`, at
-> `/infrastructure`) are **sections of the Software Factory** now: one package (`nooblyjs-ai-factory/product`,
-> `nooblyjs-ai-factory/infrastructure`), one rail item (Factory), at `/factory/product` and `/factory/infrastructure`, with
-> their data in `data/factory/product` and `data/factory/infrastructure`. Where a phase below names those projects or
-> paths, read the section. `host.service('product')` and `host.service('infrastructure')` did not change.
+> **Decided 2026-10-20:** the factory is Product, Design, Build and Test. **Quality is the Software Factory's Test
+> section** (built inside `nooblyjs-ai-factory` from Phase 16d), not a separate app. The lifecycle follows how the
+> teams work (`product.md` §3.2, §3.2a–c): eight stages, Discover · Product · Design · Engineer · Build · Test ·
+> Release · Operate (Test replaces Verify); Design writes the stories that build a feature, handed to the Factory one at
+> a time; Engineer is signed off before anything is built; the AI builds and tests, an engineer gives the Build
+> approval, a human tester verifies the pull request and gives the Test approval, then it merges; a feature is
+> released on its own once all its stories have passed Test.
+> Phases 16b–16e build that; checks and the trace move to 16f.
+>
+> **2026-10-20 (CHG-007):** Infrastructure is the hosted app `nooblyjs-ai-infrastructure` at `/infrastructure` again, with
+> its data in `data/infrastructure`: the factory is Product, Design, Build and Test, and provisioning infrastructure is
+> something different. It was a section of the Software Factory for a day (`/factory/infrastructure`, CHG-005).
+>
+> **2026-10-19:** the Product Factory (`nooblyjs-ai-product`, at `/product`) is a **section of the Software Factory** now:
+> one package (`nooblyjs-ai-factory/product`), one rail item (Factory), at `/factory/product`, with its data in
+> `data/factory/product`. Where a phase below names that project or its paths, read the section.
+> `host.service('product')` did not change.
 >
 > **2026-10-10:** the lifecycle engine, built in Phase 2 as the hosted app `nooblyjs-ai-workflows`, is part of
 > `nooblyjs-ai-host` now (`src/lifecycle/`). Where an earlier phase names `nooblyjs-ai-workflows`, read "the lifecycle
@@ -79,12 +91,16 @@ inclusion: always
 | 14 | NooblyJS in the browser: the Edge extension (agent chat beside Jira) | ☐ (skeleton in `apps/edge`) |
 | 15 | No mocks: everything real | ☐ blocked on the cloud, runtime and model decisions (`stack.md` §5) |
 | 16a | Nine stages: Verify, Release and Operate replace Ship | ☐ built, waiting for review |
-| 16b | One shape for checks, and the trace | ☐ next |
+| 16b | Eight stages, and the Factory's five groups | ☐ next |
+| 16c | The Design section: business requirements, solution architecture, functional analysis, stories | ☐ |
+| 16d | Engineering: application architecture from the code, and test analysis | ☐ |
+| 16e | Build and Test: the AI builds and tests, engineers and testers approve | ☐ |
+| 16f | One shape for checks, and the trace | ☐ |
 | 17 | Strategy and the business case | ☐ |
 | 18 | Requirements elicitation | ☐ |
 | 19 | Security by design (new app: Security) | ☐ |
-| 20 | Quality (new app: Quality) | ☐ |
-| 21 | Verify in environments | ☐ |
+| 20 | Quality (the Factory's Test section) | ☐ |
+| 21 | Testing in environments | ☐ |
 | 22 | Release (new app: Operations, part 1) | ☐ |
 | 23 | Operate and learn (Operations, part 2) | ☐ |
 
@@ -93,9 +109,13 @@ Open bugs and changes: BUG-001 to BUG-006 and CHG-001 to CHG-004, waiting for ch
 ### The plan from here
 
 ```
-Now ─► 16a Stages ─► 16b Checks + trace ─► 17 Strategy ─► 18 Elicitation ─┐
-                                                     ├─► 21 Verify in environments ─► 22 Release ─► 23 Operate & Learn
-       19 Security by design ─► 20 Quality ──────────┘        (Infra I8)                (Infra I10)
+Now ─► 16a Stages ─► 16b Eight stages ─► 16c Design ─► 16d Engineering ─► 16e Build + Test ─► 16f Checks + trace
+                                                                                                             │
+       ┌─────────────────────────────────────────────────────────────────────────────────────────────────────┘
+       ▼
+       17 Strategy ─► 18 Elicitation ─────────┐
+                                              ├─► 21 Testing in environments ─► 22 Release ─► 23 Operate & Learn
+       19 Security by design ─► 20 Quality ───┘        (Infra I8)                (Infra I10)
                                                                                   ▲
        12 · 13 · 14 sign-offs continue alongside                                 15 No mocks unblocks the real versions
 ```
@@ -856,7 +876,7 @@ architecture standards, budgets and teammate rates.
 
 > **Built 2026-10-19, waiting for review.** Spec: `nooblyjs-ai-host/.claude/specs/phase-16a-nine-stages/`. Summary:
 > `nooblyjs-ai-host/docs/phases/phase-16a-summary.md`. Phase 16 was split in two: the stages here, the checks and the
-> trace in 16b, so the small change everything else needs did not wait on the one that touches every app.
+> trace in 16b (now 16f, after the lifecycle v3 phases 16b–16e), so the small change everything else needs did not wait on the one that touches every app.
 
 **Goal:** the lifecycle has nine stages, and leaving each new one is a person's decision with its own permission.
 **Repos:** `nooblyjs-ai-host` (lifecycle engine, Home, Metrics, roles).
@@ -895,11 +915,202 @@ time after release, or when its measure has data?
 
 ---
 
-## Phase 16b — One shape for checks, and the trace
+## Phase 16b — Eight stages, and the Factory's five groups
+
+> Spec: `nooblyjs-ai-host/.claude/specs/phase-16b-product-design-build/` (rewritten 2026-10-20 for lifecycle v3). Only
+> the stage list was started (`src/lifecycle/stages.js`, seven stages from the first draft): this phase replaces it.
+
+**Goal:** the lifecycle has the eight stages of version 3, every handoff between them is a person's decision with its
+own permission, and the Software Factory's sidebar follows the work.
+**Repos:** `nooblyjs-ai-host` (lifecycle engine, Home, Metrics, roles), `nooblyjs-ai-factory` (sections and sidebar,
+the Product section's Architecture pages).
+
+**Decided before it starts (2026-10-20):** `product.md` §3.2, §3.2a–c and §4. The handoffs are per item in this
+phase; 16c makes them per story.
+
+**Build**
+- Stages `discover, product, design, engineer, build, test, release, operate`. Active items move once:
+  `specify`/`ux`/`ui` → `product`, `architect` → `design`, `verify` and `ship` → `test` (audited, no stage event);
+  history keeps its labels; handoffs are named by area ("Product → Design", "Design → Engineering", "Engineering →
+  Build", "Build → Test").
+- **Product handoff** (rule `spec`, its words "Product → Design (spec, UX and UI)", a Product lead) → Design.
+- **Design handoff** (`design-handoff`, `accept-decisions`, a Solution Architect) → Engineer. The **UI handoff**
+  (`ui-handoff`) is retired: an open one is withdrawn, with the reason said.
+- **Engineering sign-off** (`engineering-signoff`, one approval: an Application Architect with `accept-decisions` and a
+  test lead with `sign-off-tests`) → Build. The Factory's intake starts no run before it.
+- **Build approval** (`build-approval`, waiting on an engineer, the code owner; today's `merge` rule) → Test.
+- **Test approval** (`test-approval`, waiting on a tester) → the pull request may merge (a person merges); the item
+  leaves Test for Release.
+- **Anyone may approve for anyone else**, on every approval: an approval waits on the people its rule's permission
+  names, and any person who is not a Viewer may give it on behalf of one of them; the approval, Activity and the audit
+  log record who gave it (`by`) and for whom (`for`). Agents and Viewers are refused. The production deploy still needs
+  two different people. `sign-off-tests` (a new permission, built in for older data folders) names the testers and test
+  leads approvals wait on.
+- The release candidate (`release-candidate`, `accept-release-candidate`, Phase 16a) is retired with Verify: an open
+  one is withdrawn, with the reason said.
+- Agents are refused every one of these decisions, and the refusal is audited.
+- The Factory's sidebar: **Product · Design · Engineering · Build · Test** (`product.md` §4). The Design section
+  (`design/`, `/factory/design`) starts with **Architecture**, moved from `/factory/product/architecture` (the old
+  address redirects; links other apps hand out follow). Engineering and Test rows say in words what comes in 16d–16e.
+  `sections.js` lets one section put rows in more than one group (Test: Engineering and Test).
+- Work roles: Solution Architect, Functional Analyst, Application Architect, Test analyst (homes come with 16c–16e).
+- Metrics stage groups: Product (Discover, Product, and history's Specify, UX, UI), Design (and history's Architect),
+  Engineer, Build, Test (and history's Verify), Release, Operate.
+
+**How you test it**
+1. Home · Overview shows eight stages, each saying what waits there in words.
+2. Approve a Product handoff as a Product lead: the item is in Design. As a Contributor, and as an agent, refused and
+   audited.
+3. Approve the Design handoff as an Architect: Engineer. The Engineering sign-off with only the Architect waits on a
+   test lead; with both, Build.
+4. Give the Build approval as an engineer: the item is in Test, and the pull request can't merge yet. Give the Test
+   approval as a tester: it can merge, and the item is in Release. On another item, give the Test approval as Lerato on
+   Naledi's behalf: allowed, and Activity and the audit log say "Lerato for Naledi".
+5. Put item files in `stage: ux`, `architect`, `verify` and `ship` and restart: Product, Design, Test, Test; one
+   `lifecycle.stages_migrated`; restart again, nothing more.
+6. The Factory's sidebar has the five groups; `/factory/product/architecture/PRD-031` lands on
+   `/factory/design/architecture/PRD-031`.
+
+**Done when:** steps 1–6 pass, and no test that passed before fails.
+**Guide points:** Are the Build and Test approvals too much friction on small pull requests?
+
+---
+
+## Phase 16c — The Design section
+
+**Goal:** Design turns a Product handoff into business requirements, a solution architecture, a functional analysis
+and the stories that build a feature, and hands each story to the Software Factory on its own.
+**Repos:** `nooblyjs-ai-factory` (the Design section, `design/`), `nooblyjs-ai-host` (stories as lifecycle items, the
+Design handoff per story), `nooblyjs-ai-knowledge` (context for impacted systems).
+
+**Before you start**
+- Decided 2026-10-20: a feature has many stories, and a story belongs to exactly one feature. The item's feature
+  landscape names the features its stories build.
+- The NFR catalogue (shared with Phase 18) and the story id format (proposed `STORY-031-1`).
+
+**Build**
+- **Business requirements** (`BR-031-01`), drafted by the analyst agent from the spec and its elicitation record, each
+  quoting its source; a Business Analyst accepts each one (`accept-requirement`).
+- **Solution architecture**: **Feature landscape** (the features this item serves, the stories each needs, and their
+  dependencies), **Impacted systems** (from Platform's repositories and the Knowledge repository: new, changed or
+  retired, with an owner), **NFRs** (from the catalogue; they become quality attributes), and the container view, ADRs
+  and standards check moved in 16b; links to the threat model (Phase 19) and the infrastructure design
+  (Infrastructure app).
+- **Functional analysis**: **interface requirements** between impacted systems (each with both sides named, and the
+  contract), **technical requirements** per system.
+- **Feature generation**: the technical features, which are the **stories** that build a feature. The agent proposes
+  them from the landscape and the analysis; an analyst edits, splits and merges them. Each traces to its feature,
+  business requirements, systems, interfaces, technical requirements, NFRs and acceptance criteria.
+- Design's readiness checks: every business requirement is covered by a story, no decision is still proposed, every
+  interface has both sides named.
+- **Stories as lifecycle items** (type `story`, linked to their item and their feature). The **Design handoff per
+  story** moves it to Engineer; the item stays in Design until its last story goes, then shows its stories' stages.
+- Solution Architect and Functional Analyst homes.
+
+**How you test it**
+1. PRD-031 enters Design. Ask for business requirements: each quotes the spec. Accept them as Lerato; as an agent,
+   refused and audited.
+2. Impacted systems lists `web-storefront`, `slots-api` and `stores-service`, each new or changed, with an owner.
+3. Add an interface with only one side: the Design handoff check fails, naming it. Name the other side: it passes.
+4. Generate the stories: three, each tracing back to business requirements and its feature. Merge two; split one.
+5. Hand off STORY-031-1 alone as Thabo: it is in Engineer; PRD-031 is still in Design and shows "1 of 3 stories handed
+   off".
+
+**Done when:** steps 1–5 pass, and no test that passed before fails.
+**Guide points:** Are generated stories the right size for one pull request or a few? Is the feature landscape read?
+
+---
+
+## Phase 16d — Engineering: application architecture from the code, and test analysis
+
+**Goal:** before anything is built, each story has an application architecture drawn from the real code and a test
+analysis, signed off in one approval.
+**Repos:** `nooblyjs-ai-factory` (Engineering: application architecture in the Factory's own code; the new Test
+section, `quality/`, for the test analysis), `nooblyjs-ai-host` (devtools reads, the Engineering sign-off),
+`nooblyjs-ai-knowledge`.
+
+**Before you start**
+- Which repositories the application architect agent may read (Platform's agent access per repository).
+- The test case format, and which test levels the AI must automate per kind of story.
+
+**Build**
+- **Application architecture** per story and impacted system: the agent reads the repository (the devtools service,
+  read-only, and the Knowledge repository) and drafts the **application flow**, the **objects** it touches, the
+  **NFRs** per component and the changes it proposes. A person edits and accepts it. It is marked stale when the
+  repository's main branch moves.
+- The **Test section** (`quality/`, like the Product section: its own `register()`, pages in `public/quality/`, data in
+  `data/factory/quality/`, `provides: { quality }`), starting with **Test analysis**: **test cases** from the acceptance
+  criteria (`TC-031-1-1`), **automated testing requirements** (which tests the AI must automate, and at which level),
+  **integration tests** per interface and **E2E tests** per journey, and what a person should check by hand; a test
+  analyst marks each ready; coverage said in words.
+- **Work items** per repository carry their part of the architecture and their test cases.
+- **Engineering sign-off** readiness: the architecture accepted, every criterion with a ready test case, every interface
+  with an integration test (a person may override with a reason).
+- Application Architect and Test analyst homes.
+
+**How you test it**
+1. STORY-031-1 in Engineer: ask for the application architecture of `web-storefront`. It names the real modules and
+   the flow in the demo repository, and the objects the story touches.
+2. Test analysis: four criteria give at least four test cases, each with its automation level; "3 of 4 criteria have
+   a ready test case" until the last is marked ready.
+3. The sign-off is refused while a criterion has no ready test case, naming it; an override with a reason is allowed
+   and audited.
+4. Before the sign-off, the Factory starts no run for STORY-031-1; after it, its work items are queued with their test
+   cases.
+5. Push a commit to the demo repository's main: the architecture says it is stale.
+
+**Done when:** steps 1–5 pass, and no test that passed before fails.
+**Guide points:** Is an architecture drawn from code trusted more than one drawn by hand? Is the test analysis too much
+before the first line is written?
+
+---
+
+## Phase 16e — Build and Test: the AI builds and tests, engineers and testers approve
+
+**Goal:** the AI writes the code and the automated tests the test analysis asked for; an engineer gives the Build
+approval; a human tester verifies the pull request and gives the Test approval; only then does it merge. A feature
+goes to Release on its own once all its stories have passed Test.
+**Repos:** `nooblyjs-ai-factory` (the line, PR evidence, the Build group's Pull requests, the Test group's Test
+approvals), `nooblyjs-ai-host` (lifecycle, Home · Approvals, the devtools write gate).
+
+**Build**
+- The line builds each work item against its test cases: the AI writes the **required automated tests** and runs them
+  with the gates; the PR evidence lists each one (by test case id) as found and passing, or not.
+- **Build approval** on a pull request (Build · Pull requests, Home · Approvals): an engineer approves the code, or
+  asks for changes. The pull request moves to Test.
+- **Test approval** (Test · Test approvals, Home · Approvals): the tester (or anyone on their behalf, logged) sees the
+  AI's test evidence beside the test cases and what to check by hand (in a preview environment once Phase 21 brings
+  them), and approves, or sends it back to Build with a reason, which the line repairs and the engineer approves again.
+- **Merge** only after both approvals and the gates (`product.md` §3.2c); a new commit clears both. A merge made in
+  Bitbucket without them is flagged on the story, not counted as done `[CONFIRM]`.
+- A story is done when its last pull request is merged; a **feature** moves to Release when all its stories are done,
+  without waiting for the other features of its item.
+- Metrics: pull requests waiting on a Build approval, and on a Test approval, with their age.
+
+**How you test it**
+1. A run delivers a PR for STORY-031-1; its evidence says "3 of 4 required tests present (TC-031-1-4 missing)".
+2. As Lerato (engineer), ask for changes naming TC-031-1-4; the line repairs it; the evidence says 4 of 4. Lerato gives
+   the Build approval: the PR is in Test, and can't merge yet.
+3. As Naledi (tester), send it back with a reason: it is in Build again. After the repair and Lerato's approval, Naledi
+   gives the Test approval: it merges.
+4. An agent is refused both approvals, and audited. Lerato gives both, the Test approval on Naledi's behalf: allowed,
+   and the PR's evidence and the audit log say who gave each and for whom.
+5. When the last story of the slot-booking feature has passed Test, the feature is in Release while PRD-031's other
+   feature is still being built.
+6. Push a commit to an approved PR: both approvals are cleared.
+
+**Done when:** steps 1–6 pass, and no test that passed before fails.
+**Guide points:** Does a human Test approval on every PR slow the line too much? Should small PRs need it?
+
+---
+
+## Phase 16f — One shape for checks, and the trace
+
+> Was Phase 16b until 2026-10-20.
 
 **Goal:** every artefact can be traced, and every kind of check looks and behaves the same.
-**Repos:** `nooblyjs-ai-host` (trace, Home), `nooblyjs-ai-factory` (the line and its Product and
-Infrastructure sections: their `checksFor` and `trace` services).
+**Repos:** `nooblyjs-ai-host` (trace, Home), `nooblyjs-ai-factory` (the line and its Product, Design and Test
+sections), `nooblyjs-ai-infrastructure` (their `checksFor` and `trace` services).
 
 **Decided before it starts (2026-10-19):** the id prefixes (`design.md` §4) and the check shape (`design.md` §5) as
 written.
@@ -910,10 +1121,11 @@ written.
 - Item page: **Checks** panel and **Trace** tab. Home · Overview: the Learn arrow.
 
 **How you test it**
-1. Open PRD-031 · Checks: readiness, quality-attribute gates, the standards check and INF-031's policy checks are in
-   one list, each with its source and evidence, said in words.
+1. Open PRD-031 · Checks: readiness, Design's and Engineering's checks, quality-attribute gates, the standards check,
+   Build and Test approvals and INF-031's policy checks are in one list, each with its source and evidence, said in words.
 2. Override a failing readiness check with a reason; the override shows on the check and in the audit log.
-3. Open PRD-031 · Trace: from a goal down to `slots-api#482`, with the missing links named ("AC-031-04-2 has no test").
+3. Open PRD-031 · Trace: from a goal through business requirements, stories and test cases down to `slots-api#482`,
+   with the missing links named ("AC-031-04-2 has no test").
 4. Delete `data/trace/` and reload: the Trace tab is identical. `npm run trace:rebuild` reports 0 differences.
 5. As an agent (test fixture), try to override a check: refused and audited.
 
@@ -929,7 +1141,8 @@ seen by value stream.
 **Repos:** `nooblyjs-ai-factory` (Product section), `nooblyjs-ai-host` (Home, Platform budgets).
 
 **Before you start**
-- `product.md` §9 Q4: how epics, features and requirements map onto ideas, specs and Jira.
+- `product.md` §9 Q3: how epics, features, stories and requirements map onto ideas, specs and Jira (stories come from
+  Design, Phase 16c).
 - The business case template (sections, required fields).
 
 **Build**
@@ -966,8 +1179,8 @@ for, not remembered.
 - **Stakeholder map** per item; **elicitation sessions** (interview, workshop, meeting) with notes; the analyst agent
   proposes **candidate requirements**, each quoting its source; accept, merge or reject (`accept-requirement`).
 - **Requirements** with ids (`REQ-031-04`); acceptance criteria hang off requirements; the spec reads from them.
-- **NFR catalogue** walk: each category answered or marked not applicable; accepted NFRs become quality attributes
-  in Architect.
+- **NFR catalogue** walk: each category answered or marked not applicable; accepted NFRs become the solution
+  architecture's NFRs in Design, and quality attributes.
 - **Questions and assumptions** with owners; an open question blocks spec approval unless overridden.
 - The **Business analyst** work role and home.
 
@@ -976,7 +1189,7 @@ for, not remembered.
    candidates appear, each quoting the notes.
 2. Accept two, merge one into another, reject one with a reason. Only the accepted ones are in the spec.
 3. As an agent (fixture), try to accept a candidate: refused and audited.
-4. Walk the NFR catalogue; the two performance answers appear in Architect as quality attributes.
+4. Walk the NFR catalogue; the two performance answers appear in Design as NFRs and quality attributes.
 5. Leave a question open: spec approval is refused, naming it. Override with a reason: allowed and audited.
 6. Post meeting notes from the Teams simulator to PRD-033: they appear as an elicitation session.
 
@@ -989,8 +1202,8 @@ for, not remembered.
 
 **Goal:** every item has a threat model accepted by an Architect, and every PR is scanned, with findings that have
 an owner and a fix-by date.
-**Repos:** `nooblyjs-ai-security` (new, `/security`), `nooblyjs-ai-factory` (scan gates), `nooblyjs-ai-factory` (Product section)
-(Architect), `nooblyjs-ai-host`.
+**Repos:** `nooblyjs-ai-security` (new, `/security`), `nooblyjs-ai-factory` (scan gates; the Design section's solution
+architecture), `nooblyjs-ai-host`.
 
 **Before you start**
 - `product.md` §9: the fix-by days per severity, and who may accept which risk. (The app itself is decided.)
@@ -1006,7 +1219,7 @@ an owner and a fix-by date.
 - The **Security engineer** work role and home.
 
 **How you test it**
-1. Open PRD-031 · Architect: ask for a threat model. It lists threats on the slot hold flow, each with a mitigation.
+1. Open PRD-031 · Design · Solution architecture: ask for a threat model. It lists threats on the slot hold flow, each with a mitigation.
    As Thabo, accept it; as Priya, you can't.
 2. A Factory run on `web-storefront` fails the SCA gate (the unapproved chart library). The PR shows the finding.
 3. The finding has an owner and a fix-by date. Ask for a fix: a PR appears. Its scan passes; the finding closes.
@@ -1019,68 +1232,76 @@ an owner and a fix-by date.
 
 ---
 
-## Phase 20 — Quality (new app: Quality)
+## Phase 20 — Quality (the Factory's Test section)
 
-**Goal:** each item has a test strategy, every acceptance criterion has a test case, and coverage is a fact.
-**Repos:** `nooblyjs-ai-quality` (new, `/quality`), `nooblyjs-ai-factory` (Product section), `nooblyjs-ai-factory`, `nooblyjs-ai-host`.
+**Goal:** quality is a fact across an item: coverage over all its stories and features, test runs recorded against
+requirements, and defects as items of their own.
+**Repos:** `nooblyjs-ai-factory` (the Test section, `quality/` at `/factory/quality` `[CONFIRM folder and path]`, made in
+Phase 16d; the line), `nooblyjs-ai-host`.
+
+Decided 2026-10-20: Quality is a section of the Software Factory, not a separate app (root `product.md` §4, §9). Test
+analysis (16d) and the tester's Test approval on each pull request (16e) come first; this phase adds what spans them.
 
 **Before you start**
-- Test levels and which are required per item kind; the defect workflow and severity scale.
+- The defect workflow and severity scale.
 
 **Build**
-- The hosted app: Strategy, Coverage, Test runs, Defects. Hosted-app checklist.
-- **Test strategy** drafted by the test agent at Architect (level × requirement × quality attribute).
-- **Test cases from acceptance criteria**, kept in step when a criterion changes (the case is marked "criterion
-  changed" for a person to review).
-- Factory gate results recorded as test runs against requirements (Build level).
-- **Defects** as items linked to the requirement they break.
-- The **QA / test engineer** work role and home.
+- Test · **Coverage**: per item and per feature, across its stories: criteria with a ready test case, with an
+  automated test, with a passing run ("9 of 12 criteria have a passing test (Build)").
+- Test · **Test runs**: the Factory's gate results recorded as test runs against requirements and test cases (Build
+  level); environment runs join in Phase 21.
+- **Test cases kept in step**: when a criterion changes, its test cases are marked "criterion changed" for a person.
+- **Defects** as items linked to the requirement and story they break.
+- The Test analyst / tester home grows to coverage gaps and defects.
 
 **How you test it**
-1. PRD-031 · Quality shows a drafted strategy; approve it as the QA lead.
-2. Twelve criteria produce twelve test cases. Coverage says "9 of 12 criteria have a passing test (Build)".
-3. Change a criterion in the spec: its test case is marked for review.
-4. Raise a defect from a failing case; it appears in Lifecycle linked to REQ-031-01.
+1. PRD-031 · Coverage reads across STORY-031-1 to -3 in words.
+2. Change a criterion in the spec: its test cases are marked for review.
+3. Raise a defect from a failing run; it appears in Lifecycle linked to REQ-031-01 and STORY-031-2.
 
-**Done when:** steps 1–4 pass and `nooblyjs-ai-quality` passes the hosted-app checklist.
-**Guide points:** Is generated test design good enough to keep? What should a QA lead see first?
+**Done when:** steps 1–3 pass, and the Factory, with its Test section, still passes the hosted-app checklist.
+**Guide points:** What should a test lead see first?
 
 ---
 
-## Phase 21 — Verify in environments
+## Phase 21 — Testing in environments
 
-**Goal:** a merged change is deployed to previews and environments, tested there for function, performance,
-accessibility and security, and accepted as a release candidate by a person.
-**Repos:** `nooblyjs-ai-factory` (Infrastructure section, I8: previews from PRs), `nooblyjs-ai-quality`, `nooblyjs-ai-security`,
-`nooblyjs-ai-host`.
+> Was "Verify in environments" until 2026-10-20: Verify is no longer a stage. What this phase builds feeds the Test
+> stage, where a human tester verifies each pull request before it merges.
+
+**Goal:** each pull request gets a preview environment the tester verifies it in, and the environment suites (function,
+performance, accessibility, security) run there and in Test and Staging, as evidence for the Test approval.
+**Repos:** `nooblyjs-ai-infrastructure` (I8: previews from PRs), `nooblyjs-ai-factory` (its Test section),
+`nooblyjs-ai-security`, `nooblyjs-ai-host`.
 
 **Before you start**
 - Which suites run in which environment kind; whether DAST may run in Staging.
 
 **Build**
 - Infrastructure I8: `pr.opened` → preview, `pr.merged` → destroy; `run.finished` → results on the environment.
-- The **test runner adapter** (mock first): e2e, load (targets from quality attributes), accessibility, resilience.
-- Security's **dynamic scan** and **image scan** as suites in Test and Staging.
-- The Verify stage's checks and the **release candidate** approval; "a build moves right only when that
-  environment's tests pass" enforced.
+- The **test runner adapter** (mock first): e2e, load (targets from the NFRs), accessibility, resilience.
+- Security's **dynamic scan** and **image scan** as suites in the preview, Test and Staging.
+- The Test approval shows the preview's link and its suite results beside the test cases; "a build moves right only
+  when that environment's tests pass" enforced for promotion.
 
 **How you test it**
-1. Open a PR: a preview appears; e2e smoke runs there; merge: the preview goes.
+1. Open a PR: a preview appears; e2e smoke runs there; the tester opens it from the Test approval; merge: the preview
+   goes.
 2. `test-slots` shows "41 of 42 e2e · 1 failing", linked to the criterion it proves. Promotion to Staging is refused,
    naming the failing test.
 3. Fix it; the run passes; promotion is allowed. The load suite reports p95 against the 300 ms target.
-4. A DAST finding in Staging opens a Security finding linked to the release candidate.
-5. As the QA lead, accept the release candidate with all Verify checks shown in one list.
+4. A DAST finding in the preview opens a Security finding linked to the pull request and its story.
+5. As a tester, give the Test approval with the environment results and the AI's test evidence in one list.
 
 **Done when:** steps 1–5 pass on the mock runner and mock scanner.
-**Guide points:** Which suites are worth their run cost? Is the evidence pack enough for a release approver?
+**Guide points:** Which suites are worth their run cost? Does the preview make the tester's check quicker?
 
 ---
 
 ## Phase 22 — Release (new app: Operations, part 1)
 
 **Goal:** production changes only through a release with evidence, two approvers, a rollout plan and a rollback.
-**Repos:** `nooblyjs-ai-operations` (new, `/operations`), `nooblyjs-ai-factory` (Infrastructure section, I10), `nooblyjs-ai-host`,
+**Repos:** `nooblyjs-ai-operations` (new, `/operations`), `nooblyjs-ai-infrastructure` (I10), `nooblyjs-ai-host`,
 devtools (Jira fix versions, Bitbucket tags through the write gate).
 
 **Before you start**
@@ -1088,14 +1309,16 @@ devtools (Jira fix versions, Bitbucket tags through the write gate).
 
 **Build**
 - The hosted app: Releases, Deployments. Hosted-app checklist.
-- A **release** groups merged work items for a product, with version, evidence pack, SBOM, open findings, release
-  notes (drafted by an agent), rollout and rollback plans.
+- A **release** is one **feature**, released on its own once all its stories have passed Test: its merged work items,
+  with version, evidence pack (the Build and Test approvals among it), SBOM, open findings, release notes (drafted by an
+  agent), rollout and rollback plans.
 - The `deploy` approval (two different people, built in Phase 16a) carries the release; risk acceptance required for findings above threshold.
 - The **deployer adapter** (mock first) applies through Infrastructure; rollback in one action.
 - Jira fix version and Bitbucket tag as **recorded** writes through the gate.
 
 **How you test it**
-1. Create "Slots 1.0" from PRD-031's merged work: the evidence pack lists tests, scans and approvals.
+1. Release the slot-booking feature ("Slots 1.0") once its stories have passed Test: the evidence pack lists tests,
+   scans and approvals, while PRD-031's other feature is still in Build.
 2. One approval isn't enough; the second deploys to a 10% pilot; Activity shows each step.
 3. Roll back: the environment returns to the previous version and the release says why.
 4. A release with an open high finding is refused until a risk is accepted.
@@ -1140,7 +1363,7 @@ ends with an outcome review that feeds Discover.
 ## Hosted apps: open work
 
 This file is the only roadmap. The hosted apps used to keep their own; those are history now
-(`docs/roadmap-history.md` in `nooblyjs-ai-factory/product`, `nooblyjs-ai-teammate` and `nooblyjs-ai-factory/infrastructure`). This is what was
+(`docs/roadmap-history.md` in `nooblyjs-ai-factory/product`, `nooblyjs-ai-teammate` and `nooblyjs-ai-infrastructure`). This is what was
 still open in them on 2026-10-11. Each item goes into a numbered phase above (or a new one) before it is built, with
 its spec in `nooblyjs-ai-host/.claude/specs/`.
 
@@ -1161,7 +1384,7 @@ check are in Phase 13 for all of NooblyJS.
 - Backlog: teammate templates and "save as template"; export and import a teammate; model A/B tests (rating against
   cost); ratings on work items feeding memory and reviews.
 
-**Infrastructure (the Factory's Infrastructure section, `nooblyjs-ai-factory/infrastructure`, its I2–I10).**
+**Infrastructure (`nooblyjs-ai-infrastructure`, its I2–I10).**
 - [ ] I2: a side-by-side check against the mockups at 1440px.
 - [ ] I3: confirm which access role is the "platform owner" (today `change-repo-access`, so Owner) `[CONFIRM]`.
 - [ ] I5: ask design for the screens with no mockup (`Infra-EnvDetail` is linked from both mockups), then match them.

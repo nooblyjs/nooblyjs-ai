@@ -48,7 +48,7 @@ test('the route table covers every nav row, and every page keeps the frame\'s co
   const pages = fs.readdirSync(path.join(PUBLIC, 'js', 'pages'));
   assert.deepEqual(pages.sort(), ['campaigns.js', 'inbox.js', 'line.js', 'metrics.js', 'run.js', 'runs.js']);
   // The sections' routes are checked in test/sections.test.js; these are the Factory's own.
-  const own = routes.filter((r) => !/^\/(product|infrastructure)(\/|$)/.test(r.path));
+  const own = routes.filter((r) => !/^\/product(\/|$)/.test(r.path));
   for (const route of own.filter((r) => r.page)) {
     assert.match(route.path, /^\/[a-z:/]*$/);
     const [, file] = /import\('\.\/pages\/([a-z]+\.js)'\)/.exec(String(route.page)) ?? [];

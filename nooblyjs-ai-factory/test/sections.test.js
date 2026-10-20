@@ -1,7 +1,7 @@
-// The Software Factory's sections (2026-10-19): Product and Infrastructure, which were hosted apps of their own, are
-// mounted by the Factory's register() under its path, with their data inside its folder, their pages in its UI
-// module and their services under the names other apps ask for. The sections' own behaviour is tested in
-// product/test and infrastructure/test; this is how they sit in the Factory.
+// The Software Factory's sections (2026-10-19): Product, which was a hosted app of its own, is mounted by the Factory's
+// register() under its path, with its data inside its folder, its pages in its UI module and its services under the
+// name other apps ask for. The section's own behaviour is tested in product/test; this is how it sits in the Factory.
+// Infrastructure was a section until 2026-10-20 (CHG-007) and is the hosted app nooblyjs-ai-infrastructure again.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,7 +23,7 @@ async function startApp({ sections, host: change = (h) => h } = {}) {
   const stand = createHost();
   const app = express();
   app.use(express.json());
-  const hosted = await register(app, createTestServerManager(), { mountPath: '/factory', dataDir, host: change(stand.host), pollMs: 0, schedule: false, sections, sectionOptions: { product: { draftStepMs: 0 }, infrastructure: { provisionStepMs: 0, sweepEveryMs: 0 } } });
+  const hosted = await register(app, createTestServerManager(), { mountPath: '/factory', dataDir, host: change(stand.host), pollMs: 0, schedule: false, sections, sectionOptions: { product: { draftStepMs: 0 } } });
   app.use((req, res) => res.status(404).type('text').send(FALLBACK));
   const server = await new Promise((resolve) => {
     const s = app.listen(0, '127.0.0.1', () => resolve(s));
@@ -55,25 +55,27 @@ test('FACTORY_SECTIONS chooses the sections; unset means all, and a name that is
   assert.equal(sectionsFromEnv(undefined), undefined);
   assert.equal(sectionsFromEnv('*'), undefined);
   assert.deepEqual(sectionsFromEnv('product'), ['product']);
-  assert.deepEqual(sectionsFromEnv(' product , infrastructure '), ['product', 'infrastructure']);
+  assert.deepEqual(sectionsFromEnv(' product '), ['product']);
   assert.deepEqual(sectionsFromEnv(''), []);
-  assert.throws(() => sectionsFromEnv('product,infra'), /FACTORY_SECTIONS names infra, which is not a section/);
+  assert.throws(() => sectionsFromEnv('product,prodcut'), /FACTORY_SECTIONS names prodcut, which is not a section/);
+  // Infrastructure is a hosted app of its own again (CHG-007), not a section.
+  assert.throws(() => sectionsFromEnv('product,infrastructure'), /FACTORY_SECTIONS names infrastructure, which is not a section \(product\)/);
 });
 
-test('every section row in the sidebar has its page in the Factory\'s route table, and Infrastructure\'s landing redirects', async () => {
+test('every section row in the sidebar has its page in the Factory\'s route table', async () => {
   const { routes } = await import('../public/js/module.js');
   for (const section of SECTIONS) {
     for (const row of sectionNav(section)) {
       assert.ok(routes.some((r) => r.path === row.path && r.nav === row.key && typeof r.page === 'function'), `a page for ${row.key} at ${row.path}`);
     }
   }
-  assert.deepEqual(routes.find((r) => r.path === '/infrastructure'), { path: '/infrastructure', redirect: '/infrastructure/environments' });
+  assert.equal(routes.some((r) => r.path.startsWith('/infrastructure')), false, 'Infrastructure is not in the Factory');
   assert.ok(routes.some((r) => r.path === '/product/specs/:id' && r.nav === 'product-specs'));
   // No path is claimed twice.
   assert.equal(new Set(routes.map((r) => r.path)).size, routes.length);
 });
 
-test('mounted at /factory: each section answers under its path, keeps its data in its own folder, and is seeded', async () => {
+test('mounted at /factory: the section answers under its path, keeps its data in its own folder, and is seeded', async () => {
   const t = await startApp();
   try {
     // The APIs, signed in only.
@@ -81,31 +83,28 @@ test('mounted at /factory: each section answers under its path, keeps its data i
     assert.equal(specs.status, 200);
     assert.ok(Array.isArray(specs.json.specs) && specs.json.specs.length, 'the seed story\'s specs');
     assert.equal((await t.get('/factory/product/api/v1/specs')).status, 401);
-    const environments = await t.get('/factory/infrastructure/api/v1/environments', { as: 'naledi-k' });
-    assert.equal(environments.status, 200);
     // The Factory's own API is where it was.
     assert.equal((await t.get('/factory/api/v1/status', { as: 'naledi-k' })).status, 200);
     // Pages get the frame; the sections' modules are served at the URL the Factory's module imports them from.
     assert.equal((await t.get('/factory/product/specs/PRD-031', { as: 'naledi-k' })).text, FRAME);
-    assert.equal((await t.get('/factory/infrastructure/designs', { as: 'naledi-k' })).text, FRAME);
-    for (const file of ['/factory/product/js/module.js', '/factory/infrastructure/js/module.js', '/factory/product/css/product.css']) {
+    for (const file of ['/factory/product/js/module.js', '/factory/product/css/product.css']) {
       assert.equal((await t.get(file)).status, 200, file);
     }
     // The old paths are not the Factory's.
     assert.equal((await t.get('/product/api/v1/specs', { as: 'naledi-k' })).text, FALLBACK);
-    // Each section writes inside the Factory's folder, in its own.
-    for (const key of ['product', 'infrastructure']) assert.ok(fs.existsSync(path.join(t.dataDir, key, 'seed.yaml')), `${key} was seeded in its folder`);
+    // The section writes inside the Factory's folder, in its own; nothing is written for Infrastructure.
+    assert.ok(fs.existsSync(path.join(t.dataDir, 'product', 'seed.yaml')), 'product was seeded in its folder');
+    assert.equal(fs.existsSync(path.join(t.dataDir, 'infrastructure')), false);
   } finally {
     await t.close();
   }
 });
 
-test('other apps still reach the sections by the names they always used', async () => {
+test('other apps still reach the section by the name they always used', async () => {
   const t = await startApp();
   try {
-    assert.deepEqual(Object.keys(t.hosted.provides).sort(), ['infrastructure', 'product']);
+    assert.deepEqual(Object.keys(t.hosted.provides), ['product']);
     for (const fn of ['artefactsFor', 'readinessFacts', 'adrFor', 'gatesFor', 'waitingFor']) assert.equal(typeof t.hosted.provides.product[fn], 'function', `product.${fn}`);
-    assert.equal(typeof t.hosted.provides.infrastructure.decideApproval, 'function');
     // The links they hand out are under the Factory.
     const rows = await t.hosted.provides.product.artefactsFor('PRD-031');
     assert.equal(rows.link, '/factory/product/specs/PRD-031');

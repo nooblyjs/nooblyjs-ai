@@ -8,8 +8,8 @@
 //   /factory/api/v1/…     the dashboard API (the same route table `factory dashboard` serves),
 //                         behind the host's sign-in, its permissions matrix and its audit log
 //   /factory/js, /css     the UI module the NooblyJS frame loads (public/js/module.js)
-//   /factory/product/…    the Product section, and /factory/infrastructure/… the Infrastructure section
-//                         (sections.js): each with its own API, pages and data, mounted before our own router
+//   /factory/product/…    the Product section (sections.js): its own API, pages and data, mounted before our own
+//                         router
 //   /factory/<anything>   a page URL: the host's frame answers, and our module draws the page
 //
 // The event log is still the only source of truth. Hosted, it lives in the folder NooblyJS
@@ -47,7 +47,7 @@ const STATIC = { index: false, redirect: false };
 
 /**
  * The Factory's own sidebar rows (the Build group): `path` is relative to the mount path, `icon` names a NooblyJS UI
- * kit icon. register() puts the Product section's rows before them and Infrastructure's after (sections.js).
+ * kit icon. register() puts the Product section's rows before them (sections.js).
  */
 export const NAV = [
   { key: 'line', label: 'Line', path: '/line', icon: 'flow' },
@@ -110,7 +110,7 @@ const dollars = (n) => `$${(n ?? 0).toFixed(2).replace(/\.00$/, '')}`;
  * @param {{ mountPath?: string, dataDir?: string, host?: any, pollMs?: number, schedule?: boolean, tickMs?: number, sections?: string[], sectionOptions?: Record<string, object> }} [options]
  *   pollMs: how often new log events are passed on to the host (0: only when flush() is called; for tests)
  *   schedule: false to not work the queue here (tests drive it with tick()); tickMs: how often it looks
- *   sections: which sections to mount (default FACTORY_SECTIONS, else all: product, infrastructure; [] for none)
+ *   sections: which sections to mount (default FACTORY_SECTIONS, else all: product; [] for none)
  *   sectionOptions: extra register() options per section, by key (tests: { product: { draftStepMs: 0 } })
  * @returns {Promise<object>} the HostedApp description
  */
@@ -284,13 +284,13 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     icon: 'factory',
     mountPath,
     ui: { entry: 'js/module.js', styles: ['css/factory.css', ...sections.styles] },
-    // Product, then the Factory's own rows (Build), then Infrastructure: the order work moves in.
+    // Product, then the Factory's own rows (Build): the order work moves in.
     nav: [...sections.nav('before'), ...NAV.map((row) => ({ ...row, group: 'Build' })), ...sections.nav('after')],
     // The sidebar's group headers: an icon and a line saying what each part of the Factory does.
     groups: sections.groups(),
     /**
      * The sidebar's status card and badges: the line's (slots, today's spend, the Inbox badge), with one line per
-     * section saying how it stands in words (the Product section's agents on duty, Infrastructure's drift).
+     * section saying how it stands in words (the Product section's agents on duty).
      */
     async status() {
       const s = summary();
@@ -308,8 +308,8 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
         },
       };
     },
-    // host.service('product') and host.service('infrastructure'): the sections' services, under the names other
-    // NooblyJS apps have always asked for (the host's loader reads an object here as name → services).
+    // host.service('product'): the section's services, under the name other NooblyJS apps have always asked for (the
+    // host's loader reads an object here as name → services).
     provides: sections.provides,
     // What other apps may call through host.service('factory').
     services: {

@@ -1,11 +1,5 @@
 # nooblyjs-ai-infrastructure
 
-> **Since 2026-10-19 this is the Software Factory's Infrastructure section** (`nooblyjs-ai-factory/infrastructure`, pages in
-> `nooblyjs-ai-factory/public/infrastructure`), not an app of its own with a rail item. Where this file says
-> `/infrastructure`, read `/factory/infrastructure`; `data/infrastructure`, read `data/factory/infrastructure`;
-> `nooblyjs-ai-infrastructure`, read the Factory's Infrastructure section. There is no `server.js` or standalone mode
-> any more. See the section's `CLAUDE.md`.
-
 NooblyJS **Infrastructure**: infrastructure designs drafted from an approved architecture, the environments built
 from them, provisioning runs, drift and cloud cost.
 
@@ -16,7 +10,7 @@ It is a **hosted app** (a micro-frontend) for NooblyJS. NooblyJS (`../nooblyjs-a
 - What it does and shows: `.claude/steering/product.md`
 - Platform rules and the `register()` contract: `.claude/steering/stack.md`
 - Layout, API, data and events: `.claude/steering/structure.md`
-- **Progress:** NooblyJS's roadmap, `../../.claude/steering/roadmap.md` ("Hosted apps: open work"); history in `docs/roadmap-history.md`
+- **Progress:** NooblyJS's roadmap, `../.claude/steering/roadmap.md` ("Hosted apps: open work"); history in `docs/roadmap-history.md`
 
 ## Run it on its own
 

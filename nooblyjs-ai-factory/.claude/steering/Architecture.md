@@ -482,7 +482,7 @@ No learning is applied without a human-approved PR and a bench comparison.
 | `nooblyjs-learn-harness` (local path / git dependency) | The agent runtime: the whole point |
 | *(nothing else in core)* | SQLite via `node:sqlite`, HTTP via `node:http`, tests via `node:test`, HTTP client via `fetch` |
 | `express` (dev only, F26) | The tests mount `register()` into a bare Express 5 app, as NooblyJS does. Hosted, the factory uses the **host's** express (`host.express`) and never imports its own |
-| `nooblyjs-core`, `js-yaml` (2026-10-19) | The **Product and Infrastructure sections** (`product/`, `infrastructure/`), which were apps of their own and came with these: `FsStore` for their files and YAML for their config and seeds. `src/services/sections.js` uses `FsStore` to give each section its own store. The line, the stations and everything else in `src/` still use Node built-ins and the harness only |
+| `nooblyjs-core`, `js-yaml` (2026-10-19) | The **Product section** (`product/`), which was an app of its own and came with these: `FsStore` for its files and YAML for its config and seeds. `src/services/sections.js` uses `FsStore` to give each section its own store. The line, the stations and everything else in `src/` still use Node built-ins and the harness only |
 | Docker/Podman CLI (optional, F23) | Container workspaces; invoked as a subprocess, not a library |
 | `gh` CLI (optional) | Only as a convenience for manual setup; the factory uses the REST API itself |
 

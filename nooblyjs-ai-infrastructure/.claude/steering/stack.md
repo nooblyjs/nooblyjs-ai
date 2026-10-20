@@ -4,16 +4,10 @@ inclusion: always
 
 # Infrastructure: stack, and this repo in NooblyJS
 
-> **Since 2026-10-19 this is the Software Factory's Infrastructure section** (`nooblyjs-ai-factory/infrastructure`, pages in
-> `nooblyjs-ai-factory/public/infrastructure`), not an app of its own with a rail item. Where this file says
-> `/infrastructure`, read `/factory/infrastructure`; `data/infrastructure`, read `data/factory/infrastructure`;
-> `nooblyjs-ai-infrastructure`, read the Factory's Infrastructure section. There is no `server.js` or standalone mode
-> any more. See the section's `CLAUDE.md`.
-
 > **Read `NOOBLY.md` first** (in this folder; generated from noobly). noobly owns everything shared, and this file does not
-> repeat it: the hosted-app contract is `../../nooblyjs-ai-host/.claude/steering/structure.md` §2a, the cross-app services are
-> `../../nooblyjs-ai-host/.claude/steering/tech.md` §8b, governance and the permissions matrix are `../../nooblyjs-ai-host/.claude/steering/product.md`,
-> and the one roadmap is `../../.claude/steering/roadmap.md` (with the hosted-app checklist this repo must pass).
+> repeat it: the hosted-app contract is `../nooblyjs-ai-host/.claude/steering/structure.md` §2a, the cross-app services are
+> `../nooblyjs-ai-host/.claude/steering/tech.md` §8b, governance and the permissions matrix are `../nooblyjs-ai-host/.claude/steering/product.md`,
+> and the one roadmap is `../.claude/steering/roadmap.md` (with the hosted-app checklist this repo must pass).
 > If this file and noobly disagree, **noobly wins**: follow it and fix this file in the same change.
 >
 > NooblyJS mounts this repo at **`/infrastructure`**. This file gives only this repo's values for the contract, where it
@@ -119,7 +113,7 @@ npm run seed    # node --env-file-if-exists=.env server.js --seed   (-- --reset 
 Hosted in NooblyJS since Phase 9a: registered at `/infrastructure`, its `infra-design` approvals in the lifecycle
 engine (Home · Approvals), the cloud budget from Platform, and its environments on Platform · Environments. Not
 done: the agent does not draft, the Software Factory does not feed it, and there is no real provisioner. The phase
-history is `docs/roadmap-history.md`; what is open is in `../../.claude/steering/roadmap.md`, "Hosted apps: open
+history is `docs/roadmap-history.md`; what is open is in `../.claude/steering/roadmap.md`, "Hosted apps: open
 work".
 
 Environment variables (standalone): `PORT` (11008), `DATA_DIR` (`./data`), `INFRA_PROVISIONER`

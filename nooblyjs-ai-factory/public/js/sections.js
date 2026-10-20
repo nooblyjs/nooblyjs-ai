@@ -1,5 +1,5 @@
-// The Software Factory's sections in the browser (2026-10-19): the Product and Infrastructure pages, which were apps of
-// their own, shown inside the Factory's module. The server side is src/services/sections.js; this table must agree
+// The Software Factory's sections in the browser (2026-10-19): the Product pages, which were an app of their own, shown
+// inside the Factory's module. The server side is src/services/sections.js; this table must agree
 // with its SECTIONS (test/sections.test.js checks it).
 //
 // The frame gives every page a ctx bound to the app (/factory). A section's pages were written for an app of their
@@ -8,7 +8,6 @@
 // (data-module="product"), so its stylesheet applies as it always did. Everything else in ctx is the frame's.
 export const SECTIONS = [
   { key: 'product', path: '/product', prefix: 'product' },
-  { key: 'infrastructure', path: '/infrastructure', prefix: 'infra' },
 ];
 
 const under = (base, path) => `${base}${path === '/' ? '' : path}`;

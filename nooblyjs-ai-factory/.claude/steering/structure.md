@@ -35,13 +35,12 @@ nooblyjs-ai-factory/
     utils/                  clock · ids · paths · log · glob · frontmatter
   product/                  the Product section (was nooblyjs-ai-product): index.js (its register(), called by
                             src/services/sections.js) · src/ · test/ · docs/ · .claude/steering/ · CLAUDE.md
-  infrastructure/           the Infrastructure section (was nooblyjs-ai-infrastructure), laid out the same way
   public/                   static files only, served under /factory (no index.html)
-    product/, infrastructure/   each section's pages and CSS, served by the section at /factory/<section>/
+    product/                the section's pages and CSS, served by the section at /factory/<section>/
                             (js/module.js, js/pages/, css/<section>.css, scoped [data-module="<section>"])
     css/factory.css         only what the kit doesn't cover; every selector starts with [data-module="factory"]
     js/
-      module.js             route table (§2), with the sections' routes added under /product and /infrastructure
+      module.js             route table (§2), with the section's routes added under /product
       sections.js           the sections in the browser: their routes moved under the section, and a ctx bound to it
       lib.js · parts.js     what the pages share: safe DOM, the page() runner, icons, pills, the inbox card
       pages/                line.js · runs.js · run.js · inbox.js · campaigns.js · metrics.js
@@ -60,10 +59,9 @@ replace them.
 ## 2. What the shell shows
 
 > Since 2026-10-19 the sidebar is the Product section's rows (keys `product-…`, group Product), then the rows below
-> (group Build), then Infrastructure's (`infra-…`, group Infrastructure); `ui.styles` adds
-> `product/css/product.css` and `infrastructure/css/infrastructure.css`; the status card adds a line per section and
-> their badges (`product-reviews`, `infra-runs`); and the description carries `provides`. `test/register.test.js` has the
-> full list.
+> (group Build); `ui.styles` adds `product/css/product.css`; the status card adds a line per section and their badges
+> (`product-reviews`); and the description carries `provides`. `test/register.test.js` has the full list.
+> (Infrastructure's rows, group Infrastructure, were last from 2026-10-19 to 2026-10-20; it is an app of its own again.)
 
 ```js
 {

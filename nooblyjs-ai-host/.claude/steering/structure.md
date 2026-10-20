@@ -22,7 +22,7 @@ nooblyjs-ai/                   the monorepo
   nooblyjs-ai-harness/         agent runtime                                   (library + CLI)
   nooblyjs-ai-factory/         Software Factory: one app at /factory           (module + workers + CLI)
     product/                   its Product section: screens, artefacts + drafting (was nooblyjs-ai-product)
-    infrastructure/            its Infrastructure section: designs, environments, runs, drift, cost (was nooblyjs-ai-infrastructure)
+  nooblyjs-ai-infrastructure/  Infrastructure: designs, environments, runs, drift, cost   (module + standalone server)
   nooblyjs-ai-teammate/        Digital Teammates                               (module + standalone server)
   nooblyjs-ai-knowledge/       Knowledge Repository                            (module + workers)
   nooblyjs-ai-desktop/         projects, documents and chat for any LLM        (standalone app, not hosted)
@@ -170,19 +170,22 @@ stays in place. Why: `docs/adr/ADR-001-host-owned-shell.md`.
 
 | Child project | Mount path | Has a UI module (`public/js/module.js`) | API base |
 | --- | --- | --- | --- |
-| `nooblyjs-ai-factory` (with its Product and Infrastructure sections since 2026-10-19; provides `product` and `infrastructure`) | `/factory`; the sections at `/factory/product` and `/factory/infrastructure` | yes (one module: the sections' routes are in it) | `/factory/api/v1/…`, `/factory/product/api/v1/…`, `/factory/infrastructure/api/v1/…` |
+| `nooblyjs-ai-factory` (with its Product section since 2026-10-19; provides `product`) | `/factory`; the section at `/factory/product` | yes (one module: the section's routes are in it) | `/factory/api/v1/…`, `/factory/product/api/v1/…` |
+| `nooblyjs-ai-infrastructure` | `/infrastructure` | yes | `/infrastructure/api/v1/…` |
 | `nooblyjs-ai-teammate` | `/teammates` | yes | `/teammates/api/v1/…` |
 | `nooblyjs-ai-knowledge` (the Wiki Platform; provides `knowledge`) | `/wiki` | yes | `/wiki/api/v1/…` |
 | the lifecycle engine (**not a child project**: `noobly/src/lifecycle/`, mounted by `src/noobly.js` before any hosted app; it was the hosted app `nooblyjs-ai-workflows` until 2026-10-10) | `/workflows` (reserved) | no (API only; its screens are Home's Overview, Lifecycle and Approvals) | `/workflows/api/v1/…`, and `host.service('workflows')` |
 | `nooblyjs-core`, `nooblyjs-ai-common`, `nooblyjs-ai-harness` | — | libraries, not hosted | — |
 
-The Software Factory owns everything under `/factory`, its sections included: their page URLs
+The Software Factory owns everything under `/factory`, its section included: its page URLs
 (`/factory/product/specs/PRD-031`) answer with the frame and the Factory's UI module draws them. Until 2026-10-19 the
-Product Factory was the hosted app `nooblyjs-ai-product` at `/product` and Infrastructure `nooblyjs-ai-infrastructure` at
-`/infrastructure`; an older `hosted-apps.yaml` that still lists them has those entries skipped, and their data folders
-move to `data/factory/product` and `data/factory/infrastructure` on the first start (`src/hosted-apps.js` `FOLDED`,
-`foldData`). An app's `provides` may be a list (other names for its services, like the wiki's `knowledge`) or an object
-(names with services of their own, like the Factory's `product` and `infrastructure`). API-only apps have no rail item,
+Product Factory was the hosted app `nooblyjs-ai-product` at `/product`; an older `hosted-apps.yaml` that still lists it
+has that entry skipped, and its data folder moves to `data/factory/product` on the first start (`src/hosted-apps.js`
+`FOLDED`, `foldData`). Infrastructure was a section of the Factory from 2026-10-19 to 2026-10-20 and is the hosted app
+`nooblyjs-ai-infrastructure` at `/infrastructure` again (CHG-007): an install that had the section gets its data moved
+back from `data/factory/infrastructure` to `data/infrastructure`, and its entry added to `hosted-apps.yaml` if it was
+missing (`UNFOLDED`, `foldData`). An app's `provides` may be a list (other names for its services, like the wiki's
+`knowledge`) or an object (names with services of their own, like the Factory's `product`). API-only apps have no rail item,
 and their router calls `next()` for anything that isn't theirs.
 
 **This section is the only copy of the contract** (§1a). A child repo's `tech.md` gives only its own values and
@@ -284,7 +287,7 @@ export async function register(app, serverManager, options = {}) { … }
 ```
 
 `NavItem.path` is relative to the mount path (`/runs`). `group` gives the sidebar sections
-(Platform's *Build* / *Govern*; the Factory's *Product* / *Build* / *Infrastructure*): each is drawn as its own block
+(Platform's *Build* / *Govern*; the Factory's *Product* / *Build*): each is drawn as its own block
 (`role="group"`, named by its header) with a divider above it, and `groups` may give each one a kit icon and a
 one-line `hint` under its name (2026-10-19, CHG-006). A group with no entry in `groups` shows its name only. `badge` names a key in `AppStatus.badges`. `requires` names a
 permission from the matrix (`product.md` §6). The host leaves out rows the person can't use,
@@ -627,11 +630,11 @@ data/
       architecture/<PRD-ID>/  diagram.md · adrs/ADR-014.md · quality-attributes.md
       ux/<PRD-ID>/            journey.md · flows/<flow>.md · research/<study>.md
       ui/<PRD-ID>/            screens/<screen>.md · handoff.md
-    infrastructure/       the Infrastructure section (was data/infrastructure/)
-      designs/<id>.md · designs/<id>/versions/vN.md   a design, and each approved version kept as it was
-      environments/<name>.md · runs/<id>.md · drift/<id>.md   (a destroyed environment keeps its file)
-      blueprints.yaml · policies.yaml · apply-rules.yaml · promotion-paths.yaml · budget.yaml · agent.yaml
-      cost/ledger.yaml · sweep.yaml            the cloud cost ledger; when the drift sweep last ran
+  infrastructure/         (owned by nooblyjs-ai-infrastructure; in data/factory/infrastructure/ 2026-10-19 to 2026-10-20)
+    designs/<id>.md · designs/<id>/versions/vN.md   a design, and each approved version kept as it was
+    environments/<name>.md · runs/<id>.md · drift/<id>.md   (a destroyed environment keeps its file)
+    blueprints.yaml · policies.yaml · apply-rules.yaml · promotion-paths.yaml · budget.yaml · agent.yaml
+    cost/ledger.yaml · sweep.yaml            the cloud cost ledger; when the drift sweep last ran
   teammates/              (owned by nooblyjs-ai-teammate: <slug>/TEAMMATE.md, memory/, timesheets/)
   wiki/                   (owned by nooblyjs-ai-knowledge, the Wiki Platform; JSON records, its own layout)
     spaces/spaces.json · spaces/<slug>/files/…   the spaces and their pages (Markdown). A process-model page carries

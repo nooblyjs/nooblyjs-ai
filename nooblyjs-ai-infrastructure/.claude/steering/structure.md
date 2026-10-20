@@ -4,17 +4,11 @@ inclusion: always
 
 # Infrastructure: where things live
 
-> **Since 2026-10-19 this is the Software Factory's Infrastructure section** (`nooblyjs-ai-factory/infrastructure`, pages in
-> `nooblyjs-ai-factory/public/infrastructure`), not an app of its own with a rail item. Where this file says
-> `/infrastructure`, read `/factory/infrastructure`; `data/infrastructure`, read `data/factory/infrastructure`;
-> `nooblyjs-ai-infrastructure`, read the Factory's Infrastructure section. There is no `server.js` or standalone mode
-> any more. See the section's `CLAUDE.md`.
-
 > `stack.md` has the platform rules and the `register()` contract; `product.md` says what the module
 > does and shows. This repo is NooblyJS's **Infrastructure** module: it owns infrastructure designs,
 > environments, provisioning runs, drift, blueprints, policies and cloud cost, and its **screens**,
 > which are a UI module in the NooblyJS frame at `/infrastructure/…`. They call this repo's API at
-> **`/infrastructure/api/v1`**. The layout follows `../../nooblyjs-ai-host/.claude/steering/structure.md` §2a.
+> **`/infrastructure/api/v1`**. The layout follows `../nooblyjs-ai-host/.claude/steering/structure.md` §2a.
 >
 > §2 and §3 describe what is on disk. In §4–§7, anything not marked *(built)* in the roadmap is still a
 > **proposal** to settle with NooblyJS, together with the open points in `product.md` §8. `docs/roadmap-history.md`
@@ -198,7 +192,7 @@ PRD-031 and ADR-014 by id only, because those belong to `nooblyjs-ai-product`. M
 ## 9. Where to put new things
 
 - **A new screen:** a page in `public/js/pages/`, a route in `module.js`, a `nav` row in `index.js`
-  if it has one, its API in `src/routes/`, and an e2e spec in `../../nooblyjs-ai-host/test/e2e/`.
+  if it has one, its API in `src/routes/`, and an e2e spec in `../nooblyjs-ai-host/test/e2e/`.
 - **A component other apps would use:** the UI kit in `nooblyjs-core/public/ui/`, never here.
 - **A new entity:** a repo in `src/repos/`, a folder in `data/infrastructure/` (update §5), seed
   files, and the events it emits (update §6).

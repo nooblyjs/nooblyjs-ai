@@ -246,9 +246,9 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   services.set('workflows', lifecycle.services);
   if (lifecycleIsNew) await lifecycle.seed({ reset: false, content: sampleData });
 
-  // Apps that became part of another (Product and Infrastructure are sections of the Software Factory since 2026-10-19)
-  // keep their data: it moves to where that app keeps it, once, before anything loads. A failure is logged; the app
-  // that took them in then starts on an empty folder and the old one is left as it was.
+  // Apps that became part of another (Product is a section of the Software Factory since 2026-10-19) keep their data: it
+  // moves to where that app keeps it, once, before anything loads; so does the data of an app that is its own again
+  // (Infrastructure, CHG-007). A failure is logged; the app then starts on an empty folder and the old one is left.
   await foldData(config.dataDir, log).catch((err) => log.error(`moving the data of folded apps failed: ${err.message}`));
   const hosted = await loadHostedApps({ app, serverManager, config, store, shell, hostFor, services, log, sampleData });
 

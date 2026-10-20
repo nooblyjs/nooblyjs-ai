@@ -1,18 +1,17 @@
-// Phase 9a: NooblyJS Infrastructure, the Software Factory's Infrastructure section since 2026-10-19
-// (nooblyjs-ai-factory/infrastructure, at /factory/infrastructure). The hosted-app checklist (roadmap.md) and the phase's
-// test script, through the real apps: the lifecycle engine, Platform and Infrastructure with its mock provisioner. The same steps run in a browser in test/e2e/infrastructure.story.js.
+// Phase 9a: NooblyJS Infrastructure (nooblyjs-ai-infrastructure) hosted at /infrastructure (a section of the Software
+// Factory from 2026-10-19 to 2026-10-20, CHG-007). The hosted-app checklist (roadmap.md) and the phase's test script,
+// through the real apps: the lifecycle engine, Platform and Infrastructure with its mock provisioner. The same steps run in a browser in test/e2e/infrastructure.story.js.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { startApp, today, eventually } from './helpers.js';
 
-const API = '/factory/infrastructure/api/v1';
+const API = '/infrastructure/api/v1';
 let env;
 let stevie;
 let priya;
-// The section as the Factory mounted it (its register()'s description: sweep, idle, services).
-const hostedInfra = () => env.noobly.hosted.apps.find((a) => a.name === 'factory').internals.sections.infrastructure;
+const hostedInfra = () => env.noobly.hosted.apps.find((a) => a.name === 'infrastructure');
 const post = (c, url, json = {}) => c.request(url, { method: 'POST', json });
 
 before(async () => {
@@ -21,6 +20,7 @@ before(async () => {
   env = await startApp({
     hostedApps: [
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
+      { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true },
     ],
   });
   [stevie, priya] = [env.client(), env.client()];
@@ -29,19 +29,17 @@ before(async () => {
 });
 after(async () => { await env?.stop(); });
 
-test('checklist 1, 2, 4 and 5: mounted at /factory/infrastructure, its rows last in the Factory\'s sidebar with a line on its card; deep links get the frame; the API needs a sign-in', async () => {
+test('checklist 1, 2, 4 and 5: mounted at /infrastructure, on the rail as Infra with its nav and card; deep links get the frame; the API needs a sign-in', async () => {
   const { body } = await stevie.json('/api/v1/shell');
-  assert.equal(body.apps.find((a) => a.name === 'infrastructure'), undefined, 'not an app of its own');
-  const factory = body.apps.find((a) => a.name === 'factory');
-  assert.equal(factory.state, 'ready');
-  const infra = factory.nav.filter((n) => n.group === 'Infrastructure');
-  assert.deepEqual(infra.map((n) => n.key), ['infra-environments', 'infra-designs', 'infra-runs', 'infra-testing', 'infra-blueprints', 'infra-cost', 'infra-policies']);
-  // After the Factory's own rows (Build): designs and environments come with, and after, the build.
-  assert.deepEqual(factory.nav.slice(-infra.length), infra);
-  const status = (await stevie.json('/api/v1/shell/status')).body.factory;
-  assert.ok(status.card.items.some((i) => i.label === 'Infrastructure'));
-  assert.ok('infra-runs' in status.badges);
-  for (const page of ['/factory/infrastructure', '/factory/infrastructure/environments', '/factory/infrastructure/designs/INF-031']) {
+  const infra = body.apps.find((a) => a.name === 'infrastructure');
+  assert.deepEqual([infra.state, infra.mountPath, infra.label, infra.icon], ['ready', '/infrastructure', 'Infra', 'cube']);
+  assert.deepEqual(infra.nav.map((n) => n.key), ['environments', 'designs', 'runs', 'testing', 'blueprints', 'cost', 'policies']);
+  // After the Software Factory on the rail (the mockups put it between the Factory and Teammates).
+  const order = body.apps.filter((a) => a.rail !== false).map((a) => a.name);
+  assert.ok(order.indexOf('infrastructure') > order.indexOf('factory'));
+  // Not part of the Factory any more: no Infrastructure group in its sidebar.
+  assert.ok(!body.apps.find((a) => a.name === 'factory').nav.some((n) => n.group === 'Infrastructure'));
+  for (const page of ['/infrastructure', '/infrastructure/environments', '/infrastructure/designs/INF-031']) {
     const res = await stevie.get(page);
     assert.equal(res.status, 200, page);
     assert.match(await res.text(), /id="noobly-content"/);
@@ -50,8 +48,8 @@ test('checklist 1, 2, 4 and 5: mounted at /factory/infrastructure, its rows last
   assert.equal((await stevie.json(`${API}/environments`)).status, 200);
 });
 
-test('checklist 7: the seed story is written under data/factory/infrastructure/ on the first start, and nowhere else', async () => {
-  const designs = await fs.readdir(path.join(env.dataDir, 'factory', 'infrastructure', 'designs'));
+test('checklist 7: the seed story is written under data/infrastructure/ on the first start, and nowhere else', async () => {
+  const designs = await fs.readdir(path.join(env.dataDir, 'infrastructure', 'designs'));
   assert.ok(designs.includes('INF-031.md'));
   const { body } = await stevie.json(`${API}/environments`);
   assert.ok(body.environments.some((e) => e.name === 'dev-slots'));
@@ -102,7 +100,7 @@ test('step 3: the run has a page of its own: the plan, who approved, and its log
   const lines = detail.log.map((l) => l.text);
   assert.ok(lines.includes('Approved by Stevie') && lines.includes('Applied 50%') && lines.at(-1) === 'Provisioned test-slots from INF-031 v2');
   // Deep link: the run's page answers with the frame.
-  assert.equal((await stevie.get(`/factory/infrastructure/runs/${run.id}`)).status, 200);
+  assert.equal((await stevie.get(`/infrastructure/runs/${run.id}`)).status, 200);
   // Activity says it in words, once per step that matters (not once per 10%).
   const rows = (await stevie.json('/api/v1/activity')).body.rows;
   assert.ok(rows.some((r) => r.systemLabel === 'Infrastructure' && r.action === 'provisioned test-slots from INF-031 v2'));
@@ -148,9 +146,9 @@ test('step 6: a queued run is cancelled and pr-485 destroyed: both audited; pr-4
 
 test('step 7: Platform · Environments is Infrastructure\'s list, each linking to it', async () => {
   const { body } = await priya.json('/api/v1/platform/environments');
-  assert.deepEqual([body.source, body.href], ['infrastructure', '/factory/infrastructure']);
+  assert.deepEqual([body.source, body.href], ['infrastructure', '/infrastructure']);
   const prod = body.environments.find((e) => e.name === 'prod');
-  assert.deepEqual([prod.kind, prod.approvals, prod.secretsScope, prod.agentsMayDeploy, prod.href], ['Production', 2, 'production', false, '/factory/infrastructure/environments/prod']);
+  assert.deepEqual([prod.kind, prod.approvals, prod.secretsScope, prod.agentsMayDeploy, prod.href], ['Production', 2, 'production', false, '/infrastructure/environments/prod']);
   const dev = body.environments.find((e) => e.name === 'dev-slots');
   assert.deepEqual([dev.approvals, dev.secretsScope, dev.agentsMayDeploy], [0, 'staging', true]);
 });

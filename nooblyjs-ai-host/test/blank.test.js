@@ -37,6 +37,7 @@ before(async () => {
   assert.match(out, /First Owner: Stevie B <stevie@example\.com>/);
   await new FsStore(dataDir).writeYaml(['config', 'hosted-apps.yaml'], { apps: [
     { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
+    { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true },
     { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
   ] });
   noobly = await createApp({ config: testConfig(dataDir) });
@@ -76,8 +77,8 @@ test('every main page answers, with nothing in it', async () => {
     '/factory/product/api/v1/specs': (b) => (b.specs ?? b.rows ?? []).length,
     '/teammates/api/v1/teammates': (b) => b.teammates.length,
     '/factory/api/v1/runs': (b) => (b.runs ?? b).length,
-    '/factory/infrastructure/api/v1/designs': (b) => (b.designs ?? b.rows ?? []).length,
-    '/factory/infrastructure/api/v1/environments': (b) => (b.environments ?? b.rows ?? []).length,
+    '/infrastructure/api/v1/designs': (b) => (b.designs ?? b.rows ?? []).length,
+    '/infrastructure/api/v1/environments': (b) => (b.environments ?? b.rows ?? []).length,
     '/api/v1/platform/secrets': (b) => (b.secrets ?? b.rows ?? []).length,
   };
   for (const [url, count] of Object.entries(empty)) {
@@ -109,12 +110,13 @@ test('nothing on disk is sample content, and each app wrote only its system file
   }
   const top = (dir) => files.filter((f) => f.startsWith(`${dir}/`)).map((f) => f.slice(dir.length + 1).split('/')[0]);
   assert.deepEqual([...new Set(top('workflows'))].sort(), ['approval-rules.yaml', 'readiness.yaml', 'seed.yaml']);
-  // The Software Factory's sections keep their files in its folder (2026-10-19): system files only.
+  // The Software Factory's Product section keeps its files in its folder (2026-10-19): system files only.
   assert.deepEqual([...new Set(top('factory/product'))].sort(), ['accessibility.yaml', 'budget.yaml', 'catalogue.yaml', 'seed.yaml', 'standards.yaml', 'templates']);
-  assert.ok(top('factory/infrastructure').includes('seed.yaml'), 'the Infrastructure section wrote its system files');
-  assert.ok(!top('factory/infrastructure').some((n) => ['designs', 'environments', 'runs', 'drift', 'cost'].includes(n)));
+  // Infrastructure is an app of its own (CHG-007), in its own folder: system files only.
+  assert.ok(top('infrastructure').includes('seed.yaml'), 'Infrastructure wrote its system files');
+  assert.ok(!top('infrastructure').some((n) => ['designs', 'environments', 'runs', 'drift', 'cost'].includes(n)));
   const folders = new Set(files.map((f) => f.split('/')[0]));
-  assert.ok(folders.has('factory') && !folders.has('product') && !folders.has('infrastructure'), 'nothing in the old folders');
+  assert.ok(folders.has('factory') && !folders.has('product') && !top('factory').includes('infrastructure'), 'nothing in the old folders');
   assert.ok(!top('teammates').includes('teammates') || !(await filesOf(path.join(dataDir, 'teammates', 'teammates'))).length, 'nobody is hired');
   assert.ok(top('teammates').includes('skills'), 'the skills library is there');
   assert.ok(!top('factory').includes('repos'), 'no demo repository');

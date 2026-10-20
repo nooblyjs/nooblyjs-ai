@@ -30,8 +30,8 @@ test('every rail and sidebar item goes somewhere, shows its active state, and pa
   test.setTimeout(240_000); // about 30 pages, each scanned by axe
   await signIn(page, 'stevie');
   const railNames = await page.locator('#noobly-rail .rail__item').evaluateAll((els) => els.map((e) => e.dataset.app));
-  // The Factory carries the Product section (and Infrastructure, in its own story): one rail item.
-  expect(railNames).toEqual(['home', 'factory', 'teammates', 'wiki', 'hello-app', 'throwing-app', 'platform']);
+  // The Factory carries the Product section: one rail item. Infrastructure is an app of its own (off here, not installed).
+  expect(railNames).toEqual(['home', 'factory', 'infrastructure', 'teammates', 'wiki', 'hello-app', 'throwing-app', 'platform']);
 
   const visited = [];
   for (const name of railNames) {

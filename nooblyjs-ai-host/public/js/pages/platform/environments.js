@@ -1,4 +1,4 @@
-// Platform · Environments: a read-only summary. Infrastructure (the Software Factory's Infrastructure section) owns environments and previews
+// Platform · Environments: a read-only summary. Infrastructure (nooblyjs-ai-infrastructure) owns environments and previews
 // (decided 2026-10-10); when it is hosted this lists its environments and links there. When it is switched off
 // this lists data/platform/environments.yaml. Which secrets scope each environment gets is shown, because agents and previews
 // only ever get staging values (product.md §3.8).
@@ -10,7 +10,7 @@ export async function render(view, { ctx }) {
   const data = await ctx.hostApi.get('platform/environments');
   if (!ctx.isCurrent()) return;
   const fromInfra = data.source === 'infrastructure';
-  view.innerHTML = String(html`${head('Environments', 'Where builds are deployed, and which secrets each environment gets.', fromInfra ? button({ label: 'Open Infrastructure', kind: 'secondary', href: data.href ?? '/factory/infrastructure' }) : '')}
+  view.innerHTML = String(html`${head('Environments', 'Where builds are deployed, and which secrets each environment gets.', fromInfra ? button({ label: 'Open Infrastructure', kind: 'secondary', href: data.href ?? '/infrastructure' }) : '')}
   <p class="note">${fromInfra
     ? 'Infrastructure owns environments and previews: this is its list. Designs, provisioning, drift and cost are there.'
     : `Infrastructure owns environments and previews, but it is not running here, so this is Platform's own list (data/platform/environments.yaml) · ${data.cloud} · ${data.region}.`}</p>
