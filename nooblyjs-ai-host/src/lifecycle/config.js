@@ -107,10 +107,22 @@ export async function loadRules(repos, log) {
 // Where a stage's checks were kept before lifecycle v3: used when readiness.yaml has nothing under the new key.
 const READINESS_BEFORE = { product: 'specify', design: 'architect', test: 'verify' };
 
+/**
+ * Checks added after a data folder was made (Phase 16c: Design's, before each story's Design handoff). The file wins
+ * where it lists the stage.
+ */
+export const BUILT_IN_READINESS = {
+  design: [
+    { key: 'requirements-covered', passed: 'Every business requirement is covered by a story', failed: 'A business requirement has no story' },
+    { key: 'decisions-decided', passed: 'No decision is still proposed', failed: 'A decision is still proposed' },
+    { key: 'interfaces-complete', passed: 'Every interface has both sides named', failed: 'An interface has a side missing' },
+  ],
+};
+
 /** The readiness checks a stage requires: [{ key, passed, failed }]. Empty when the stage has none. */
 export async function loadReadiness(repos, stage) {
   const doc = await repos.readYaml('readiness.yaml');
-  return doc?.stages?.[stage] ?? doc?.stages?.[READINESS_BEFORE[stage]] ?? [];
+  return doc?.stages?.[stage] ?? doc?.stages?.[READINESS_BEFORE[stage]] ?? BUILT_IN_READINESS[stage] ?? [];
 }
 
 /** How many days an item may wait on a person before Lifecycle calls it "waiting too long". */

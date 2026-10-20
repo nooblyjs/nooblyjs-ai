@@ -1,6 +1,7 @@
 ---
 name: acme/stores-service
 branch: main
+team: delivery-squad
 access: read-prs
 readCode: true
 pushAgentBranches: true

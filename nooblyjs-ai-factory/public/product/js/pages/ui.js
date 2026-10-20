@@ -100,11 +100,12 @@ export async function render(view, { params, query, ctx }) {
 
   function paint() {
     const { overview, screens, ds, a11y, handoff, drafter } = data;
-    const canSend = ctx.can('approve') && handoff.status === 'draft' && handoff.count > 0 && !handoff.outside?.length;
+    const canSend = ctx.can('approve') && handoff.status === 'draft' && handoff.count > 0 && !handoff.outside?.length && !handoff.perStory;
     const actions = html`${button({ label: 'Open in canvas', kind: 'secondary', icon: 'screen', disabled: !overview.canvasUrl, href: overview.canvasUrl ?? undefined, attrs: overview.canvasUrl ? {} : { 'aria-describedby': 'pf-canvas-note' } })}${canSend ? button({ label: 'Send to Software Factory', icon: 'handoff', attrs: { 'data-action': 'send' } }) : ''}`;
     const lead = html`${overview.lead ?? 'Screens, design-system reuse and accessibility, ready to hand off.'} <a href="${hrefFor(ctx, `/specs/${overview.itemId}`)}">${overview.itemId} · ${overview.title}</a>`;
     view.innerHTML = String(html`${pageHead({ eyebrow: 'Product Factory · Stage 4', title: 'UI Design', lead, actions })}
       ${overview.canvasUrl ? '' : html`<p class="pf-cost" id="pf-canvas-note">Open in canvas needs Figma, which isn't connected yet.</p>`}
+      ${handoff.perStory ? html`<p class="pf-cost">${handoff.perStory.text} <a href="${handoff.perStory.href}">Open the Design handoff</a></p>` : ''}
       <p class="pf-message" role="status" aria-live="polite" data-message></p>
       <div class="pf-draft" data-draft hidden></div>
       <form class="card pf-form" data-form="send" hidden>

@@ -35,6 +35,8 @@ function view(doc, fileName) {
     shortName: name.split('/').pop(),
     branch: r.branch ?? 'main',
     stack: r.stack ?? '',
+    // The team that owns it (Phase 16c: Design's impacted systems name it). Not Bitbucket's owner, which is in the name.
+    team: typeof r.team === 'string' && r.team ? r.team : null,
     notes: r.notes ?? '',
     access: r.access,
     accessText: ACCESS_TEXT[r.access],

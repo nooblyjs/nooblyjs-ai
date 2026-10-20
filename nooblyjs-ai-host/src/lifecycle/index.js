@@ -92,10 +92,18 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       sendBack: ({ itemId, to, reason, actor }) => engine.sendBack(itemId, { to, reason }, actor),
       /** The Design handoff (Design → Engineering) with the planned work items; they go to the Software Factory on the Engineering sign-off. */
       handoff: (input) => engine.handoff(input),
+      /** The Design section's stories for an item in Design (Phase 16c): new ones become items, removed ones are withdrawn. */
+      syncStories: (input) => engine.syncStories(input),
+      /** One story's Design handoff (Phase 16c): it moves to Engineer; its item follows when its last story has gone. */
+      handoffStory: (input) => engine.handoffStory(input),
+      /** An item's stories as the lifecycle sees them: [{ id, title, stage, status, feature }]. */
+      storiesOf: async ({ itemId } = {}) => (await engine.storiesOf(itemId)).map(({ id, ref, title, stage, status, feature, stageEnteredAt }) => ({ id, ref, title, stage, status, feature: feature ?? null, stageEnteredAt })),
       /** One handoff with its work items ({ id, itemId, workItems: [{ id, repo, title, status }], … }), or null. The Software Factory reads it. */
       handoffOf: async ({ handoffId } = {}) => repos.handoffs.get(handoffId),
       /** One item, as the lifecycle sees it (null when unknown). */
       item: async ({ itemId } = {}) => repos.items.get(itemId),
+      /** Items, optionally those in one stage (the Design section's lists, Phase 16c). */
+      items: async ({ stage = null } = {}) => (await repos.items.list()).filter((i) => !stage || i.stage === stage),
       /** Approvals waiting on this person (Home, For you). */
       waitingFor: (person) => views.waitingFor(person),
       /** Items in flight, approvals waiting on the person, agents working. */

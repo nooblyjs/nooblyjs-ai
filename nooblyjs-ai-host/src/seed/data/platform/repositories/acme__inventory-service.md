@@ -1,6 +1,7 @@
 ---
 name: acme/inventory-service
 branch: main
+team: platform-team
 access: read
 readCode: true
 pushAgentBranches: false

@@ -130,8 +130,11 @@ export function createUiService({ repos, host, log, flow }) {
     const low = items.length * per.low;
     const high = items.length * per.high;
     const sent = doc?.requested ?? null;
+    // Since Phase 16c an item whose Design wrote stories goes on story by story, from the Design section: no Send here.
+    const stories = (await host.service?.('workflows')?.storiesOf?.({ itemId }).catch(() => [])) ?? [];
     return {
       itemId,
+      ...(stories.length ? { perStory: { text: `${itemId} goes on story by story: hand each of its ${stories.length} stories to Engineering in Design.`, href: `/factory/design/handoff/${encodeURIComponent(itemId)}` } } : {}),
       version: doc?.version ?? 0,
       workItems: items.map((w) => ({ ...w, text: `${w.repo} · ${w.title}` })),
       count: items.length,

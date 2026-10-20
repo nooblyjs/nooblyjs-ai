@@ -12,6 +12,9 @@ const LAYOUTS = {
   'product-manager': () => import('./for-you-pm.js'),
   architect: () => import('./for-you-architect.js'),
   developer: () => import('./for-you-developer.js'),
+  // Phase 16c: the Design homes, over the Factory's Design section.
+  'solution-architect': () => import('./for-you-design.js'),
+  'functional-analyst': () => import('./for-you-design.js'),
 };
 
 function greeting(name) {
@@ -126,5 +129,5 @@ export async function render(view, { ctx, query }) {
   }, { signal: ctx.signal });
 
   await draw();
-  onChange(ctx, draw, { types: ['item.', 'approval.', 'handoff.', 'profile.', 'clock.', 'run.', 'pr.'] });
+  onChange(ctx, draw, { types: ['item.', 'approval.', 'handoff.', 'profile.', 'clock.', 'run.', 'pr.', 'design.'] });
 }

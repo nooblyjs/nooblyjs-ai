@@ -25,6 +25,7 @@ import { createUxService, uxKinds } from './src/services/ux.js';
 import { createUiService, uiKinds } from './src/services/ui.js';
 import { createFlowService } from './src/services/flow.js';
 import { seed as seedStory } from './src/seed/index.js';
+import { parseSpec } from './src/services/spec-format.js';
 
 const NAME = 'product';
 // One or more path segments: /product on its own, /factory/product inside the Software Factory.
@@ -177,6 +178,30 @@ export async function register(app, serverManager, { mountPath = '/product', dat
       },
       /** The item's gates with the decisions still open on them: { gates, proposedAdrs, standards }, or null. */
       architectureFor: (itemId) => architecture.summaryFor(itemId).catch(() => null),
+      /**
+       * What the Design section works from (Phase 16c): the spec, parsed ({ problem, goals, stories, acceptanceCriteria,
+       * … }), its repositories, the container view's containers and relations, the quality attributes and the ADRs.
+       * Null when there is no spec for the item.
+       */
+      designInputs: async (itemId) => {
+        const spec = await repos.specs.get(itemId).catch(() => null);
+        if (!spec) return null;
+        const [diagram, qa, adrs] = await Promise.all([
+          architecture.diagram(itemId).catch(() => null),
+          architecture.qualityAttributes(itemId).catch(() => null),
+          architecture.adrs(itemId).catch(() => []),
+        ]);
+        return {
+          itemId, title: spec.title, product: spec.product ?? null, version: spec.version ?? null,
+          // The spec's own (confirmed in Architecture), else its product's defaults (Phase 11).
+          repositories: spec.repositories?.length ? spec.repositories : (await catalogue.defaultsFor(spec.product).catch(() => null))?.repositories ?? [],
+          spec: parseSpec(spec.body),
+          containers: (diagram?.nodes ?? []).map(({ id, kind, label, tech, description, status }) => ({ id, kind, label, tech, description, status })),
+          relations: (diagram?.edges ?? []).map(({ from, to, label, tech }) => ({ from, to, label, tech })),
+          qualityAttributes: qa?.attributes ?? [],
+          adrs: adrs.map(({ id, title, status }) => ({ id, title, status })),
+        };
+      },
       /** The quality attributes that become Software Factory gates on every PR for this item. */
       gatesFor: async (itemId) => (await architecture.qualityAttributes(itemId).catch(() => null))?.attributes ?? [],
       /** Rows for Home · Waiting on you and the For you pages. */

@@ -50,11 +50,13 @@ roles:
       - { key: decide-adr-014, text: Accept or challenge ADR-014 · Cache slot availability in Redis, short: First decision, next: decide ADR-014, done: { type: approval.decided, where: { subject: ADR-014 } } }
       - { key: review-container-view, text: Review the container view of PRD-031, short: Container view, next: review a container view, done: { type: architecture.diagram_updated, where: { itemId: PRD-031 } } }
       - { key: give-design-handoff, text: Give your first Design handoff, short: Design handoff, next: give a Design handoff, done: { type: approval.decided, where: { type: design-handoff } } }
-  # Lifecycle v3 (Phase 16b, root product.md §5): the Design and Engineer stages' people and the testers. Their homes
-  # come with Phases 16c–16e; until then onboarding lands on Overview.
+  # Lifecycle v3 (Phase 16b, root product.md §5): the Design and Engineer stages' people and the testers. The Solution
+  # Architect and Functional Analyst homes came with Phase 16c; the others come with 16d–16e, and until then onboarding
+  # lands on Overview.
   - key: solution-architect
     name: Solution Architect
     initials: SA
+    layout: solution-architect
     blurb: Fit each change into the estate and hand its stories to Engineering.
     promise: Agents draft the feature landscape, impacted systems and NFRs; you own the solution and the Design handoff.
     tasks:
@@ -65,11 +67,12 @@ roles:
     agent: rhea-voss
     agents: Rhea Voss · solution architecture and decisions
     tools: [Jira Cloud, Enterprise Knowledge Repository]
-    home: /home/overview
+    home: /
     firstWeek: []
   - key: functional-analyst
     name: Functional Analyst
     initials: FA
+    layout: functional-analyst
     blurb: Write the interface and technical requirements, and shape the stories.
     promise: Agents draft the functional analysis and the stories; you make each interface whole.
     tasks:
@@ -79,7 +82,7 @@ roles:
     leadsWith: [Interfaces with one side missing, Stories to finish, Items in Design]
     agents: Analyst agents · functional analysis and stories
     tools: [Jira Cloud, Confluence]
-    home: /home/overview
+    home: /
     firstWeek: []
   - key: application-architect
     name: Application Architect

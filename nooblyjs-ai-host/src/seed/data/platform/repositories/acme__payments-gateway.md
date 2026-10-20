@@ -1,6 +1,7 @@
 ---
 name: acme/payments-gateway
 branch: main
+team: checkout-squad
 access: none
 readCode: false
 pushAgentBranches: false

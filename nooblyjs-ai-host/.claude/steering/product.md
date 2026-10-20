@@ -87,18 +87,20 @@ the monorepo root's `.claude/steering/product.md` §3):
 1 Discover → 2 Product → 3 Design → 4 Engineer → 5 Build → 6 Test → 7 Release → 8 Operate
 ```
 
-Requirements, UX and UI are one **Product** stage, worked on together. **Design** does the solution architecture (the
-Architecture pages, at `/factory/design`); **Engineer** the application architecture and test analysis, signed off
-before anything is built; in **Build** the AI builds and tests and an engineer gives the Build approval; in **Test** a
-person verifies the pull request and gives the Test approval. Items that were in a stage from before moved once, on
-record (`lifecycle.stages_migrated` in the audit log): Specify, UX and UI to Product, Architect to Design, Verify (Phase
-16a) and Ship (before it) to Test. History written before still says what it said.
+Requirements, UX and UI are one **Product** stage, worked on together. **Design** writes the business requirements, the
+solution architecture, the functional analysis and the **stories** that build each feature (the Factory's Design section,
+at `/factory/design`, §5.3a); from there an item goes on **story by story** (Phase 16c); **Engineer** the application
+architecture and test analysis, signed off before anything is built; in **Build** the AI builds and tests and an
+engineer gives the Build approval; in **Test** a person verifies the pull request and gives the Test approval. Items that
+were in a stage from before moved once, on record (`lifecycle.stages_migrated` in the audit log): Specify, UX and UI to
+Product, Architect to Design, Verify (Phase 16a) and Ship (before it) to Test. History written before still says what
+it said.
 
 | Stage | Main artifact | Default agent | Exit gate (a person approves) |
 | --- | --- | --- | --- |
 | Discover | Signal clusters, Idea with RICE score | Research agent (e.g. Ada Quill) | Idea accepted |
 | Product | Spec/PRD (problem, goals, user stories, acceptance criteria, readiness checks), journeys and flows, screens | Product, design and UI agents | **Product handoff** (Product lead + Engineering) |
-| Design | Container diagram, ADRs, standards check, quality attributes (business requirements, impacted systems, functional analysis and stories in Phase 16c) | Architect agent (e.g. Rhea Voss) | **Design handoff** (Solution Architect, `accept-decisions`), with the planned work items; ADR acceptance when a new dependency is added |
+| Design | Business requirements, impacted systems, NFRs, the feature landscape, interfaces and technical requirements, the **stories** (Phase 16c); the container diagram, ADRs, standards check and quality attributes | Analyst agent (Ada Quill stands in), architect agent (e.g. Rhea Voss) | **Design handoff per story** (Solution Architect, `accept-decisions`; any person but a Viewer may give it for them), with the story's work items; ADR acceptance when a new dependency is added. An item without stories (from before 16c) keeps one Design handoff |
 | Engineer | Application architecture and test analysis (Phase 16d) | Application architect agent, test agent | **Engineering sign-off** (an Application Architect and a test lead, one approval): the work items go to the Software Factory |
 | Build | Work items → Software Factory runs → PRs | Factory stations / engineering teammates | Gates pass (tests, contracts, quality attributes); **Build approval** (an engineer, the code owner) |
 | Test | The pull request verified by a person (tests in environments: root roadmap Phases 19–21) | Test agent, security agent | **Test approval** (a tester, `sign-off-tests`); then the PR may merge |
@@ -305,6 +307,34 @@ portfolios and value streams, and opens each document.
 > Product, UX and UI are the Product stage (with Discover before it), and its Architecture the Design stage, whose
 > pages the Factory shows in its Design section (`/factory/design/architecture`).
 
+### 5.3a Design (the Factory's Design section, `/factory/design`, Phase 16c)
+
+The sidebar's Design group: **Architecture** (the Product section's pages, §5.3), **Business requirements**,
+**Solution architecture**, **Functional analysis**, **Stories**, **Handoff to the Factory**. Each row lists the items in
+Design with that part said in words ("6 business requirements · 4 accepted", "1 of 3 stories handed off") and opens the
+item's page for it, with tabs for the five parts. Root `product.md` §3.2a says what Design is for.
+
+- **Business requirements** (`BR-031-01`): drafted by the analyst agent, one per goal and per user story of the spec,
+  each quoting the words it comes from. A person with `accept-requirement` accepts each; an edit makes it proposed again.
+- **Solution architecture**: impacted systems (from the item's repositories, else its product's, and Platform's
+  records: new, changed or retired, with the owning team and what Knowledge has on each), NFRs (from the item's quality
+  attributes, then the NFR catalogue's default for each category not covered, `[CONFIRM]` targets), and the feature
+  landscape (one feature per user story; a person names what each depends on, with no loops). Links to the container view and ADRs, the threat model (Phase 19) and the
+  infrastructure design.
+- **Functional analysis**: interfaces (one per relation of the container view; people add, edit and remove them; a side
+  missing is said in red **and** in words) and a technical requirement per impacted system.
+- **Stories** (`STORY-031-1`): proposed one per feature, each tracing to its business requirements, systems, interfaces,
+  technical requirements, NFRs and acceptance criteria. An analyst **merges** picked stories (into the first) and
+  **splits** one (it keeps the first part). Each story is a lifecycle item of its own (Lifecycle shows it, with its item
+  and feature); one merged away is withdrawn.
+- **Handoff to the Factory**: Design's three checks (every business requirement covered by a story, no decision still
+  proposed, every interface with both sides named) and a **Hand off to Engineering** per story, with an override
+  reason when a check fails. The story moves to Engineer with one work item per impacted system; the item stays in
+  Design until its last story goes, then follows its stories. The item itself can't be handed off, signed off or moved
+  on as a whole once it has stories.
+- Agents draft every part (each a teammate task); people accept, edit, merge, split and hand off. Agents are refused
+  every acceptance and handoff, and the refusal is audited. A Viewer reads everything and changes nothing.
+
 ### 5.4 Software Factory (`factory`): existing, restyle to NooblyJS
 
 Nav: Line, Runs, Inbox, Campaigns, Metrics. Status card: accepting work, slots running and
@@ -496,6 +526,9 @@ How it sits in NooblyJS:
         (a question from a stuck run, linked to the acceptance criterion, with **Answer /
         Open run**), and your engineering teammate card ("Juno opens PRs on your repos. You
         review and merge; Juno never merges to main.").
+    - **The Design homes** (Phase 16c): the Solution Architect's (items in Design, decisions awaiting them, stories ready
+      for their Design handoff, stories handed off) and the Functional Analyst's (interfaces with a side missing, stories
+      to finish: no criteria or no business requirement, items in Design), each row linking to its Design page.
     - **Your first week** checklist (Hide). It tracks the onboarding's first three things
       plus "Pick your role and teams" to completion, and drives the Getting started card.
 
@@ -697,6 +730,7 @@ through events and APIs. Don't copy code from another slice.
 | **`nooblyjs-ai-common`** | Shared AI building blocks: provider adapters, model catalogue, tokens, **cost**, retry, SSE | The **model gateway** behind Model routing: work type → model → fallback → provider (Bedrock / Vertex / Azure); cost per call tagged with item, teammate and system |
 | **`nooblyjs-ai-harness`** | The agent runtime: agent loop, tools, permissions, sandboxing, hooks, MCP, skills, memory | What every agent runs in: factory stations, teammate tasks, Product Factory drafting agents. Enforces guardrails, no outbound internet, staging-only secrets |
 | **`nooblyjs-ai-factory`** · Product section (`product/`, `/factory/product`; it was `nooblyjs-ai-product` until 2026-10-19) | The **Product Factory** (with its own screens): signals, ideas, specs, architecture artefacts (diagram as code, ADRs, standards check, quality attributes), UX and UI artefacts, the roadmap, and the per-stage **drafting agents** | Owns the Product board, Spec, Architecture, UX Design and UI Design screens (a UI module in the frame), the handoff preview, and "ask the agent to draft" |
+| **`nooblyjs-ai-factory`** · Design section (`design/`, `/factory/design`; Phase 16c) | **Design**: business requirements, solution architecture, functional analysis and stories (§5.3a), and Design's readiness checks | Owns the five Design screens; keeps each story a lifecycle item through `host.service('workflows')` (`syncStories`, `handoffStory`); answers `host.service('design')` |
 | **`nooblyjs-ai-infrastructure`** (`/infrastructure`; a section of the Software Factory from 2026-10-19 to 2026-10-20) | **Infrastructure**: designs, environments, provisioning runs, drift, cloud cost | Environments, Design, Designs, Provisioning runs (and a run's page), Environment, Testing in environments, Blueprints, Cost, Policies. Asks the lifecycle engine for design approvals and Platform for the cloud budget; tells Platform its environments and previews |
 | **`nooblyjs-ai-factory`** · the line | **Software Factory**: queue, scheduler, line of stations, gates, PR delivery; one app at `/factory` that also mounts the Product section above and answers `host.service('product')` for it | Line, Runs, Inbox, Campaigns, **Metrics**. Accepts handoff work items; applies quality attributes as gates; reports runs, PRs and gate results back to the Item |
 | **`nooblyjs-ai-teammate`** | **Digital Teammates**: hire, configure, budget and bill named agents | **Team roster**, Profiles, Work timeline, Billing & timesheets, Hire, Team memory. The source of agents across NooblyJS, including agents answering in chat and Teams meetings; every agent action bills to a timesheet and to the right team |

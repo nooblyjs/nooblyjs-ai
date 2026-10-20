@@ -10,3 +10,9 @@ stages:
     - { key: performance-targets, passed: Performance targets set, failed: Performance targets missing }
     - { key: privacy-reviewed, passed: Privacy reviewed, failed: Privacy not reviewed }
     - { key: rollout-plan, passed: Rollout plan ready, failed: Rollout plan missing }
+  # Before each story's Design handoff (Phase 16c). The Design section works them out from the item's design; an item
+  # with no Design work (handed off before 16c) has none.
+  design:
+    - { key: requirements-covered, passed: Every business requirement is covered by a story, failed: A business requirement has no story }
+    - { key: decisions-decided, passed: No decision is still proposed, failed: A decision is still proposed }
+    - { key: interfaces-complete, passed: Every interface has both sides named, failed: An interface has a side missing }

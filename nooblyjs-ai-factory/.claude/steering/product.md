@@ -7,8 +7,9 @@ inclusion: always
 > **Since 2026-10-19 the Software Factory is one app with two parts**, in the order work moves through it: the
 > **Product section** (`product/`; what NooblyJS needs from it is `product/.claude/steering/product.md`) and the
 > **line** (this file). One rail item, **Factory**; one sidebar, grouped **Product · Design · Engineering · Build ·
-> Test** (lifecycle v3, Phase 16b: Design shows the Product section's Architecture pages until 16c gives it its own
-> code; Engineering and Test say which phase brings their pages); one status card with a
+> Test** (lifecycle v3, Phase 16b; the **Design section**, `design/`, came with Phase 16c: business requirements,
+> solution architecture, functional analysis and stories, with the Product section's Architecture pages under it;
+> Engineering and Test say which phase brings their pages); one status card with a
 > line per section. The Product Factory keeps its screens, rules and services, at `/factory/product`. The factory is
 > Product, Design, Build and Test: Quality is to be its **Test** section (decided 2026-10-20, Phase 20), not an app of
 > its own. Infrastructure, a section here from 2026-10-19 to 2026-10-20, is the hosted app `nooblyjs-ai-infrastructure`

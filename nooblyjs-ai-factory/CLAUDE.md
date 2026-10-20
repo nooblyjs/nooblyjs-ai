@@ -2,11 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Since 2026-10-19 this package is the whole Software Factory app in NooblyJS**, at `/factory`, with two parts: the
+**Since 2026-10-19 this package is the whole Software Factory app in NooblyJS**, at `/factory`, with three parts: the
 **Product section** (`product/`, pages in `public/product/`: signals → ideas → specs → architecture → UX → UI →
-handoff; it was `nooblyjs-ai-product`) and the **line** (everything below: issues in, verified PRs out). The section
-keeps its own code, tests and docs, with its own `CLAUDE.md`; how it sits in the Factory is `src/services/sections.js`
-and `public/js/sections.js` (below, "Sections"). The factory is Product, Design, Build and Test: Quality joins as the
+handoff; it was `nooblyjs-ai-product`), the **Design section** (`design/`, pages in `public/design/`, Phase 16c:
+business requirements, solution architecture, functional analysis and the stories, each handed to Engineering on its
+own; the Product section's Architecture pages show under it) and the **line** (everything below: issues in, verified
+PRs out). Each section keeps its own code, tests and docs, with its own `CLAUDE.md`; how they sit in the Factory is
+`src/services/sections.js` and `public/js/sections.js` (below, "Sections"). The factory is Product, Design, Build and Test: Quality joins as the
 **Test** section in Phase 20 (decided 2026-10-20; root `roadmap.md`), built the same way as Product. Infrastructure was
 a section here from 2026-10-19 to 2026-10-20 and is the hosted app `../nooblyjs-ai-infrastructure` again (CHG-007).
 
@@ -26,7 +28,7 @@ pages, signs people in, stores data, emits events or calls models, read
 
 ```bash
 npm install                                   # links ../nooblyjs-ai-harness and nooblyjs-ai-common (../../nooblyjs-core/src/aiservice/common)
-npm test                                      # all tests: the line's, then the Product section's (product/test), offline
+npm test                                      # all tests: the line's, then the Product and Design sections' (product/test, design/test), offline
 node --test test/services/line/line.test.js   # one test file
 node --test --test-name-pattern="<regex>" test/services/line/line.test.js   # one test
 npm run check:examples                        # run every documented example (examples/examples.txt) against a fresh demo repo

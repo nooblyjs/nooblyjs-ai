@@ -29,8 +29,11 @@ test('the shell lists the Factory first after Home, with the Product section\'s 
   assert.ok(factory.ui.styles.includes('product/css/product.css'));
   const product = factory.nav.filter((n) => n.group === 'Product');
   assert.deepEqual(product.map((n) => n.key), ['product-overview', 'product-portfolios', 'product-board', 'product-specs', 'product-ux', 'product-ui', 'product-reviews', 'product-handoffs', 'product-settings']);
-  // Architecture moved to the Design section (Phase 16b).
-  assert.deepEqual(factory.nav.filter((n) => n.group === 'Design').map((n) => [n.key, n.path]), [['design-architecture', '/design/architecture']]);
+  // Architecture moved to the Design section (Phase 16b), which has its own five rows since Phase 16c.
+  assert.deepEqual(factory.nav.filter((n) => n.group === 'Design').map((n) => [n.key, n.path]), [
+    ['design-architecture', '/design/architecture'], ['design-requirements', '/design/requirements'], ['design-solution', '/design/solution'],
+    ['design-functional', '/design/functional'], ['design-stories', '/design/stories'], ['design-handoff', '/design/handoff'],
+  ]);
   assert.deepEqual(factory.nav.slice(0, product.length), product, 'Product leads the sidebar');
   assert.ok(product.every((n) => n.path === '/product' || n.path.startsWith('/product/')));
   const kitIcons = await fs.readFile(require.resolve('nooblyjs-core/public/ui/js/icons.js'), 'utf8');

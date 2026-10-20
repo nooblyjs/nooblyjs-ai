@@ -1,6 +1,7 @@
 ---
 name: acme/slots-api
 branch: main
+team: delivery-squad
 access: read-prs
 readCode: true
 pushAgentBranches: true

@@ -8,9 +8,14 @@
 // section's, under /design; the old addresses move on. Engineering and Test rows say which phase brings them.
 import { SECTIONS, sectionRoutes } from './sections.js';
 import { routes as productRoutes } from '../product/js/module.js';
+import { routes as designRoutes } from '../design/js/module.js';
 
 const isArchitecture = (route) => route.nav === 'architecture';
-const OWN = { product: productRoutes.filter((r) => !isArchitecture(r)), design: productRoutes.filter(isArchitecture) };
+// The Design section's Architecture pages are the Product section's (drawn in its scope); the rest are Design's own.
+const OWN = {
+  product: productRoutes.filter((r) => !isArchitecture(r)),
+  design: [...productRoutes.filter(isArchitecture).map((r) => ({ ...r, scope: 'product' })), ...designRoutes],
+};
 
 const coming = (path, nav, title, text, phase, link) => ({ path, nav, title, page: () => import('./pages/coming.js'), meta: { text, phase, ...(link ? { link } : {}) } });
 const APPROVALS = { label: 'Decide them on Home · Approvals', href: '/home/approvals' };

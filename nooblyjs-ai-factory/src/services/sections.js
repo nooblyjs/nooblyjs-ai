@@ -10,8 +10,9 @@
 // so it is the hosted app nooblyjs-ai-infrastructure at /infrastructure again.
 //
 // Lifecycle v3 (Phase 16b, 2026-10-20): the sidebar follows the work, Product · Design · Engineering · Build · Test.
-// The Design section (/factory/design) starts with Architecture, whose code is still the Product section's: it has no
-// server part of its own yet (16c gives it one), only its rows, and its pages are the Product section's (`scope`).
+// The Design section (/factory/design, design/, since Phase 16c a section with its own register()) does the business
+// requirements, solution architecture, functional analysis and stories. Its Architecture rows are still the Product
+// section's code and pages (moved under Design in 16b; the browser draws them in the Product section's scope).
 // Engineering, Build and Test are the Factory's own groups (FACTORY_GROUPS).
 //
 // A section's register() takes what a hosted app's does, so its tests still mount it on its own. Here it is given
@@ -21,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { register as registerProduct, NAV as PRODUCT_NAV } from '../../product/index.js';
+import { register as registerDesign, NAV as DESIGN_NAV } from '../../design/index.js';
 
 const require = createRequire(import.meta.url);
 const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
@@ -33,7 +35,7 @@ const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
  */
 export const SECTIONS = [
   { key: 'product', label: 'Product', group: 'Product', icon: 'product', hint: 'Requirements, UX and UI, together', place: 'before', path: '/product', prefix: 'product', register: registerProduct, nav: PRODUCT_NAV, omit: ['architecture'], styles: 'product/css/product.css' },
-  { key: 'design', label: 'Design', group: 'Design', icon: 'pen', hint: 'Solution architecture, then the stories', place: 'before', path: '/design', prefix: 'design', register: null, nav: PRODUCT_NAV.filter((row) => row.key === 'architecture'), styles: null, scope: 'product' },
+  { key: 'design', label: 'Design', group: 'Design', icon: 'pen', hint: 'Solution architecture, then the stories', place: 'before', path: '/design', prefix: 'design', register: registerDesign, nav: [...PRODUCT_NAV.filter((row) => row.key === 'architecture'), ...DESIGN_NAV], styles: 'design/css/design.css' },
 ];
 
 /** The Factory's own group for the line, after the sections that come 'before' it. */
@@ -89,7 +91,7 @@ export async function mountSections({ app, serverManager, mountPath, dataDir, ho
   const mounted = [];
   try {
     for (const section of SECTIONS.filter((s) => !only || only.includes(s.key))) {
-      // A section with no server part yet (Design, until 16c): its rows only.
+      // A section with no server part of its own: its rows only.
       if (!section.register) {
         mounted.push({ section, hosted: null });
         continue;

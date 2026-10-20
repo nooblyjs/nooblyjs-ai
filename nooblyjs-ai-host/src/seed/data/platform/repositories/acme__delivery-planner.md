@@ -1,6 +1,7 @@
 ---
 name: acme/delivery-planner
 branch: main
+team: delivery-squad
 access: read
 readCode: true
 pushAgentBranches: false

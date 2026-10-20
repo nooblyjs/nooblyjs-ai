@@ -1,6 +1,7 @@
 ---
 name: acme/mobile-app
 branch: main
+team: checkout-squad
 access: read-prs
 readCode: true
 pushAgentBranches: true

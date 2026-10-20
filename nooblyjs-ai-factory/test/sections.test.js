@@ -104,7 +104,8 @@ test('mounted at /factory: the section answers under its path, keeps its data in
 test('other apps still reach the section by the name they always used', async () => {
   const t = await startApp();
   try {
-    assert.deepEqual(Object.keys(t.hosted.provides), ['product']);
+    assert.deepEqual(Object.keys(t.hosted.provides), ['product', 'design']);
+    for (const fn of ['readinessFacts', 'designFor', 'items']) assert.equal(typeof t.hosted.provides.design[fn], 'function', `design.${fn}`);
     for (const fn of ['artefactsFor', 'readinessFacts', 'adrFor', 'gatesFor', 'waitingFor']) assert.equal(typeof t.hosted.provides.product[fn], 'function', `product.${fn}`);
     // The links they hand out are under the Factory.
     const rows = await t.hosted.provides.product.artefactsFor('PRD-031');
@@ -189,13 +190,28 @@ test('lifecycle v3: Architecture is the Design section\'s, and its old addresses
   assert.deepEqual(navigated, [['/design/architecture/PRD-031', { replace: true }]]);
 });
 
-test('in the browser, the Design section\'s pages are the Product section\'s: its API, links and scope, under /design', async () => {
+test('in the browser, the Design section\'s own pages (Phase 16c) draw in its own scope and call its own API', async () => {
   const kitApi = pathToFileURL(createRequire(import.meta.url).resolve('nooblyjs-core/public/ui/js/api.js')).href;
   const { createApi } = await import(kitApi);
   const element = () => ({ dataset: {}, className: '', children: [], append(child) { this.children.push(child); } });
   const seen = {};
   const design = BROWSER_SECTIONS.find((s) => s.key === 'design');
-  const [route] = sectionRoutes(design, [{ path: '/architecture/:id', nav: 'architecture', title: 'Architecture', page: async () => ({ render: (root, args) => Object.assign(seen, { root, args }) }) }], { api: async () => createApi, doc: () => ({ createElement: element }) });
+  const [route] = sectionRoutes(design, [{ path: '/stories/:id', nav: 'stories', title: 'Stories', page: async () => ({ render: (root, args) => Object.assign(seen, { root, args }) }) }], { api: async () => createApi, doc: () => ({ createElement: element }) });
+  assert.deepEqual([route.path, route.nav], ['/design/stories/:id', 'design-stories']);
+  await (await route.page()).render(element(), { params: { id: 'PRD-031' }, ctx: { app: { name: 'factory', mountPath: '/factory' }, signal: new AbortController().signal, navigate: () => {} } });
+  assert.equal(seen.root.dataset.module, 'design');
+  assert.equal(seen.args.ctx.api.base, '/factory/design/api/v1');
+  const { routes } = await import('../public/js/module.js');
+  assert.equal(routes.find((r) => r.path === '/design/architecture/:id')?.nav, 'design-architecture', 'Architecture is still under Design');
+});
+
+test('in the browser, the Design section\'s Architecture pages are the Product section\'s: its API, links and scope, under /design', async () => {
+  const kitApi = pathToFileURL(createRequire(import.meta.url).resolve('nooblyjs-core/public/ui/js/api.js')).href;
+  const { createApi } = await import(kitApi);
+  const element = () => ({ dataset: {}, className: '', children: [], append(child) { this.children.push(child); } });
+  const seen = {};
+  const design = BROWSER_SECTIONS.find((s) => s.key === 'design');
+  const [route] = sectionRoutes(design, [{ path: '/architecture/:id', nav: 'architecture', title: 'Architecture', scope: 'product', page: async () => ({ render: (root, args) => Object.assign(seen, { root, args }) }) }], { api: async () => createApi, doc: () => ({ createElement: element }) });
   assert.deepEqual([route.path, route.nav], ['/design/architecture/:id', 'design-architecture']);
   const navigated = [];
   const view = element();

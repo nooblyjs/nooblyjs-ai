@@ -23,6 +23,6 @@ products:
   - { name: Merchandising, portfolio: Digital, valueStream: Digital Commerce }
   - { name: Payments, portfolio: Digital, valueStream: Digital Commerce }
   - { name: Checkout, portfolio: Digital, valueStream: Digital Commerce }
-  - { name: Delivery, portfolio: Digital, valueStream: Digital Commerce }
+  - { name: Delivery, portfolio: Digital, valueStream: Digital Commerce, repositories: [acme/web-storefront, acme/slots-api, acme/stores-service] }
   - { name: Search, portfolio: Digital, valueStream: Digital Commerce }
   - { name: Rewards, portfolio: Digital, valueStream: Rewards }

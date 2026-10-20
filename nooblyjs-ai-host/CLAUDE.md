@@ -20,7 +20,10 @@ Bitbucket and Jira, read-only) are done** (`docs/phases/phase-0N-summary.md`; Ph
 tech.md §8a). **Phase 16a (nine stages: Verify, Release and Operate replace Ship) is built and waiting for review**
 (`.claude/specs/phase-16a-nine-stages/`), and so is **Phase 16b (lifecycle v3: eight stages, Discover · Product · Design ·
 Engineer · Build · Test · Release · Operate; approvals given on someone's behalf; the Factory's five sidebar groups)**
-(`.claude/specs/phase-16b-product-design-build/`; the root roadmap `../.claude/steering/roadmap.md` holds every phase). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
+(`.claude/specs/phase-16b-product-design-build/`; the root roadmap `../.claude/steering/roadmap.md` holds every phase). **Phase 16c (the
+Design section: business requirements, solution architecture, functional analysis and stories, each story a lifecycle
+item of its own with its own Design handoff) is built and waiting for review** (`.claude/specs/phase-16c-design-section/`;
+the section is `../nooblyjs-ai-factory/design/`, `host.service('design')`; stories in `src/lifecycle/services/engine.js`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed
 2026-10-20)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent

@@ -252,11 +252,28 @@ export function createViews({ repos, host, engine }) {
     const mayApprove = person.accessRole !== 'Viewer';
     const blocking = approvals.filter((a) => isOpen(a) && a.from === found.stage);
     const next = STAGES[stageIndex(found.stage) + 1] ?? null;
+    // Phase 16c: an item's stories (from Design on it goes story by story), and a story's item and feature.
+    const stories = ctx.items.filter((i) => i.type === 'story' && i.parentId === found.id && i.status !== 'withdrawn')
+      .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
+    const handedOff = stories.filter((st) => stageIndex(st.stage) > stageIndex('design') || st.status === 'completed').length;
+    const parent = found.parentId ? ctx.items.find((i) => i.id === found.parentId) : null;
     return {
       at: ctx.at,
       item: {
         ...r, status: found.status, team: found.team, createdAt: found.createdAt, stageEnteredAt: found.stageEnteredAt,
         work: found.work ?? null, waitingSince: found.waitingSince ?? null, body: found.body ?? '',
+        ...(found.type === 'story' ? {
+          feature: found.feature ?? null,
+          parent: parent ? { id: parent.id, ref: parent.ref ?? parent.id, title: parent.title, href: `/home/lifecycle/${encodeURIComponent(parent.id)}` } : null,
+          designHref: parent ? `/factory/design/stories/${encodeURIComponent(parent.id)}` : null,
+        } : {}),
+        ...(stories.length ? {
+          stories: {
+            total: stories.length, handedOff,
+            text: `${handedOff} of ${plural(stories.length, 'story', 'stories')} handed off`,
+            rows: stories.map((st) => ({ id: st.id, ref: st.ref ?? st.id, title: st.title, stage: st.stage, stageLabel: stageLabel(st.stage), status: st.status, feature: st.feature ?? null, href: `/home/lifecycle/${encodeURIComponent(st.id)}` })),
+          },
+        } : {}),
       },
       readiness,
       history: (found.history ?? []).map((h, i, all) => ({
@@ -268,7 +285,9 @@ export function createViews({ repos, host, engine }) {
       actions: {
         canSendBack: canApprove && found.status === 'active' && stageIndex(found.stage) > 0,
         sendBackTo: STAGES.slice(0, Math.max(0, stageIndex(found.stage))).map((s) => ({ key: s.key, label: s.label })),
-        canAdvance: mayApprove && found.status === 'active' && !blocking.length,
+        // An item with stories goes on story by story (Phase 16c).
+        canAdvance: mayApprove && found.status === 'active' && !blocking.length && !stories.length,
+        ...(stories.length ? { perStory: `${found.ref ?? found.id} goes on story by story: hand each one off in Design.` } : {}),
         advanceLabel: ADVANCE_LABELS[found.stage] ?? `Approve & move to ${next?.label}`,
         blockedBy: blocking.map((a) => a.id),
       },

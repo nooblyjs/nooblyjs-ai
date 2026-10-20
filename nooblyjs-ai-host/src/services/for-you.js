@@ -59,8 +59,20 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         } catch { /* the Factory is there but can't answer: the panels say it isn't running */ }
       }
     }
-    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor };
-    const shaped = { 'product-manager': productManager, architect, developer }[role.layout](ctx);
+    // The Design homes (Phase 16c) read each item's design from the Factory's Design section, when it is running here.
+    let design = null;
+    if (role.layout === 'solution-architect' || role.layout === 'functional-analyst') {
+      const service = services.get('design');
+      if (typeof service?.items === 'function') {
+        try {
+          const list = (await service.items()).filter((i) => i.stage === 'design');
+          design = (await Promise.all(list.map((i) => service.designFor(i.itemId)))).filter(Boolean)
+            .filter((d) => base.scope === 'all' || items.some((i) => i.id === d.itemId));
+        } catch { /* the Design section is there but can't answer: the panels say it isn't running */ }
+      }
+    }
+    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design };
+    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst }[role.layout](ctx);
     return { ...base, layout: role.layout, engine: true, now: snapshot.at, ...shaped };
   }
 
@@ -159,6 +171,85 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         queue,
         standards: { unavailable: later(7, 'Standards are checked on every pull request once the Software Factory joins NooblyJS.') },
         models: { unavailable: later(8, 'Models that are stale, contradicted or heavily cited come from the Knowledge Repository.') },
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------------------- Design (Phase 16c)
+
+  const DESIGN_OFF = 'The Factory\'s Design section is not running here, so there is no design to show.';
+  const designHref = (part, itemId) => `/factory/design/${part}/${encodeURIComponent(itemId)}`;
+
+  /** Solution Architect: items in Design, decisions awaiting them, and stories ready for their Design handoff. */
+  function solutionArchitect({ mine, design, base }) {
+    const yours = mine.filter((a) => a.type === 'adr' || a.type === 'design-handoff');
+    const open = (design ?? []).flatMap((d) => d.stories.filter((s) => !s.handedOff).map((s) => ({ d, s })));
+    const ready = open.filter(({ d }) => d.readiness.total && d.readiness.passed === d.readiness.total);
+    const gone = (design ?? []).reduce((n, d) => n + d.stories.filter((s) => s.handedOff).length, 0);
+    return {
+      summary: design === null ? DESIGN_OFF
+        : `${words(design.length)} ${plural(design.length, 'item is', 'items are')} in Design. ${ready.length ? `${words(ready.length)} ${plural(ready.length, 'story is', 'stories are')} ready for your Design handoff.` : 'No story is ready for a Design handoff yet.'}`,
+      filters: { what: 'Items in Design' },
+      action: { label: 'Open Design', href: '/factory/design/solution' },
+      tiles: [
+        { key: 'in-design', label: 'Items in Design', value: design?.length ?? null, note: design === null ? 'Design is not running here' : null },
+        { key: 'decisions', label: 'Decisions awaiting you', value: yours.length, note: yours.length ? null : 'Nothing waiting' },
+        { key: 'ready', label: 'Stories ready for your handoff', value: ready.length, note: open.length ? `${open.length} still in Design` : 'None in Design' },
+        { key: 'handed-off', label: 'Stories handed off', value: gone, note: 'to Engineering' },
+      ],
+      panels: {
+        lists: [
+          {
+            key: 'items', title: 'Items in Design', link: { label: 'Solution architecture', href: '/factory/design/solution' },
+            empty: design === null ? DESIGN_OFF : `Nothing is in Design${base.scope === 'all' ? '' : ' for your teams'}.`,
+            rows: (design ?? []).map((d) => ({ id: d.itemId, title: `${d.ref} · ${d.title}`, text: `${d.parts.solution} · ${d.parts.handoff}`, action: { label: 'Open', href: designHref('solution', d.itemId) } })),
+          },
+          {
+            key: 'handoffs', title: 'Stories to hand to Engineering', link: { label: 'Handoff to the Factory', href: '/factory/design/handoff' },
+            empty: 'No story is waiting for its Design handoff.',
+            rows: open.map(({ d, s }) => {
+              const ok = d.readiness.total && d.readiness.passed === d.readiness.total;
+              return { id: s.id, title: `${s.id} · ${s.title}`, late: !ok, text: ok ? `${d.ref} · ready: every check passes` : `${d.ref} · ${d.readiness.passed} of ${d.readiness.total} checks pass`, action: { label: ok ? 'Hand off' : 'See the checks', href: designHref('handoff', d.itemId) } };
+            }),
+          },
+        ],
+        side: [
+          { key: 'decisions', title: 'Decisions awaiting you', link: { label: 'Approvals', href: '/home/approvals' }, empty: 'No decision is waiting on you.', rows: yours.map((a) => ({ id: a.id, title: a.title, text: `${a.age}${a.due ? ` · ${a.due.text}` : ''}`, late: a.overdue, action: { label: 'Decide', href: a.href } })) },
+        ],
+      },
+    };
+  }
+
+  /** Functional Analyst: interfaces with a side missing, stories to finish, and the items in Design. */
+  function functionalAnalyst({ design, base }) {
+    const oneSided = (design ?? []).flatMap((d) => d.interfaces.filter((i) => !i.complete).map((i) => ({ d, i })));
+    const unfinished = (design ?? []).flatMap((d) => d.stories.filter((s) => !s.handedOff && (!s.criteria?.length || !s.requirements?.length)).map((s) => ({ d, s })));
+    return {
+      summary: design === null ? DESIGN_OFF
+        : oneSided.length ? `${words(oneSided.length)} ${plural(oneSided.length, 'interface has', 'interfaces have')} a side missing, which holds the Design handoff.` : 'Every interface has both sides named.',
+      filters: { what: 'Items in Design' },
+      action: { label: 'Open the functional analysis', href: '/factory/design/functional' },
+      tiles: [
+        { key: 'one-sided', label: 'Interfaces with a side missing', value: oneSided.length, note: oneSided.length ? 'They hold the Design handoff' : 'All have both sides', tone: oneSided.length ? 'warning' : null },
+        { key: 'unfinished', label: 'Stories to finish', value: unfinished.length, note: 'No criteria, or no business requirement' },
+        { key: 'in-design', label: 'Items in Design', value: design?.length ?? null, note: design === null ? 'Design is not running here' : null },
+      ],
+      panels: {
+        lists: [
+          {
+            key: 'interfaces', title: 'Interfaces with one side missing', link: { label: 'Functional analysis', href: '/factory/design/functional' },
+            empty: design === null ? DESIGN_OFF : 'Every interface has both sides named.',
+            rows: oneSided.map(({ d, i }) => ({ id: i.id, title: `${d.ref} · ${i.id} ${i.name}`, text: i.sidesText, late: true, action: { label: 'Name the side', href: designHref('functional', d.itemId) } })),
+          },
+          {
+            key: 'stories', title: 'Stories to finish', link: { label: 'Stories', href: '/factory/design/stories' },
+            empty: 'Every story in Design has its criteria and a business requirement.',
+            rows: unfinished.map(({ d, s }) => ({ id: s.id, title: `${s.id} · ${s.title}`, text: `${d.ref} · ${!s.criteria?.length ? 'no acceptance criteria' : 'no business requirement'}`, action: { label: 'Finish', href: designHref('stories', d.itemId) } })),
+          },
+        ],
+        side: [
+          { key: 'items', title: 'Items in Design', link: { label: 'Design', href: '/factory/design/requirements' }, empty: design === null ? DESIGN_OFF : `Nothing is in Design${base.scope === 'all' ? '' : ' for your teams'}.`, rows: (design ?? []).map((d) => ({ id: d.itemId, title: `${d.ref} · ${d.title}`, text: d.parts.functional, action: { label: 'Open', href: designHref('functional', d.itemId) } })) },
+        ],
       },
     };
   }

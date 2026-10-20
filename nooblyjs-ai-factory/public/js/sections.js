@@ -7,12 +7,12 @@
 // navigate() stay under /factory/<section>, and it draws inside an element scoped like its own app was
 // (data-module="product"), so its stylesheet applies as it always did. Everything else in ctx is the frame's.
 //
-// A section may show another's pages (`scope`, Phase 16b): the Design section's Architecture pages are still the
-// Product section's code, so they call its API, build their links under it and draw in its scope, while their routes
-// and navigation are the Design section's (/design).
+// A route may show another section's page (`scope` on the route, Phase 16b): the Design section's Architecture pages
+// are still the Product section's code, so they call its API, build their links under it and draw in its scope, while
+// their routes and navigation are the Design section's (/design). Design's own pages (Phase 16c) are its own.
 export const SECTIONS = [
   { key: 'product', path: '/product', prefix: 'product' },
-  { key: 'design', path: '/design', prefix: 'design', scope: 'product' },
+  { key: 'design', path: '/design', prefix: 'design' },
 ];
 
 const under = (base, path) => `${base}${path === '/' ? '' : path}`;
@@ -61,6 +61,6 @@ export function sectionRoutes(section, routes, deps) {
     path: under(section.path, route.path),
     ...(route.nav ? { nav: `${section.prefix}-${route.nav}` } : {}),
     ...(route.redirect ? { redirect: under(section.path, route.redirect) } : {}),
-    ...(route.page ? { page: wrapPage(route.page, section, deps) } : {}),
+    ...(route.page ? { page: wrapPage(route.page, route.scope ? { ...section, scope: route.scope } : section, deps) } : {}),
   }));
 }

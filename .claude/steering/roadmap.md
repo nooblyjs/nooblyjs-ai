@@ -92,7 +92,7 @@ inclusion: always
 | 15 | No mocks: everything real | ☐ blocked on the cloud, runtime and model decisions (`stack.md` §5) |
 | 16a | Nine stages: Verify, Release and Operate replace Ship | ☐ built, waiting for review |
 | 16b | Eight stages, and the Factory's five groups | ☐ built, waiting for review |
-| 16c | The Design section: business requirements, solution architecture, functional analysis, stories | ☐ |
+| 16c | The Design section: business requirements, solution architecture, functional analysis, stories | ☐ built, waiting for review |
 | 16d | Engineering: application architecture from the code, and test analysis | ☐ |
 | 16e | Build and Test: the AI builds and tests, engineers and testers approve | ☐ |
 | 16f | One shape for checks, and the trace | ☐ |
@@ -104,7 +104,7 @@ inclusion: always
 | 22 | Release (new app: Operations, part 1) | ☐ |
 | 23 | Operate and learn (Operations, part 2) | ☐ |
 
-Open bugs and changes: BUG-001 to BUG-006 and CHG-001 to CHG-004, waiting for checks.
+Open bugs and changes: BUG-001 to BUG-007 and CHG-001 to CHG-007, all fixed and waiting for your checks (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 
 ### The plan from here
 
@@ -953,7 +953,7 @@ phase; 16c makes them per story.
   (`design/`, `/factory/design`) starts with **Architecture**, moved from `/factory/product/architecture` (the old
   address redirects; links other apps hand out follow). Engineering and Test rows say in words what comes in 16d–16e.
   `sections.js` lets one section put rows in more than one group (Test: Engineering and Test).
-- Work roles: Solution Architect, Functional Analyst, Application Architect, Test analyst (homes come with 16c–16e).
+- Work roles: Solution Architect, Functional Analyst, Application Architect, Test analyst (homes come with 16c–16e; the first two came with 16c).
 - Metrics stage groups: Product (Discover, Product, and history's Specify, UX, UI), Design (and history's Architect),
   Engineer, Build, Test (and history's Verify), Release, Operate.
 
@@ -977,6 +977,11 @@ phase; 16c makes them per story.
 ---
 
 ## Phase 16c — The Design section
+
+> **Built 2026-10-20, waiting for review** (started at your word with 16a and 16b still waiting for review). Spec:
+> `nooblyjs-ai-host/.claude/specs/phase-16c-design-section/`. Summary: `nooblyjs-ai-host/docs/phases/phase-16c-summary.md`.
+> Decided at the start: story ids `STORY-031-1` (and `BR-031-01`, `NFR-031-01`, `IF-031-01`, `TR-031-01`, `FEAT-031-1`),
+> and the NFR catalogue as the Design section's `nfr-catalogue.yaml`, seven categories with `[CONFIRM]` targets.
 
 **Goal:** Design turns a Product handoff into business requirements, a solution architecture, a functional analysis
 and the stories that build a feature, and hands each story to the Software Factory on its own.

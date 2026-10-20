@@ -10,6 +10,7 @@ import { STAGE_KEYS, LEGACY, stageKey, stageLabel, stageIndex, nextStage, curren
 import { addWorkingDays, dueFrom } from '../working-days.js';
 import { loadRules, loadReadiness } from '../config.js';
 import { newId } from '../ids.js';
+import { ITEM_ID } from '../repos.js';
 
 const DECISIONS = new Set(['approve', 'request-changes']);
 const MAX_TEXT = 2000;
@@ -109,18 +110,42 @@ export function createEngine({ repos, host, log, clock }) {
 
   // ---------------------------------------------------------------------------- readiness
 
-  /** Readiness for the item's current stage: n of m, each check in words, the failing ones named. */
+  const NO_CHECKS = { passed: 0, total: 0, checks: [], failing: [], source: 'none' };
+  const factsOf = (facts) => ({
+    results: Object.fromEntries(Object.entries(facts).map(([key, fact]) => [key, fact?.value ?? null])),
+    details: Object.fromEntries(Object.entries(facts).filter(([, fact]) => fact?.detail).map(([key, fact]) => [key, fact.detail])),
+  });
+
+  /**
+   * Readiness for the item's current stage: n of m, each check in words, the failing ones named. In Design (Phase 16c)
+   * the Design section works the checks out, for a story from its item's design; an item with no Design work (handed off
+   * before 16c, or with the Design section not running here) has no Design checks.
+   */
   async function readinessOf(item) {
     const checks = await loadReadiness(repos, item.stage);
-    if (!checks.length) return { passed: 0, total: 0, checks: [], failing: [], source: 'none' };
+    if (!checks.length) return NO_CHECKS;
     let results = item.readiness?.results ?? {};
+    let details = {};
     let source = 'recorded';
-    const product = item.system === 'product' ? host.service('product') : null;
+    if (item.stage === 'design') {
+      const design = host.service('design');
+      if (typeof design?.readinessFacts !== 'function') return NO_CHECKS;
+      try {
+        const facts = (await design.readinessFacts(item.parentId ?? item.id))?.facts;
+        if (!facts) return NO_CHECKS;
+        ({ results, details } = factsOf(facts));
+        source = 'design';
+      } catch (err) {
+        log.warn(`design readinessFacts(${item.id}) failed: ${err.message}`);
+        return NO_CHECKS;
+      }
+    }
+    const product = item.system === 'product' && item.stage !== 'design' ? host.service('product') : null;
     if (typeof product?.readinessFacts === 'function') {
       try {
         const facts = (await product.readinessFacts(item.id))?.facts;
         if (facts) {
-          results = Object.fromEntries(Object.entries(facts).map(([key, fact]) => [key, fact?.value ?? null]));
+          ({ results, details } = factsOf(facts));
           source = 'product';
         }
       } catch (err) {
@@ -129,7 +154,8 @@ export function createEngine({ repos, host, log, clock }) {
     }
     const view = checks.map((c) => {
       const result = results[c.key];
-      return { key: c.key, passed: result === true, text: result === true ? c.passed : result === false ? c.failed : `${c.passed}: not checked yet` };
+      const failed = details[c.key] ? `${c.failed}: ${details[c.key]}` : c.failed;
+      return { key: c.key, passed: result === true, text: result === true ? c.passed : result === false ? failed : `${c.passed}: not checked yet` };
     });
     const failing = view.filter((c) => !c.passed);
     return { passed: view.length - failing.length, total: view.length, checks: view, failing, source };
@@ -172,7 +198,119 @@ export function createEngine({ repos, host, log, clock }) {
     if (kind === 'forward') {
       await emit('item.stage_changed', { itemId, system: item.system, from, to, summary: `moved ${item.ref ?? itemId} · ${item.title} to ${stageLabel(to)}` }, actor.id);
     }
+    if (item.parentId) await followStories(item.parentId);
     return { item, from };
+  }
+
+  // ---------------------------------------------------------------------------- stories (Phase 16c)
+
+  /** The stories of an item (lifecycle items of type story whose parentId it is), withdrawn ones left out. */
+  async function storiesOf(parentId) {
+    return (await repos.items.list()).filter((i) => i.type === 'story' && i.parentId === parentId && i.status !== 'withdrawn')
+      .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
+  }
+
+  /** Refuses a decision on an item as a whole once it has stories: from Design on it goes story by story. */
+  async function refuseWithStories(item, what) {
+    if (item.type === 'story') return;
+    const stories = await storiesOf(item.id);
+    if (!stories.length) return;
+    throw refused('per_story', `${item.ref ?? item.id} goes on story by story: ${what} each of its ${stories.length} stories (${stories.map((st) => st.ref ?? st.id).join(', ')}) instead.`, { stories: stories.map((st) => st.id) });
+  }
+
+  /**
+   * The item follows its stories (Phase 16c): it stays in Design while any of them is there, then its stage is the
+   * earliest of its active stories'. Nobody decided this, so it is on record (history and audit) but no stage event is
+   * emitted, and Metrics counts no handoff.
+   */
+  async function followStories(parentId) {
+    const stories = (await storiesOf(parentId)).filter((st) => st.status === 'active');
+    if (!stories.length) return null;
+    const to = stories.some((st) => st.stage === 'design') ? 'design' : stories.map((st) => st.stage).sort((a, b) => stageIndex(a) - stageIndex(b))[0];
+    const at = now();
+    let from = null;
+    const parent = await repos.items.update(parentId, (current) => {
+      if (current.status !== 'active' || current.stage === to) return null;
+      from = current.stage;
+      const history = (current.history ?? []).map((h) => ({ ...h }));
+      const open = history.at(-1);
+      if (open && !open.leftAt) open.leftAt = at;
+      history.push({ stage: to, enteredAt: at, by: 'system', kind: 'stories' });
+      return { ...current, stage: to, stageEnteredAt: at, history, version: (current.version ?? 0) + 1, updatedAt: at };
+    });
+    if (parent) await audit({ actor: 'system', action: 'item.followed_stories', target: parentId, itemId: parentId, from, to, stories: stories.map((st) => st.id) });
+    return parent;
+  }
+
+  /**
+   * The Design section's stories for an item in Design (Phase 16c): each one the lifecycle doesn't have becomes an item
+   * of its own in Design (type story, linked to its item and its feature); those still in Design take the new title and
+   * feature; those in Design that are no longer listed (merged away, removed) are withdrawn, with the reason said. A
+   * story already handed off is left as it is. Changing the stories is drafting, so it needs `draft`.
+   */
+  async function syncStories({ itemId, stories = [], reason = null, actor } = {}) {
+    const person = await personFor(actor, { what: 'change the stories', target: `item ${itemId}` });
+    await requirePermission(person, { permission: 'draft' }, 'change the stories');
+    const parent = await itemOr404(itemId);
+    if (parent.type === 'story') throw badRequest('A story has no stories of its own.');
+    if (parent.status !== 'active' || parent.stage !== 'design') {
+      throw conflict('wrong_stage', `${parent.ref ?? parent.id} is in ${stageLabel(parent.stage)}, so its stories can't change: stories are written in Design.`);
+    }
+    const listed = (Array.isArray(stories) ? stories : []).map((st) => ({
+      id: String(st?.id ?? ''), title: text(st?.title, 200),
+      feature: st?.feature?.id ? { id: String(st.feature.id).slice(0, 40), title: text(st.feature.title, 200) } : null,
+    }));
+    const bad = listed.find((st) => !ITEM_ID.test(st.id) || !st.id.startsWith('STORY-') || !st.title);
+    if (bad) throw badRequest(`Each story needs an id like STORY-031-1 and a title (${bad.id || 'no id'}).`);
+    const at = now();
+    const existing = (await repos.items.list()).filter((i) => i.type === 'story' && i.parentId === parent.id);
+    const done = { created: [], updated: [], withdrawn: [] };
+    for (const st of listed) {
+      const found = existing.find((i) => i.id === st.id);
+      if (!found) {
+        if (await repos.items.get(st.id)) throw conflict('exists', `${st.id} is already an item of another item.`);
+        await repos.items.create({
+          id: st.id, type: 'story', ref: st.id, title: st.title, system: 'factory', parentId: parent.id, feature: st.feature,
+          stage: 'design', status: 'active', owner: parent.owner ?? null, team: parent.team ?? null, createdAt: at, stageEnteredAt: at,
+          history: [{ stage: 'design', enteredAt: at, by: person.id }], version: 1, updatedAt: at,
+        });
+        await emit('item.created', { itemId: st.id, parentId: parent.id, system: 'factory', stage: 'design', summary: `opened ${st.id} · ${st.title}, a story of ${parent.ref ?? parent.id}` }, person.id);
+        done.created.push(st.id);
+      } else if (found.status === 'active' && found.stage === 'design' && (found.title !== st.title || found.feature?.id !== st.feature?.id || found.feature?.title !== st.feature?.title)) {
+        await repos.items.update(found.id, (current) => ({ ...current, title: st.title, feature: st.feature, version: (current.version ?? 0) + 1, updatedAt: at }));
+        done.updated.push(found.id);
+      }
+    }
+    for (const found of existing.filter((i) => i.status === 'active' && i.stage === 'design' && !listed.some((st) => st.id === i.id))) {
+      const why = reason ?? `${found.ref ?? found.id} is no longer one of ${parent.ref ?? parent.id}'s stories`;
+      await withdrawOpenApprovals(found, person, why);
+      await repos.items.update(found.id, (current) => ({ ...current, status: 'withdrawn', withdrawnAt: at, withdrawnReason: why, version: (current.version ?? 0) + 1, updatedAt: at }));
+      await emit('item.withdrawn', { itemId: found.id, parentId: parent.id, system: 'factory', reason: why, summary: `withdrew ${found.ref ?? found.id} · ${found.title}: ${why}` }, person.id);
+      done.withdrawn.push(found.id);
+    }
+    return done;
+  }
+
+  /**
+   * One story's Design handoff (Phase 16c): the person gives the story's `design-handoff` approval, with Design's
+   * readiness checks (or an override with a reason), and the story moves to Engineer with its work items (one per
+   * impacted system it touches). Its item stays in Design until its last story goes.
+   */
+  async function handoffStory({ storyId, workItems = [], note = null, override = null, actor } = {}) {
+    const person = await personFor(actor, { what: 'hand work on to Engineering', target: `item ${storyId}` });
+    const story = await itemOr404(storyId);
+    if (story.type !== 'story') throw badRequest(`${story.ref ?? story.id} is not a story: hand it off from its own page.`);
+    if (story.status !== 'active' || story.stage !== 'design') {
+      throw conflict('wrong_stage', `${story.ref ?? story.id} is ${story.status !== 'active' ? story.status : `in ${stageLabel(story.stage)}`}, so it can't be handed to Engineering: the Design handoff leaves from Design.`);
+    }
+    const items = (Array.isArray(workItems) ? workItems : []).filter((w) => w?.repo && w?.title).map((w) => ({ repo: String(w.repo), title: String(w.title) }));
+    const input = { comment: note, ...(override ? { override } : {}) };
+    const open = (await repos.approvals.list()).find((a) => a.itemId === story.id && a.type === 'design-handoff' && a.status === 'open');
+    if (open) {
+      await repos.approvals.update(open.id, (a) => ({ ...a, workItems: items.length ? items : a.workItems }));
+      return decideApproval(open.id, { decision: 'approve', ...input }, person);
+    }
+    return openAndDecide({ item: story, type: 'design-handoff', to: 'engineer', person, input, extra: { subject: story.ref ?? story.id, workItems: items, repoCount: new Set(items.map((w) => w.repo)).size } });
   }
 
   async function complete(itemId, actor, summary) {
@@ -535,6 +673,7 @@ export function createEngine({ repos, host, log, clock }) {
     const person = await personFor(actor, { what: 'move work on', target: `item ${itemId}` });
     const item = await itemOr404(itemId);
     if (item.status !== 'active') throw conflict('not_active', `${item.ref ?? item.id} is ${item.status}.`);
+    await refuseWithStories(item, 'move on');
     const open = (await repos.approvals.list()).filter((a) => a.itemId === item.id && a.status === 'open' && a.from === item.stage);
     if (open.length) throw conflict('approval_open', `${item.ref ?? item.id} already has an approval waiting for this step. Decide it in Approvals.`, { approvalIds: open.map((a) => a.id) });
     const type = LEAVES_BY[item.stage] ?? 'stage';
@@ -624,6 +763,7 @@ export function createEngine({ repos, host, log, clock }) {
     if (item.stage !== 'design') {
       throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}, so it can't be handed to Engineering yet: the Design handoff leaves from Design.`);
     }
+    await refuseWithStories(item, 'hand off');
     const items = (Array.isArray(workItems) ? workItems : []).filter((w) => w?.repo && w?.title).map((w) => ({ repo: String(w.repo), title: String(w.title) }));
     const where = (Array.isArray(repositories) ? repositories : []).map(String).filter(Boolean);
     const outside = where.length ? items.filter((w) => !where.some((r) => r === w.repo || r.split('/').pop() === w.repo)) : [];
@@ -855,5 +995,5 @@ export function createEngine({ repos, host, log, clock }) {
     return { items: items.map((i) => i.id), approvals, withdrawn };
   }
 
-  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages };
+  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories };
 }

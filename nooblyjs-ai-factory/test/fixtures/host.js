@@ -24,6 +24,9 @@ export const MATRIX = {
   'set-budgets': ['Owner'],
   'change-guardrails': ['Owner'],
   'change-repo-access': ['Owner'],
+  // The nine stages (Phase 16a) and lifecycle v3 (Phase 16b), as in NooblyJS's roles.yaml: the Design section's acceptance.
+  'accept-requirement': ['Approver', 'Architect', 'Owner'],
+  'sign-off-tests': ['Approver', 'Architect', 'Owner'],
 };
 
 export const FRAME = '<!doctype html><title>NooblyJS</title><script type="module" src="/ui/js/frame.js"></script>';
