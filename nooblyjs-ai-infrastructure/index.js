@@ -21,6 +21,7 @@ import { createPolicies } from './src/services/policies.js';
 import { createSummary } from './src/services/summary.js';
 import { createApprovals } from './src/services/approvals.js';
 import { createSweep } from './src/services/sweep.js';
+import { createPreviews } from './src/services/previews.js';
 import { withWords } from './src/services/event-words.js';
 import { seed as seedStory } from './src/seed/index.js';
 
@@ -88,6 +89,12 @@ export async function register(app, serverManager, { mountPath = '/infrastructur
   const sweepTimer = sweepEveryMs > 0 ? setInterval(() => sweep.tick().catch((err) => log.warn(`drift sweep: ${err.message}`)), sweepEveryMs) : null;
   sweepTimer?.unref();
   const summary = createSummary({ ...deps, cost, runs, drift, designs, environments });
+  // NooblyJS Phase 21 (I8): a preview per pull request the lifecycle records, destroyed when it merges.
+  const previews = createPreviews({ ...deps, designs, runs });
+  const offPreviews = [
+    host.events.on?.('pr.recorded', (event) => previews.onPrRecorded(event?.payload ?? event).catch((err) => log.warn(`preview: ${err.message}`))),
+    host.events.on?.('pr.merged', (event) => previews.onPrMerged(event?.payload ?? event).catch((err) => log.warn(`preview: ${err.message}`))),
+  ];
 
   const router = host.express.Router();
   router.use('/api/v1', createApi({ host, log, seed, designs, environments, runs, drift, policies, cost, summary, about: { name: NAME, version: VERSION, mountPath, provisioner: provisioner.name } }));
@@ -124,6 +131,16 @@ export async function register(app, serverManager, { mountPath = '/infrastructur
       cloudByItem: (month) => cost.byItem(month),
       /** A month of an item's infrastructure in production, from its design: { usd, perDay, design } or null (Phase 17). */
       monthlyCostFor: (itemId) => cost.monthlyFor(itemId),
+      /** Phase 21: one environment as the Test section needs it to run its suites, or null. */
+      environment: (name) => environments.environment(name),
+      /** Phase 21: the suites that ran in an environment ({ environment, suites, testRunId }). */
+      recordTests: (input) => environments.recordTests(input),
+      /** Phase 21: a pull request's preview ({ name, status, url, tests, href }), or null. */
+      async previewForPr(prId) {
+        const env = (await repos.environments.listAll()).filter((e) => e.kind === 'preview' && e.prId === prId).at(-1);
+        if (!env) return null;
+        return { name: env.name, status: env.status, url: env.url ?? null, tests: env.tests ?? [], testRunId: env.testRunId ?? null, testedAt: env.testedAt ?? null, destroyedAt: env.destroyedAt ?? null, href: `${mountPath}/environments/${env.name}` };
+      },
       /** The policy checks of the item's designs, per kind of environment, in NooblyJS's one shape (Phase 16f). */
       checksFor: (itemId) => infraChecks.checksFor(itemId),
       /** The item's designs, linked to it: { nodes, links } (Phase 16f). */
@@ -150,6 +167,7 @@ export async function register(app, serverManager, { mountPath = '/infrastructur
     /** Stops the run in progress (it resumes at the next start) and waits for the queue to settle. */
     close: async () => {
       if (sweepTimer) clearInterval(sweepTimer);
+      for (const off of offPreviews) off?.();
       await runs.close();
     },
     /** For the tests, and a person in a hurry: the drift sweep's due check, and the sweep itself. */

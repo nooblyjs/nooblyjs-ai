@@ -1,6 +1,8 @@
 // The mock scanner (root design.md §9: "the seed's findings, e.g. an unapproved chart library"). It reads the files it
 // is given with a few plain rules, so the seed story and the tests have something to find; it is not a security tool
-// and every result says it came from the mock. Kinds it has no rule for (image, dast) find nothing and say so.
+// and every result says it came from the mock. Phase 21: DAST and the image scan look at an environment, not files: a
+// web app's preview answers without a Content-Security-Policy header (the mock calls nothing; it is the seed story's
+// finding), and the mock provisioner builds no image, so there is nothing to scan.
 //
 // A finding: { kind, rule, severity, title, file, line, fingerprint, detail, fix? }. The fingerprint names the problem,
 // not where it was seen, so the same problem in a later scan is the same finding.
@@ -75,7 +77,15 @@ export function createMockScanner() {
       return out;
     },
     image: () => [],
-    dast: () => [],
+    dast(target) {
+      if (!target.environment || !/web|storefront|console/i.test(String(target.repo ?? ''))) return [];
+      return [{
+        rule: 'csp-missing', severity: 'medium', title: `${target.repo} answers without a Content-Security-Policy header`, file: null, line: null,
+        fingerprint: `dast:${target.repo}:csp-missing`,
+        detail: `The dynamic scan of ${target.environment}${target.url ? ` (${target.url})` : ''} found pages served without a Content-Security-Policy header, so an injected script would run. Send one that allows only the app's own scripts.`,
+        fix: { title: 'Send a Content-Security-Policy header', brief: 'Pages are served without a Content-Security-Policy header. Send one that allows only the app\'s own scripts and styles, with a test that checks it.' },
+      }];
+    },
   };
   return {
     name: 'mock',

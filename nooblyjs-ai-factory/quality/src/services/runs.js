@@ -8,7 +8,7 @@
 // story is the proof that its open defects are fixed (the case a defect names passes, or every gate when it names none).
 import { notFound } from '../util/errors.js';
 
-const ID = /^TRN-[0-9A-Za-z]+(?:-[0-9]+)*-[0-9]+$/;
+const ID = /^TRN-[0-9A-Za-z][0-9A-Za-z-]{0,60}-[0-9]+$/;
 const MANUAL = 'manual';
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const number = (id) => String(id ?? '').replace(/^[A-Z]+-/, '');
@@ -133,6 +133,23 @@ export function createRuns({ host, log, analysis }) {
     }
   }
 
+  /**
+   * Phase 21: an environment's suites ran (env-runs.js): one test run of the environment (TRN-test-slots-1), at its
+   * kind's level, with each suite's result and its failing tests linked to their cases and criteria.
+   */
+  async function recordEnvironment({ environment, kind, storyIds = [], prId = null, repo = null, suites = [], runner = 'mock', by = null } = {}) {
+    const ran = suites.filter((x) => !x.skipped);
+    const status = ran.every((x) => x.passed >= x.total) ? 'passed' : 'failed';
+    const run = {
+      id: await nextId(`TRN-${environment}`), at: now(), kind: 'environment', level: kind, environment, storyIds, prId, repo, runner, by, status,
+      suites: suites.map(({ cases, ...x }) => x), defects: [],
+    };
+    run.text = `${status === 'passed' ? 'Passed' : 'Failed'} in ${environment} (${runner} runner): ${ran.map((x) => x.text ?? `${x.passed} of ${x.total} ${x.label ?? x.suite}`).join(' · ') || 'no suite ran'}`;
+    await save(run);
+    await emit('test_run.recorded', { itemId: storyIds[0] ?? null, testRunId: run.id, environment, level: kind, status, prId, summary: `recorded ${run.id}: ${run.text}` });
+    return run;
+  }
+
   /** A defect was raised from this run: the run names it. */
   async function addDefect(testRunId, defectId) {
     const run = await get(testRunId);
@@ -151,5 +168,5 @@ export function createRuns({ host, log, analysis }) {
     return (await all()).filter((r) => (!storyId || r.storyId === storyId) && (!itemId || r.itemId === itemId || r.storyId === itemId));
   }
 
-  return { recordGates, recordRequired, addDefect, get, list, criterionRef };
+  return { recordGates, recordRequired, recordEnvironment, addDefect, get, list, criterionRef };
 }

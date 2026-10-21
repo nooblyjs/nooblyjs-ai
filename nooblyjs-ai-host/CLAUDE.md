@@ -48,7 +48,10 @@ fix-by date, a fix as a Factory run, risk acceptance with an expiry; the Securit
 in the Factory's Test section, coverage per item, feature and story in words, test cases marked "criterion changed" when
 Design changes a criterion, defects as lifecycle items `DEF-031-1` linked to the requirement and story they break
 (`src/lifecycle/services/defects.js`); the tester's coverage gaps and defects) is built and waiting for review**
-(`.claude/specs/phase-20-quality/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
+(`.claude/specs/phase-20-quality/`). **Phase 21 (Testing in environments: a preview per pull request from Infrastructure,
+destroyed on merge; the Test section's test runner adapter (mock) runs each environment kind's suites, with Security's
+DAST and image scans; promotion only when that environment's tests pass; the pull request page's preview and evidence in
+one list) is built and waiting for review** (`.claude/specs/phase-21-testing-in-environments/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed
 2026-10-20)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent

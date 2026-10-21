@@ -7,7 +7,7 @@ import { apiNotFound, apiErrors } from './util/errors.js';
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-export function createApi({ host, log, analysis, runs, coverage, defects, about }) {
+export function createApi({ host, log, analysis, runs, coverage, defects, envRuns, about }) {
   const api = host.express.Router();
   const read = host.requireRole('read');
   const draft = host.requireRole('draft');
@@ -38,6 +38,10 @@ export function createApi({ host, log, analysis, runs, coverage, defects, about 
     if (!found) return res.status(404).json({ error: { code: 'not_found', message: `There is no item ${req.params.itemId}.` } });
     res.json(found);
   }));
+
+  // Phase 21: an environment's suites, run now (a person with draft), and the environment runs.
+  api.post('/environments/:name/runs', draft, asyncRoute(async (req, res) => res.status(201).json(await envRuns.runEnvironment({ environment: req.params.name, storyIds: Array.isArray(req.body?.storyIds) ? req.body.storyIds.map(String).slice(0, 50) : null, actor: req.person }))));
+  api.get('/environment-runs', read, asyncRoute(async (req, res) => res.json({ testRuns: await envRuns.environmentRuns({ environment: req.query.environment ?? null, prId: req.query.prId ?? null }) })));
 
   api.use(apiNotFound);
   api.use(apiErrors({ log }));

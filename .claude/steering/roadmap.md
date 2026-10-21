@@ -100,7 +100,7 @@ inclusion: always
 | 18 | Requirements elicitation | ✅ (reviewed 2026-10-21) |
 | 19 | Security by design (new app: Security) | ✅ (reviewed 2026-10-21) |
 | 20 | Quality (the Factory's Test section) | ☐ built, waiting for review |
-| 21 | Testing in environments | ☐ |
+| 21 | Testing in environments | ☐ built, waiting for review |
 | 22 | Release (new app: Operations, part 1) | ☐ |
 | 23 | Operate and learn (Operations, part 2) | ☐ |
 
@@ -1436,7 +1436,7 @@ check are in Phase 13 for all of NooblyJS.
 - [ ] I7, the drafting agent: hire Ines Tau in Digital Teammates; `POST /designs/:id/drafts` as a teammate task that
       reads the architecture through `host.service('product')` and saves a new design version; a scripted draft for
       the seed story; offer a new draft on `adr.accepted` or `architecture.updated`; `agent.action` with cost.
-- [ ] I8, previews and tests from the Software Factory: `pr.opened` → a preview environment, `pr.merged` → destroy it;
+- [x] I8 (built in Phase 21, 2026-10-21: `pr.recorded` → a preview, `pr.merged` → destroyed, the Test section's suites recorded on the environment, promotion only when they pass), previews and tests from the Software Factory: `pr.opened` → a preview environment, `pr.merged` → destroy it;
       `run.finished` → test results on an environment; `services.testTargets(kind)`; an environment's tests as a gate;
       Infrastructure rows on Home · Approvals, Activity and the Platform engineer's home.
 - [ ] I9, a real provisioner (**blocked** on the cloud, the region and the IaC tool): the adapter in

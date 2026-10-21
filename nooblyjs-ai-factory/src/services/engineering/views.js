@@ -78,13 +78,24 @@ export function engineeringRoutes({ home, host, architecture }) {
   }
 
   /** A recorded test run as the Test runs page lists it (the sample's shape, with what Phase 20 adds). */
-  const recordedRow = (r) => ({
+  const recordedRow = (r) => (r.kind === 'environment' ? envRow(r) : {
     id: r.id, at: r.at, itemId: r.storyId ?? r.itemId, ref: `${r.repo}${r.sha ? ` @ ${String(r.sha).slice(0, 7)}` : ''}`, kind: r.kind ?? 'gates',
     suite: r.gates.map((g) => g.name).join(' · '), environment: r.environment, status: r.status,
     passed: r.gates.filter((g) => g.status === 'passed').length, failed: r.gates.filter((g) => !['passed', 'skipped'].includes(g.status)).length, skipped: r.gates.filter((g) => g.status === 'skipped').length,
     durationS: null, failures: r.failures, cases: r.cases, requirements: r.requirements, defects: r.defects ?? [], text: r.text, runId: r.runId, storyId: r.storyId,
     href: r.runId ? `/factory/runs/${encodeURIComponent(r.runId)}` : null, recorded: true,
   });
+  /** Phase 21: a run of an environment's suites. */
+  const envRow = (r) => {
+    const ran = (r.suites ?? []).filter((x) => !x.skipped);
+    return {
+      id: r.id, at: r.at, itemId: r.storyIds?.[0] ?? null, ref: r.prId ? `${r.prId} · preview` : (r.storyIds ?? []).join(', '), kind: 'environment',
+      suite: ran.map((x) => x.label ?? x.suite).join(' · '), environment: r.environment, status: r.status,
+      passed: ran.reduce((n, x) => n + x.passed, 0), failed: ran.reduce((n, x) => n + (x.total - x.passed), 0), skipped: (r.suites ?? []).length - ran.length,
+      durationS: null, failures: ran.flatMap((x) => (x.failing ?? []).map((f) => `${x.label ?? x.suite}: ${f.name}${f.criterionRef ? ` (${f.criterionRef})` : ''}`)),
+      cases: [], requirements: [], defects: r.defects ?? [], text: r.text, storyId: r.storyIds?.[0] ?? null, recorded: true,
+    };
+  };
 
   async function runs() {
     const { runs: sample } = await readSamples(home);

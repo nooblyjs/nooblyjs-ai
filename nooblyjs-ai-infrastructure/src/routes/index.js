@@ -45,6 +45,14 @@ export function createApi({ host, log, about, seed, designs, environments, runs,
   api.post('/environments/:name/destroy', async (req, res) => res.json(await environments.destroy(req.params.name, req.body ?? {}, req.person)));
   api.post('/environments/:name/drift-check', host.requireRole('draft'), async (req, res) => res.json(await drift.check(req.params.name, req.person)));
   api.get('/promotion-paths/:product', async (req, res) => res.json(await environments.promotionPath(req.params.product)));
+  // NooblyJS Phase 21: a build moves right only when that environment's tests pass (the service checks who and the tests).
+  api.post('/promotion-paths/:product/promote', async (req, res) => res.json(await environments.promote(req.params.product, req.body ?? {}, req.person)));
+  // NooblyJS Phase 21: run an environment's suites now (the Factory's Test section runs them; a person with draft).
+  api.post('/environments/:name/tests', host.requireRole('draft'), async (req, res) => {
+    const quality = host.service('quality');
+    if (typeof quality?.runEnvironment !== 'function') return res.status(503).json({ error: { code: 'quality_unavailable', message: 'The Software Factory\'s Test section is not running here, so no suites can run.' } });
+    res.status(201).json(await quality.runEnvironment({ environment: req.params.name, storyIds: Array.isArray(req.body?.storyIds) ? req.body.storyIds.map(String).slice(0, 50) : null, actor: req.person }));
+  });
 
   // ---------- designs ----------
   api.get('/designs', async (req, res) => res.json({ designs: await designs.list(req.person) }));

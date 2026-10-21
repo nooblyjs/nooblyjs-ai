@@ -38,6 +38,9 @@ Factory and Digital Teammates hosted).
   the same rules run (`services.decideApproval`), and the approval is recorded once.
 - **Closing a finding needs proof**: only the scan of the run made for it (`request.noobly.findingId`), no longer
   finding it, closes it. There is no "close" button.
+- **Environments are scanned too** (Phase 21): `scanEnvironment` (DAST, the image scan) runs as one of an environment's
+  suites for the Factory's Test section; its findings are linked to the environment, the preview's pull request and
+  its story, and the suite fails at `environmentScans`' level (default high).
 - **Nothing pretends to be a real scan.** The mock scanner says so on every gate, in the PR's SBOM section and on
   Policies; `SECURITY_SCANNER` other than `mock` is refused at start.
 - **Time is the host's clock** (`host.clock`): fix-by dates and risk expiries move with NooblyJS's dev clock. Never

@@ -13,6 +13,10 @@ gates:
   - { kind: sca, blockAt: medium }
   - { kind: licence, blockAt: medium }
   - { kind: iac, blockAt: high }
+# Phase 21: the scans of an environment (preview, Test, Staging), run as its suites; each blocks at this level [CONFIRM].
+environmentScans:
+  - { kind: dast, blockAt: high }
+  - { kind: image, blockAt: high }
 # Who may accept a risk: accept-risk (Architect, Owner) for these severities; the others only an Owner [CONFIRM].
 riskAcceptance:
   maxDays: 90

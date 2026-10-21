@@ -17,6 +17,14 @@ criterion the case is "criterion changed", and in Build or Test only such a case
 and **defects** (`defects.js`: raised from a failing run or on a story; each is a lifecycle item `DEF-031-1`, the
 lifecycle's `recordDefect`/`decideDefect`; a later passing run of the story marks it fixed, a person closes it).
 
+**Phase 21** adds **testing in environments**: the test runner adapter (`src/runners/`, `TEST_RUNNER`, only `mock`: e2e
+and e2e smoke from the stories' Build-level results plus the environment's baseline of journeys, load against the
+item's performance NFR, accessibility, resilience) and `src/services/env-runs.js`, which runs the suites of an
+environment's kind (`test-policy.yaml` `environments`), asks NooblyJS Security for DAST and the image scan, records
+an environment test run (`TRN-test-slots-1`, each failing test with its case and criterion) and tells Infrastructure
+(`recordTests`), where the results decide promotion. A preview's suites run when Infrastructure says it is provisioned
+(`environment.provisioned`).
+
 | | |
 | --- | --- |
 | Where it answers | `/factory/quality` (API at `/factory/quality/api/v1`; pages in `../public/quality/`) |

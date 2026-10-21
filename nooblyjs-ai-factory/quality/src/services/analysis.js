@@ -305,6 +305,8 @@ export function createAnalysis({ host, log }) {
   async function casesFor(storyId, repo) {
     const doc = await get(storyId).catch(() => null);
     const short = String(repo ?? '').split('/').pop();
+    // No repository named (Phase 21, an environment's suites): every case of the story.
+    if (!short) return doc?.cases ?? [];
     return (doc?.cases ?? []).filter((c) => !c.systems?.length || c.systems.includes(short));
   }
 

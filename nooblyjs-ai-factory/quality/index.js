@@ -16,6 +16,8 @@ import { createAnalysis } from './src/services/analysis.js';
 import { createRuns } from './src/services/runs.js';
 import { createCoverage } from './src/services/coverage.js';
 import { createDefects } from './src/services/defects.js';
+import { createEnvRuns } from './src/services/env-runs.js';
+import { createRunner } from './src/runners/index.js';
 import { seed as seedSection } from './src/seed/index.js';
 
 const NAME = 'quality';
@@ -42,13 +44,16 @@ export async function register(app, serverManager, { mountPath = '/quality', dat
   const missing = NEEDS.filter((key) => !host?.[key]);
   if (missing.length) throw new Error(`The Test section needs host.${missing.join(', host.')} from the host.`);
 
+  // Phase 21: the test runner adapter; an unknown TEST_RUNNER is refused before anything is mounted.
+  const runner = createRunner({ name: process.env.TEST_RUNNER || 'mock' });
   const log = serverManager.logger(serverManager.getDefaultProviderType('logging'), { instanceName: NAME });
   const analysis = createAnalysis({ host, log });
   const runs = createRuns({ host, log, analysis });
   const coverage = createCoverage({ host, analysis, runs });
   const defects = createDefects({ host, runs });
+  const envRuns = createEnvRuns({ host, log, analysis, runs, runner });
   const router = host.express.Router();
-  router.use('/api/v1', createApi({ host, log, analysis, runs, coverage, defects, about: { name: NAME, version: VERSION, mountPath } }));
+  router.use('/api/v1', createApi({ host, log, analysis, runs, coverage, defects, envRuns, about: { name: NAME, version: VERSION, mountPath, testRunner: runner.name, realTestRunner: runner.real } }));
   router.use(host.express.static(PUBLIC_DIR, { index: false, redirect: false }));
   router.get('/{*rest}', (req, res, next) => (path.extname(req.path) || req.path.startsWith('/api/') ? next() : host.frame(req, res, next)));
   app.use(mountPath, router);
@@ -61,6 +66,13 @@ export async function register(app, serverManager, { mountPath = '/quality', dat
       if (!flagged.length) return null;
       return host.events.emit('quality.cases_flagged', { system: 'factory', section: 'quality', itemId: p.storyId, storyId: p.storyId, cases: flagged, criterion: p.ref ?? null, summary: `marked ${flagged.join(', ')} of ${p.storyId} "criterion changed": a person checks ${flagged.length === 1 ? 'it' : 'them'}` }, { actor: null });
     }).catch((err) => log.warn?.(`quality: the cases of ${p.storyId} were not flagged: ${err.message}`));
+  });
+
+  // Phase 21: a preview is provisioned (Infrastructure, from a pull request): its suites run there.
+  const offPreview = host.events.on?.('environment.provisioned', (event) => {
+    const p = event?.payload ?? event ?? {};
+    if (p.kind !== 'preview') return;
+    envRuns.runEnvironment({ environment: p.environment }).catch((err) => log.warn?.(`quality: the suites of ${p.environment} did not run: ${err.message}`));
   });
 
   return {
@@ -105,12 +117,16 @@ export async function register(app, serverManager, { mountPath = '/quality', dat
       defects: (input) => defects.list(input),
       /** Raise a defect from a failing test run ({ testRunId, title?, severity?, caseId?, requirementId?, actor }). */
       raiseDefect: ({ testRunId, actor, ...body } = {}) => defects.raiseFromRun(testRunId, body, actor),
+      /** Phase 21: run an environment's suites ({ environment, storyIds?, actor? }); the run, recorded. */
+      runEnvironment: (input) => envRuns.runEnvironment(input),
+      /** Environment test runs, of one environment or a pull request's preview ({ environment?, prId? }). */
+      environmentRuns: (input) => envRuns.environmentRuns(input),
       /** Decide a defect ({ defectId, decision, reason, actor }): the lifecycle engine checks who. */
       decideDefect: ({ defectId, actor, ...body } = {}) => defects.decide(defectId, body, actor),
     },
     seed: async ({ reset = false, content = host.sampleData !== false } = {}) => {
       await seedSection(host.store, { reset, content, now: () => new Date(host.clock?.now?.() ?? Date.now()).toISOString() });
     },
-    close: async () => { offCriterion?.(); },
+    close: async () => { offCriterion?.(); offPreview?.(); },
   };
 }

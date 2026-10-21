@@ -11,6 +11,12 @@ From 2026-10-19 to 2026-10-20 this was a section of the Software Factory (`noobl
 factory is Product, Design, Build and Test, and provisioning infrastructure is something different. NooblyJS moves an
 install's `data/factory/infrastructure` back to `data/infrastructure` on its next start.
 
+**NooblyJS Phase 21 (roadmap I8)**: `src/services/previews.js` makes a preview for each pull request the lifecycle
+records (`pr.recorded`) on a repository a design serves (the design's `repos`), from that design, and destroys it when the pull request merges (`pr.merged`); the Factory's Test section runs its
+suites (`environment.provisioned`) and records them here (`services.recordTests`). `environments.promote()`
+(`POST /promotion-paths/:product/promote`) moves what is deployed one step right only when that environment's suites
+pass, naming each failing test; Production only through a release. `POST /environments/:name/tests` runs the suites now.
+
 ## Part of NooblyJS (read first)
 
 This repo is hosted by **NooblyJS** (`../nooblyjs-ai-host`) at `/infrastructure` (NooblyJS Phase 9a: on the rail as Infra; design

@@ -77,6 +77,9 @@ export function pullRequestRoutes({ home, host, store, bridge, mountPath = '/fac
     const mayApprove = Boolean(me && me.accessRole !== 'Viewer' && me.kind !== 'agent');
     const mayMerge = Boolean(me && me.kind !== 'agent' && (await host.can?.(me.accessRole, 'merge')));
     const open = (type) => view.approvals.find((a) => a.type === type && a.status === 'open') ?? null;
+    // NooblyJS Phase 21: the pull request's preview (Infrastructure) and the suites that ran there (the Test section).
+    const preview = await Promise.resolve(host.service?.('infrastructure')?.previewForPr?.(item.id)).catch(() => null) ?? null;
+    const [envRun] = (await Promise.resolve(host.service?.('quality')?.environmentRuns?.({ prId: item.id })).catch(() => [])) ?? [];
     const decision = (type) => {
       const a = open(type);
       if (!a || !mayApprove || item.status !== 'active') return null;
@@ -96,12 +99,37 @@ export function pullRequestRoutes({ home, host, store, bridge, mountPath = '/fac
         approvals: view.approvals.map((a) => ({ ...a, label: LABEL[a.type] ?? a.type })),
         given: await Promise.all(view.given.map(async (g) => ({ ...g, label: LABEL[g.type], byName: await nameOf(g.by), forName: g.for && g.for !== g.by ? await nameOf(g.for) : null }))),
         blockers: view.blockers,
+        preview: preview ? { ...preview, text: preview.status === 'destroyed' ? `${preview.name} was destroyed when it merged` : preview.status === 'live' ? `${preview.name} is live: verify the pull request there` : `${preview.name} is ${preview.status}` } : null,
+        evidence: evidenceList(item, envRun, preview),
         can: {
           build: decision('build-approval'), test: decision('test-approval'),
           merge: mayMerge && item.status === 'active' && !view.blockers.length,
         },
         mergeText: item.status === 'completed' ? `Merged by ${item.mergedBy?.name ?? 'a person'}` : view.blockers.length ? `It can't merge yet: it needs ${view.blockers.join(', ')}.` : 'Both approvals are given for this commit, and its checks passed: a person may merge it.',
       },
+    };
+  }
+
+  /**
+   * NooblyJS Phase 21: the tester's evidence in one list: the AI's required tests on the commit (Build), what a person
+   * checks by hand, and each suite that ran in the preview (function, accessibility, security).
+   */
+  function evidenceList(item, envRun, preview) {
+    const ev = item.pr?.evidence;
+    const RESULT = { passing: 'Passing', failing: 'Failing', unproven: 'Present, not proven', missing: 'Missing' };
+    const rows = (ev?.cases ?? []).map((c) => ({ where: 'Build · the AI\'s tests', id: c.id, title: c.title, level: c.level, result: c.status, text: RESULT[c.status] ?? c.status }));
+    for (const c of ev?.manual ?? []) rows.push({ where: 'A person checks', id: c.id, title: c.title, level: 'manual', result: 'manual', text: 'The tester checks it' });
+    for (const s of envRun?.suites ?? []) {
+      rows.push({
+        where: `Preview · ${envRun.environment}`, id: s.suite, title: s.text ?? `${s.passed} of ${s.total} ${s.label ?? s.suite}`, level: s.label ?? s.suite,
+        result: s.skipped ? 'skipped' : s.passed >= s.total ? 'passing' : 'failing', text: s.skipped ? 'Did not run' : `${s.passed} of ${s.total}${s.failing?.length ? ` · ${s.failing.map((f) => f.name).join('; ')}` : ''}`,
+        ...(s.findings?.length ? { findings: s.findings } : {}),
+      });
+    }
+    const failing = rows.filter((r) => r.result === 'failing' || r.result === 'missing').length;
+    return {
+      rows, testRunId: envRun?.id ?? null,
+      text: `${rows.filter((r) => r.result === 'passing').length} passing of ${rows.length}${failing ? ` · ${failing} failing or missing` : ''}${envRun ? ` (with ${envRun.environment})` : preview ? ' (the preview\'s suites have not run yet)' : ' (no preview)'}`,
     };
   }
 

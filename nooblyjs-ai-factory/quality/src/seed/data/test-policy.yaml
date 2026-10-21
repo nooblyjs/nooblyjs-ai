@@ -12,3 +12,9 @@ journeys: { level: e2e, automate: true }
 nfrs:
   accessibility: { level: manual, automate: false, title: 'A person checks it with a screen reader and the keyboard' }
   performance: { level: performance, automate: true, title: 'A load test proves the target' }
+# Phase 21: the suites that run in each kind of environment, by the test runner adapter (e2e, e2e-smoke, load,
+# accessibility, resilience) or by NooblyJS Security (dast, image). Defaults to agree with the test leads [CONFIRM].
+environments:
+  preview: [e2e-smoke, accessibility, dast]
+  test: [e2e, load, image]
+  staging: [e2e, resilience, dast]

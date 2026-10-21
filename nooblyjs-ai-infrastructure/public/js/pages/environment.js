@@ -1,6 +1,7 @@
 // One environment: what is deployed, the tests that ran here, the design it was built from, drift, and its runs.
 // There is no mockup for this screen yet (the mockups link it as Infra-EnvDetail); it follows the other two.
-// Data: GET /environments/:name, POST /environments/:name/drift-check, POST /drift/:id/restore|keep.
+// Data: GET /environments/:name, POST /environments/:name/drift-check, POST /drift/:id/restore|keep, and (NooblyJS
+// Phase 21) POST /environments/:name/tests: its suites, run now by the Factory's Test section.
 import { html } from '/ui/js/html.js';
 import { pageHead, button, card, dataTable, statusPill } from '/ui/js/components/index.js';
 import { hrefFor, errorCard, isAbort, reloadable, say, messageRegion, kindPill, toned, progressBar, REFRESH_MS } from '../lib.js';
@@ -27,7 +28,7 @@ export async function render(view, { params, ctx }) {
     ${pageHead({
       title: env.name,
       lead: env.note.text,
-      actions: ctx.can('draft') && !provisioning ? html`${button({ label: 'Check for drift', kind: 'secondary', icon: 'refresh', attrs: { 'data-action': 'check' } })}${env.kind === 'production' ? '' : button({ label: 'Destroy', kind: 'danger', icon: 'trash', attrs: { 'data-action': 'ask-destroy' } })}` : '',
+      actions: ctx.can('draft') && !provisioning ? html`${env.kind === 'production' ? '' : button({ label: 'Run the suites', kind: 'secondary', icon: 'check', attrs: { 'data-action': 'tests' } })}${button({ label: 'Check for drift', kind: 'secondary', icon: 'refresh', attrs: { 'data-action': 'check' } })}${env.kind === 'production' ? '' : button({ label: 'Destroy', kind: 'danger', icon: 'trash', attrs: { 'data-action': 'ask-destroy' } })}` : '',
     })}
     <p class="inf-meta">${kindPill(env)}${provisioning ? progressBar(env.statusText, env.progress) : statusPill({ text: env.statusText, tone: 'success' })}<span class="inf-muted">Cost per day <span class="inf-mono">${env.costText}</span></span></p>
     ${messageRegion()}
@@ -90,6 +91,7 @@ export async function render(view, { params, ctx }) {
     const steps = {
       check: [() => ctx.api.post(`environments/${encodeURIComponent(params.name)}/drift-check`), (r) => (r.found.length ? `Found ${r.found.length} new difference${r.found.length === 1 ? '' : 's'} from the design.` : r.open ? 'Nothing new. The drift already listed is still open.' : 'No drift: this environment matches its design.')],
       restore: [() => ctx.api.post(`drift/${id}/restore`), () => 'Restoring from the design. The run has started.'],
+      tests: [() => ctx.api.post(`environments/${encodeURIComponent(params.name)}/tests`, {}), (r) => `${r.id}: ${r.text}`],
       keep: [() => ctx.api.post(`drift/${id}/keep`), (r) => `Kept. Design ${r.design.id} is now at v${r.design.version} and waits for approval.`],
     }[action];
     if (!steps) return;

@@ -132,3 +132,24 @@ test('the policies say the scanner is the mock, and the Security engineer\'s hom
     await t.close();
   }
 });
+
+test('Phase 21: an environment\'s DAST finds a missing CSP on a web preview, linked to the pull request and story; the image scan has nothing to scan', async () => {
+  const f = fakes();
+  const t = await startApp({ seed: true, services: f.services });
+  try {
+    const dast = await t.hosted.services.scanEnvironment({ kind: 'dast', environment: 'pr-031-1-1', envKind: 'preview', repo: 'web-storefront', itemId: 'STORY-031-1', prId: 'PR-031-1-1' });
+    assert.deepEqual([dast.passed, dast.total, dast.failing, dast.findings], [1, 1, [], ['FND-003']], 'medium: below the level a DAST suite blocks at');
+    assert.match(dast.text, /^Dynamic scan: FND-003, below the level that blocks \(High\) \(mock scanner: not a real scan\)$/);
+    const finding = (await t.get(`${API}/findings/FND-003`, { as: 'priya-s' })).json;
+    assert.deepEqual([finding.kind, finding.severity, finding.owner, finding.subject.prId, finding.subject.itemId, finding.subject.environment], ['dast', 'medium', 'priya-s', 'PR-031-1-1', 'STORY-031-1', 'pr-031-1-1']);
+    assert.equal(finding.fixAs.title, 'Send a Content-Security-Policy header');
+    // The same problem in Staging is the same finding; a service repository has none; the image scan finds nothing.
+    assert.deepEqual((await t.hosted.services.scanEnvironment({ kind: 'dast', environment: 'staging', repo: 'web-storefront' })).findings, ['FND-003']);
+    assert.deepEqual((await t.hosted.services.scanEnvironment({ kind: 'dast', environment: 'staging', repo: 'slots-api' })).findings, []);
+    const image = await t.hosted.services.scanEnvironment({ kind: 'image', environment: 'test-slots', repo: 'slots-api' });
+    assert.match(image.text, /^Container image: no image to scan/);
+    await assert.rejects(t.hosted.services.scanEnvironment({ kind: 'sast', environment: 'x' }), /dast or image/);
+  } finally {
+    await t.close();
+  }
+});

@@ -62,10 +62,43 @@ export function createScans({ repos, host, scanner, policies, findings, now }) {
     return { scanId, scanner: scanner.name, real: scanner.real, text: scanner.real ? '' : 'Mock scanner: not a real scan.', passed, results, sbom };
   }
 
+  /**
+   * Phase 21: a scan of an environment (DAST, or the image scan), run as one of its suites by the Factory's Test
+   * section. Its findings are linked to the environment, the pull request (a preview's) and the story; the suite fails
+   * when one is at or above the policy's level (`environmentScans`, default high) and its risk is not accepted.
+   * @param {{ kind: 'dast' | 'image', environment: string, envKind?: string, repo?: string, itemId?: string, prId?: string, url?: string }} input
+   */
+  async function scanEnvironment({ kind, environment, envKind = null, repo = null, itemId = null, prId = null, url = null } = {}) {
+    if (!['dast', 'image'].includes(kind)) throw badRequest('An environment scan is dast or image.');
+    if (typeof environment !== 'string' || !environment) throw badRequest('A scan of an environment needs the environment.');
+    const p = await policies.read();
+    const blockAt = (p.environmentScans ?? []).find((g) => g.kind === kind)?.blockAt ?? 'high';
+    const scanId = newId('scn');
+    const target = { repo: repo ?? environment, environment, envKind, url, files: [] };
+    const ids = [];
+    const blocking = [];
+    for (const one of scanner.scan(kind, target, p)) {
+      const { finding } = await findings.record(one, { repo: target.repo, itemId, runId: null, sha: null, scanId, scanner: scanner.name, prId, environment });
+      ids.push(finding.id);
+      if (findings.blocks(finding, blockAt)) blocking.push(finding);
+    }
+    const label = KIND_LABEL[kind] ?? kind;
+    const at = new Date(now()).toISOString();
+    const passed = !blocking.length;
+    await repos.scans.append({ id: scanId, at, repo: target.repo, itemId, environment, prId, scanner: scanner.name, real: scanner.real, passed, results: [{ kind, status: passed ? 'passed' : 'failed', findings: ids }], components: 0 });
+    await emit('scan.finished', { scanId, itemId, repo: target.repo, environment, prId, scanner: scanner.name, passed, summary: `scanned ${environment} (${label}) with the ${scanner.name} scanner: ${passed ? 'passed' : 'failed'}${ids.length ? `, ${ids.join(', ')}` : ''}` });
+    const mock = scanner.real ? '' : ' (mock scanner: not a real scan)';
+    return {
+      passed: passed ? 1 : 0, total: 1, scanId, scanner: scanner.name, real: scanner.real, findings: ids,
+      failing: blocking.map((f) => ({ name: `${f.id}: ${f.title}`, findingId: f.id })),
+      text: kind === 'image' && !ids.length ? `${label}: no image to scan${mock}` : `${label}: ${ids.length ? `${ids.join(', ')}${passed ? `, below the level that blocks (${SEVERITY_LABEL[blockAt]})` : ''}` : 'nothing found'}${mock}`,
+    };
+  }
+
   /** The newest scans, for the Findings page and a run's evidence. */
   async function recent({ repo, limit = 20 } = {}) {
     return (await repos.scans.list()).filter((s) => !repo || s.repo === repo).slice(-limit).reverse();
   }
 
-  return { scanChange, recent };
+  return { scanChange, scanEnvironment, recent };
 }

@@ -109,6 +109,8 @@ export async function register(app, serverManager, { mountPath = '/security', da
         const all = await findings.list({ itemId });
         return { open: all.filter((f) => f.state === 'open' || f.state === 'fixing'), accepted: all.filter((f) => f.state === 'accepted') };
       },
+      /** Phase 21: an environment's DAST or image scan, as one of its suites (the Factory's Test section asks). */
+      scanEnvironment: (input) => scans.scanEnvironment(input),
       /** The Software Factory scans a run's commit: each kind is a gate, with the SBOM (scans.js). */
       scanChange: (input) => scans.scanChange(input),
       /** A person accepts a finding's risk, relayed by another app; an agent is refused and audited. */

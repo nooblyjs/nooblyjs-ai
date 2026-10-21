@@ -152,5 +152,73 @@ export function createEnvironments({ repos, host, designs, runs, now, mountPath 
     return { environment: await get(name), run: runs.view(run) };
   }
 
-  return { list, get, promotionPath, create, destroy };
+  /**
+   * NooblyJS Phase 21: one environment as the Factory's Test section needs it to run its suites: its kind, the
+   * repositories its design serves, its preview's pull request and story, and the baseline of journeys there.
+   */
+  async function environment(name) {
+    const env = await repos.environments.get(name);
+    if (!env || env.status === 'destroyed') return null;
+    const design = env.designId ? await repos.designs.get(env.designId) : null;
+    return {
+      name: env.name, kind: env.kind, status: env.status, product: env.product ?? null, repo: env.repo ?? null, repos: design?.repos ?? (env.repo ? [env.repo] : []),
+      prId: env.prId ?? null, storyId: env.storyId ?? null, url: env.url ?? null, baseline: env.baseline ?? {}, deployed: env.deployed ?? [],
+    };
+  }
+
+  /** NooblyJS Phase 21: the suites that ran in an environment (the Test section's run): they decide promotion. */
+  async function recordTests({ environment: name, suites = [], testRunId = null } = {}) {
+    const at = new Date(now()).toISOString();
+    const env = await repos.environments.update(name, (e) => e && { ...e, tests: suites, testRunId, testedAt: at, testsNote: undefined, testsTone: undefined });
+    if (!env) throw notFound(`No environment called ${name}.`);
+    const failing = suites.filter((s) => s.passed < s.total);
+    await host.events.emit('environment.tested', {
+      system: 'infrastructure', environment: name, kind: env.kind, testRunId, passed: !failing.length, itemId: env.storyId ?? null, pullRequestId: env.prId ?? null,
+      summary: `${name}'s suites ran: ${testsView(env).text}`,
+    }, { actor: null });
+    return view(env, await context());
+  }
+
+  /**
+   * NooblyJS Phase 21: what is deployed in one environment of a product's path goes to the next, by a person with the
+   * apply rule's permission, only when that environment's suites ran and pass. A refusal names each failing test and the
+   * criterion it proves. Production changes only through a release.
+   */
+  async function promote(product, { from } = {}, person) {
+    const path = (await repos.config.promotionPaths())[product];
+    if (!path) throw notFound(`No promotion path for ${product}.`);
+    const kinds = Object.keys(path.environments ?? {});
+    const i = kinds.indexOf(from);
+    if (i < 0 || i === kinds.length - 1) throw badRequest(`from is one of ${kinds.slice(0, -1).join(', ')}.`, { from: 'a kind on the path' });
+    const to = kinds[i + 1];
+    const action = `promote ${product} from ${KIND_LABEL[from]} to ${KIND_LABEL[to]}`;
+    await peopleOnly(host, person, action);
+    const rules = await repos.config.applyRules();
+    if ((rules.kinds?.[to] ?? 'approval') === 'release') throw new HttpError(422, 'release_only', `${KIND_LABEL[to]} only changes through a release, with two approvers.`);
+    await needs(host, person, (rules.kinds?.[to] ?? 'approval') === 'approval' ? rules.approval?.permission ?? 'change-repo-access' : 'draft', action);
+    const source = await repos.environments.get(path.environments[from]);
+    const target = await repos.environments.get(path.environments[to]);
+    if (!source || !target) throw notFound(`${product}'s path has no ${!source ? from : to} environment.`);
+    const refuse = async (code, message, details = {}) => {
+      await host.events.emit('environment.promotion_refused', { system: 'infrastructure', product, from: source.name, to: target.name, reason: message, summary: `could not ${action}: ${message}` }, { actor: person.id });
+      throw new HttpError(422, code, message, details);
+    };
+    const tests = source.tests ?? [];
+    if (!tests.length) await refuse('not_tested', `No suites have run in ${source.name} yet: a build moves right only when that environment's tests pass.`);
+    const failingTests = tests.flatMap((t) => (t.passed < t.total ? (t.failingDetail?.length ? t.failingDetail : (t.failing ?? []).map((name) => ({ name }))).map((f) => ({ suite: t.suite, ...f })) : []));
+    if (failingTests.length) {
+      const named = failingTests.map((f) => `${f.name}${f.criterionRef ? ` (${f.criterionRef})` : ''}`).join('; ');
+      await refuse('tests_failing', `Promotion to ${KIND_LABEL[to]} is refused: ${failingTests.length === 1 ? 'a test is' : `${failingTests.length} tests are`} failing in ${source.name}: ${named}.`, { failing: failingTests });
+    }
+    const at = new Date(now()).toISOString();
+    const deployed = source.deployed ?? [];
+    await repos.environments.update(target.name, (e) => e && { ...e, deployed, deployedAt: at, promotedFrom: { environment: source.name, testRunId: source.testRunId ?? null, by: { id: person.id, name: person.name }, at }, tests: [], testRunId: null, testsNote: 'Promoted: its suites run next' });
+    await host.events.emit('environment.promoted', {
+      system: 'infrastructure', product, from: source.name, to: target.name, deployed, testRunId: source.testRunId ?? null,
+      summary: `promoted ${product} from ${source.name} to ${target.name}: ${deployed.map((d) => `${d.service} ${d.version}`).join(' · ') || 'nothing deployed'}`,
+    }, { actor: person.id });
+    return { product, from: source.name, to: target.name, deployed, text: `${deployed.map((d) => `${d.service} ${d.version}`).join(' · ')} is in ${target.name} now. Its suites run next.` };
+  }
+
+  return { list, get, promotionPath, create, destroy, environment, recordTests, promote };
 }

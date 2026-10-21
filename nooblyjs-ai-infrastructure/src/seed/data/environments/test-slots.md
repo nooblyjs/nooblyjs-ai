@@ -13,4 +13,6 @@ tests:
   - { suite: e2e, passed: 41, total: 42, failing: ["Slot hold expires while the customer is paying"] }
   - { suite: load, passed: 1, total: 1 }
 costPerDay: 18
+# NooblyJS Phase 21: the journeys already tested here (sample data), counted in each e2e run with the stories under test.
+baseline: { e2e: 41 }
 ---

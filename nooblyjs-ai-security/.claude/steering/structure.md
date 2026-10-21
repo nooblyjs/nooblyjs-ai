@@ -40,5 +40,5 @@ How this repo is laid out. The hosted-app contract it follows is `../../nooblyjs
 ## Services (`host.service('security')`)
 
 `draftThreatModel`, `threatModelFor`, `findingsFor`, `riskFor` (for Release, Phase 22), `scanChange` (the Software
-Factory's verify station), `acceptRisk`, `home`, `checksFor`, `trace`, `decideApproval`. The Software Factory's
+Factory's verify station), `scanEnvironment` (Phase 21: DAST and the image scan in an environment), `acceptRisk`, `home`, `checksFor`, `trace`, `decideApproval`. The Software Factory's
 `startWork` is what "Draft a fix as a PR" calls; its `run.finished` links the fix to its PR.

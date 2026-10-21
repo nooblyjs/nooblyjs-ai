@@ -1,6 +1,7 @@
 // Environments (mockup: .claude/steering/ui/noobly-infrastructure-environments): the promotion path, every environment,
 // what needs attention, the infrastructure agent and cost by kind.
-// Data: GET /environments, /promotion-paths/slots, /drift, /summary, /designs.
+// Data: GET /environments, /promotion-paths/slots, /drift, /summary, /designs; NooblyJS Phase 21: POST
+// /promotion-paths/slots/promote (a build moves right only when that environment's tests pass).
 import { html } from '/ui/js/html.js';
 import { pageHead, button, card, dataTable, statusPill, meter } from '/ui/js/components/index.js';
 import { hrefFor, errorCard, isAbort, reloadable, say, messageRegion, kindPill, toned, progressBar, REFRESH_MS } from '../lib.js';
@@ -63,6 +64,7 @@ export async function render(view, { ctx }) {
     <section class="card" aria-label="Promotion path">
       <div class="card__head"><h2 class="card__title">Promotion path · ${path.label}</h2><span class="card__meta">${path.note}</span></div>
       <ol class="inf-path">${path.tiles.map(tile)}</ol>
+      ${ctx.can('draft') ? html`<div class="actions">${path.tiles.filter((t) => ['dev', 'test'].includes(t.kind)).map((t) => button({ label: `Promote ${t.label} → ${t.kind === 'dev' ? 'Test' : 'Staging'}`, kind: 'secondary', small: true, attrs: { 'data-action': 'promote', 'data-id': t.kind } }))}</div>` : ''}
     </section>
     <div class="inf-split">
       <section class="card inf-split__main" aria-label="Environments">
@@ -120,6 +122,7 @@ export async function render(view, { ctx }) {
       else redraw();
     }
     if (action === 'restore') act("Couldn't restore", () => ctx.api.post(`drift/${id}/restore`), (r) => `Restoring ${r.drift.environment} from the design. The run has started.`);
+    if (action === 'promote') act("Couldn't promote", () => ctx.api.post(`promotion-paths/${PRODUCT}/promote`, { from: id }), (r) => r.text);
     if (action === 'keep') act("Couldn't keep the change", () => ctx.api.post(`drift/${id}/keep`), (r) => `Kept. Design ${r.design.id} is now at v${r.design.version} and waits for approval.`);
   }, { signal: ctx.signal });
 

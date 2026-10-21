@@ -91,20 +91,20 @@ export function createFindings({ repos, host, log, policies, now, mountPath }) {
    * One scan's finding: the open finding with the same fingerprint, or a new one with its owner and fix-by date. A
    * problem seen again after its finding closed is a new finding.
    */
-  async function record(found, { repo, itemId, runId, sha, scanId, scanner }) {
+  async function record(found, { repo, itemId, runId, sha, scanId, scanner, prId = null, environment = null }) {
     const open = (await repos.findings.list()).find((f) => f.fingerprint === found.fingerprint && f.state !== 'closed');
     if (open) return { finding: open, created: false };
     const p = await policies.read();
     const at = now();
     const finding = await repos.findings.create({
       title: found.title, kind: found.kind, rule: found.rule, severity: found.severity, state: 'open',
-      subject: { itemId: itemId ?? null, repo, runId: runId ?? null, sha: sha ?? null, file: found.file ?? null, line: found.line ?? null },
+      subject: { itemId: itemId ?? null, repo, runId: runId ?? null, sha: sha ?? null, file: found.file ?? null, line: found.line ?? null, ...(prId ? { prId } : {}), ...(environment ? { environment } : {}) },
       fingerprint: found.fingerprint, detail: found.detail, ...(found.fix ? { fixAs: found.fix } : {}),
       owner: policies.ownerFor(p, repo), openedAt: new Date(at).toISOString(), fixBy: policies.fixByFor(p, found.severity, at),
       source: { scanner, scanId },
-      history: [{ at: new Date(at).toISOString(), what: `Opened by the ${scanner} scanner's ${KIND_LABEL[found.kind] ?? found.kind} scan of ${repo}${sha ? ` at ${sha.slice(0, 7)}` : ''}` }],
+      history: [{ at: new Date(at).toISOString(), what: `Opened by the ${scanner} scanner's ${KIND_LABEL[found.kind] ?? found.kind} scan of ${environment ? `${environment} (${repo})` : repo}${sha ? ` at ${sha.slice(0, 7)}` : ''}${prId ? ` for ${prId}` : ''}` }],
     });
-    await emit('finding.opened', { findingId: finding.id, itemId: itemId ?? null, repo, severity: finding.severity, kind: finding.kind, title: finding.title, owner: finding.owner, fixBy: finding.fixBy, runId: runId ?? null });
+    await emit('finding.opened', { findingId: finding.id, itemId: itemId ?? null, repo, severity: finding.severity, kind: finding.kind, title: finding.title, owner: finding.owner, fixBy: finding.fixBy, runId: runId ?? null, prId, environment });
     return { finding, created: true };
   }
 
