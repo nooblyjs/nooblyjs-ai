@@ -65,7 +65,9 @@ has a test that proves it **refuses**.
   approval there (`src/services/approvals.js`). Without the engine (standalone) the decision is recorded on the
   design only. `infra_design.approved` is emitted either way.
 - **Policy checks run on every design version and before every apply.** A failed blocking policy
-  refuses the approval request with 422 `policy_failed`.
+  refuses the approval request with 422 `policy_failed`. Since NooblyJS Phase 16f they are also reported in NooblyJS's
+  one check shape (`services.checksFor(itemId)`: per design for the item, per kind Test, Staging and Production,
+  `src/services/checks-trace.js`), and each design is in the item's trace (`services.trace(itemId)`).
 - **Only approved blueprints** may appear in generated code.
 - **Secrets are references** (`vault:test/REDIS_URL`), never values, in `data/`, in designs, in logs
   and in generated code. Agents and non-production environments never receive production values.

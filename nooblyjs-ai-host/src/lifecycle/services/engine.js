@@ -12,6 +12,7 @@ import { loadRules, loadReadiness, loadPullRequestReadiness } from '../config.js
 import { newId } from '../ids.js';
 import { ITEM_ID } from '../repos.js';
 import { createPullRequests } from './pull-requests.js';
+import { createLifecycleChecks } from './checks.js';
 
 const DECISIONS = new Set(['approve', 'request-changes']);
 const MAX_TEXT = 2000;
@@ -23,13 +24,13 @@ const NUDGE_EVERY_MS = 4 * 3_600_000;
  * item is done after its outcome review. `merge` is the Build approval's key from before (an older open one moves too).
  */
 const MOVES = {
-  spec: 'design', 'design-handoff': 'engineer', 'engineering-signoff': 'build', 'build-approval': 'test', merge: 'test',
+  idea: 'product', spec: 'design', 'design-handoff': 'engineer', 'engineering-signoff': 'build', 'build-approval': 'test', merge: 'test',
   'test-approval': 'release', deploy: 'operate', 'outcome-review': 'complete', stage: null,
 };
 
 /** The approval that leaves each stage when a person presses Approve & move (any other stage: a plain stage move). */
 const LEAVES_BY = {
-  product: 'spec', design: 'design-handoff', engineer: 'engineering-signoff', build: 'build-approval', test: 'test-approval',
+  discover: 'idea', product: 'spec', design: 'design-handoff', engineer: 'engineering-signoff', build: 'build-approval', test: 'test-approval',
   release: 'deploy', operate: 'outcome-review',
 };
 
@@ -123,7 +124,23 @@ export function createEngine({ repos, host, log, clock }) {
    * before 16c, or with the Design section not running here) has no Design checks. In Engineer (Phase 16d) the Software
    * Factory works them out from the story's application architecture and test analysis, the same way.
    */
+  /**
+   * Readiness, with the checks a person overrode one by one for this stage (Phase 16f): an overridden check no longer
+   * holds the decision, and says who overrode it and why.
+   */
   async function readinessOf(item) {
+    const readiness = await stageReadiness(item);
+    const overrides = item.checkOverrides ?? {};
+    if (!readiness.total || !Object.keys(overrides).length) return readiness;
+    const checks = readiness.checks.map((c) => {
+      const o = overrides[`${item.stage}:${c.key}`];
+      return o && !c.passed ? { ...c, passed: true, overridden: o, text: `${c.text} · overridden by ${o.byName ?? o.by}: ${o.reason}` } : c;
+    });
+    const failing = checks.filter((c) => !c.passed);
+    return { ...readiness, passed: checks.length - failing.length, checks, failing };
+  }
+
+  async function stageReadiness(item) {
     // A pull request's Test approval (Phase 16e): worked out from the evidence of its commit.
     if (item.stage === 'test' && item.type === 'pr' && item.pr) return pullRequestReadiness(item);
     const checks = await loadReadiness(repos, item.stage);
@@ -164,11 +181,11 @@ export function createEngine({ repos, host, log, clock }) {
         if (facts) {
           ({ results, details } = factsOf(facts));
           source = 'product';
-        }
+        } else if (item.stage === 'discover') return NO_CHECKS; // Phase 17: only an idea has a business case to check
       } catch (err) {
         log.warn(`readinessFacts(${item.id}) failed, using the recorded result: ${err.message}`);
       }
-    }
+    } else if (item.stage === 'discover') return NO_CHECKS;
     const view = checks.map((c) => {
       const result = results[c.key];
       const failed = details[c.key] ? `${c.failed}: ${details[c.key]}` : c.failed;
@@ -451,6 +468,7 @@ export function createEngine({ repos, host, log, clock }) {
     adr: (i, a) => `accepted ${a.subject ?? 'the decision'} · ${a.title}`,
     'ui-handoff': (i) => `approved the handoff of ${i.title} to the Software Factory`,
     merge: (i) => `approved the merge of ${i.ref ?? i.id} · ${i.title}`,
+    idea: (i) => `accepted the idea ${i.ref ?? i.id} · ${i.title}`,
     'design-handoff': (i) => `approved the Design handoff of ${i.ref ?? i.id} · ${i.title} to Engineering`,
     'engineering-signoff': (i, a, r) => `signed off ${r?.role ? `the ${r.role}'s part of ` : ''}the engineering of ${i.ref ?? i.id} · ${i.title}`,
     'build-approval': (i) => `gave the Build approval on ${i.ref ?? i.id} · ${i.title}`,
@@ -740,6 +758,28 @@ export function createEngine({ repos, host, log, clock }) {
     const to = type === 'stage' ? nextStage(item.stage) : MOVES[type] === 'complete' ? null : MOVES[type];
     const extra = type === 'build-approval' || type === 'test-approval' ? { subject: item.ref ?? item.id } : {};
     return openAndDecide({ item, type, to, person, input, extra });
+  }
+
+  /**
+   * Accepting an idea (Phase 17), the Discover exit, from the Product section: the idea's lifecycle item is opened when
+   * it has none (in Discover), then a person gives the `idea` approval, with its readiness check ("Business case
+   * complete") or an override with a reason. Refused anywhere but Discover.
+   */
+  async function acceptIdea({ itemId, title = null, override = null, comment = null, actor } = {}) {
+    const person = await personFor(actor, { what: 'accept an idea', target: `item ${itemId}` });
+    if (!/^IDEA-\d{3,}$/.test(String(itemId ?? ''))) throw badRequest('Only an idea (IDEA-…) is accepted this way.');
+    let item = await repos.items.get(itemId);
+    if (!item) {
+      const at = now();
+      const full = await host.people.get(person.id);
+      item = await repos.items.create({
+        id: itemId, type: 'idea', ref: itemId, title: text(title, 200) ?? itemId, system: 'product', stage: 'discover', status: 'active',
+        owner: person.id, team: full?.teams?.[0] ?? null, createdAt: at, stageEnteredAt: at, history: [{ stage: 'discover', enteredAt: at, by: person.id }], version: 1, updatedAt: at,
+      });
+      await emit('item.created', { itemId, system: 'product', stage: 'discover', summary: `opened ${itemId} · ${item.title}` }, person.id);
+    }
+    if (item.stage !== 'discover') throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}: an idea is accepted in Discover.`);
+    return advance(itemId, { ...(override ? { override } : {}), ...(comment ? { comment } : {}) }, person);
   }
 
   /**
@@ -1068,6 +1108,8 @@ export function createEngine({ repos, host, log, clock }) {
   // Pull requests as lifecycle items (Phase 16e): their Build and Test approvals, merges, and the stories and features
   // that follow them.
   const prs = createPullRequests({ repos, host, log, now, emit, audit, personFor, requirePermission, reviewersFor, ruleOr500, itemOr404, storiesOf, followStories, moveStage });
+  // One shape for checks, and the trace (Phase 16f).
+  const checks = createLifecycleChecks({ repos, host, now, emit, audit, personFor, requireApprover, readinessOf, storiesOf });
 
-  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories, signOffEngineering, pullRequests: prs };
+  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories, signOffEngineering, acceptIdea, pullRequests: prs, checks };
 }

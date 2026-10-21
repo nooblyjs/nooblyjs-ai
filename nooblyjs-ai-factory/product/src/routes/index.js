@@ -9,11 +9,12 @@ import { uxRoutes } from './ux.js';
 import { uiRoutes } from './ui.js';
 import { flowRoutes } from './flow.js';
 import { strategyRoutes } from './strategy.js';
+import { businessRoutes } from './business.js';
 import { apiNotFound, apiErrors } from '../util/errors.js';
 
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-export function createApi({ host, log, about, seed, repos, people, catalogue, documents, templates, ideas, specWrites, drafting, summary, architecture, ux, ui, flow, kindKeys, mountPath, stageAgents = null }) {
+export function createApi({ host, log, about, seed, repos, people, catalogue, documents, templates, ideas, hierarchy = null, businessCases = null, specWrites, drafting, summary, architecture, ux, ui, flow, kindKeys, mountPath, stageAgents = null }) {
   const api = host.express.Router();
   api.use(host.auth);
   // NooblyJS audits every write app-wide and its host.audit passes through; the stand-in host records here.
@@ -22,6 +23,8 @@ export function createApi({ host, log, about, seed, repos, people, catalogue, do
   api.use(systemRoutes({ host, about, seed, summary }));
   api.use(boardRoutes({ host, repos, people, ideas, catalogue }));
   api.use(strategyRoutes({ host, repos, people, catalogue, documents, templates }));
+  // NooblyJS Phase 17: the work hierarchy, business cases, accepting an idea.
+  if (hierarchy && businessCases) api.use(businessRoutes({ host, hierarchy, businessCases, ideas, repos }));
   api.use(specRoutes({ host, repos, people, specWrites, stageAgents }));
   // Who drafts each stage: a hired teammate. GET for the screens; PUT /drafters/:stage { teammateId } (draft).
   if (stageAgents) {

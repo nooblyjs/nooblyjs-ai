@@ -9,7 +9,7 @@
 //   decide   item, key, type?             … and decided or withdrawn    } sign-off (type: the approval's, Phase 16e)
 //   open · gate · edit · merge   key, item?, cost?   a pull request: opened, failed a gate, changed by a person, merged
 //   run      key, cost                    a Software Factory run finished (the cost behind its PR)
-//   spend    system, cost                 money spent by a system
+//   spend    system, cost, item?          money spent by a system (on an item, when the event names one: Phase 17)
 //   work     item, who                    an agent or a person did something on an item
 import { systemKey } from '../platform/budgets.js';
 
@@ -92,7 +92,7 @@ export function factsOf(event, dir) {
   if (event.type in SPEND_SYSTEMS) {
     const cost = positive(p.costUsd);
     if (event.type === 'run.finished' && p.runId) out.push({ t, k: 'run', key: String(p.runId), ...(cost ? { cost } : {}) });
-    if (cost) out.push({ t, k: 'spend', system: SPEND_SYSTEMS[event.type] ?? systemKey(p.system), cost });
+    if (cost) out.push({ t, k: 'spend', system: SPEND_SYSTEMS[event.type] ?? systemKey(p.system), cost, ...(item ? { item: String(item) } : {}) });
   }
   if (work && event.type === 'item.created') out.push(work);
   return out;

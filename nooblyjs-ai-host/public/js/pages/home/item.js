@@ -1,12 +1,50 @@
 // Home · Lifecycle · one item: where it is, its readiness, its approvals and its history, with the two things a
 // person may do from here: move it on when no approval is waiting, and send it back with a reason. Its Jira issues
-// (Phase 11) are read from Jira and linked here by key; NooblyJS never writes to Jira.
+// (Phase 11) are read from Jira and linked here by key; NooblyJS never writes to Jira. Since Phase 16f two more tabs:
+// **Checks** (every check of the item, its stories and pull requests, in one shape, with its source and evidence; a
+// failing readiness check can be overridden with a reason) and **Trace** (from its goals down to its pull requests,
+// with the missing links named).
 import { html } from '/ui/js/html.js';
 import { pageHead, card, button, checklist, statusPill, notice, dataTable } from '/ui/js/components/index.js';
 import { ApiError } from '/ui/js/api.js';
 import { workflowsApi, onChange, engineMissing, isMissing, dayLabel, timeText } from './lib.js';
 
 // Lifecycle v3 (Phase 16b): the eight stages and their names.
+const TABS = [['overview', 'Overview'], ['checks', 'Checks'], ['trace', 'Trace']];
+const RESULT = { passed: ['Passes', 'success'], failed: ['Fails', 'danger'], warning: ['Warning', 'warning'], 'not-run': ['Not run', 'neutral'] };
+
+function tabsBar(current) {
+  return html`<nav class="chips" aria-label="Item views">${TABS.map(([key, label]) => html`<button type="button" class="chip${key === current ? ' is-active' : ''}" data-tab="${key}" aria-pressed="${key === current ? 'true' : 'false'}">${label}</button>`)}</nav>`;
+}
+
+/** Phase 16f: every check of the item in one list, grouped by kind, each with its source and evidence. */
+function checksView(c, canOverride) {
+  if (!c) return card({ title: 'Checks', body: html`<p class="row__meta">The checks could not be gathered.</p>` });
+  const row = (x) => {
+    const [word, tone] = RESULT[x.result] ?? [x.result, 'neutral'];
+    const ev = x.evidence?.ref?.startsWith?.('/') ? html`<a href="${x.evidence.ref}">${x.evidence.summary}</a>` : x.evidence?.summary ?? '';
+    const form = canOverride && x.overridable && !x.override
+      ? html`<form class="form" data-form="override" data-check="${x.id}"><label class="field">Override with a reason<input name="reason" required minlength="3" maxlength="500"></label><div class="actions">${button({ label: 'Override', kind: 'secondary', type: 'submit' })}</div></form>`
+      : '';
+    return html`<li class="wait">${statusPill({ text: word, tone })}<div class="wait__main"><span class="wait__title">${x.text}</span>
+      <span class="row__meta">${x.subject.ref ?? x.subject.item} · ${x.source} (${x.definedBy?.ref ?? ''}) · verified by ${x.verifiedBy}${x.severity === 'warning' ? ' · a warning' : ''}</span>
+      <span class="row__meta">Evidence: ${ev}</span>
+      ${x.override ? html`<span class="row__meta">Overridden by ${x.override.byName ?? x.override.by}: ${x.override.reason}</span>` : ''}${form}</div></li>`;
+  };
+  return html`${card({ title: 'Checks', meta: c.text, body: html`<p class="row__meta">Readiness, approvals, gates, quality attributes, the standards check, required tests and policy checks, from every system, in one shape.${c.unavailable?.length ? ` Not running here: ${c.unavailable.join(', ')}.` : ''}</p>` })}
+    ${c.kinds.map((k) => card({ title: k.text, meta: `${c.checks.filter((x) => x.kind === k.kind && x.result === 'passed').length} of ${k.count} pass`, body: html`<ul class="waits" role="list">${c.checks.filter((x) => x.kind === k.kind).map(row)}</ul>` }))}`;
+}
+
+/** Phase 16f: the trace as a tree, the missing links named, coverage in words. */
+function traceView(t) {
+  if (!t) return card({ title: 'Trace', body: html`<p class="row__meta">The trace could not be built.</p>` });
+  const node = (n) => html`<li><span class="row__meta">${n.typeText}${n.rel ? ` · ${n.rel}` : ''}</span> ${n.href ? html`<a href="${n.href}"><strong>${n.id}</strong></a>` : html`<strong>${n.id}</strong>`} ${n.title}${n.also?.length ? html` <span class="row__meta">(also ${n.also.join(', ')})</span>` : ''}${n.children.length ? html`<ul>${n.children.map(node)}</ul>` : ''}</li>`;
+  return html`${card({ title: 'Missing links', meta: t.text, body: t.gaps.length ? html`<ul role="list">${t.gaps.map((g) => html`<li>${g.text}</li>`)}</ul>` : html`<p class="row__meta">Nothing is missing.</p>` })}
+    ${card({ title: 'Coverage', body: t.coverage.length ? html`<ul role="list">${t.coverage.map((c) => html`<li>${c}</li>`)}</ul>` : html`<p class="row__meta">No requirements or criteria to cover yet.</p>` })}
+    ${card({ title: 'Trace', meta: 'From the item down to the code', body: t.root ? html`<ul class="trace">${node(t.root)}</ul>` : html`<p class="row__meta">${t.text}</p>` })}
+    ${t.unplaced?.length ? card({ title: 'Not linked to the item', body: html`<ul role="list">${t.unplaced.map((u) => html`<li>${u.typeText} <strong>${u.id}</strong> ${u.title}</li>`)}</ul>` }) : ''}`;
+}
+
 const STAGES = [['discover', 'Discover'], ['product', 'Product'], ['design', 'Design'], ['engineer', 'Engineer'], ['build', 'Build'], ['test', 'Test'], ['release', 'Release'], ['operate', 'Operate']];
 
 function tracker(item) {
@@ -89,8 +127,9 @@ const history = (rows, now) => html`<ol class="history">${rows.map((h) => html`<
     <span class="row__meta">${dayLabel(h.enteredAt, now)} · ${timeText(h.enteredAt, now)}${h.byName ? ` · ${h.byName}` : ''}</span>
   </li>`)}</ol>`;
 
-export async function render(view, { ctx, params }) {
+export async function render(view, { ctx, params, query }) {
   const api = workflowsApi(ctx);
+  let tab = TABS.some(([k]) => k === query?.get?.('tab')) ? query.get('tab') : 'overview';
   const head = { eyebrow: 'NooblyJS · Lifecycle', title: params.id };
   // The item's team chat thread (shared with its Spec and Architecture pages in the Product Factory).
   ctx.chat.scope({ kind: 'item', id: params.id });
@@ -109,6 +148,17 @@ export async function render(view, { ctx, params }) {
         return;
       }
       throw err;
+    }
+    if (tab !== 'overview') {
+      const id = encodeURIComponent(params.id);
+      const more = tab === 'checks' ? await ctx.hostApi.get(`home/items/${id}/checks`).catch(() => null) : await ctx.hostApi.get(`home/items/${id}/trace`).catch(() => null);
+      if (!ctx.isCurrent()) return;
+      ctx.setTitle(`${data.item.ref} · ${data.item.title}`);
+      view.innerHTML = String(html`${pageHead({ eyebrow: 'NooblyJS · Lifecycle', title: data.item.title, lead: `${data.item.ref} · ${data.item.status === 'completed' ? 'Completed' : `in ${data.item.stageLabel}`}` })}
+        ${message ? html`<p class="flash flash--${message.tone}" role="${message.tone === 'error' ? 'alert' : 'status'}">${message.text}</p>` : ''}
+        ${tabsBar(tab)}
+        ${tab === 'checks' ? checksView(more, ctx.can('draft')) : traceView(more)}`);
+      return;
     }
     // The gate list comes from the item's architecture (the Product Factory). Without it the page still works.
     const gates = await ctx.hostApi.get(`home/items/${encodeURIComponent(params.id)}/gates`).catch(() => null);
@@ -180,6 +230,7 @@ export async function render(view, { ctx, params }) {
       actions: html`${item.specHref ? button({ label: 'Open the spec', kind: 'secondary', href: item.specHref }) : ''}${item.pullRequest ? button({ label: 'Open the pull request', kind: 'secondary', href: item.pullRequest.href }) : ''}${item.parent ? button({ label: item.parent.ref, kind: 'secondary', href: item.parent.href }) : ''}${button({ label: 'All items', kind: 'secondary', href: '/home/lifecycle' })}`,
     })}
     ${message ? html`<p class="flash flash--${message.tone}" role="${message.tone === 'error' ? 'alert' : 'status'}">${message.text}</p>` : ''}
+    ${tabsBar(tab)}
     ${earlyNote}
     ${card({ title: 'Where this is', body: tracker(item) })}
     ${featuresCard}
@@ -207,7 +258,9 @@ export async function render(view, { ctx, params }) {
     const submit = form.querySelector('[type="submit"]');
     submit.disabled = true;
     try {
-      const result = form.dataset.form === 'advance'
+      const result = form.dataset.form === 'override'
+        ? await ctx.hostApi.post(`home/items/${encodeURIComponent(params.id)}/checks/${encodeURIComponent(form.dataset.check)}/override`, { reason: fields.reason })
+        : form.dataset.form === 'advance'
         ? await api.post(`items/${encodeURIComponent(params.id)}/advance`, fields.override ? { override: { reason: fields.override } } : {})
         : await api.post(`items/${encodeURIComponent(params.id)}/send-back`, { to: fields.to, reason: fields.reason });
       message = { tone: 'ok', text: result.text };
@@ -242,6 +295,13 @@ export async function render(view, { ctx, params }) {
   }
 
   view.addEventListener('click', async (event) => {
+    const tabButton = event.target.closest('[data-tab]');
+    if (tabButton) {
+      tab = tabButton.dataset.tab;
+      message = null;
+      history.replaceState(history.state, '', tab === 'overview' ? location.pathname : `${location.pathname}?tab=${tab}`);
+      return draw();
+    }
     const link = event.target.closest('[data-link]');
     const unlink = event.target.closest('[data-unlink]');
     const refresh = event.target.closest('[data-action="jira-refresh"]');

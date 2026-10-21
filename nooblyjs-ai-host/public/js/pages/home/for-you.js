@@ -18,6 +18,8 @@ const LAYOUTS = {
   // Phase 16d: the Engineering homes, over the Software Factory's Engineering pages.
   'application-architect': () => import('./for-you-design.js'),
   'test-analyst': () => import('./for-you-design.js'),
+  // Phase 17: the Business owner's home, the same lists.
+  'business-owner': () => import('./for-you-design.js'),
 };
 
 function greeting(name) {

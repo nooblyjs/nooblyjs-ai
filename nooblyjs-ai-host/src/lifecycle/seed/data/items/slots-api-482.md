@@ -16,6 +16,10 @@ history:
     by: juno-park
 version: 1
 updatedAt: '2026-10-08T14:00:00.000Z'
+# The links it knows about (Phase 16f, root design.md §4): what it delivers, kept in its own front matter.
+links:
+  - { rel: delivers, to: STORY-031-2 }
+  - { rel: for, to: PRD-031 }
 sampleData: true
 ---
 

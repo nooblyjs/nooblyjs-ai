@@ -89,6 +89,19 @@ function stages(rows) {
   </section>`;
 }
 
+/** Phase 17: this month's agent and cloud spend by value stream, and each portfolio against its budget. */
+function byValueStream(s) {
+  if (!s) return '';
+  const rows = s.rows.map((r) => html`<li class="spend__row"><div class="spend__head"><span>${r.portfolio ?? 'No portfolio'} › ${r.valueStream ?? 'no value stream'}</span><span class="mono">${dollars(r.totalUsd)}</span></div><p class="row__meta">Agent ${dollars(r.agentUsd)} · cloud ${dollars(r.cloudUsd)} · ${r.items.join(', ')}</p></li>`);
+  const portfolios = s.portfolios.map((p) => html`<li class="spend__row"><div class="spend__head"><span>${p.name}</span><span class="mono">${dollars(p.totalUsd)}</span></div>${p.budgetUsd ? html`<div class="spend__track" aria-hidden="true"><div class="spend__fill" style="width: ${Math.min(100, Math.max(1, Math.round((p.ratio ?? 0) * 100)))}%"></div></div>` : ''}<p class="row__meta">${p.text}</p></li>`);
+  return html`<section class="card spend" aria-label="Spend by value stream">
+    <div class="card__head"><h2 class="card__title">Spend by value stream, this month</h2><span class="card__meta">${s.text}</span></div>
+    ${portfolios.length ? html`<ul class="spend__list" role="list">${portfolios}</ul>` : ''}
+    ${rows.length ? html`<ul class="spend__list" role="list">${rows}</ul>` : html`<p class="row__meta">Nothing spent this month is placed in a value stream yet.</p>`}
+    <p class="row__meta">${s.unplaced.text}. Cloud: ${s.cloud.basis}.</p>
+  </section>`;
+}
+
 /** Phase 16e: the pull requests waiting on a person now, by approval, with the oldest's age. */
 function waiting(rows = []) {
   return html`<section class="card" aria-label="Pull requests waiting on people">
@@ -121,6 +134,7 @@ export async function render(view, { ctx, query }) {
       <div class="metrics__row">${leadTime(data.weeks)}${spend(data.spend)}</div>
       ${stages(data.stages)}
       ${waiting(data.waiting)}
+      ${byValueStream(data.spendByValueStream)}
       <p class="metrics__foot" role="status">Computed from the event log at ${at.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit', hour12: false })} on ${at.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}.
         Idea → merge is the median from opening an item to its last merged PR; a stage’s numbers are over the visits that ended in the period.</p>
     </div>`);

@@ -5,9 +5,10 @@ import crypto from 'node:crypto';
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
 
 /** The numbered artefacts and their prefixes. */
-export const NUMBERED = { idea: 'IDEA', spec: 'PRD', adr: 'ADR' };
+// NooblyJS Phase 17: the work hierarchy's portfolio epics, epics and features (catalogue.yaml, hierarchy.js).
+export const NUMBERED = { idea: 'IDEA', spec: 'PRD', adr: 'ADR', portfolioEpic: 'PEPIC', epic: 'EPIC', feature: 'FEAT' };
 
-const NUMBERED_ID = /^(IDEA|PRD|ADR)-(\d{3,})$/;
+const NUMBERED_ID = /^(IDEA|PRD|ADR|PEPIC|EPIC|FEAT)-(\d{3,})$/;
 const GENERATED_ID = /^[a-z]{2,8}_[a-z0-9]{6,32}$/;
 
 /** A generated id, e.g. newId('drf') → 'drf_8f3k2q9a1b'. */

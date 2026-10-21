@@ -55,6 +55,19 @@ function budgets(data, pending, canEdit) {
   </section>`;
 }
 
+/** Phase 17: a monthly budget per portfolio, against this month's agent and cloud spend in its value streams. */
+function portfolioBudgets(data, canEdit) {
+  const pb = data.portfolioBudgets;
+  if (!pb?.available) return html`<section class="card" aria-label="Budgets by portfolio"><h2 class="card__title">Budgets by portfolio</h2><p class="note">The Product section is not running here, so there are no portfolios to budget.</p></section>`;
+  return html`<section class="card card--flush" aria-label="Budgets by portfolio">
+    <div class="card__head"><h2 class="card__title">Budgets by portfolio</h2><span class="card__meta">Agent and cloud spend in its value streams this month; it pauses nothing</span></div>
+    <div class="budgets">${pb.portfolios.map((p) => html`<div class="budget">
+      ${meter({ label: p.name, value: p.monthly ? `${money(p.spentUsd)} of ${money(p.monthly)} (agent ${money(p.agentUsd)}, cloud ${money(p.cloudUsd)})` : `${money(p.spentUsd)} (no budget)`, ratio: p.monthly ? p.spentUsd / p.monthly : 0, tone: p.monthly && p.spentUsd >= p.monthly ? 'danger' : p.monthly && p.spentUsd >= 0.8 * p.monthly ? 'warning' : undefined })}
+      ${canEdit ? html`<label class="field">Monthly ($)<input class="cell-input cell-input--money" type="number" min="0" step="1" inputmode="decimal" data-portfolio-budget="${p.name}" value="${p.monthly ?? ''}"></label>${button({ label: `Save ${p.name}`, kind: 'secondary', small: true, attrs: { 'data-action': 'portfolio-budget', 'data-portfolio': p.name } })}` : ''}
+    </div>`)}</div>
+  </section>`;
+}
+
 function guardrails(data, { canEdit, asking, history }) {
   return html`<section class="card card--flush" aria-label="Guardrails">
     <div class="card__head"><h2 class="card__title">Guardrails</h2><span class="card__meta"><button class="link-button" type="button" data-action="history" aria-expanded="${history ? 'true' : 'false'}">Policy history</button></span></div>
@@ -185,7 +198,7 @@ export async function render(view, { ctx }) {
     const canBudget = ctx.can('set-budgets');
     const body = {
       models: () => models(data, pending, canRoute),
-      budgets: () => budgets(data, pending, canBudget),
+      budgets: () => html`${budgets(data, pending, canBudget)}${portfolioBudgets(data, canBudget)}`,
       guardrails: () => guardrails(data, { canEdit: canRoute, asking, history }),
       integrations: () => html`${integrations(data)}${writing(writes, { canEdit: canRoute, confirming })}`,
       organisation: () => organisation(data),
@@ -252,6 +265,19 @@ export async function render(view, { ctx }) {
         message = { tone: 'error', text: errorText(err) };
       }
       confirming = null;
+      return draw();
+    }
+    const portfolioSave = t.closest('[data-action="portfolio-budget"]');
+    if (portfolioSave) {
+      const name = portfolioSave.dataset.portfolio;
+      const value = view.querySelector(`[data-portfolio-budget="${CSS.escape(name)}"]`)?.value?.trim();
+      try {
+        await api.put(`platform/settings/budgets/portfolios/${encodeURIComponent(name)}`, { monthly: value === '' ? null : Number(value) });
+        message = { tone: 'ok', text: value === '' ? `${name} has no budget now.` : `${name}'s budget is ${money(Number(value))} a month.` };
+      } catch (err) {
+        if (err?.name === 'AbortError') return undefined;
+        message = { tone: 'error', text: errorText(err) };
+      }
       return draw();
     }
     if (t.closest('[data-action="history"]')) {

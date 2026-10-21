@@ -17,7 +17,16 @@ export async function viewContext({ people, repos }, person) {
   const filed = (catalogue?.products ?? []).filter((p) => p?.name);
   const products = new Map(filed.map((p) => [String(p.name).toLowerCase(), p.portfolio ?? null]));
   const valueStreams = new Map(filed.map((p) => [String(p.name).toLowerCase(), p.valueStream ?? null]));
-  return { me: person ?? null, people: new Map(everyone.map((p) => [p.id, p])), drafts, products, valueStreams };
+  // NooblyJS Phase 17: feature id → { id, name, epic: { id, name } }, so a card can say which feature it is for.
+  const epics = new Map((catalogue?.epics ?? []).map((e) => [e.id, e]));
+  const features = new Map((catalogue?.features ?? []).map((f) => [f.id, { id: f.id, name: f.name, epic: epics.has(f.epic) ? { id: f.epic, name: epics.get(f.epic).name } : null }]));
+  return { me: person ?? null, people: new Map(everyone.map((p) => [p.id, p])), drafts, products, valueStreams, features };
+}
+
+/** The feature of the work hierarchy a record is for, and its epic (Phase 17): { feature, epic } or nulls. */
+export function featureOf(ctx, record) {
+  const f = record?.feature ? ctx?.features?.get(record.feature) ?? null : null;
+  return { feature: f ? { id: f.id, name: f.name } : null, epic: f?.epic ?? null };
 }
 
 /** Where a record sits: { product, portfolio, valueStream }. The portfolio and value stream are the product's, from the catalogue. */
@@ -74,6 +83,7 @@ export function ideaView(ctx, opp) {
     id: opp.id,
     title: opp.title,
     ...filedUnder(ctx, opp),
+    ...featureOf(ctx, opp),
     status: opp.status ?? 'open',
     version: opp.version ?? 1, // an edit sends it back as If-Match: "<id>@<version>"
     owner: actorRef(ctx, opp.owner),
@@ -157,6 +167,7 @@ export function specSummary(ctx, spec) {
     id: spec.id,
     title: spec.title,
     ...filedUnder(ctx, spec),
+    ...featureOf(ctx, spec),
     status: spec.status,
     statusText: specStatusText(ctx, spec),
     progress: draft ? draft.progress ?? 0 : null,

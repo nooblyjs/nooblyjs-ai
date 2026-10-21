@@ -9,7 +9,8 @@ const MAX_DAYS_BACK = 30;
 // Sign-ins, profile changes and the dev clock are not work. A teammate's task is shown (and its cost counted) once,
 // by the event of what it was for: the chat message, the draft, the meeting answer. teams.activity_sent only tells
 // the Teams simulator to redraw, and teammates.* are live updates for the Teammates pages.
-const SKIP = /^(session|clock|person|profile)\.|^chat\.agent_working$|^teammate\.task_|^teams\.activity_|^teammates\.|^environment\.provisioning_progressed$/;
+// check.recorded (Phase 16f): one line per check gathered would drown Activity; an override is said (check.overridden).
+const SKIP = /^(session|clock|person|profile)\.|^chat\.agent_working$|^teammate\.task_|^teams\.activity_|^teammates\.|^environment\.provisioning_progressed$|^check\.recorded$/;
 const DECISIONS = new Set(['approval.decided', 'adr.accepted', 'item.sent_back', 'readiness.overridden', 'chat.card_decided']);
 const SYSTEM_LABELS = { product: 'Product', factory: 'Factory', teammates: 'Teammates', knowledge: 'Knowledge', platform: 'Platform', lifecycle: 'Lifecycle', infrastructure: 'Infrastructure' };
 const SYSTEM_BY_PREFIX = {

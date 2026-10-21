@@ -8,6 +8,21 @@
 # (src/lifecycle/config.js) unless listed here, and so are the lifecycle v3 rules for a data folder from before.
 # Lifecycle v3 (Phase 16b, 2026-10-20): Product → Design → Engineer → Build → Test → Release → Operate.
 rules:
+  # Phase 17: accepting an idea, once its business case is complete (the Discover readiness check).
+  - key: idea
+    decision: Discover → Product (idea accepted)
+    approver: Business owner
+    permission: approve
+    quorum: any
+    target: { workingDays: 3 }
+    targetText: 3 working days
+    ifLate: Remind
+    remind: true
+    needsReadiness: true
+    tag: Idea
+    label: Idea accepted
+    transition: Accept the idea
+    toLabel: Product
   - key: spec
     decision: Product → Design (spec, UX and UI)
     approver: Product lead + Engineering

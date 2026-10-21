@@ -81,6 +81,9 @@ function normalize(doc, { assign = false } = {}) {
     }),
     valueStreams: (doc?.valueStreams ?? []).filter((v) => v?.name).map((v) => ({ id: id(v.id, 'vs'), name: String(v.name), portfolio: v.portfolio ? String(v.portfolio) : null })),
     products: (doc?.products ?? []).filter((p) => p?.name).map(productRecord),
+    // NooblyJS Phase 17: the work hierarchy (hierarchy.js), kept as it is.
+    ...(doc?.epics?.length ? { epics: doc.epics } : {}),
+    ...(doc?.features?.length ? { features: doc.features } : {}),
   };
 }
 
@@ -106,7 +109,7 @@ function description(value) {
  * @param {{ repos: object, host: object, log?: object, documents?: object }} deps
  *   documents (documents.js): writes, renames and removes a portfolio's and a value stream's document with it
  */
-export function createCatalogue({ repos, host, log, documents = null }) {
+export function createCatalogue({ repos, host, log, documents = null, hierarchy = null }) {
   const emit = (type, payload, actor) => host.events.emit(type, { system: 'product', ...payload }, { actor: actor?.id ?? null });
 
   const read = async () => normalize(await repos.catalogue.get());
@@ -555,6 +558,7 @@ export function createCatalogue({ repos, host, log, documents = null }) {
 
   /** A portfolio or value stream by its id, as the catalogue has it: { id, name, portfolio?, themes? }, or null. */
   async function entry(kind, id) {
+    if (hierarchy && ['portfolio-epic', 'epic', 'feature'].includes(kind)) return hierarchy.entry(kind, id);
     const c = await read();
     const found = (kind === 'portfolio' ? c.portfolios : c.valueStreams).find((x) => x.id === id);
     return found ? { ...found } : null;

@@ -67,7 +67,7 @@ test('the blank folder has the system files and one person: the Owner the script
   // Lifecycle v3 (Phase 16b): seven rules in the seed (spec, adr, design-handoff, engineering-signoff, build-approval,
   // test-approval, deploy) and five built in (infra-design, devtools-write, outcome-review, threat-model,
   // risk-acceptance); the retired release candidate is not listed.
-  assert.equal((await stevie.json('/workflows/api/v1/rules')).body.rules.length, 12);
+  assert.equal((await stevie.json('/workflows/api/v1/rules')).body.rules.length, 13); // 13 since accepting an idea (Phase 17)
 });
 
 test('every main page answers, with nothing in it', async () => {

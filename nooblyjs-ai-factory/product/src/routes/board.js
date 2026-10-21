@@ -21,7 +21,7 @@ export function boardRoutes({ host, repos, people, ideas, catalogue }) {
 
   router.get('/board', read, async (req, res) => {
     const ctx = await ctxFor(req);
-    res.json(await buildBoard(ctx, repos, { portfolio: oneString(req.query.portfolio), valueStream: oneString(req.query.valueStream), product: oneString(req.query.product), mine: truthy(req.query.mine) }, catalogue));
+    res.json(await buildBoard(ctx, repos, { portfolio: oneString(req.query.portfolio), valueStream: oneString(req.query.valueStream), product: oneString(req.query.product), mine: truthy(req.query.mine), epic: oneString(req.query.epic), feature: oneString(req.query.feature) }, catalogue));
   });
 
   // ---------- strategic themes, portfolios, value streams and products ----------

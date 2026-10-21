@@ -34,7 +34,7 @@ function devtoolsRow(i, status) {
   };
 }
 
-export function platformRoutes({ express, platform, devtools, notify = null, teamsConfig = null, members, auditQuery, events, store, clock, roles, requireSignIn, requireRole, env = process.env }) {
+export function platformRoutes({ express, platform, services = new Map(), devtools, notify = null, teamsConfig = null, members, auditQuery, events, store, clock, roles, requireSignIn, requireRole, env = process.env }) {
   const router = express.Router();
   const read = [requireSignIn, requireRole('read')];
   const at = () => nowIso(clock);
@@ -151,6 +151,21 @@ export function platformRoutes({ express, platform, devtools, notify = null, tea
         providers: CLOUD_PROVIDERS.map((p) => ({ id: p, label: PROVIDER_TEXT[p] })),
       },
       budgets,
+      // Phase 17: a budget per portfolio (the Product section's portfolios), with this month's agent and cloud spend.
+      portfolioBudgets: await (async () => {
+        const [list, spent] = await Promise.all([
+          Promise.resolve(services.get('product')?.portfolios?.()).catch(() => null),
+          Promise.resolve(services.get('metrics')?.spendByValueStream?.()).catch(() => null),
+        ]);
+        if (!list) return { available: false, portfolios: [] };
+        return {
+          available: true,
+          portfolios: list.map((p) => {
+            const s = spent?.portfolios?.find((x) => x.name === p.name);
+            return { name: p.name, monthly: budgets.portfolios?.find((b) => b.name === p.name)?.monthly ?? null, spentUsd: s?.totalUsd ?? 0, agentUsd: s?.agentUsd ?? 0, cloudUsd: s?.cloudUsd ?? 0 };
+          }),
+        };
+      })(),
       guardrails,
       integrations: INTEGRATIONS.map((i) => {
         if (i.devtools) return devtoolsRow(i, tools);
@@ -184,6 +199,18 @@ export function platformRoutes({ express, platform, devtools, notify = null, tea
     const route = (await platform.routes.list()).find((r) => r.id === req.params.id);
     await events.emit('model_route.changed', { system: 'platform', route: req.params.id, from: before, to: after, summary: `routed "${route.label}" to ${route.modelLabel} on ${route.providerText}${route.fallbackLabel ? `, falling back to ${route.fallbackLabel}` : ''}` }, { actor: req.person.id });
     res.json({ route });
+  }));
+
+  // A portfolio's monthly budget (Phase 17): { monthly } (null removes it). What Metrics sets its value streams' spend against.
+  router.put('/api/v1/platform/settings/budgets/portfolios/:name', ...write('set-budgets'), wrap(async (req, res) => {
+    res.locals.audit = { action: 'budget.changed', target: `portfolio ${req.params.name}`, reason: textOf(req.body?.reason) };
+    const known = await services.get('product')?.portfolios?.().catch(() => null);
+    if (known && !known.some((p) => p.name.toLowerCase() === String(req.params.name).toLowerCase())) throw new HttpError(404, 'portfolio_not_found', `There is no portfolio "${req.params.name}" in the Product section.`);
+    const name = known?.find((p) => p.name.toLowerCase() === String(req.params.name).toLowerCase())?.name ?? req.params.name;
+    const change = await platform.budgets.setPortfolio(name, req.body?.monthly ?? null);
+    Object.assign(res.locals.audit, { from: change.before, to: change.after });
+    await events.emit('budget.changed', { system: 'platform', changed: [`portfolio:${change.portfolio}`], portfolio: change.portfolio, monthly: change.after, summary: change.after ? `set the ${change.portfolio} portfolio's budget to ${money(change.after)} a month` : `removed the ${change.portfolio} portfolio's budget` }, { actor: req.person.id });
+    res.json({ budgets: await platform.budgets.status(at()) });
   }));
 
   router.patch('/api/v1/platform/settings/budgets', ...write('set-budgets'), wrap(async (req, res) => {

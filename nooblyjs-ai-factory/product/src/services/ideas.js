@@ -6,7 +6,10 @@ import { nextNumbered, isId } from '../util/ids.js';
 import { checkIfMatch } from '../util/http.js';
 import { conflict, notFound } from '../util/errors.js';
 
+// What a person may set. "accepted" (NooblyJS Phase 17) is set only by accepting the idea at the Discover exit (the
+// lifecycle engine's decision: markAccepted); it stays on the board until it has a spec.
 const STATUSES = ['open', 'closed'];
+const FEATURE = /^FEAT-\d{3,}$/;
 
 const riceField = (value) => {
   const errors = riceErrors(value);
@@ -16,7 +19,7 @@ const riceField = (value) => {
 /** The fields a person may set on an idea. */
 function ideaFields(body, { creating }) {
   return validator(body)
-    .only(['title', 'product', 'portfolio', 'problem', 'rice', 'signals', 'status'])
+    .only(['title', 'product', 'portfolio', 'problem', 'rice', 'signals', 'status', 'feature'])
     .string('title', { required: creating, max: 120 })
     // Labels, not a fixed list: a new product name becomes a product (catalogue.js), in `portfolio` when given.
     .string('product', { max: 40 })
@@ -25,6 +28,8 @@ function ideaFields(body, { creating }) {
     .custom('rice', riceField)
     .list('signals', (id) => (isId(id) ? id : invalid('not a signal id')), { max: 100 })
     .oneOf('status', STATUSES)
+    // NooblyJS Phase 17: the feature of the work hierarchy it belongs to (hierarchy.js), or null.
+    .custom('feature', (v) => (v === null || v === '' ? { value: null } : FEATURE.test(String(v)) ? { value: String(v) } : { errors: ['not a feature id (FEAT-001)'] }))
     .result();
 }
 
@@ -71,7 +76,7 @@ export async function migrateFromOpportunities(store, log) {
   return { moved };
 }
 
-export function createIdeaService({ repos, host, catalogue }) {
+export function createIdeaService({ repos, host, catalogue, hierarchy = null }) {
   const now = () => new Date().toISOString();
   const emit = (type, payload, actor) => host.events.emit(type, payload, { actor: actor.id });
 
@@ -94,6 +99,7 @@ export function createIdeaService({ repos, host, catalogue }) {
         version: 1,
         signals: fields.signals ?? [],
         rice: fields.rice ?? null,
+        ...(fields.feature ? { feature: fields.feature } : {}),
         createdAt: at,
         createdBy: actor.id,
         updatedAt: at,
@@ -110,6 +116,7 @@ export function createIdeaService({ repos, host, catalogue }) {
     /** POST /ideas */
     async createFromBody(body, actor) {
       const fields = ideaFields(body, { creating: true });
+      if (fields.feature) await hierarchy?.requireFeature(fields.feature);
       for (const signalId of fields.signals ?? []) {
         if (!(await repos.signals.get(signalId))) throw notFound(`There is no signal ${signalId}.`);
       }
@@ -141,6 +148,7 @@ export function createIdeaService({ repos, host, catalogue }) {
     /** PUT /ideas/:id with If-Match. */
     async update(id, body, actor, { ifMatch } = {}) {
       const fields = ideaFields(body, { creating: false });
+      if (fields.feature) await hierarchy?.requireFeature(fields.feature);
       // Filed before the record's lock is taken: naming a new product makes it.
       const product = await catalogue.productFor(fields, actor);
       let scored = false;
@@ -162,6 +170,13 @@ export function createIdeaService({ repos, host, catalogue }) {
       if (!updated) throw notFound(`There is no idea ${id}.`);
       await emit('idea.updated', { ideaId: id, fields: Object.keys(fields), version: updated.version }, actor);
       if (scored) await emit('idea.scored', { ideaId: id, rice: updated.rice, score: riceScore(updated.rice) }, actor);
+      return updated;
+    },
+
+    /** NooblyJS Phase 17: a person accepted it at the Discover exit (the lifecycle engine recorded the decision). */
+    async markAccepted(id, actor) {
+      const updated = await repos.ideas.update(id, (current) => (current && current.status !== 'accepted' ? { ...current, status: 'accepted', acceptedAt: now(), acceptedBy: actor.id, version: (current.version ?? 1) + 1, updatedAt: now() } : null));
+      if (updated) await emit('idea.accepted', { ideaId: id, itemId: id, summary: `accepted the idea ${id} · ${updated.title}` }, actor);
       return updated;
     },
   };

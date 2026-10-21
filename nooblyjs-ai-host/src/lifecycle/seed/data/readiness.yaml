@@ -2,6 +2,10 @@
 # unless a person overrides with a reason. The Product Factory works out each check's result from the spec.
 waitingTooLongDays: 3
 stages:
+  # Before an idea is accepted (Phase 17). The Product section works it out from the idea's business case; an item in
+  # Discover that is not an idea has none.
+  discover:
+    - { key: business-case-complete, passed: Business case complete, failed: Business case not complete }
   product:
     - { key: problem-evidence, passed: Problem backed by evidence, failed: Problem needs evidence }
     - { key: goals-measurable, passed: Goals are measurable, failed: Goals need measures }

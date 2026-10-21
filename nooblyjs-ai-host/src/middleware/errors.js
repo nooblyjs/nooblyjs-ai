@@ -14,7 +14,9 @@ export function errorHandler({ log }) {
     const status = err instanceof HttpError ? err.status : clientError ? err.status : 500;
     if (status >= 500) log.error(`${req.method} ${req.originalUrl}: ${err.stack ?? err.message}`);
     if (res.headersSent) return;
-    const code = err instanceof HttpError ? err.code : status === 500 ? 'internal_error' : 'bad_request';
+    // Another module's error (the lifecycle engine's) keeps its own code ("people_only"), as an HttpError does.
+    const own = clientError && typeof err.code === 'string' && /^[a-z][a-z0-9_]{1,60}$/.test(err.code) ? err.code : null;
+    const code = err instanceof HttpError ? err.code : own ?? (status === 500 ? 'internal_error' : 'bad_request');
     const message = status === 500 ? 'Something went wrong on our side. It has been logged.' : err.message;
     if (wantsJson(req)) return sendError(res, status, code, message, err.details);
     res.status(status).type('text').send(message);

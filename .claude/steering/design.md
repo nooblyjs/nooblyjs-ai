@@ -141,7 +141,10 @@ at: …
 ```
 
 - Each system keeps producing checks in its own data, in this shape (decided 2026-10-19), and reports them with the event
-  `check.recorded`.
+  `check.recorded`. **As built (Phase 16f):** each app maps its checks to the shape in a `checksFor` service; NooblyJS
+  gathers them per item, gives each its id and emits `check.recorded` when one is new or changed. A Build or Test
+  approval is a check of kind `approval` (a person's). A person may override one readiness check with a reason; other
+  kinds are overridden, or not, by their own app.
 - The lifecycle engine reads them for **stage exit**: a stage's required kinds come from `readiness.yaml`, extended
   with the new stages.
 - A failing check **offers exactly one agent action** (the existing rule: "Ask Ada to draft rollout"), now also "Ask

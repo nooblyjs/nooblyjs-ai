@@ -31,6 +31,23 @@ roles:
       - { key: review-first-spec, text: Review PRD-031 · Same-day delivery slots, short: First spec, next: review your first spec, done: { type: approval.decided, where: { type: spec } } }
       - { key: score-substitutions, text: 'Score the "Smarter substitutions" idea', short: Score an idea, next: score an idea, done: { type: idea.scored, where: { ideaId: IDEA-018 } } }
       - { key: pin-delivery-space, text: Pin the Delivery space in Knowledge, short: Pin a space, next: pin a Knowledge space, done: { type: knowledge.space_pinned } }
+  # Phase 17: the Business owner (root product.md §5): a portfolio's outcomes and funding.
+  - key: business-owner
+    name: Business owner
+    initials: BO
+    layout: business-owner
+    blurb: Own a portfolio's outcomes and its funding.
+    promise: Agents draft each business case and estimate its cost from the factory's own history; you decide what is worth doing and watch spend against budget.
+    tasks:
+      - { title: Decide business cases, detail: An idea is accepted only once its business case is complete., where: 'Product, Approvals' }
+      - { title: Watch spend against budget, detail: Agent and cloud spend by value stream against each portfolio's budget., where: Metrics }
+      - { title: Shape the work, detail: Portfolio epics, epics and features under your portfolio., where: Product · Portfolios }
+    leadsWith: [Business cases waiting, Spend against budget, Epics without a business case]
+    agent: ada-quill
+    agents: Research agent · business cases and their estimates
+    tools: [Jira Cloud]
+    home: /
+    firstWeek: []
   - key: architect
     name: Architect
     initials: AR

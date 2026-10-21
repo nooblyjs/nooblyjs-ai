@@ -191,7 +191,8 @@ Nav: For you, Overview, Lifecycle, Approvals (badge), Activity, Metrics, Teams &
      Discover: ideas. Product: specs, UX and UI (and how many are in review). Design: ADRs proposed and Design
      handoffs waiting. Engineer: sign-offs waiting. Build: on the line and PRs awaiting the Build approval. Test: PRs
      awaiting the Test approval. Release: deploys awaiting approval. Operate: outcome reviews due. Above the strip sits the median idea → merge over the
-     last 30 days. Under it are two bands: **Knowledge Repository** ("every stage reads
+     last 30 days. Under it, the **Learn** arrow (Phase 16f): incidents, SLO breaches, failing synthetic checks, support
+     tickets and goal results come back to Discover as signals. Then two bands: **Knowledge Repository** ("every stage reads
      context in and writes decisions back") and **Platform** ("repos, containers, models,
      budgets and guardrails underneath").
    - **One card per system**, with a one-line purpose and two live stats. Product Factory:
@@ -249,6 +250,9 @@ Nav: For you, Overview, Lifecycle, Approvals (badge), Activity, Metrics, Teams &
    time."). **Spend by system**: the period total, then Digital Teammates, Platform compute,
    Product Factory, Software Factory and Knowledge.
    **Who does the work, by stage**: agent vs people share, median, p90 and sent-back rate.
+   **Spend by value stream, this month** (Phase 17): each portfolio against its budget, then each value stream's agent
+   spend (events that name an item, through the item's product) and cloud spend (Infrastructure's environments, through
+   their design's item), with the items behind it, and what can't be placed said.
 6. **Teams & roles**: **Invite a person** and **Hire a teammate**. Team cards mix people
    (round avatars) and agents (square avatars) and show focus areas (e.g. Delivery squad,
    Checkout squad, Platform team). A **roles × permissions matrix** and a **members table**
@@ -375,7 +379,13 @@ fails), and **Merge** (a person with `merge`, after both approvals for the pull 
 Factory merges it on the local forge, on record as theirs; a Bitbucket one is merged in Bitbucket). A commit pushed to the
 pull request's branch clears both approvals and is checked again. **Test approvals**: what waits on a tester (with the
 evidence), what is in Test, what was given (by whom, for whom). Test runs, Coverage and Defects stay the seed story's
-sample, said so, until Phase 20. The item page shows a story's pull requests and an item's features (each in Release on
+sample, said so, until Phase 20. **The item page's tabs (Phase 16f):** Overview (as before); **Checks**: every check of
+the item, its stories and their pull requests in one shape (readiness, the Build and Test approvals, the standards
+check, gates, quality attributes, required tests, the infrastructure design's policy checks), grouped by kind, each with
+its source, what verifies it and its evidence, and a failing readiness check overridable with a reason (a person); and
+**Trace**: the tree from the item's goals through business requirements, stories, acceptance criteria and test cases,
+and stories → work items → runs → pull requests, with decisions, quality attributes and infrastructure, the missing
+links named ("AC-031-2-1 has no test") and coverage in words. The item page shows a story's pull requests and an item's features (each in Release on
 its own once all its stories passed Test).
 
 ### 5.5 Digital Teammates (`teammates`): existing, restyle to NooblyJS
@@ -452,7 +462,9 @@ On Containers, the status card also carries **Stop all containers**.
       → Opus with a Sonnet fallback; implementation and tests → Sonnet with a Haiku fallback;
       indexing, triage and clean-up → Haiku. Each route carries its provider (Bedrock / Vertex / Azure).
     - **Budgets**: the month's total across systems ("$2,690 of $11,600"), then monthly per
-      system (a daily cap for Software Factory), and **Pause all agents when a budget is reached**.
+      system (a daily cap for Software Factory), and **Pause all agents when a budget is reached**. **Budgets by
+      portfolio** (Phase 17): a monthly budget per portfolio of the Product section, against this month's agent and
+      cloud spend in its value streams; it pauses nothing.
     - **Guardrails** (on/off, scope note, and a **Policy history** link): agents open PRs and
       people merge (per-repo override in Repositories); human approval for production deploys
       (two approvers for payments-gateway); new dependency requires an ADR (checked at the
@@ -557,6 +569,9 @@ How it sits in NooblyJS:
     - **The Design homes** (Phase 16c): the Solution Architect's (items in Design, decisions awaiting them, stories ready
       for their Design handoff, stories handed off) and the Functional Analyst's (interfaces with a side missing, stories
       to finish: no criteria or no business requirement, items in Design), each row linking to its Design page.
+    - **The Business owner's home** (Phase 17): business cases waiting (ideas whose case isn't complete, ideas ready to
+      accept, epics with none), spend against budget per portfolio this month, and spend by value stream; each row
+      links to the business case or to Metrics and Platform budgets.
     - **The Engineering homes** (Phase 16d): the Application Architect's (architectures to draft, accept or draw again,
       stale ones, the stories in Engineer, sign-offs waiting on them) and the Test analyst's (criteria without a ready
       test case, stories with no test analysis, interfaces without a ready test, sign-offs waiting on them, and since

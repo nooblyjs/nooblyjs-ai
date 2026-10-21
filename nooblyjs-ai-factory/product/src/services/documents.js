@@ -11,7 +11,10 @@ import { checkIfMatch, etagOf, isAgent } from '../util/http.js';
 import { HttpError, unprocessable } from '../util/errors.js';
 import { templateSections } from './templates.js';
 
-export const DOCUMENT_KINDS = { portfolio: 'Portfolio', 'value-stream': 'Value stream' };
+export const DOCUMENT_KINDS = { portfolio: 'Portfolio', 'value-stream': 'Value stream', 'portfolio-epic': 'Portfolio epic', epic: 'Epic', feature: 'Feature' };
+// NooblyJS Phase 17: where each kind's documents are, and the event a save says it with.
+const REPOS = { portfolio: 'portfolios', 'value-stream': 'valueStreams', 'portfolio-epic': 'portfolioEpics', epic: 'epics', feature: 'features' };
+const SAVED = { portfolio: 'portfolio.updated', 'value-stream': 'value_stream.updated', 'portfolio-epic': 'portfolio_epic.updated', epic: 'epic.updated', feature: 'feature.updated' };
 const MAX_SECTION = 20000;
 
 const same = (a, b) => String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase();
@@ -20,9 +23,13 @@ const write = (sections) => sections.map((s) => (s.text ? `## ${s.heading}\n\n${
 
 export function createDocuments({ repos, host, templates }) {
   const now = () => new Date().toISOString();
-  const repoFor = (kind) => (kind === 'portfolio' ? repos.portfolios : repos.valueStreams);
-  /** What the front matter says the document is about: its name, and a value stream's portfolio. */
-  const about = (kind, entry) => ({ id: entry.id, kind, name: entry.name, ...(kind === 'value-stream' ? { portfolio: entry.portfolio ?? null } : {}) });
+  const repoFor = (kind) => repos[REPOS[kind]];
+  /** What the front matter says the document is about: its name, and where it sits (a value stream's portfolio; an epic's or feature's portfolio, value stream and parent). */
+  const about = (kind, entry) => ({
+    id: entry.id, kind, name: entry.name,
+    ...(kind === 'value-stream' ? { portfolio: entry.portfolio ?? null } : {}),
+    ...(['portfolio-epic', 'epic', 'feature'].includes(kind) ? Object.fromEntries(['portfolio', 'valueStream', 'parent', 'epic'].filter((k) => entry[k]).map((k) => [k, entry[k]])) : {}),
+  });
 
   /** Writes a new document from the template: its headings, empty. Does nothing when the document exists. */
   async function create(kind, entry, actor = null) {
@@ -114,8 +121,8 @@ export function createDocuments({ repos, host, templates }) {
         body: write(next),
       };
     });
-    await host.events.emit(kind === 'portfolio' ? 'portfolio.updated' : 'value_stream.updated', {
-      system: 'product', [kind === 'portfolio' ? 'portfolio' : 'valueStream']: entry.name, id: entry.id, version: saved.version,
+    await host.events.emit(SAVED[kind], {
+      system: 'product', [kind === 'portfolio' ? 'portfolio' : kind === 'value-stream' ? 'valueStream' : 'name']: entry.name, id: entry.id, version: saved.version,
       summary: `updated the ${DOCUMENT_KINDS[kind].toLowerCase()} ${entry.name} (version ${saved.version})`,
     }, { actor: actor.id });
     return read(kind, entry);

@@ -1,5 +1,7 @@
 // Portfolios (product.md §5.7): the strategic themes; each portfolio with the themes it works towards, its value
-// streams and its products; and links to each portfolio's and value stream's document. Data: GET /catalogue.
+// streams and its products; and links to each portfolio's and value stream's document. Since NooblyJS Phase 17, each
+// portfolio's work hierarchy too: its portfolio epics, epics and features, each with its document and (an epic) its
+// business case, and forms to add them (draft). Data: GET /catalogue, /hierarchy; POST /catalogue/epics, /catalogue/features.
 // Writes: POST /catalogue/themes, /catalogue/portfolios, /catalogue/value-streams (draft); PATCH and DELETE
 // /catalogue/themes/:name, and PATCH /catalogue/portfolios/:name { themes } (approve).
 import { html } from '/ui/js/html.js';
@@ -62,15 +64,42 @@ function portfolioView(p, c, ctx, editingThemes) {
   </section>`;
 }
 
+/** NooblyJS Phase 17: a portfolio's work, epics above their features, and the forms that add them. */
+function workView(p, h, ctx) {
+  const epics = h.epics.filter((e) => e.portfolio === p.name);
+  const pes = epics.filter((e) => e.kind === 'portfolio-epic');
+  const featureRow = (id) => {
+    const f = h.features.find((x) => x.id === id);
+    return f ? listRow({ title: `${f.id} · ${f.name}`, meta: 'Feature', href: hrefFor(ctx, `/features/${f.id}`) }) : '';
+  };
+  const epicRow = (e) => html`${listRow({ title: `${e.id} · ${e.name}`, meta: [e.kindLabel, e.valueStream, e.parent ? `under ${e.parent}` : null].filter(Boolean).join(' · '), href: hrefFor(ctx, `/${e.kind === 'epic' ? 'epics' : 'portfolio-epics'}/${e.id}`),
+    action: button({ label: 'Business case', kind: 'secondary', small: true, href: hrefFor(ctx, `/business-cases/${e.id}`) }) })}
+    ${e.features.length ? html`<div class="rows pf-indent">${e.features.map(featureRow)}</div>` : ''}`;
+  const forms = ctx.can('draft') ? html`<form class="pf-form pf-form--inline" data-form="new-epic" data-portfolio="${p.name}" aria-label="Add an epic to ${p.name}">
+      <div class="pf-form__row"><label>Epic <input name="name" required maxlength="40" autocomplete="off" placeholder="Same-day everything"></label>
+      <label>Kind <select name="kind"><option value="epic">Epic</option><option value="portfolio-epic">Portfolio epic</option></select></label>
+      <label>Value stream <select name="valueStream"><option value="">None</option>${p.valueStreams.map((v) => html`<option>${v.name}</option>`)}</select></label>
+      ${pes.length ? html`<label>Under <select name="parent"><option value="">The portfolio</option>${pes.map((e) => html`<option value="${e.id}">${e.id} · ${e.name}</option>`)}</select></label>` : ''}</div>
+      <div class="actions">${button({ label: 'Add epic', type: 'submit', small: true })}</div></form>
+    ${epics.some((e) => e.kind === 'epic') ? html`<form class="pf-form pf-form--inline" data-form="new-feature" aria-label="Add a feature in ${p.name}">
+      <div class="pf-form__row"><label>Feature <input name="name" required maxlength="40" autocomplete="off" placeholder="See capacity by store"></label>
+      <label>Epic <select name="epic">${epics.filter((e) => e.kind === 'epic').map((e) => html`<option value="${e.id}">${e.id} · ${e.name}</option>`)}</select></label></div>
+      <div class="actions">${button({ label: 'Add feature', type: 'submit', small: true })}</div></form>` : ''}` : '';
+  return html`<div class="pf-stack" aria-label="${p.name}'s work"><h3 class="card__title card__title--small">Work: portfolio epics, epics and features</h3>
+    ${epics.length ? html`<div class="rows">${[...pes, ...epics.filter((e) => e.kind === 'epic' && !e.parent), ...epics.filter((e) => e.kind === 'epic' && e.parent)].map(epicRow)}</div>` : html`<p class="muted">No epics yet. An idea sits under a feature, a feature under an epic.</p>`}
+    ${forms}</div>`;
+}
+
 export async function render(view, { ctx }) {
   let catalogue = null;
+  let hierarchy = { epics: [], features: [] };
   let editingTheme = null;    // the theme an Approver is changing
   let editingThemesOf = null; // the portfolio whose themes an Approver is choosing
   const message = () => view.querySelector('[data-message]');
 
   async function draw() {
     try {
-      catalogue = await ctx.api.get('catalogue');
+      [catalogue, hierarchy] = await Promise.all([ctx.api.get('catalogue'), ctx.api.get('hierarchy').catch(() => ({ epics: [], features: [] }))]);
     } catch (err) {
       if (!isAbort(err)) view.innerHTML = String(errorCard(err, 'the portfolios'));
       return;
@@ -85,7 +114,7 @@ export async function render(view, { ctx }) {
     })}
       <p class="pf-message" role="status" aria-live="polite" data-message></p>
       ${themesView(c, ctx, editingTheme)}
-      ${c.portfolios.map((p) => portfolioView(p, c, ctx, editingThemesOf === p.name))}
+      ${c.portfolios.map((p) => html`${portfolioView(p, c, ctx, editingThemesOf === p.name)}${card({ body: workView(p, hierarchy, ctx), label: `${p.name}'s work` })}`)}
       ${c.portfolios.length ? '' : card({ title: 'Start with your portfolios', body: html`<p class="muted">A portfolio is a large area of the business, such as Buying or Banking. Add yours, then their value streams and products.</p>` })}
       ${ctx.can('draft') ? card({ title: 'Add a portfolio', body: html`<p class="muted">It starts with a document made from the portfolio template.</p>${adder('portfolio', 'Add a portfolio', 'Add portfolio')}` }) : html`<p class="muted">Adding a portfolio, value stream or theme needs the draft permission.</p>`}
       <p class="muted">Products are added and moved on the <a href="${hrefFor(ctx, '/board')}">Product board</a> (Portfolios &amp; products).</p>`);
@@ -169,7 +198,11 @@ export async function render(view, { ctx }) {
     if (!form) return;
     e.preventDefault();
     const data = Object.fromEntries(new FormData(form));
-    if (form.dataset.form === 'new-theme') {
+    if (form.dataset.form === 'new-epic') {
+      act(() => ctx.api.post('catalogue/epics', { kind: data.kind, name: data.name, portfolio: form.dataset.portfolio, ...(data.valueStream ? { valueStream: data.valueStream } : {}), ...(data.parent ? { parent: data.parent } : {}) }), (r) => `${r.epic.id} · ${r.epic.name} is ${r.epic.kind === 'epic' ? 'an epic' : 'a portfolio epic'} in ${[r.epic.portfolio, r.epic.valueStream].filter(Boolean).join(' › ')} now, with its document.`);
+    } else if (form.dataset.form === 'new-feature') {
+      act(() => ctx.api.post('catalogue/features', { name: data.name, epic: data.epic }), (r) => `${r.feature.id} · ${r.feature.name} is a feature of ${r.feature.epic.id} now. File ideas under it on the board.`);
+    } else if (form.dataset.form === 'new-theme') {
       act(() => ctx.api.post('catalogue/themes', { name: data.name, ...(data.description.trim() ? { description: data.description } : {}) }), (r) => (r.added ? `${r.theme} is a strategic theme now.` : `${r.theme} is already a strategic theme.`));
     } else if (form.dataset.form === 'theme') {
       const was = form.dataset.name;

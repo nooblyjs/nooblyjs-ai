@@ -32,6 +32,7 @@ import { seedSamples } from './engineering/samples.js';
 import { engineeringRoutes, ENGINEERING_PERMISSIONS } from './engineering/views.js';
 import { createArchitecture } from './engineering/architecture.js';
 import { createBridge } from './pull-requests/bridge.js';
+import { createLineChecks } from './evidence/checks.js';
 import { pullRequestRoutes, PULL_REQUEST_PERMISSIONS } from './pull-requests/views.js';
 import { executeRun } from './job/run-job.js';
 import { workerName } from './scheduler/leases.js';
@@ -140,7 +141,7 @@ const dollars = (n) => `$${(n ?? 0).toFixed(2).replace(/\.00$/, '')}`;
  *   sectionOptions: extra register() options per section, by key (tests: { product: { draftStepMs: 0 } })
  * @returns {Promise<object>} the HostedApp description
  */
-export async function register(app, serverManager, { mountPath = '/factory', dataDir, host, pollMs = 2000, schedule = true, tickMs, sections: only = sectionsFromEnv(process.env.FACTORY_SECTIONS), sectionOptions = {} } = {}) {
+export async function register(app, serverManager, { mountPath = '/factory', dataDir, host, pollMs = 2000, schedule = process.env.FACTORY_SCHEDULE !== 'off', tickMs, sections: only = sectionsFromEnv(process.env.FACTORY_SECTIONS), sectionOptions = {} } = {}) {
   // Check everything before mounting anything, so a failed start leaves nothing half-mounted.
   if (typeof app?.use !== 'function') throw new Error("nooblyjs-ai-factory needs the host's Express app.");
   if (!MOUNT.test(mountPath ?? '')) throw new Error(`mountPath must look like /factory, not ${JSON.stringify(mountPath)}`);
@@ -238,6 +239,8 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
   // Phase 16e: a pull request the line delivers for a story is a lifecycle item, with its Build and Test approvals
   // (src/services/pull-requests/bridge.js).
   const bridge = createBridge({ store, env, host, mountPath, log });
+  // NooblyJS Phase 16f: what the line proves (gates, quality attributes, required tests) as checks, and its runs in the trace.
+  const lineChecks = createLineChecks({ store, host, mountPath });
 
   // The Engineering, Pull requests and Test pages (CHG-008; Engineering is real since Phase 16d, Pull requests and Test
   // approvals since 16e).
@@ -413,6 +416,10 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       status: async () => summary(),
       /** The Engineering sign-off's checks for an item ({ itemId, facts }), or null when it has no Engineering work. */
       engineeringReadiness,
+      /** The line's checks of an item and its stories (gates, quality attributes, required tests), in the one shape (Phase 16f). */
+      checksFor: (input) => lineChecks.checksFor(input),
+      /** The runs of an item and its stories, each linked to the work item it built: { nodes, links } (Phase 16f). */
+      trace: (input) => lineChecks.trace(input),
       /** The stories in Engineer, each with its architecture, test analysis and sign-off checks (the Engineering homes). */
       engineeringFor: async () => (await engineeringList({})).json.stories,
       /** The runs a NooblyJS lifecycle item's work items became, newest first. */

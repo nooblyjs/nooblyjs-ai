@@ -13,6 +13,7 @@ import { createDesignRepo } from './src/repo.js';
 import { createCatalogue } from './src/services/catalogue.js';
 import { createDrafter } from './src/services/drafter.js';
 import { createDesignService } from './src/services/design.js';
+import { createDesignTrace } from './src/services/trace.js';
 import { seed as seedCatalogue } from './src/seed/index.js';
 
 const NAME = 'design';
@@ -52,6 +53,7 @@ export async function register(app, serverManager, { mountPath = '/design', data
   const catalogue = createCatalogue({ store: host.store, log });
   const drafter = createDrafter({ host, log });
   const design = createDesignService({ host, repo, catalogue, drafter, log, mountPath });
+  const designTrace = createDesignTrace({ repo, host });
 
   const router = host.express.Router();
   router.use('/api/v1', createApi({ host, log, design, catalogue, drafter, about: { name: NAME, version: VERSION, mountPath } }));
@@ -80,6 +82,8 @@ export async function register(app, serverManager, { mountPath = '/design', data
       designFor: (itemId) => design.view(itemId).catch(() => null),
       /** The items in Design, each part in words. */
       items: () => design.items(),
+      /** Its part of an item's trace (NooblyJS Phase 16f): requirements, features, stories, criteria, interfaces. */
+      trace: (itemId) => designTrace.trace(itemId),
       /** A person's acceptance of a business requirement, relayed by another app; an agent is refused and audited. */
       acceptRequirement: ({ itemId, requirementId, actor }) => design.acceptRequirement(itemId, requirementId, actor),
     },

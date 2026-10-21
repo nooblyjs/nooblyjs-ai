@@ -407,6 +407,8 @@ export async function createApp({ config, devtoolsFetch, devtoolsGitRemote, team
     platform: noobly.platform,
     lifecycle: noobly.lifecycle,
     metrics: noobly.metrics,
+    checks: noobly.checks,
+    trace: noobly.trace,
     devtools: noobly.devtools,
     syncSettled: noobly.syncSettled,
     entra: noobly.entra,

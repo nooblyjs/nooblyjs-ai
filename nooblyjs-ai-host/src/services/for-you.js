@@ -69,6 +69,15 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         } catch { /* the Factory is there but can't answer: the panels say it isn't running */ }
       }
     }
+    // The Business owner's home (Phase 17): the business cases (the Product section's) and spend against budget (Metrics).
+    let business = null;
+    if (role.layout === 'business-owner') {
+      const [cases, spend] = await Promise.all([
+        Promise.resolve(services.get('product')?.businessCases?.()).catch(() => null),
+        Promise.resolve(services.get('metrics')?.spendByValueStream?.()).catch(() => null),
+      ]);
+      business = { cases, spend };
+    }
     // The Design homes (Phase 16c) read each item's design from the Factory's Design section, when it is running here.
     let design = null;
     if (role.layout === 'solution-architect' || role.layout === 'functional-analyst') {
@@ -81,8 +90,8 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         } catch { /* the Design section is there but can't answer: the panels say it isn't running */ }
       }
     }
-    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering };
-    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst }[role.layout](ctx);
+    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business };
+    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst, 'business-owner': businessOwner }[role.layout](ctx);
     return { ...base, layout: role.layout, engine: true, now: snapshot.at, ...shaped };
   }
 
@@ -349,6 +358,55 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
           },
         ],
         side: [signOffList(mine)],
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------------------- Business owner (Phase 17)
+
+  /**
+   * Business owner: the business cases waiting (ideas whose case isn't complete, ideas waiting to be accepted, epics
+   * with none), and spend against budget per portfolio, this month.
+   */
+  function businessOwner({ business, snapshot }) {
+    const cases = business?.cases ?? null;
+    const spend = business?.spend ?? null;
+    const acceptance = snapshot.approvals.filter((a) => a.type === 'idea');
+    const open = (cases ?? []).filter((c) => !c.complete);
+    const ready = (cases ?? []).filter((c) => c.complete && c.ownerKind === 'idea');
+    const epicsWithout = open.filter((c) => c.ownerKind === 'epic' && !c.exists);
+    const portfolios = spend?.portfolios ?? [];
+    const over = portfolios.filter((p) => p.budgetUsd && p.totalUsd > p.budgetUsd);
+    const money = (n) => `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+    const caseHref = (c) => `/factory/product/business-cases/${encodeURIComponent(c.ownerId)}`;
+    return {
+      summary: cases === null ? 'The Product section is not running here, so there are no business cases to show.'
+        : `${words(open.length)} ${plural(open.length, 'business case needs', 'business cases need')} you${over.length ? `, and ${words(over.length)} ${plural(over.length, 'portfolio is', 'portfolios are')} over budget` : ''}.`,
+      filters: { what: 'Portfolios' },
+      action: { label: 'Open the Product board', href: '/factory/product' },
+      tiles: [
+        { key: 'cases', label: 'Business cases waiting', value: cases ? open.length : null, note: cases === null ? 'The Product section is not running here' : open.length ? 'Not complete yet' : 'All complete' },
+        { key: 'accept', label: 'Ideas ready to accept', value: ready.length + acceptance.length, note: 'Their business case is complete' },
+        { key: 'epics', label: 'Epics without a business case', value: epicsWithout.length, note: epicsWithout.length ? 'Ask an agent to draft one' : 'None' },
+        ...portfolios.slice(0, 1).map((p) => ({ key: 'spend', label: `${p.name} this month`, value: money(p.totalUsd), note: p.budgetUsd ? `of ${money(p.budgetUsd)} · agent ${money(p.agentUsd)}, cloud ${money(p.cloudUsd)}` : 'No budget set', tone: p.budgetUsd && p.totalUsd > p.budgetUsd ? 'warning' : null })),
+      ],
+      panels: {
+        lists: [
+          {
+            key: 'cases', title: 'Business cases waiting', link: { label: 'Product board', href: '/factory/product' },
+            empty: cases === null ? 'The Product section is not running here.' : 'Every business case is complete.',
+            rows: open.map((c) => ({ id: c.ownerId, title: `${c.ownerId} · ${c.title}`, text: c.text, late: !c.exists, action: { label: c.exists ? 'Finish' : 'Draft', href: caseHref(c) } })),
+          },
+          {
+            key: 'spend', title: 'Spend against budget, this month', link: { label: 'Metrics', href: '/home/metrics' },
+            empty: spend === null ? 'Metrics could not be read.' : 'No portfolio has spend or a budget yet.',
+            rows: portfolios.map((p) => ({ id: p.name, title: p.name, text: `${p.text} · agent ${money(p.agentUsd)}, cloud ${money(p.cloudUsd)}`, late: Boolean(p.budgetUsd && p.totalUsd > p.budgetUsd), action: { label: 'Budgets', href: '/platform/settings' } })),
+          },
+        ],
+        side: [{
+          key: 'value-streams', title: 'By value stream', empty: 'Nothing placed in a value stream yet.',
+          rows: (spend?.rows ?? []).map((r) => ({ id: `${r.portfolio}:${r.valueStream}`, title: `${r.portfolio} › ${r.valueStream ?? 'no value stream'}`, text: `${money(r.totalUsd)} · agent ${money(r.agentUsd)}, cloud ${money(r.cloudUsd)}` })),
+        }],
       },
     };
   }

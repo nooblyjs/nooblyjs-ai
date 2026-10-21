@@ -63,7 +63,7 @@ export function topSignals(signals) {
  * @param {{ portfolio?: string, valueStream?: string, product?: string, mine?: boolean }} filter
  * @param {{ view: (counts: Map<string, number>) => Promise<object> }} catalogue   where work sits (catalogue.js)
  */
-export async function buildBoard(ctx, repos, { portfolio = null, valueStream = null, product = null, mine = false } = {}, catalogue = null) {
+export async function buildBoard(ctx, repos, { portfolio = null, valueStream = null, product = null, mine = false, epic = null, feature = null } = {}, catalogue = null) {
   const [{ cards, signals }, roadmap] = await Promise.all([allCards(ctx, repos), repos.roadmap.get()]);
   const is = (a, b) => String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase();
 
@@ -89,7 +89,14 @@ export async function buildBoard(ctx, repos, { portfolio = null, valueStream = n
     .filter((p) => !chosenStream || is(p.valueStream, chosenStream.name))
     .map((p) => ({ name: p.name, portfolio: p.portfolio, valueStream: p.valueStream, count: p.count, active: is(p.name, chosenProduct?.name) }));
 
+  // NooblyJS Phase 17: the work hierarchy's epics and features in the chosen value stream (or portfolio), with counts.
+  const inPlace = (x) => (!chosenStream || is(x.valueStream, chosenStream.name)) && (!chosenPortfolio || is(x.portfolio, chosenPortfolio));
+  const hierarchyDoc = (await repos.catalogue.get()) ?? {};
+  const epicRows = (hierarchyDoc.epics ?? []).filter((e) => e.kind === 'epic' && inPlace(e)).map((e) => ({ id: e.id, name: e.name, count: cards.filter((c) => c.card.epic?.id === e.id).length, active: epic === e.id }));
+  const featureRows = (hierarchyDoc.features ?? []).filter((f) => (!epic || f.epic === epic) && epicRows.some((e) => e.id === f.epic)).map((f) => ({ id: f.id, name: f.name, epic: f.epic, count: cards.filter((c) => c.card.feature?.id === f.id).length, active: feature === f.id }));
   const shown = cards.filter((c) => (!mine || c.mine)
+    && (!feature || c.card.feature?.id === feature)
+    && (!epic || c.card.epic?.id === epic)
     && (!chosenProduct || is(c.card.product, chosenProduct.name))
     && (!chosenStream || chosenProduct || is(c.card.valueStream, chosenStream.name))
     && (!chosenPortfolio || chosenProduct || chosenStream || is(c.card.portfolio, chosenPortfolio)));
@@ -99,11 +106,13 @@ export async function buildBoard(ctx, repos, { portfolio = null, valueStream = n
   });
 
   return {
-    filter: { portfolio: chosenPortfolio, valueStream: chosenStream?.name ?? null, product: chosenProduct?.name ?? null, mine: Boolean(mine) },
+    filter: { portfolio: chosenPortfolio, valueStream: chosenStream?.name ?? null, product: chosenProduct?.name ?? null, mine: Boolean(mine), ...(epic ? { epic } : {}), ...(feature ? { feature } : {}) },
     filters,
     portfolios,
     valueStreams,
     products,
+    epics: epicRows,
+    features: featureRows,
     // Everything a form needs to offer the labels: the themes, each portfolio with its value streams and products,
     // the products in none, and whether nothing is set up yet.
     catalogue: { ...labels, unfiledCards },

@@ -32,7 +32,8 @@ test('step 1: Naledi (no profile) is sent to onboarding from any page, with Prod
   const { body } = await c.json('/api/v1/me/onboarding');
   assert.deepEqual(body.suggested, { role: 'product-manager', jobTitle: 'Product Manager, Digital' });
   assert.deepEqual(body.roles.map((r) => r.name), [
-    'Product manager', 'Architect',
+    // The Business owner (Phase 17), after the Product manager.
+    'Product manager', 'Business owner', 'Architect',
     // Lifecycle v3's Design and Engineer people and the testers (Phase 16b).
     'Solution Architect', 'Functional Analyst', 'Application Architect', 'Test analyst',
     'Developer', 'Designer', 'Engineering lead', 'Platform engineer',
@@ -207,6 +208,8 @@ test('Teams & roles: the teams, the matrix from roles.yaml, the members, and Inv
   // Lifecycle v3's handoffs (Phase 16b), the infrastructure design (9a), a write to Jira or Bitbucket (13), the outcome
   // review (16a) and the Security app's two (19).
   assert.deepEqual(body.rules.map((r) => r.key), [
+    // Accepting an idea (Phase 17).
+    'idea',
     'spec', 'adr', 'design-handoff', 'engineering-signoff', 'build-approval', 'test-approval', 'deploy',
     'infra-design', 'devtools-write', 'outcome-review', 'threat-model', 'risk-acceptance',
   ]);

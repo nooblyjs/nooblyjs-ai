@@ -53,6 +53,12 @@ export const BUILT_IN_RULES = [
     quorum: 'any', target: { hours: 4 }, targetText: '4 hours', ifLate: 'Remind', remind: true, needsReadiness: true,
     tag: 'Test', label: 'Test approval', transition: 'Give the Test approval', toLabel: 'Release',
   },
+  // Phase 17: accepting an idea leaves Discover, a person's, once its business case is complete.
+  {
+    key: 'idea', decision: 'Discover → Product (idea accepted)', approver: 'Business owner', permission: 'approve',
+    quorum: 'any', target: { workingDays: 3 }, targetText: '3 working days', ifLate: 'Remind', remind: true, needsReadiness: true,
+    tag: 'Idea', label: 'Idea accepted', transition: 'Accept the idea', toLabel: 'Product',
+  },
   // Retired with the stages they left (Phase 16b): kept so their history still reads, never opened again and not in
   // the Who approves what table. Open ones were withdrawn when the stages moved (engine.migrateStages).
   {
@@ -112,6 +118,10 @@ const READINESS_BEFORE = { product: 'specify', design: 'architect', test: 'verif
  * Engineering's, before its sign-off). The file wins where it lists the stage.
  */
 export const BUILT_IN_READINESS = {
+  // Phase 17: before an idea is accepted. The Product section works it out from the idea's business case.
+  discover: [
+    { key: 'business-case-complete', passed: 'Business case complete', failed: 'Business case not complete' },
+  ],
   design: [
     { key: 'requirements-covered', passed: 'Every business requirement is covered by a story', failed: 'A business requirement has no story' },
     { key: 'decisions-decided', passed: 'No decision is still proposed', failed: 'A decision is still proposed' },

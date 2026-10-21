@@ -9,6 +9,11 @@ export const routes = [
   { path: '/portfolios', nav: 'portfolios', title: 'Portfolios', page: page(() => import('./pages/strategy.js')) },
   { path: '/portfolios/:id', nav: 'portfolios', title: 'Portfolio', page: page(() => import('./pages/document.js')), meta: { kind: 'portfolio' } },
   { path: '/value-streams/:id', nav: 'portfolios', title: 'Value stream', page: page(() => import('./pages/document.js')), meta: { kind: 'value-stream' } },
+  // NooblyJS Phase 17: the work hierarchy's documents, and the business case of an idea or an epic.
+  { path: '/portfolio-epics/:id', nav: 'portfolios', title: 'Portfolio epic', page: page(() => import('./pages/document.js')), meta: { kind: 'portfolio-epic' } },
+  { path: '/epics/:id', nav: 'portfolios', title: 'Epic', page: page(() => import('./pages/document.js')), meta: { kind: 'epic' } },
+  { path: '/features/:id', nav: 'portfolios', title: 'Feature', page: page(() => import('./pages/document.js')), meta: { kind: 'feature' } },
+  { path: '/business-cases/:id', nav: 'board', title: 'Business case', page: page(() => import('./pages/business-case.js')) },
   { path: '/board', nav: 'board', title: 'Product', page: page(() => import('./pages/board.js')) },
   { path: '/specs', nav: 'specs', title: 'Specs', page: page(() => import('./pages/specs.js')) },
   { path: '/specs/:id', nav: 'specs', title: 'Spec', page: page(() => import('./pages/spec.js')) },

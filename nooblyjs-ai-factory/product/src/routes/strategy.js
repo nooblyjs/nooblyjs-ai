@@ -20,7 +20,7 @@ export function strategyRoutes({ host, repos, people, catalogue, documents, temp
   /** The catalogue entry for a document, or 404. */
   async function entryFor(kind, id) {
     const entry = await catalogue.entry(kind, id);
-    if (!entry) throw notFound(`There is no ${kind === 'portfolio' ? 'portfolio' : 'value stream'} ${id}.`);
+    if (!entry) throw notFound(`There is no ${kind.replace('-', ' ')} ${id}.`);
     return entry;
   }
 
@@ -30,6 +30,7 @@ export function strategyRoutes({ host, repos, people, catalogue, documents, temp
     const c = await catalogue.view();
     const updatedBy = actorRef(ctx, doc.updatedBy);
     const base = { ...doc, updatedBy, text: doc.version ? `Version ${doc.version}${updatedBy ? ` · ${updatedBy.name}` : ''}` : 'Not filled in yet' };
+    if (!['portfolio', 'value-stream'].includes(kind)) return { ...base, portfolio: doc.portfolio ?? null, valueStream: doc.valueStream ?? null, parent: doc.parent ?? null, epic: doc.epic ?? null };
     if (kind === 'portfolio') {
       const p = c.portfolios.find((x) => x.id === doc.id);
       return {
@@ -44,7 +45,8 @@ export function strategyRoutes({ host, repos, people, catalogue, documents, temp
     return { ...base, portfolioId: p?.id ?? null, themes: (p?.themes ?? []).map((name) => c.themes.find((t) => t.name === name) ?? { name, description: null }), products: stream?.products ?? [] };
   }
 
-  for (const [path, kind] of [['portfolios', 'portfolio'], ['value-streams', 'value-stream']]) {
+  // NooblyJS Phase 17: the work hierarchy's documents too.
+  for (const [path, kind] of [['portfolios', 'portfolio'], ['value-streams', 'value-stream'], ['portfolio-epics', 'portfolio-epic'], ['epics', 'epic'], ['features', 'feature']]) {
     router.get(`/${path}/:id`, read, async (req, res) => {
       const doc = await documents.read(kind, await entryFor(kind, req.params.id));
       res.set('ETag', doc.etag).json(await documentView(req, kind, doc));

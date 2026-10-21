@@ -29,6 +29,7 @@ const HISTORY_WORDS = {
 };
 
 const ADVANCE_LABELS = {
+  discover: 'Accept the idea',
   product: 'Approve & hand off to Design',
   design: 'Approve & hand off to Engineering',
   engineer: 'Sign off & send to Build',

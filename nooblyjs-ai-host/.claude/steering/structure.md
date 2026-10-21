@@ -126,11 +126,14 @@ noobly/
                             services other apps call as host.service('workflows')) · services/engine.js (items, stages,
                             approvals, handoffs, send-back, the sweep) · services/pull-requests.js (Phase 16e: pull
                             requests as items, their Build and Test approvals, merges, the story and its feature
-                            following them) · services/views.js (Overview, Lifecycle,
+                            following them) · services/checks.js (Phase 16f: its checks, one check's override, its
+                            part of the trace) · services/views.js (Overview, Lifecycle,
                             Approvals) · routes.js (/workflows/api/v1) · repos.js · stages.js · working-days.js ·
                             config.js (approval rules, readiness) · seed/ (the PRD-031 story's items and approvals)
     teams/                  the Teams bot: activities.js · cards.js + cards/*.yaml · sessions.js · bot.js · simulator.js
-      platform.js · guardrails.js · budgets.js · audit-log.js · events.js · metrics/ (facts.js · compute.js · index.js)
+      platform.js · guardrails.js · budgets.js · audit-log.js · events.js · metrics/ (facts.js · compute.js · index.js) ·
+      checks.js (an item's checks from every app, one shape, Phase 16f) · trace.js (the trace index, Phase 16f) ·
+      metrics/places.js (spend by value stream and per item, Phase 17)
       devtools/ (transport.js: the reader, GET only · writer.js: the only HTTP writer, listed kinds only · git-push.js: a factory/… branch, never forced
                  writes.js: the write gate, locks, rules and the outbox · sync.js: work items in step with Jira and Bitbucket · jira.js · bitbucket.js · index.js)
       backup.js             backup, verify and restore of data/ (Phase 13)
@@ -614,6 +617,8 @@ data/
   access/                 roles.yaml (permissions matrix) · job-title-roles.yaml
   people/<person-id>/     PERSON.md (name, email, access role, job title) · profile.md (work role, teams, onboarding)
   teams/<team-id>.md      people + teammates, focus areas, Teams channel
+  checks/<item>.yaml      each check's last result, so check.recorded says what changed (Phase 16f)
+  trace/index.yaml        the trace index: each item's nodes and links, derived, rebuilt (npm run trace:rebuild; Phase 16f)
   workflows/              (owned by the lifecycle engine, noobly/src/lifecycle/; the folder keeps its name)
     items/<ITEM-ID>.md    IDEA-018, PRD-031, STORY-031-1, PR-031-1-1, slots-api-482 … (stage, status, owner, work, history;
                           a story's passedTestAt; a pull request's `pr`: run, commit, evidence, Phase 16e)

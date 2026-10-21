@@ -114,6 +114,16 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       pullRequests: async ({ storyId = null } = {}) => (storyId ? engine.pullRequests.prsOf(storyId) : (await repos.items.list()).filter((i) => i.type === 'pr')),
       /** An item's features, each with its stories and where it is (Phase 16e). */
       featuresOf: ({ itemId } = {}) => engine.pullRequests.featuresOf(itemId),
+      /** Accepting an idea (Phase 17): opens its item in Discover if needed, then the `idea` approval with its readiness. */
+      acceptIdea: (input) => engine.acceptIdea(input),
+      /** The checks of an item, its stories and their pull requests, in the one shape (Phase 16f; without ids). */
+      checksFor: ({ itemId } = {}) => engine.checks.checksFor(itemId),
+      /** A person overrides one failing readiness check of an item's current stage, with a reason. */
+      overrideCheck: (input) => engine.checks.overrideCheck(input),
+      /** The lifecycle's part of an item's trace: { nodes, links } (Phase 16f). */
+      trace: ({ itemId } = {}) => engine.checks.trace(itemId),
+      /** An item with its stories and pull requests: their ids. */
+      familyOf: async ({ itemId } = {}) => (await engine.checks.familyOf(itemId)).members.map((m) => m.id),
       /** The readiness of an item for its current stage's decision (the Factory's Engineering sign-off page). */
       readinessOf: async ({ itemId } = {}) => {
         const item = await repos.items.get(itemId);

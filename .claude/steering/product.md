@@ -474,6 +474,9 @@ system, agent vs people share) stay. Added, all computed from events:
    (The Test section's was taken on 2026-10-20, Phase 16d: `nooblyjs-ai-factory/quality`, at `/factory/quality`.)
 3. The work hierarchy above the feature (portfolio epic, epic) against ideas, specs and Jira
    (`nooblyjs-ai-factory/product` §8). Feature → stories is decided: many stories per feature, one feature per story.
+   **Taken as a default in Phase 17 (2026-10-21), to confirm:** portfolio epics, epics and features live in the Product
+   section's catalogue; an idea belongs to a feature and its spec follows it; Design's per-item features are linked to a
+   hierarchy feature later (Phase 18); Jira keeps only the stories `[CONFIRM]`.
 4. Which scanners, load-test and monitoring tools are approved (`stack.md` §6), and where they run.
 5. Fix-by days per finding severity, and who may accept which risk.
 6. Compliance regimes in scope `[PLACEHOLDER]`.

@@ -65,6 +65,8 @@ export async function register(app, serverManager, { mountPath = '/quality', dat
       readinessFacts: (storyId) => analysis.readinessFacts(storyId),
       /** The test cases a work item on one repository carries. */
       casesFor: (storyId, repo) => analysis.casesFor(storyId, repo),
+      /** Its part of an item's trace (NooblyJS Phase 16f): the test cases and what each verifies. */
+      trace: (itemId) => analysis.trace(itemId),
       /** A story's coverage in words. */
       summaryFor: (storyId) => analysis.summaryOf(storyId),
       /** The stories in Engineer with their coverage. */

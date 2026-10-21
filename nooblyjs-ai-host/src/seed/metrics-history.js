@@ -50,6 +50,8 @@ const SPEND = [
   ['knowledge', 'teammate.task_finished', 96],
 ];
 const SPEND_DAYS = 23;
+// The seed's specs the Product section's sample spend was for (Digital Commerce: Delivery and Checkout; Rewards).
+const SPEND_ITEMS = ['PRD-031', 'PRD-027', 'PRD-029', 'PRD-030'];
 
 const AGENT = { actor: 'sample-agent', actorKind: 'agent', actorName: 'Sample agent' };
 const PERSON = { actor: 'sample-person', actorKind: 'person', actorName: 'Sample person' };
@@ -228,6 +230,8 @@ export function sampleHistory(now) {
       const cents = d === 1 ? usd * 100 - share * (SPEND_DAYS - 1) : share;
       say(M - d * DAY + 12 * HOUR, type, type === 'compute.metered' ? SYSTEM : AGENT, {
         system, costUsd: cents / 100, ...(type === 'run.finished' ? { runId: `smp_spend_${system}_${d}`, outcome: 'delivered', workType: 'implementation' } : {}),
+        // Phase 17: the Product section's drafts were for the seed's specs, so its spend is placed by value stream.
+        ...(system === 'product' ? { itemId: SPEND_ITEMS[d % SPEND_ITEMS.length] } : {}),
       });
     }
   }

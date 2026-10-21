@@ -339,6 +339,7 @@ test('the snapshot gives a home every item row and open approval, saying who may
 test('the rules table is lifecycle v3\'s, with the app approvals, and the lifecycle page has stage health and where work waits', async () => {
   const { rules } = (await get('naledi-k', '/rules')).body;
   assert.deepEqual(rules.map((r) => [r.decision, r.approver, r.target, r.ifLate]), [
+    ['Discover → Product (idea accepted)', 'Business owner', '3 working days', 'Remind'],
     ['Product → Design (spec, UX and UI)', 'Product lead + Engineering', '1 working day', 'Remind, then escalate'],
     ['New dependency (ADR)', 'Architect', '1 working day', 'Remind'],
     ['Design → Engineering (Design handoff)', 'Solution Architect', '1 working day', 'Remind, then escalate'],

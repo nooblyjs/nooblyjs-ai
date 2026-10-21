@@ -26,6 +26,9 @@ import { createUiService, uiKinds } from './src/services/ui.js';
 import { createFlowService } from './src/services/flow.js';
 import { seed as seedStory } from './src/seed/index.js';
 import { parseSpec } from './src/services/spec-format.js';
+import { createProductChecks } from './src/services/checks-trace.js';
+import { createHierarchy } from './src/services/hierarchy.js';
+import { createBusinessCases } from './src/services/business-cases.js';
 
 const NAME = 'product';
 // One or more path segments: /product on its own, /factory/product inside the Software Factory.
@@ -80,11 +83,16 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   // portfolio template), value streams (the same) and products. A data folder from before them is brought up to date now.
   const templates = createTemplates({ repos, host });
   const documents = createDocuments({ repos, host, templates });
-  const catalogue = createCatalogue({ repos, host, log, documents });
+  // NooblyJS Phase 17: the work hierarchy (portfolio epics, epics, features) and business cases.
+  const hierarchy = createHierarchy({ repos, host, documents });
+  const catalogue = createCatalogue({ repos, host, log, documents, hierarchy });
   await catalogue.migrate();
-  const ideas = createIdeaService({ repos, host, catalogue });
+  const ideas = createIdeaService({ repos, host, catalogue, hierarchy });
+  const businessCases = createBusinessCases({ repos, host, hierarchy, log });
   const specWrites = createSpecWriteService({ repos, host, log, flow, catalogue });
   const architecture = createArchitectureService({ repos, host, log });
+  // NooblyJS Phase 16f: this section's checks (the spec's readiness, the standards check) and its part of the trace.
+  const productChecks = createProductChecks({ repos, architecture, specWrites, mountPath });
   const ux = createUxService({ repos, host });
   const ui = createUiService({ repos, host, log, flow });
   const kinds = {
@@ -108,7 +116,7 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   const summary = createSummaryService({ repos, people, host, budget: drafting.budget, architecture, stageAgents, mountPath });
 
   const router = host.express.Router();
-  router.use('/api/v1', createApi({ host, log, seed, repos, people, catalogue, documents, templates, ideas, specWrites, drafting, summary, architecture, ux, ui, flow, stageAgents, kindKeys: Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.keys(v)])), mountPath, about: { name: NAME, version: VERSION, mountPath } }));
+  router.use('/api/v1', createApi({ host, log, seed, repos, people, catalogue, documents, templates, ideas, hierarchy, businessCases, specWrites, drafting, summary, architecture, ux, ui, flow, stageAgents, kindKeys: Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.keys(v)])), mountPath, about: { name: NAME, version: VERSION, mountPath } }));
   // The browser files (module, pages, CSS). redirect: false, or /product would 301 to /product/ (public/ is a folder).
   router.use(host.express.static(PUBLIC_DIR, { index: false, redirect: false }));
   // Every other GET without a file extension is a page: the host's frame answers it, so deep links and refresh land
@@ -163,7 +171,8 @@ export async function register(app, serverManager, { mountPath = '/product', dat
     services: {
       artefactsFor: (itemId, options) => summary.artefactsFor(itemId, options),
       summary: (person) => summary.summary(person),
-      readinessFacts: (itemId) => specWrites.facts(itemId),
+      // An idea's (Phase 17): "Business case complete", the Discover exit's check. A spec's: the spec's checks.
+      readinessFacts: (itemId) => (/^IDEA-/.test(String(itemId)) ? businessCases.facts(itemId) : specWrites.facts(itemId)),
       /**
        * A person's edit of a spec's sections from outside this app (NooblyJS team chat's "Apply to spec"). The caller has
        * checked the person's permission; an agent actor is refused here. Resolves with the new { id, version }.
@@ -204,6 +213,28 @@ export async function register(app, serverManager, { mountPath = '/product', dat
       },
       /** The quality attributes that become Software Factory gates on every PR for this item. */
       gatesFor: async (itemId) => (await architecture.qualityAttributes(itemId).catch(() => null))?.attributes ?? [],
+      /**
+       * Where an item sits (Phase 17): { product, portfolio, valueStream, feature, epic } for a spec or an idea, from its
+       * product and its feature; null when it is neither. Metrics places spend with it.
+       */
+      placeOf: async (itemId) => {
+        const record = /^IDEA-/.test(String(itemId)) ? await repos.ideas.get(itemId).catch(() => null) : await repos.specs.get(itemId).catch(() => null);
+        if (!record) return null;
+        const c = (await repos.catalogue.get()) ?? {};
+        const product = (c.products ?? []).find((p) => String(p.name).toLowerCase() === String(record.product ?? '').toLowerCase());
+        const place = record.feature ? await hierarchy.placeOf(record.feature).catch(() => null) : null;
+        return { product: record.product ?? null, portfolio: product?.portfolio ?? place?.portfolio ?? null, valueStream: product?.valueStream ?? place?.valueStream ?? null, feature: place?.feature ?? null, epic: place?.epic ?? null };
+      },
+      /** The portfolios and their value streams (Platform's budgets by portfolio, Metrics). */
+      portfolios: async () => (await catalogue.view()).portfolios.map((p) => ({ id: p.id, name: p.name, valueStreams: p.valueStreams.map((v) => v.name) })),
+      /** Every open idea's and every epic's business case, in words (the Business owner's home). */
+      businessCases: () => businessCases.all(),
+      /** The work hierarchy: { epics, features } (Phase 17). */
+      hierarchy: () => hierarchy.view(),
+      /** The spec's readiness and the standards check, in NooblyJS's one shape (Phase 16f). */
+      checksFor: (itemId) => productChecks.checksFor(itemId),
+      /** The spec, its goals, decisions and quality attributes, linked to the item: { nodes, links } (Phase 16f). */
+      trace: (itemId) => productChecks.trace(itemId),
       /** Rows for Home · Waiting on you and the For you pages. */
       waitingFor: (person) => flow.waitingFor(person),
       /** Facts for NooblyJS Metrics: lead time, sent-back rate per stage, spend. */

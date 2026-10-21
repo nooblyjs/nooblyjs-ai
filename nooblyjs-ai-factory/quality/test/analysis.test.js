@@ -136,3 +136,14 @@ test('the page draws a story\'s criteria and cases, and the list, from the API\'
   await render(l, { params: {}, route: { meta: { view: 'list' } }, ctx });
   assert.ok(l.innerHTML.includes('STORY-031-1 · See which stores still have same-day capacity'));
 });
+
+test('NooblyJS Phase 16f: its part of the trace: each test case and what it verifies (a criterion, an interface, the story)', async () => {
+  const t = await env.hosted.services.trace('STORY-031-1');
+  const verifies = Object.fromEntries(t.links.map((l) => [l.from, l.to]));
+  const cases = t.nodes.filter((n) => n.type === 'test-case');
+  assert.ok(cases.length >= 3);
+  assert.equal(verifies['TC-031-1-1'], 'AC-031-1-1', 'the first criterion');
+  assert.ok(Object.values(verifies).includes('IF-031-01'), 'a contract test verifies its interface');
+  assert.ok(Object.values(verifies).includes('STORY-031-1'), 'the journey verifies the story');
+  assert.ok(t.links.every((l) => l.rel === 'verifies'));
+});

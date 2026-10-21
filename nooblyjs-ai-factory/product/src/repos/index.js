@@ -65,7 +65,7 @@ function docs(store, folder, log) {
 /** The templates (templates/<kind>.md) that portfolios' and value streams' documents start from. */
 function templates(store) {
   const path = (kind) => {
-    if (!['portfolio', 'value-stream'].includes(kind)) throw new Error(`not a template: ${kind}`);
+    if (!['portfolio', 'value-stream', 'portfolio-epic', 'epic', 'feature'].includes(kind)) throw new Error(`not a template: ${kind}`);
     return ['templates', `${kind}.md`];
   };
   const read = async (kind) => {
@@ -93,6 +93,11 @@ export function createRepos(store, { log }) {
     /** A portfolio's and a value stream's document, by its id (services/documents.js). */
     portfolios: docs(store, 'portfolios', log),
     valueStreams: docs(store, 'value-streams', log),
+    /** NooblyJS Phase 17: the work hierarchy's documents, and the business cases of ideas and epics. */
+    portfolioEpics: docs(store, 'portfolio-epics', log),
+    epics: docs(store, 'epics', log),
+    features: docs(store, 'features', log),
+    businessCases: docs(store, 'business-cases', log),
     templates: templates(store),
     specs: {
       ...specs,

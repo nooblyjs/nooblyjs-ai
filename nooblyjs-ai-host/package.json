@@ -31,6 +31,7 @@
     "seed": "node --env-file-if-exists=.env scripts/seed.js",
     "seed:blank": "node --env-file-if-exists=.env scripts/seed.js --blank",
     "metrics:reconcile": "node --env-file-if-exists=.env scripts/metrics-reconcile.js",
+    "trace:rebuild": "node --env-file-if-exists=.env scripts/trace-rebuild.js",
     "steering:sync": "node scripts/sync-steering.js",
     "backup": "node --env-file-if-exists=.env scripts/backup.js",
     "restore": "node --env-file-if-exists=.env scripts/restore.js",

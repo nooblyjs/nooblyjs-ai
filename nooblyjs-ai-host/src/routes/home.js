@@ -22,7 +22,7 @@ function cardLines(card) {
   ].filter(Boolean).slice(0, 2);
 }
 
-export function homeRoutes({ express, shell, services, activity, metrics, forYou, teams, agents, events, onInvited, clock, requireSignIn, requireRole }) {
+export function homeRoutes({ express, shell, services, activity, metrics, forYou, checks, trace, teams, agents, events, onInvited, clock, requireSignIn, requireRole }) {
   const router = express.Router();
   const read = [requireSignIn, requireRole('read')];
 
@@ -96,6 +96,35 @@ export function homeRoutes({ express, shell, services, activity, metrics, forYou
       const links = services.get('devtools')?.links;
       const withIssues = links ? await Promise.all(runs.map(async (r) => ({ ...r, jiraIssues: r.workItemId ? await links.keys(r.workItemId).catch(() => []) : [] }))) : runs;
       res.json({ itemId: req.params.id, running: true, runs: withIssues, waiting });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // An item's checks (Phase 16f): its, its stories' and its pull requests' readiness, approvals, gates, quality
+  // attributes, standards, required tests and policy checks, in one shape, each with its source and evidence.
+  router.get('/api/v1/home/items/:id/checks', ...read, async (req, res, next) => {
+    try {
+      res.json(await checks.checksFor(req.params.id));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // A person overrides one failing readiness check with a reason (the lifecycle engine records it, refuses an agent).
+  router.post('/api/v1/home/items/:id/checks/:checkId/override', requireSignIn, requireRole('draft'), async (req, res, next) => {
+    try {
+      res.locals.audit = { action: 'check.override_asked', target: req.params.id, checkId: req.params.checkId };
+      res.json(await checks.override({ itemId: req.params.id, checkId: req.params.checkId, reason: req.body?.reason, actor: req.person }));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // An item's trace (Phase 16f): the tree from the item down to the pull requests, and the missing links in words.
+  router.get('/api/v1/home/items/:id/trace', ...read, async (req, res, next) => {
+    try {
+      res.json(await trace.view(req.params.id));
     } catch (err) {
       next(err);
     }

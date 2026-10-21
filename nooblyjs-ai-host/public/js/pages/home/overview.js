@@ -13,6 +13,7 @@ function line(lifecycle) {
   return html`<section class="card" aria-label="Lifecycle">
     <div class="card__head"><h2 class="card__title">The line, end to end</h2><span class="card__meta">${lifecycle.inFlight} in flight · the busiest stage is highlighted</span></div>
     ${stageStrip({ stages, current })}
+    <p class="learn" aria-label="Learn"><span aria-hidden="true">↺</span> <strong>Learn</strong> — incidents, SLO breaches, failing synthetic checks, support tickets and goal results come back to Discover as signals, linked to the item and release that caused them.</p>
     <div class="bands">
       <div class="band band--knowledge">${icon('book')}<span><strong>Knowledge Repository</strong> — every stage reads context in and writes decisions back</span></div>
       <div class="band">${icon('layers')}<span><strong>Platform</strong> — repos, containers, models, budgets and guardrails underneath</span></div>

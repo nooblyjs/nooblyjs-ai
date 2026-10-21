@@ -31,7 +31,13 @@ Test: each pull request the Factory delivers for a story is a lifecycle item wit
 evidence listing the required tests by test case id; changes asked for are repaired by the line; a new commit clears
 both approvals; a person merges after both; a story passes Test with its last merge and a feature goes to Release on its
 own) is built and waiting for review** (`.claude/specs/phase-16e-build-and-test/`; `src/lifecycle/services/pull-requests.js`
-and the Factory's `src/services/pull-requests/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
+and the Factory's `src/services/pull-requests/`). **Phase 16f (one shape for checks, and the trace: each app's
+`checksFor` and `trace` services, gathered by `src/services/checks.js` and `src/services/trace.js`; the item page's Checks
+and Trace tabs; `npm run trace:rebuild`) is built and waiting for review** (`.claude/specs/phase-16f-checks-and-trace/`). **Phase 17
+(Strategy and the business case: portfolio epics, epics and features in the Product section with ideas under features;
+a business case on an idea or epic, drafted by an agent with an estimate from the factory's history, and "Business case
+complete" before an idea is accepted; budgets by portfolio and spend by value stream in Metrics; the Business owner's
+home) is built and waiting for review** (`.claude/specs/phase-17-strategy-business-case/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed
 2026-10-20)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent
@@ -192,6 +198,7 @@ node --test --test-name-pattern="refuses" "test/**/*.test.js"   # tests matching
 npm run seed -- --reset                     # wipe data/ and rewrite the seed story
 npm run seed:blank -- --owner you@x.com     # start from scratch: system files only, no sample content (--reset moves data/ aside, never deletes)
 npm run metrics:reconcile                   # recompute Metrics from the raw events; exit 1 on any difference
+npm run trace:rebuild                       # build the trace again from every app; diff with data/trace/index.yaml, exit 1 on a difference
 npm run test:e2e                            # Playwright + axe (specs, then five stories, each on its own NooblyJS; ~15 min); failures in .temp/test-results/e2e*
 npm run test:live                           # LIVE: one real model call (needs ANTHROPIC_API_KEY)
 npm run test:live:devtools                  # LIVE, READ ONLY: GET requests to Jira and Bitbucket with the .env tokens

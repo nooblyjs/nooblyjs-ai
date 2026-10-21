@@ -49,5 +49,41 @@ export function createCost({ repos, host = null, now }) {
     };
   }
 
-  return { month, spent };
+  /**
+   * NooblyJS Phase 17: a month's cloud spend per lifecycle item. The ledger is by kind of environment, so each kind's
+   * spend is shared across that kind's environments by their cost a day, and each environment's share goes to the item
+   * its design was built for. What no item can take (a kind with no environment, an environment of no design) is
+   * `unattributed`.
+   */
+  async function byItem(month = thisMonth()) {
+    const [ledger, environments, designs] = await Promise.all([repos.cost.list(), repos.environments.list(), repos.designs.list()]);
+    const itemOf = new Map(designs.map((d) => [d.id, d.itemId ?? null]));
+    const totals = new Map();
+    for (const entry of ledger) if (String(entry.at).slice(0, 7) === month) totals.set(entry.kind, (totals.get(entry.kind) ?? 0) + Number(entry.usd ?? 0));
+    const items = {};
+    let unattributed = 0;
+    const r2 = (n) => Math.round(n * 100) / 100;
+    for (const [kind, usd] of totals) {
+      const envs = environments.filter((e) => e.kind === kind && Number(e.costPerDay) > 0);
+      const weight = envs.reduce((n, e) => n + Number(e.costPerDay), 0);
+      if (!weight) { unattributed += usd; continue; }
+      for (const e of envs) {
+        const share = (usd * Number(e.costPerDay)) / weight;
+        const item = itemOf.get(e.designId) ?? null;
+        if (item) items[item] = r2((items[item] ?? 0) + share);
+        else unattributed += share;
+      }
+    }
+    return { month, items, unattributed: r2(unattributed), basis: 'Each kind of environment\'s spend this month, shared across its environments by their cost a day, to the item each one\'s design was built for' };
+  }
+
+  /** NooblyJS Phase 17: a month of an item's infrastructure in production, from its design: { usd, perDay, design } or null. */
+  async function monthlyFor(itemId) {
+    const design = (await repos.designs.list()).find((d) => d.itemId === itemId);
+    if (!design) return null;
+    const perDay = (design.resources ?? []).reduce((n, r) => n + Number(r.costPerDay?.production ?? 0), 0);
+    return perDay > 0 ? { usd: Math.round(perDay * 30 * 100) / 100, perDay: Math.round(perDay * 100) / 100, design: design.id } : null;
+  }
+
+  return { month, spent, byItem, monthlyFor };
 }

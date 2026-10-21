@@ -1,6 +1,8 @@
 // The Product board (Stage 1, product.md §5.1): tabs Board / Roadmap / Insights, New idea, filters by
 // portfolio, value stream and product (labels, set up in the Portfolios & products panel: pages/portfolios.js), the kanban (Signals → Ideas → Spec drafting → In review → To architecture), Top signals this week
-// and the quarter's roadmap. Data: GET /board. Writes: POST /signals/:id/idea, POST /ideas,
+// and the quarter's roadmap. Since NooblyJS Phase 17 it also filters by the work hierarchy's epic and feature, an idea
+// says its feature and links to its business case, and a new idea can be filed under a feature.
+// Data: GET /board. Writes: POST /signals/:id/idea, POST /ideas,
 // PUT /ideas/:id (the RICE score) and POST /specs (a spec for an idea, which Ada then drafts).
 import { html } from '/ui/js/html.js';
 import { pageHead, card, button, statusPill } from '/ui/js/components/index.js';
@@ -25,12 +27,25 @@ function boardCard(c, ctx) {
         ? button({ label: 'Draft a spec', kind: 'secondary', small: true, attrs: { 'data-action': 'spec-from', 'data-id': c.id, 'aria-label': `Draft a spec for "${c.title}"` } })
         : ''}</span>`
       : '';
-    return html`<li class="kanban__card"><span class="kanban__title">${c.title}</span><span class="kanban__meta">${c.text}</span>${scored ? '' : statusPill({ text: 'Not scored yet', tone: 'warning' })}${actions}</li>`;
+    return html`<li class="kanban__card"><span class="kanban__title">${c.id} ${c.title}</span><span class="kanban__meta">${c.text}${c.feature ? ` · ${c.feature.id} ${c.feature.name}` : ''}</span>${scored ? '' : statusPill({ text: 'Not scored yet', tone: 'warning' })}${c.status === 'accepted' ? statusPill({ text: 'Accepted', tone: 'success' }) : ''}${actions}<a class="pf-card-link" href="${hrefFor(ctx, `/business-cases/${c.id}`)}">Business case</a></li>`;
   }
   const progress = c.progress != null
     ? html`<span class="pf-progress" role="progressbar" aria-label="${c.statusText}" aria-valuenow="${c.progress}" aria-valuemin="0" aria-valuemax="100"><span style="width:${Math.max(0, Math.min(100, c.progress))}%"></span></span>`
     : '';
   return html`<li class="kanban__card"><a class="kanban__title" href="${hrefFor(ctx, `/specs/${c.id}`)}">${c.id} ${c.title}</a><span class="kanban__meta">${c.product ?? ''}</span>${specPill(c)}${progress}</li>`;
+}
+
+/** NooblyJS Phase 17: the work hierarchy's epics and features in the chosen value stream, as filters with counts. */
+function workFilters(board, ctx) {
+  if (!board.epics?.length) return '';
+  const link = (key, value, label, count, active) => {
+    const q = new URLSearchParams(Object.entries({ ...board.filter, epic: null, feature: null, [key]: active ? null : value }).filter(([k, v]) => v && v !== false && k !== 'mine'));
+    return html`<a class="pf-chip${active ? ' pf-chip--on' : ''}" aria-pressed="${active ? 'true' : 'false'}" href="${hrefFor(ctx, `/board${q.size ? `?${q}` : ''}`)}">${label} <span class="muted">${count}</span></a>`;
+  };
+  return html`<div class="pf-filters" aria-label="Epics and features">
+    <span class="muted">Epics</span> ${board.epics.map((e) => link('epic', e.id, `${e.id} ${e.name}`, e.count, e.active))}
+    ${board.features.length ? html`<span class="muted">Features</span> ${board.features.map((f) => link('feature', f.id, `${f.id} ${f.name}`, f.count, f.active))}` : ''}
+  </div>`;
 }
 
 function kanbanView(board, ctx) {
@@ -95,6 +110,7 @@ function newIdeaForm(board) {
     <h2 class="card__title">New idea</h2>
     <label>Title <input name="title" required maxlength="120" autocomplete="off"></label>
     ${labelFields(board, { product: board.filter.product })}
+    ${board.features?.length ? html`<label>Feature <select name="feature"><option value="">None</option>${board.features.map((f) => html`<option value="${f.id}"${board.filter.feature === f.id ? html` selected` : ''}>${f.id} · ${f.name}</option>`)}</select></label>` : ''}
     <label>Problem <textarea name="problem" rows="3" maxlength="10000"></textarea></label>
     <div class="actions">${button({ label: 'Create idea', type: 'submit' })}${button({ label: 'Cancel', kind: 'secondary', attrs: { 'data-action': 'cancel-new' } })}</div>
   </form>`;
@@ -124,7 +140,7 @@ function riceForm(opp) {
 
 export async function render(view, { query, ctx }) {
   let tab = TABS.some(([k]) => k === query.get('tab')) ? query.get('tab') : 'board';
-  const filter = { portfolio: query.get('portfolio') ?? undefined, valueStream: query.get('valueStream') ?? undefined, product: query.get('product') ?? undefined, mine: query.get('mine') ? '1' : undefined };
+  const filter = { portfolio: query.get('portfolio') ?? undefined, valueStream: query.get('valueStream') ?? undefined, product: query.get('product') ?? undefined, mine: query.get('mine') ? '1' : undefined, epic: query.get('epic') ?? undefined, feature: query.get('feature') ?? undefined };
   let board = null;
   // The Portfolios & products panel: open or not, and the label an Approver is changing.
   const labels = { open: false, editing: null };
@@ -146,7 +162,7 @@ export async function render(view, { query, ctx }) {
     const tabs = html`<div class="pf-tabs" role="tablist" aria-label="Product views">${TABS.map(([k, l]) => html`<button type="button" role="tab" class="pf-tab" id="pf-tab-${k}" aria-selected="${k === tab}" aria-controls="pf-panel" data-tab="${k}">${l}</button>`)}</div>`;
     let panel;
     if (tab === 'board') {
-      panel = html`${filtersView(board, ctx)}${kanbanView(board, ctx)}<div class="grid pf-panels">${topSignalsView(board.topSignals)}${roadmapView(board.roadmap, ctx, { compact: true })}</div>`;
+      panel = html`${filtersView(board, ctx)}${workFilters(board, ctx)}${kanbanView(board, ctx)}<div class="grid pf-panels">${topSignalsView(board.topSignals)}${roadmapView(board.roadmap, ctx, { compact: true })}</div>`;
     } else if (tab === 'roadmap') {
       panel = roadmapView(board.roadmap, ctx);
     } else {
@@ -263,7 +279,7 @@ export async function render(view, { query, ctx }) {
     if (!form) return;
     e.preventDefault();
     const data = Object.fromEntries(new FormData(form));
-    const body = { title: data.title, ...(data.product ? { product: data.product, ...(data.portfolio ? { portfolio: data.portfolio } : {}) } : {}), ...(data.problem.trim() ? { problem: data.problem } : {}) };
+    const body = { title: data.title, ...(data.product ? { product: data.product, ...(data.portfolio ? { portfolio: data.portfolio } : {}) } : {}), ...(data.problem.trim() ? { problem: data.problem } : {}), ...(data.feature ? { feature: data.feature } : {}) };
     try {
       const opp = await ctx.api.post('ideas', body);
       await draw();

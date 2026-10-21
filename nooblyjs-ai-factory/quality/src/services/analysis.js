@@ -276,5 +276,26 @@ export function createAnalysis({ host, log }) {
     return (doc?.cases ?? []).filter((c) => !c.systems?.length || c.systems.includes(short));
   }
 
-  return { view, stories, draft, addCase, editCase, removeCase, markReady, readinessFacts, casesFor, policy, summaryOf: async (id) => summary(await get(id), await storyOf(id).catch(() => null)) };
+  /**
+   * Its part of an item's trace (NooblyJS Phase 16f): each test case and what it verifies: its criterion (AC-031-1-1,
+   * story 1's first), its interface (IF-031-01), or for the journey and an NFR the story itself.
+   */
+  async function trace(itemId) {
+    const w = host.service?.('workflows');
+    const item = await w?.item?.({ itemId }).catch(() => null);
+    const storyIds = item?.type === 'story' ? [itemId] : ((await w?.storiesOf?.({ itemId }).catch(() => [])) ?? []).map((s) => s.id);
+    const nodes = [];
+    const links = [];
+    for (const storyId of storyIds) {
+      const doc = await get(storyId).catch(() => null);
+      for (const c of doc?.cases ?? []) {
+        nodes.push({ id: c.id, type: 'test-case', title: `${c.title} (${c.level}${c.automate ? ', automated' : ', by a person'})`, status: c.status ?? null, system: 'quality', href: `/factory/quality/test-analysis/${encodeURIComponent(storyId)}` });
+        const to = Number.isInteger(c.criterion) ? `AC-${String(storyId).replace(/^STORY-/, '')}-${c.criterion + 1}` : c.interface ?? storyId;
+        links.push({ from: c.id, rel: 'verifies', to });
+      }
+    }
+    return { nodes, links };
+  }
+
+  return { view, stories, draft, addCase, editCase, removeCase, markReady, readinessFacts, casesFor, policy, trace, summaryOf: async (id) => summary(await get(id), await storyOf(id).catch(() => null)) };
 }

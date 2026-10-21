@@ -14,6 +14,7 @@ import { createProvisioner } from './src/provisioners/index.js';
 import { createCost } from './src/services/cost.js';
 import { createRuns } from './src/services/runs.js';
 import { createDesigns } from './src/services/designs.js';
+import { createInfraChecks } from './src/services/checks-trace.js';
 import { createEnvironments } from './src/services/environments.js';
 import { createDrift } from './src/services/drift.js';
 import { createPolicies } from './src/services/policies.js';
@@ -77,6 +78,8 @@ export async function register(app, serverManager, { mountPath = '/infrastructur
   const runs = createRuns({ ...deps, cost });
   const approvals = createApprovals(deps);
   const designs = createDesigns({ ...deps, cost, runs, approvals });
+  // NooblyJS Phase 16f: the designs' policy checks in the one shape, and the designs in the trace.
+  const infraChecks = createInfraChecks({ repos, designs, mountPath });
   const environments = createEnvironments({ ...deps, designs, runs });
   const drift = createDrift({ ...deps, designs, runs, approvals });
   const policies = createPolicies(deps);
@@ -117,6 +120,14 @@ export async function register(app, serverManager, { mountPath = '/infrastructur
     // What other apps may call (structure.md §6).
     services: {
       ...summary.services,
+      /** A month's cloud spend per lifecycle item: { month, items, unattributed, basis } (Phase 17, Metrics' spend by value stream). */
+      cloudByItem: (month) => cost.byItem(month),
+      /** A month of an item's infrastructure in production, from its design: { usd, perDay, design } or null (Phase 17). */
+      monthlyCostFor: (itemId) => cost.monthlyFor(itemId),
+      /** The policy checks of the item's designs, per kind of environment, in NooblyJS's one shape (Phase 16f). */
+      checksFor: (itemId) => infraChecks.checksFor(itemId),
+      /** The item's designs, linked to it: { nodes, links } (Phase 16f). */
+      trace: (itemId) => infraChecks.trace(itemId),
       /**
        * The lifecycle engine's `infra-design` approval was decided on Home · Approvals: decide the design exactly as
        * the Design screen does (same rules, same refusals). The engine records the approval once this returns.

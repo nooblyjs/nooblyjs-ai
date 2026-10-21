@@ -95,8 +95,8 @@ inclusion: always
 | 16c | The Design section: business requirements, solution architecture, functional analysis, stories | ☐ built, waiting for review |
 | 16d | Engineering: application architecture from the code, and test analysis | ☐ built, waiting for review |
 | 16e | Build and Test: the AI builds and tests, engineers and testers approve | ☐ built, waiting for review |
-| 16f | One shape for checks, and the trace | ☐ |
-| 17 | Strategy and the business case | ☐ |
+| 16f | One shape for checks, and the trace | ☐ built, waiting for review |
+| 17 | Strategy and the business case | ☐ built, waiting for review |
 | 18 | Requirements elicitation | ☐ |
 | 19 | Security by design (new app: Security) | ☐ |
 | 20 | Quality (the Factory's Test section) | ☐ |
@@ -1127,6 +1127,13 @@ approvals), `nooblyjs-ai-host` (lifecycle, Home · Approvals, the devtools write
 ## Phase 16f — One shape for checks, and the trace
 
 > Was Phase 16b until 2026-10-20.
+>
+> **Built 2026-10-21, waiting for review** (started at your word). Spec: `nooblyjs-ai-host/.claude/specs/phase-16f-checks-and-trace/`.
+> Summary: `nooblyjs-ai-host/.claude/phases/phase-16f-summary.md`. Decided at the start: Build and Test approvals are
+> checks of a kind of their own (`approval`); NooblyJS emits `check.recorded` when it gathers a check that is new or
+> changed; one readiness check can be overridden by a person (other kinds are their app's); a goal is `GOAL-031-1`, a
+> story's criterion `AC-031-1-1`, a quality attribute `QA-031-1`. The script's missing link is "AC-031-2-1 has no test"
+> (there are no `REQ-…` until Phase 18).
 
 **Goal:** every artefact can be traced, and every kind of check looks and behaves the same.
 **Repos:** `nooblyjs-ai-host` (trace, Home), `nooblyjs-ai-factory` (the line and its Product, Design and Test
@@ -1155,6 +1162,13 @@ written.
 ---
 
 ## Phase 17 — Strategy and the business case
+
+> **Built 2026-10-21, waiting for review** (started at your word, with the defaults). Spec:
+> `nooblyjs-ai-host/.claude/specs/phase-17-strategy-business-case/`. Summary: `nooblyjs-ai-host/.claude/phases/phase-17-summary.md`.
+> Decided at the start: portfolio epics (`PEPIC-001`), epics (`EPIC-001`) and features (`FEAT-001`) live in the
+> Product section's catalogue; an idea belongs to a feature; Design's per-item features and the hierarchy are linked
+> later, and Jira gets no hierarchy `[CONFIRM]`. The business case: value hypothesis, who benefits, the measure, the
+> cost estimate (agent, cloud a month, people's days, each with its source) and the horizon are required.
 
 **Goal:** work can be followed from a strategic theme to an item, each idea has a business case, and spend can be
 seen by value stream.

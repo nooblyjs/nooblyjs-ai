@@ -37,6 +37,34 @@ export const TEMPLATE_KINDS = {
       ['Attachments', 'Links to supporting documents: decks, canvases, reports.'],
     ],
   },
+  // NooblyJS Phase 17: the work hierarchy's documents (hierarchy.js). A business case is kept on its own (business-cases.js).
+  'portfolio-epic': {
+    label: 'Portfolio epic',
+    sections: [
+      ['Outcome', 'The business outcome it aims for, in a sentence or two.'],
+      ['Leading indicators', 'The early measures that show it is working.'],
+      ['In scope', 'What it covers.'],
+      ['Out of scope', 'What it leaves out.'],
+    ],
+  },
+  epic: {
+    label: 'Epic',
+    sections: [
+      ['Summary', 'What the epic delivers, and for whom.'],
+      ['Outcome', 'The measure it should move.'],
+      ['Non-functional requirements', 'Performance, availability, security and accessibility it must keep.'],
+      ['Dependencies', 'Other epics, teams or systems it relies on.'],
+    ],
+  },
+  feature: {
+    label: 'Feature',
+    sections: [
+      ['Description', 'What a customer or colleague can do once it exists.'],
+      ['Benefit hypothesis', 'What we believe it will change, and how we will know.'],
+      ['Acceptance criteria', 'Given, when, then: how a person checks it is done.'],
+      ['Dependencies', 'What it needs first.'],
+    ],
+  },
 };
 
 const MAX_BODY = 20000;

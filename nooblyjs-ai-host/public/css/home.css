@@ -19,6 +19,10 @@
 [data-module="home"] .rule__decision { font-weight: 500; color: var(--navy-900); }
 
 /* ---- Overview ---- */
+/* Phase 16f: the Learn arrow under the line (Operate back to Discover). */
+[data-module="home"] .learn { margin: 8px 0 12px; padding: 8px 12px; border-left: 3px solid var(--blue-600); color: var(--text-muted); }
+[data-module="home"] .trace ul { margin: 4px 0 4px 18px; padding-left: 10px; border-left: 1px solid var(--border); }
+[data-module="home"] .trace li { margin: 4px 0; }
 [data-module="home"] .bands { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
 [data-module="home"] .band { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 14px; background: var(--surface-inset); color: var(--text-nav); font-size: var(--text-small); }
 [data-module="home"] .band--knowledge { background: var(--blue-50); color: var(--blue-700); }

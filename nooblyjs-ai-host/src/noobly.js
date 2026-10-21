@@ -23,6 +23,8 @@ import { createWorkRoles } from './services/work-roles.js';
 import { createProfiles } from './services/profiles.js';
 import { createTeams } from './services/teams.js';
 import { createForYou } from './services/for-you.js';
+import { createChecks } from './services/checks.js';
+import { createTrace } from './services/trace.js';
 import { createChat } from './services/chat.js';
 import { createAgents } from './services/agents.js';
 import { createPlatform } from './services/platform/index.js';
@@ -92,7 +94,8 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   const auditLog = createAuditLog({ store, clock });
   const people = createPeople({ store });
   const activity = createActivity({ store, people, clock });
-  const metrics = createMetrics({ store, activity, clock, log });
+  // Spend by value stream (Phase 17) asks the apps where items sit: `services` is filled in below, before any request.
+  const metrics = createMetrics({ store, activity, clock, log, services: { get: (name) => services.get(name) } });
   const workRoles = createWorkRoles({ store });
   const profiles = createProfiles({ store, workRoles, events, clock });
   const teams = createTeams({ store, people });
@@ -132,6 +135,8 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   const services = new Map();
   // The NooblyJS teams, for an app that needs to name the team an item belongs to (who pays for an agent's work).
   services.set('teams', { list: () => teams.list(), get: async (id) => (await teams.list()).find((t) => t.id === id) ?? null });
+  // Metrics for other apps (Phase 17): agent spend per item, for a business case's estimate.
+  services.set('metrics', { spendByItem: () => metrics.spendByItem(), spendByValueStream: async () => (await metrics.get('30d')).spendByValueStream });
   // Agent teammates come from Digital Teammates when it is hosted (services/agents.js).
   const agents = createAgents({ services, teams });
   // Platform: repositories, model routes, budgets and guardrails, and the check every agent action passes first.
@@ -149,8 +154,11 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   const stream = eventRoutes({ express, events, activity, store, clock, requireSignIn: signedIn, log });
   app.use(stream.router);
   const forYou = createForYou({ services, profiles, workRoles, teams, agents });
+  // One shape for checks, and the trace (Phase 16f): gathered from each app's checksFor and trace services.
+  const checks = createChecks({ store, services, events, log });
+  const trace = createTrace({ store, services, events, log });
   app.use(homeRoutes({
-    express, shell, services, activity, metrics, forYou, teams, agents, events, clock, requireSignIn: signedIn, requireRole: roles.requireRole,
+    express, shell, services, activity, metrics, forYou, checks, trace, teams, agents, events, clock, requireSignIn: signedIn, requireRole: roles.requireRole,
     // An invited person can sign in straight away: their nooblyjs-core account is made now, not at the next start.
     onInvited: () => ensureCoreAccounts({ authservice, people }),
   }));
@@ -168,7 +176,7 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
       .catch((err) => log.warn(`Bitbucket: repositories not imported (${err.message})`));
   }
   app.use(devtoolsRoutes({ express, devtools, auditLog, events, requireSignIn: signedIn, requireRole: roles.requireRole }));
-  app.use(platformRoutes({ express, platform, devtools, notify: { status: () => notify.status() }, teamsConfig: config.teams, members, auditQuery, events, store, clock, roles, requireSignIn: signedIn, requireRole: roles.requireRole }));
+  app.use(platformRoutes({ express, platform, services, devtools, notify: { status: () => notify.status() }, teamsConfig: config.teams, members, auditQuery, events, store, clock, roles, requireSignIn: signedIn, requireRole: roles.requireRole }));
   // A signed-in person who hasn't been through onboarding (no profile.md) is sent there from any page. Skip for
   // now writes a profile too, so this happens once.
   const frame = (req, res, next) => signedIn(req, res, (err) => {
@@ -299,7 +307,7 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   app.use(errorHandler({ log }));
 
   return {
-    events, auditLog, people, roles, shell, hosted, clock, activity, metrics, devtools, backups, backupNow, entra, notify, profiles, chat, agents, platform, lifecycle, sessions, simulator, teamsBot, devKey,
+    events, auditLog, people, roles, shell, hosted, clock, activity, metrics, checks, trace, devtools, backups, backupNow, entra, notify, profiles, chat, agents, platform, lifecycle, sessions, simulator, teamsBot, devKey,
     /** Resolves when the sync work started by events so far is done (tests). */
     syncSettled: async () => { while (syncing.size) await Promise.allSettled([...syncing]); },
     async close() {

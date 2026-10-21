@@ -1,6 +1,8 @@
 // Budgets per NooblyJS system and the spend ledger (tech.md §6, Platform · Settings · Budgets).
 //
-// budgets.yaml   the month's total, a monthly limit per system (the Software Factory: a daily cap), pauseOnLimit
+// budgets.yaml   the month's total, a monthly limit per system (the Software Factory: a daily cap), pauseOnLimit, and
+//                (Phase 17) a monthly budget per portfolio: portfolios: { Digital: { monthly: 5000 } }. A portfolio's
+//                budget pauses nothing: it is what Metrics sets its value streams' agent and cloud spend against
 // spend/YYYY-MM.yaml   { days: { 'YYYY-MM-DD': { systems: { product: 12.4 }, routes: { <route id>: 12.4 } } },
 //                        reached: { 'product:2026-10': <when> } }
 //
@@ -47,7 +49,8 @@ export function createBudgets({ files, external = async () => null }) {
       limit: Number(s?.daily ?? s?.monthly ?? 0) || null,
       source: s?.source ?? null,
     }));
-    return { total: Number(doc.total) || null, pauseOnLimit: doc.pauseOnLimit !== false, systems };
+    const portfolios = Object.entries(doc.portfolios ?? {}).map(([name, p]) => ({ name, monthly: Number(p?.monthly) || null })).filter((p) => p.monthly);
+    return { total: Number(doc.total) || null, pauseOnLimit: doc.pauseOnLimit !== false, systems, portfolios };
   }
 
   async function ledger(month) {
@@ -95,6 +98,7 @@ export function createBudgets({ files, external = async () => null }) {
       pauseOnLimit: b.pauseOnLimit,
       total: { limit: b.total, spent, reached: b.total != null && spent >= b.total, periodKey: month },
       systems,
+      portfolios: b.portfolios,
       month,
     };
   }
@@ -194,6 +198,24 @@ export function createBudgets({ files, external = async () => null }) {
     return { before, after, changed };
   }
 
+  /** A portfolio's monthly budget (Phase 17): set, changed, or removed with null. Returns { before, after }. */
+  async function setPortfolio(name, monthly) {
+    const key = String(name ?? '').replace(/\s+/g, ' ').trim();
+    if (!key || key.length > 40) throw new HttpError(400, 'invalid_budget', 'Name the portfolio (at most 40 characters).');
+    let before = null;
+    let after = null;
+    await files.updateYaml(FILE, (doc) => {
+      const next = doc ?? { systems: {} };
+      next.portfolios ??= {};
+      before = next.portfolios[key]?.monthly ?? null;
+      if (monthly === null) delete next.portfolios[key];
+      else next.portfolios[key] = { monthly: amount(monthly, `${key}'s budget`) };
+      after = next.portfolios[key]?.monthly ?? null;
+      return next;
+    });
+    return { portfolio: key, before, after };
+  }
+
   /** Recomputes one month's ledger from the events (teammate.task_finished and run.finished with a cost). */
   async function rebuild(month, { eventsOfDay, routeOf }) {
     if (!MONTH.test(month)) throw new HttpError(400, 'invalid_month', 'A month is YYYY-MM.');
@@ -217,7 +239,7 @@ export function createBudgets({ files, external = async () => null }) {
     return days;
   }
 
-  return { read, status, addSpend, routeSpend, refusal, newlyReached, update, rebuild };
+  return { read, status, addSpend, routeSpend, refusal, newlyReached, update, setPortfolio, rebuild };
 }
 
 /** The events that carry spend. */

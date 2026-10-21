@@ -175,9 +175,21 @@ Reuse the store from `nooblyjs-ai-teammate/src/store/fs-store.js`. Move it into
   it is missing or when the day's event file changed; today is always read from the events. The seed's sample
   history (`src/seed/metrics-history.js`) is events marked `sampleHistory: true`, which Activity and Platform's
   ledger rebuild skip. A new event type that a metric should read is added in `facts.js` (and the roll-up version
-  raised when a fact changes shape). Since Phase 16e `ask` and `decide` facts carry the approval's type (roll-up
+  raised when a fact changes shape). Since Phase 17 a `spend` fact carries its item (roll-up version 3), and
+  `src/services/metrics/places.js` places this month's agent and cloud spend by value stream and portfolio (the
+  Product section's `placeOf`, Infrastructure's `cloudByItem`, Platform's portfolio budgets) and sums agent spend per
+  item for a business case's estimate (`host.service('metrics')`: `spendByItem`, `spendByValueStream`). Since Phase 16e `ask` and `decide` facts carry the approval's type (roll-up
   version 2), which gives the pull requests waiting on a Build approval and on a Test approval now, with the oldest's
   age; a pull request's own item events (`itemType: 'pr'`) are its story's work, not lead time.
+- **Checks and the trace** (Phase 16f, root `design.md` §4–§5). Each app maps its own checks to one shape in a
+  `checksFor` service (the lifecycle: readiness and the Build and Test approvals; the Product section: the spec's
+  readiness and the standards check; the Software Factory: gates, quality attributes, required tests; Infrastructure:
+  policy checks) and gives its links in a `trace` service. `src/services/checks.js` gathers an item's checks (with its
+  stories' and pull requests'), gives each a stable id, keeps the last results in `data/checks/<item>.yaml` and emits
+  `check.recorded` when one is new or changed (Activity leaves it out). One readiness check can be overridden by a
+  person with a reason (`check.overridden`, audited), for that stage. `src/services/trace.js` keeps the derived index
+  `data/trace/index.yaml` (built again when anything changed since, or when it is missing); `npm run trace:rebuild`
+  compares it with a fresh build. Links an item knows about live in its front matter (`links: [{ rel, to }]`).
 - **Knowledge search** is the Wiki Platform's own indexer over nooblyjs-core's searching service (lexical). It was
   not changed in Phase 8. Semantic search is not built `[DECIDE format]`.
 - **Knowledge (Phase 8)** is the Wiki Platform at `/wiki` (`src/wiki/knowledge/` in `nooblyjs-ai-knowledge`). An
@@ -615,15 +627,15 @@ changing a function here is a shared change: update this table in the same chang
 
 | Name | Provided by | Functions | Main callers |
 | --- | --- | --- | --- |
-| `workflows` | NooblyJS, the lifecycle engine (`src/lifecycle/index.js`) | `item`, `items({ stage })`, `approvals({ type })`, `decide`, `requestApproval`, `requestAppApproval`, `closeAppApproval`, `withdrawAppApprovals`, `sendBack`, `handoff`, `handoffOf`, `syncStories`, `handoffStory`, `storiesOf` (Phase 16c: stories as items, the Design handoff per story), `signOffEngineering`, `readinessOf` (Phase 16d), `decideApproval`, `recordPullRequest`, `canMerge`, `pullRequestMerged`, `pullRequestMergedOutside`, `pullRequest`, `pullRequests`, `featuresOf` (Phase 16e: pull requests as items, `src/lifecycle/services/pull-requests.js`), `waitingFor`, `counts`, `overview`, `live`, `snapshot`, `rules`, `sweep` | Product, Design, Factory (Engineering, Pull requests, Test, the pull request bridge), devtools (a Bitbucket merge), Infrastructure, Home |
+| `workflows` | NooblyJS, the lifecycle engine (`src/lifecycle/index.js`) | `item`, `items({ stage })`, `approvals({ type })`, `decide`, `requestApproval`, `requestAppApproval`, `closeAppApproval`, `withdrawAppApprovals`, `sendBack`, `handoff`, `handoffOf`, `syncStories`, `handoffStory`, `storiesOf` (Phase 16c: stories as items, the Design handoff per story), `signOffEngineering`, `readinessOf` (Phase 16d), `decideApproval`, `recordPullRequest`, `canMerge`, `pullRequestMerged`, `pullRequestMergedOutside`, `pullRequest`, `pullRequests`, `featuresOf` (Phase 16e: pull requests as items, `src/lifecycle/services/pull-requests.js`), `checksFor`, `overrideCheck`, `trace`, `familyOf` (Phase 16f, `src/lifecycle/services/checks.js`), `acceptIdea` (Phase 17), `waitingFor`, `counts`, `overview`, `live`, `snapshot`, `rules`, `sweep` | Product, Design, Factory (Engineering, Pull requests, Test, the pull request bridge), devtools (a Bitbucket merge), Infrastructure, Home |
 | `platform` | NooblyJS (`src/services/platform/index.js`) | `checkAgentWork`, `route(workType)`, `budgetFor`, `spendFor`, `guardrail(key)`, `repository(ref)`, `repositories.list()` (each with its owning `team`, Phase 16c), `environments`, `containers`, `secrets` (references only) | every agent action (Teammates, Product, Factory, Knowledge, Infrastructure) |
 | `devtools` | NooblyJS (`src/services/devtools/`): reads (Phase 11), and writes through the gate only (Phase 13) | `writes` (`status`, `outbox`, `retry`, `discard`, `setMode`, `setRule`), `sync` (`onHandoff`, `onRunStarted`, `poll`, `workFor`), `forge` (`pushBranch`, `openOrUpdatePullRequest`, for the Factory), `decideApproval`, `status`, `repositories`, `repository(slug)`, `file(slug, path, { ref })`, `jira.search` / `issue` / `issues` / `projects`, `links` | Product (Architecture · Repositories), Factory |
 | `teams` | NooblyJS | `list`, `get(id)` (NooblyJS teams, for billing and homes) | Teammates, Factory |
 | `teammates` | `nooblyjs-ai-teammate` | `roster`, `get(slug)`, `availability(slug)`, `provider`, **`runTask(request)`**: every agent action in NooblyJS is one | chat, the Teams bot, Product, Infrastructure |
-| `product` | the Factory's Product section (`nooblyjs-ai-factory/product`, through the Factory's `provides`) | `artefactsFor`, `summary`, `readinessFacts`, `updateSpec` (a person's edit; agents refused), `linkKnowledge`, `adrFor`, `architectureFor`, `gatesFor`, `designInputs` (the spec parsed, its repositories, the container view, quality attributes and ADRs; Phase 16c), `waitingFor`, `metrics` | Home, chat, Knowledge, Factory, Design |
-| `design` | the Factory's Design section (`nooblyjs-ai-factory/design`, through the Factory's `provides`; Phase 16c) | `readinessFacts(itemId)` (Design's checks, null with no Design work), `designFor(itemId)`, `items()`, `acceptRequirement` (a person's; agents refused) | the lifecycle engine (Design's readiness), Home (the Design homes) |
-| `factory` | `nooblyjs-ai-factory` (`src/services/hosted.js`) | `status`, `runsForItem`, `runsFor`, `questionsFor(person)`, `waitingWork`, `intake`, `cancel(runId)`, `stopAll`, `engineeringReadiness(itemId)` (the Engineering sign-off's checks, null with no Engineering work), `engineeringFor()` (the stories in Engineer; Phase 16d) | Home, Platform · Containers, the lifecycle engine (Engineering readiness) |
-| `quality` | the Factory's Test section (`nooblyjs-ai-factory/quality`, through the Factory's `provides`; Phase 16d) | `readinessFacts(storyId)`, `casesFor(storyId, repo)`, `summaryFor(storyId)`, `stories()` | the Factory (the sign-off's checks, a work item's test cases), Home (the Test analyst's home) |
+| `product` | the Factory's Product section (`nooblyjs-ai-factory/product`, through the Factory's `provides`) | `artefactsFor`, `summary`, `readinessFacts`, `updateSpec` (a person's edit; agents refused), `linkKnowledge`, `adrFor`, `architectureFor`, `gatesFor`, `designInputs` (the spec parsed, its repositories, the container view, quality attributes and ADRs; Phase 16c), `waitingFor`, `metrics`, `checksFor(itemId)`, `trace(itemId)` (Phase 16f), `placeOf(itemId)`, `portfolios()`, `businessCases()`, `hierarchy()` (Phase 17; `readinessFacts` answers an idea's business case too) | Home, chat, Knowledge, Factory, Design, Platform, Metrics |
+| `design` | the Factory's Design section (`nooblyjs-ai-factory/design`, through the Factory's `provides`; Phase 16c) | `readinessFacts(itemId)` (Design's checks, null with no Design work), `designFor(itemId)`, `items()`, `acceptRequirement` (a person's; agents refused), `trace(itemId)` (Phase 16f) | the lifecycle engine (Design's readiness), Home (the Design homes) |
+| `factory` | `nooblyjs-ai-factory` (`src/services/hosted.js`) | `status`, `runsForItem`, `runsFor`, `questionsFor(person)`, `waitingWork`, `intake`, `cancel(runId)`, `stopAll`, `engineeringReadiness(itemId)` (the Engineering sign-off's checks, null with no Engineering work), `engineeringFor()` (the stories in Engineer; Phase 16d), `checksFor({ itemId, itemIds })` and `trace({ itemId, itemIds })` (gates, quality attributes, required tests; runs; Phase 16f) | Home, Platform · Containers, the lifecycle engine (Engineering readiness) |
+| `quality` | the Factory's Test section (`nooblyjs-ai-factory/quality`, through the Factory's `provides`; Phase 16d) | `readinessFacts(storyId)`, `casesFor(storyId, repo)`, `summaryFor(storyId)`, `stories()`, `trace(itemId)` (Phase 16f) | the Factory (the sign-off's checks, a work item's test cases), Home (the Test analyst's home) |
 | `knowledge` (the wiki returns `provides: ['knowledge']`) | `nooblyjs-ai-knowledge` | `contextFor`, `search`, `find`, `locate`, `contextOf`, `flagged`, `status` | Product (drafts, Architecture · Knowledge), Factory (run context), chat |
 | `infrastructure` | `nooblyjs-ai-infrastructure` (`src/services/summary.js`) | `summary`, `designFor`, `environmentsFor`, `previewFor`, `waitingFor`, `environments`, `decideApproval` | Home · Approvals (through the lifecycle engine), Platform · Environments |
 
@@ -680,6 +692,7 @@ npm run seed         # (re)write seed data into DATA_DIR  (-- --reset wipes data
 npm run test:e2e     # Playwright + axe per screen (dev dependency)
 npm run test:live    # LIVE: one real model call through team chat (needs ANTHROPIC_API_KEY; a few cents)
 npm run metrics:reconcile   # recompute every metric from raw events and diff with the screens
+npm run trace:rebuild       # build the trace again from every app and diff with data/trace/index.yaml (Phase 16f)
 ```
 
 Clone the repos side by side (`<workspace>/noobly`, `…\nooblyjs-core`, …) so the

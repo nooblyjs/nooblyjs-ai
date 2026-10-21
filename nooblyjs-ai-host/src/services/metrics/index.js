@@ -8,11 +8,12 @@ import { daySegments } from '../../util/dates.js';
 import { HttpError } from '../../util/errors.js';
 import { factsOfDay } from './facts.js';
 import { compute, windowStart, RANGES, DAY } from './compute.js';
+import { createPlaces } from './places.js';
 
 export { RANGES } from './compute.js';
 
 // Raised when a fact changes shape, so roll-ups written by older code are rebuilt.
-const ROLLUP_VERSION = 2; // 2: ask and decide facts carry the approval type (Phase 16e)
+const ROLLUP_VERSION = 3; // 2: ask and decide facts carry the approval type (Phase 16e); 3: spend facts their item (Phase 17)
 const dayOf = (ms) => new Date(ms).toISOString().slice(0, 10);
 
 /**
@@ -21,7 +22,9 @@ const dayOf = (ms) => new Date(ms).toISOString().slice(0, 10);
  * @param {{ directory: () => Promise<{ people: Map<string, object>, agents: Set<string> }> }} deps.activity
  * @param {{ now: () => number }} [deps.clock]  business time
  */
-export function createMetrics({ store, activity, clock = Date, log }) {
+export function createMetrics({ store, activity, clock = Date, log, services = null }) {
+  // Phase 17: spend placed by value stream and portfolio, and per item (the business case's estimate).
+  const places = createPlaces({ services, log });
   const eventFile = (day) => ['events', ...daySegments(day)];
   const rollupFile = (day) => ['metrics', 'rollups', `${day}.yaml`];
 
@@ -71,12 +74,18 @@ export function createMetrics({ store, activity, clock = Date, log }) {
     /** The metrics of a range ('7d', '30d' or 'quarter'), ending now on the business clock. */
     async get(range = '30d', { now = clock.now() } = {}) {
       check(range);
-      return compute(await facts(range, now, { raw: false }), { range, now });
+      const all = await facts(range, now, { raw: false });
+      return { ...compute(all, { range, now }), spendByValueStream: await places.byValueStream(all, now) };
     },
     /** The same, recomputed from the raw events without reading or writing a roll-up (npm run metrics:reconcile). */
     async fromEvents(range = '30d', { now = clock.now() } = {}) {
       check(range);
-      return compute(await facts(range, now, { raw: true }), { range, now });
+      const all = await facts(range, now, { raw: true });
+      return { ...compute(all, { range, now }), spendByValueStream: await places.byValueStream(all, now) };
+    },
+    /** Agent spend per item (its root item), over the last quarter and before it: { PRD-031: 41.2, … } (Phase 17). */
+    async spendByItem({ now = clock.now() } = {}) {
+      return places.spendByItem(await facts('quarter', now, { raw: false }));
     },
   };
 }
