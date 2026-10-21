@@ -111,6 +111,8 @@ inclusion: always
 | 22 | Release (new app: Operations, part 1) | ✅ (reviewed 2026-10-21) |
 | 23 | Operate and learn (Operations, part 2) | ✅ (reviewed 2026-10-21) |
 | 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ✅ (reviewed 2026-10-21) |
+| 25a | Product: customer evidence, the ideas portal, closing the loop | ☐ planned (from the Productboard and Aha! comparison) |
+| 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ☐ planned |
 
 Open bugs and changes: BUG-001 to BUG-007 and CHG-001 to CHG-007, all fixed and waiting for your checks (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 
@@ -1439,6 +1441,118 @@ hosted app stores through `host.store`, and the mocking audit lists every mock a
 
 **Done when:** steps 1–5 pass.
 **Guide points:** Which teammate should the wiki's agents work as?
+
+---
+
+## Phase 25 — Product enhancements (from Productboard and Aha!)
+
+**Where it came from:** the comparison of 2026-10-21 (`nooblyjs-ai-host/.claude/audits/2026-10-21-product-tools-comparison.md`):
+what Productboard and Aha! do well that the Product app does not. What we have and they don't (one loop to the
+outcome review, requirements with their sources, architecture, business cases from real spend, accountable agents)
+stays as it is. Two parts, each stopping for review.
+**Repos:** `nooblyjs-ai-product` (most of it), `nooblyjs-ai-host` (the permission, notifications, Metrics, the PM's
+home), `nooblyjs-ai-operations` (a release tells Product), `nooblyjs-ai-design` (dependencies on the roadmap).
+
+**Decided 2026-10-21 (your answers):**
+- **Feedback** comes in as planned below: notes typed in, Teams, email, Jira (read through devtools) and the support
+  tool's connector (mock first).
+- **The customer is the portfolio.** There are no customer or company records and no CRM: the people who ask are
+  colleagues, and who they ask for is a portfolio, value stream and product from the catalogue. That is the segment
+  the board and the evidence filter by. No revenue is held.
+- **The portal is for colleagues only, always**: everyone signed in to NooblyJS, and nobody outside Acme.
+- **Viewers submit, vote and comment too**: a new `suggest` permission that every access role has; agents never.
+- **Scoring stays RICE**, as today. Customer importance (25a) and the objective an item serves show beside the score;
+  they don't change it.
+- **Objectives run by Now · Next · Later**, not by quarter or half, and so does capacity.
+
+### Phase 25a — Customer evidence, the ideas portal, closing the loop
+
+**Goal:** every idea shows who asked for it, for which portfolio, and how much it matters to them; colleagues put
+ideas forward and vote; and everyone who asked hears when it ships and whether it worked.
+
+**Before you start**
+- The support tool behind the connector (Zendesk in the sample) `[PLACEHOLDER]`, and the email address feedback goes to
+  `[PLACEHOLDER]`.
+- The vote limit per person (default: 10 open votes at a time; a vote comes back when its idea ships or closes)
+  `[CONFIRM]`.
+
+**Build**
+- **A feedback inbox** (Product · Feedback): each piece of feedback a **note** (`NOTE-0412`) with its source, the
+  colleague it came from or through, the portfolio, value stream and product it is about, and when; personal data
+  redacted on the way in, as Knowledge's import does. A person, or Ada as a teammate task, highlights a snippet and
+  links it to an idea, feature or spec with an **importance** (nice to have, important, critical): an **insight**. Ada
+  suggests links and clusters notes into **signals**, which now count real notes instead of a typed number (the
+  seeded counts stay sample data).
+- **Customer importance** on every idea, feature and spec: how many colleagues asked, for which portfolios, weighted
+  by importance, said in words ("12 colleagues across 2 portfolios; 4 say critical"). The board and the evidence
+  filter by portfolio, value stream and product.
+- **The `suggest` permission** in NooblyJS's matrix: every access role has it, Viewer included; an agent is refused it
+  (audited), like every rule that keeps agents from deciding.
+- **The ideas portal** (Product · Ideas portal), for colleagues only: submit an idea for a portfolio and product, see
+  the others with their status in words, vote (within the limit), comment, follow, and vote **on behalf of a
+  colleague** who asked them (a store manager on the phone to support). A person with `draft` merges duplicates
+  (votes and followers carried over) and promotes an idea to the board.
+- **Closing the loop**: when a feature's release reaches production (Operations), everyone linked to its ideas and
+  insights (voters, followers, the colleagues whose notes were linked) is told in NooblyJS and Teams, with the release
+  notes; the outcome review tells them again whether the goals were met.
+- The PM's home: new feedback, insights to link, portal ideas waiting, and who is to be told.
+
+**How you test it**
+1. Priya logs three notes from store managers about slots selling out (one a Teams message) and one from support about
+   a customer who wants to edit an order. Ada suggests linking the three to PRD-031 and the fourth to IDEA-019 "Edit
+   order until picking starts"; Lerato accepts with "critical" and "important": PRD-031 shows "3 colleagues across 1
+   portfolio; 1 says critical". The phone number in one note is redacted.
+2. Signals: "Slots sell out before 10:00" counts the notes behind it; a click shows them. The board filtered by the
+   Checkout product shows PRD-031's evidence and not IDEA-019's (Delivery).
+3. Naledi (Viewer) submits "Let me add to my order after paying" in the portal and votes; past the limit she is told
+   why. Thabo votes on behalf of a store manager. An agent's vote is refused (403) and audited.
+4. Lerato merges Naledi's idea into IDEA-019 (votes and followers carried over) and promotes it to the board.
+5. Slots 1.0 reaches production: everyone linked to PRD-031's ideas and insights gets "Same-day slots shipped", with
+   the release notes; after the outcome review, "0 of 3 goals met" with a link.
+
+**Done when:** steps 1–5 pass.
+**Guide points:** Which portfolios bring the most feedback, and does the board now show it?
+
+### Phase 25b — Objectives, roadmaps and capacity
+
+**Goal:** the board and the roadmap say why each item is there (the objective it serves, its RICE score, who asked)
+and whether the teams can do what is in Now, and a roadmap is something people edit and share, not a typed file.
+
+**Before you start**
+- How long Now is, for capacity (default: the next 12 weeks, set by an Owner) `[CONFIRM]`; Next and Later have no
+  dates.
+- Each team's people-days available in Now `[PLACEHOLDER]`, from Teams & roles.
+
+**Build**
+- **Objectives** (`OBJ-07`), each in **Now, Next or Later**, with key results that have a measure, a start, a target
+  and a source (Metrics, the monitor, or typed in); linked to strategic themes, epics, features, ideas and specs;
+  progress in words, moved by outcome reviews. An objective is moved between horizons by a Product lead (`approve`),
+  audited; an item in Now serving an objective in Later is pointed out.
+- **Why, on every card**: the RICE score as today, the objective it serves and its horizon, and customer importance
+  (25a), in words ("RICE 42 · serves OBJ-07 (Now) · 12 colleagues asked").
+- **Roadmaps from the items themselves** (replacing `roadmap.yaml`): Now · Next · Later by default, a timeline for Now
+  from the lifecycle's dates and targets, and views by portfolio, theme, objective or team; releases (Operations) and
+  Design's feature dependencies on them; saved views; a read-only roadmap page anyone signed in can be sent; edited in
+  the app by a person with `draft`, every change audited.
+- **Capacity in Now**: each team's people-days against the business cases' estimates of the items in Now; an
+  over-planned Now said in words ("Delivery squad: 64 of 50 days planned in Now"). Next and Later are not checked.
+- **Strategy documents**: vision, positioning, personas and competitors from templates (like portfolios today), which
+  the drafting agents read (`designInputs`, the spec and business-case drafts).
+- **Product reports** in Metrics: feedback over time and by portfolio, planned days by objective and horizon, key
+  results' progress.
+
+**How you test it**
+1. Lerato creates OBJ-07 "More same-day orders" in Now, with a key result "Same-day slots still open at 12:00, 18% →
+   45%", read from the monitor; PRD-031 serves it.
+2. The board orders by RICE as today; PRD-031's card says "serves OBJ-07 (Now) · 3 colleagues asked".
+3. The roadmap's Now · Next · Later shows PRD-031 in Now with Slots 1.0 and its features' dependencies (Design's
+   FEAT-031-…); Lerato moves PRD-027 to Next; the change is audited; the shared page shows it read-only.
+4. Capacity: the delivery squad is over-planned in Now and the roadmap says so; moving PRD-025 to Later clears it.
+5. The outcome review of PRD-031 moves the key result to 31.5%; the objective says "1 of 1 key result behind".
+6. Metrics shows feedback by portfolio and planned days by objective.
+
+**Done when:** steps 1–6 pass.
+**Guide points:** Is 12 weeks the right length for Now?
 
 ---
 
