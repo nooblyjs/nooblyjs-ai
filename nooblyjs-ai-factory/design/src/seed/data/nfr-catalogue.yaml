@@ -1,33 +1,41 @@
 # The NFR catalogue (root product.md §3.2a, §3.4): the non-functional requirements Design draws an item's NFRs from, by
 # category. Seeded on 2026-10-20 (Phase 16c) with one entry per category; the targets are defaults to agree with the
 # teams [CONFIRM], and an item's own quality attributes (its Architecture page) win over them. Phase 18 (elicitation)
-# reads this file too. Edit it here; a category is { key, label, entries: [{ key, requirement, target }] }.
+# reads this file too: each category's prompt is the question its NFR walk asks. Edit it here; a category is { key, label,
+# prompt, entries: [{ key, requirement, target }] }.
 categories:
   - key: performance
     label: Performance
+    prompt: 'How fast must it be, and at what peak? Name the page or call, the percentile and the load.'
     entries:
       - { key: page-response, requirement: 'Customer-facing pages and APIs respond quickly at peak', target: 'p95 < 500 ms [CONFIRM]' }
   - key: availability
     label: Availability and consistency
+    prompt: 'How much downtime can it take, and can any write be lost or doubled?'
     entries:
       - { key: monthly-availability, requirement: 'Customer-facing services stay up, and no write is lost or doubled', target: '99.9% monthly [CONFIRM]' }
   - key: security
     label: Security
+    prompt: 'Who may use it, what must they never see, and which data needs protecting?'
     entries:
       - { key: authenticated-apis, requirement: 'Every API is authenticated and authorised; secrets come from the vault', target: 'No open findings above medium at release [CONFIRM]' }
   - key: privacy
     label: Privacy
+    prompt: 'Which personal data does it touch, why, where is it kept and for how long?'
     entries:
       - { key: personal-data, requirement: 'Personal data is kept to what the feature needs and stays in its region', target: 'Privacy review passed [PLACEHOLDER: regime]' }
   - key: accessibility
     label: Accessibility
+    prompt: 'Who must be able to use it with a keyboard or a screen reader, and on which screens?'
     entries:
       - { key: wcag, requirement: 'Every screen meets WCAG 2.2 AA', target: 'No axe violations; keyboard and screen reader checked [CONFIRM]' }
   - key: cost
     label: Cost
+    prompt: 'What may it cost to run each month at today''s volume, and at the peak?'
     entries:
       - { key: run-cost, requirement: 'The change runs within its budget at current volume', target: '[PLACEHOLDER: monthly run cost]' }
   - key: operability
     label: Operability
+    prompt: 'Who runs it, how do they know it is unwell, and how fast must they recover it?'
     entries:
       - { key: observable, requirement: 'Each service logs, has health checks and alerts on its SLOs', target: 'Dashboards and alerts before release [CONFIRM]' }

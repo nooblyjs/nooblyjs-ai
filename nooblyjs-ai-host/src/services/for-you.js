@@ -78,6 +78,12 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
       ]);
       business = { cases, spend };
     }
+    // The Business analyst's home (Phase 18): each spec's elicitation, from the Product section.
+    let elicitation = null;
+    if (role.layout === 'business-analyst') {
+      elicitation = await Promise.resolve(services.get('product')?.elicitations?.()).catch(() => null);
+      if (elicitation && base.scope !== 'all') elicitation = elicitation.filter((e) => items.some((i) => i.id === e.itemId) || !snapshot.items.some((i) => i.id === e.itemId));
+    }
     // The Design homes (Phase 16c) read each item's design from the Factory's Design section, when it is running here.
     let design = null;
     if (role.layout === 'solution-architect' || role.layout === 'functional-analyst') {
@@ -90,8 +96,8 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         } catch { /* the Design section is there but can't answer: the panels say it isn't running */ }
       }
     }
-    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business };
-    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst, 'business-owner': businessOwner }[role.layout](ctx);
+    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business, elicitation };
+    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst, 'business-owner': businessOwner, 'business-analyst': businessAnalyst }[role.layout](ctx);
     return { ...base, layout: role.layout, engine: true, now: snapshot.at, ...shaped };
   }
 
@@ -358,6 +364,42 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
           },
         ],
         side: [signOffList(mine)],
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------------------- Business analyst (Phase 18)
+
+  /** Business analyst: candidate requirements to decide, specs in Product with no session, open questions, NFR walks to finish. */
+  function businessAnalyst({ elicitation }) {
+    const list = (elicitation ?? []).filter((e) => e.requirements !== undefined);
+    const live = list.filter((e) => !['approved'].includes(e.status));
+    const toDecide = list.filter((e) => e.proposed > 0);
+    const noSession = live.filter((e) => !e.sessions);
+    const questions = list.filter((e) => e.openQuestions > 0);
+    const walks = live.filter((e) => e.sessions && e.walked < e.categories);
+    const href = (id) => `/factory/product/elicitation/${encodeURIComponent(id)}`;
+    const off = 'The Product section is not running here, so there is no elicitation to show.';
+    const n = toDecide.reduce((s, e) => s + e.proposed, 0);
+    return {
+      summary: elicitation === null ? off : n ? `${words(n)} candidate ${plural(n, 'requirement waits', 'requirements wait')} for your decision.` : 'No candidate requirement waits for a decision.',
+      filters: { what: 'Specs' },
+      action: { label: 'Open the Product board', href: '/factory/product/board' },
+      tiles: [
+        { key: 'candidates', label: 'Candidates to decide', value: elicitation === null ? null : n, note: n ? 'Accept, merge or reject' : 'Nothing waiting' },
+        { key: 'no-session', label: 'Specs with no session', value: noSession.length, note: noSession.length ? 'Run an interview or a workshop' : 'Every spec has one' },
+        { key: 'questions', label: 'Open questions', value: questions.reduce((s, e) => s + e.openQuestions, 0), note: 'They hold the spec approval', tone: questions.length ? 'warning' : null },
+        { key: 'nfr', label: 'NFR walks to finish', value: walks.length, note: 'Categories not answered yet' },
+      ],
+      panels: {
+        lists: [
+          { key: 'candidates', title: 'Candidate requirements to decide', empty: elicitation === null ? off : 'Nothing waiting.', rows: toDecide.map((e) => ({ id: e.itemId, title: `${e.itemId} · ${e.title}`, text: e.text, action: { label: 'Decide', href: href(e.itemId) } })) },
+          { key: 'questions', title: 'Open questions', empty: 'No open question.', rows: questions.map((e) => ({ id: e.itemId, title: `${e.itemId} · ${e.title}`, text: `${e.openQuestions} open: the spec approval waits on them`, late: true, action: { label: 'Answer', href: href(e.itemId) } })) },
+        ],
+        side: [
+          { key: 'no-session', title: 'Specs with no session', empty: 'Every spec has a session.', rows: noSession.map((e) => ({ id: e.itemId, title: `${e.itemId} · ${e.title}`, text: 'No interview, workshop or meeting yet', action: { label: 'Record one', href: href(e.itemId) } })) },
+          { key: 'nfr', title: 'NFR walks to finish', empty: 'Every walk is finished.', rows: walks.map((e) => ({ id: e.itemId, title: `${e.itemId} · ${e.title}`, text: `${e.walked} of ${e.categories} categories walked`, action: { label: 'Walk', href: href(e.itemId) } })) },
+        ],
       },
     };
   }

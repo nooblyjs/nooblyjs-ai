@@ -147,6 +147,7 @@ export function createEngine({ repos, host, log, clock }) {
     if (!checks.length) return NO_CHECKS;
     let results = item.readiness?.results ?? {};
     let details = {};
+    let extraChecks = {};
     let source = 'recorded';
     if (item.stage === 'design') {
       const design = host.service('design');
@@ -180,13 +181,16 @@ export function createEngine({ repos, host, log, clock }) {
         const facts = (await product.readinessFacts(item.id))?.facts;
         if (facts) {
           ({ results, details } = factsOf(facts));
+          extraChecks = Object.fromEntries(Object.entries(facts).filter(([, f]) => f?.check?.passed && f?.check?.failed).map(([k, f]) => [k, { passed: f.check.passed, failed: f.check.failed }]));
           source = 'product';
         } else if (item.stage === 'discover') return NO_CHECKS; // Phase 17: only an idea has a business case to check
       } catch (err) {
         log.warn(`readinessFacts(${item.id}) failed, using the recorded result: ${err.message}`);
       }
     } else if (item.stage === 'discover') return NO_CHECKS;
-    const view = checks.map((c) => {
+    // A fact that carries its own words (Phase 18: a spec's open questions) is a check of that item only.
+    const extra = Object.entries(extraChecks).filter(([key]) => !checks.some((c) => c.key === key)).map(([key, words]) => ({ key, ...words }));
+    const view = [...checks, ...extra].map((c) => {
       const result = results[c.key];
       const failed = details[c.key] ? `${c.failed}: ${details[c.key]}` : c.failed;
       return { key: c.key, passed: result === true, text: result === true ? c.passed : result === false ? failed : `${c.passed}: not checked yet` };

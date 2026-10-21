@@ -5,7 +5,7 @@ import { specDetail, specEtag, versionsView } from '../services/specs.js';
 import { notFound } from '../util/errors.js';
 import { peopleOnly } from '../util/http.js';
 
-export function specRoutes({ host, repos, people, specWrites, stageAgents = null }) {
+export function specRoutes({ host, repos, people, specWrites, stageAgents = null, elicitation = null }) {
   const router = host.express.Router();
   const read = host.requireRole('read');
   const draft = host.requireRole('draft');
@@ -22,7 +22,9 @@ export function specRoutes({ host, repos, people, specWrites, stageAgents = null
     // Who would draft it now: a hired teammate, or nobody (with why). Older specs stored a fixed name.
     const drafter = stageAgents ? await stageAgents.forStage('product') : null;
     const current = drafter ? { ...spec, agent: drafter.teammate } : spec;
-    res.status(status).set('ETag', specEtag(spec)).json({ ...specDetail(await ctxFor(req), current), drafter });
+    // NooblyJS Phase 18: the spec reads its accepted requirements from its elicitation.
+    const requirements = elicitation ? await elicitation.requirementsFor(spec.id).catch(() => []) : [];
+    res.status(status).set('ETag', specEtag(spec)).json({ ...specDetail(await ctxFor(req), current), drafter, requirements });
   };
 
   router.get('/specs', read, async (req, res) => {

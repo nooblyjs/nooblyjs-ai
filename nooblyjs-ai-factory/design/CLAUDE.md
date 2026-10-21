@@ -13,7 +13,7 @@ each feature. Each story is a lifecycle item of its own and goes to Engineering 
 | --- | --- |
 | Where it answers | `/factory/design` (API at `/factory/design/api/v1`; pages in `../public/design/`) |
 | Who mounts it | the Factory's `register()` (`../src/services/sections.js`) |
-| Its data | `data/factory/design/`: `nfr-catalogue.yaml`, `items/<itemId>/design.md` |
+| Its data | `data/factory/design/`: `nfr-catalogue.yaml` (each category with its `prompt` since Phase 18; the Product section's NFR walk reads it through the `nfrCatalogue` service), `items/<itemId>/design.md` |
 | What other apps call | `host.service('design')`: `readinessFacts`, `designFor`, `items`, `acceptRequirement`, `trace` (NooblyJS Phase 16f) |
 | What it calls | `workflows` (items, `syncStories`, `handoffStory`), `product.designInputs`, `platform.repositories`, `teammates.runTask`, `knowledge.find` |
 

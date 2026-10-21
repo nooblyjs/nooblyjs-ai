@@ -17,6 +17,8 @@ export const routes = [
   { path: '/board', nav: 'board', title: 'Product', page: page(() => import('./pages/board.js')) },
   { path: '/specs', nav: 'specs', title: 'Specs', page: page(() => import('./pages/specs.js')) },
   { path: '/specs/:id', nav: 'specs', title: 'Spec', page: page(() => import('./pages/spec.js')) },
+  // NooblyJS Phase 18: an item's elicitation (stakeholders, sessions, candidates, requirements, the NFR walk, questions).
+  { path: '/elicitation/:id', nav: 'specs', title: 'Elicitation', page: page(() => import('./pages/elicitation.js')) },
   { path: '/architecture', nav: 'architecture', title: 'Architecture', page: page(() => import('./pages/stage-list.js')), meta: { stage: 'architecture' } },
   { path: '/architecture/:id', nav: 'architecture', title: 'Architecture', page: page(() => import('./pages/architecture.js')) },
   { path: '/ux', nav: 'ux', title: 'UX Design', page: page(() => import('./pages/stage-list.js')), meta: { stage: 'ux' } },

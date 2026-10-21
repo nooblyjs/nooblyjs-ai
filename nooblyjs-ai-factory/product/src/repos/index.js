@@ -98,6 +98,8 @@ export function createRepos(store, { log }) {
     epics: docs(store, 'epics', log),
     features: docs(store, 'features', log),
     businessCases: docs(store, 'business-cases', log),
+    /** NooblyJS Phase 18: each spec's elicitation (stakeholders, sessions, candidates, requirements, the NFR walk, questions). */
+    elicitation: docs(store, 'elicitation', log),
     templates: templates(store),
     specs: {
       ...specs,

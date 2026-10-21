@@ -281,6 +281,8 @@ export function createBot({ agents, teams, people, roles, sessions, cards, conne
     await audit({ actor: as.id, action: 'teams.meeting_notes_posted', target: itemId, conversation: a.conversationName, requestedBy: person.id, costUsd: result.costUsd, modelRoute: result.modelRoute, lines: lines.length });
     await events.emit('teams.meeting_notes_posted', {
       itemId, conversationId: a.conversationId, teammateId: as.id, system: 'teammates', costUsd: result.costUsd, modelRoute: result.modelRoute, actorKind: 'agent', actorName: as.name,
+      // Phase 18: the notes themselves, so the Product section records them as an elicitation session of the item.
+      notes: body.slice(0, 20_000), meeting: a.conversationName ?? 'Teams meeting', with: [...new Set(lines.filter((l) => !/NooblyJS teammate/.test(l.who)).map((l) => l.who))].slice(0, 20),
       summary: `posted the notes of the ${a.conversationName ?? 'Teams'} meeting to ${facts.item}`,
     }, { actor: as.id });
     await say(a, `${as.name} posted the meeting notes to ${facts.item} · ${facts.title}: ${link(`/home/lifecycle/${encodeURIComponent(itemId)}`)}`);

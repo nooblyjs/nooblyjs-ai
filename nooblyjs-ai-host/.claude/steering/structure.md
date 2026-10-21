@@ -124,7 +124,8 @@ noobly/
                             containers.js (the simulated ContainerRuntime) · governance.js (members, audit query)
     lifecycle/              the lifecycle engine (was the repo nooblyjs-ai-workflows until 2026-10-10): index.js (register, the
                             services other apps call as host.service('workflows')) · services/engine.js (items, stages,
-                            approvals, handoffs, send-back, the sweep) · services/pull-requests.js (Phase 16e: pull
+                            approvals, handoffs, send-back, the sweep; a fact with its own words is an extra
+                            readiness check, Phase 18) · services/pull-requests.js (Phase 16e: pull
                             requests as items, their Build and Test approvals, merges, the story and its feature
                             following them) · services/checks.js (Phase 16f: its checks, one check's override, its
                             part of the trace) · services/views.js (Overview, Lifecycle,
@@ -646,6 +647,8 @@ data/
       architecture/<PRD-ID>/  diagram.md · adrs/ADR-014.md · quality-attributes.md
       ux/<PRD-ID>/            journey.md · flows/<flow>.md · research/<study>.md
       ui/<PRD-ID>/            screens/<screen>.md · handoff.md
+      business-cases/<id>.md  an idea's or epic's business case (Phase 17)
+      elicitation/<PRD-ID>.md stakeholders, sessions, candidates, requirements, the NFR walk, questions (Phase 18)
     design/               the Design section (Phase 16c)
       nfr-catalogue.yaml · items/<itemId>/design.md (requirements, systems, NFRs, features, interfaces, technical, stories)
     quality/              the Test section (Phase 16d)

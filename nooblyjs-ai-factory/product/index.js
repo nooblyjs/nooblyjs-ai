@@ -29,6 +29,7 @@ import { parseSpec } from './src/services/spec-format.js';
 import { createProductChecks } from './src/services/checks-trace.js';
 import { createHierarchy } from './src/services/hierarchy.js';
 import { createBusinessCases } from './src/services/business-cases.js';
+import { createElicitation } from './src/services/elicitation.js';
 
 const NAME = 'product';
 // One or more path segments: /product on its own, /factory/product inside the Software Factory.
@@ -91,6 +92,8 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   const businessCases = createBusinessCases({ repos, host, hierarchy, log });
   const specWrites = createSpecWriteService({ repos, host, log, flow, catalogue });
   const architecture = createArchitectureService({ repos, host, log });
+  // NooblyJS Phase 18: where requirements come from, and who accepted them.
+  const elicitation = createElicitation({ repos, host, architecture, log });
   // NooblyJS Phase 16f: this section's checks (the spec's readiness, the standards check) and its part of the trace.
   const productChecks = createProductChecks({ repos, architecture, specWrites, mountPath });
   const ux = createUxService({ repos, host });
@@ -116,7 +119,7 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   const summary = createSummaryService({ repos, people, host, budget: drafting.budget, architecture, stageAgents, mountPath });
 
   const router = host.express.Router();
-  router.use('/api/v1', createApi({ host, log, seed, repos, people, catalogue, documents, templates, ideas, hierarchy, businessCases, specWrites, drafting, summary, architecture, ux, ui, flow, stageAgents, kindKeys: Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.keys(v)])), mountPath, about: { name: NAME, version: VERSION, mountPath } }));
+  router.use('/api/v1', createApi({ host, log, seed, repos, people, catalogue, documents, templates, ideas, hierarchy, businessCases, elicitation, specWrites, drafting, summary, architecture, ux, ui, flow, stageAgents, kindKeys: Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.keys(v)])), mountPath, about: { name: NAME, version: VERSION, mountPath } }));
   // The browser files (module, pages, CSS). redirect: false, or /product would 301 to /product/ (public/ is a folder).
   router.use(host.express.static(PUBLIC_DIR, { index: false, redirect: false }));
   // Every other GET without a file extension is a page: the host's frame answers it, so deep links and refresh land
@@ -134,6 +137,13 @@ export async function register(app, serverManager, { mountPath = '/product', dat
     host.events.on('handoff.created', (event) => ui.onHandoffCreated(event)),
     host.events.on('item.sent_back', (event) => flow.onSentBack(event)),
     host.events.on('knowledge.answer_flagged', (event) => flow.onKnowledgeFlagged(event)),
+    // NooblyJS Phase 18: meeting notes a person had a teammate post to a spec become one of its elicitation sessions.
+    host.events.on('teams.meeting_notes_posted', (event) => {
+      const p = event?.payload ?? {};
+      if (!p.itemId || !p.notes) return;
+      repos.specs.get(p.itemId).then((spec) => spec && elicitation.addSession(p.itemId, { kind: 'meeting', title: p.meeting ?? 'Teams meeting', notes: p.notes, with: p.with ?? [] }, { id: p.teammateId ?? 'teams', name: p.actorName ?? 'Teams', kind: 'agent' }, { source: 'teams' }))
+        .catch((err) => log.warn(`product: ${p.itemId}'s meeting notes were not recorded as a session: ${err.message}`));
+    }),
   ];
   // Jobs that were waiting when the process last stopped are queued again.
   await drafting.recover();
@@ -172,7 +182,20 @@ export async function register(app, serverManager, { mountPath = '/product', dat
       artefactsFor: (itemId, options) => summary.artefactsFor(itemId, options),
       summary: (person) => summary.summary(person),
       // An idea's (Phase 17): "Business case complete", the Discover exit's check. A spec's: the spec's checks.
-      readinessFacts: (itemId) => (/^IDEA-/.test(String(itemId)) ? businessCases.facts(itemId) : specWrites.facts(itemId)),
+      // A spec with questions (Phase 18) also has "Every question is answered", failing while one is open.
+      readinessFacts: async (itemId) => {
+        if (/^IDEA-/.test(String(itemId))) return businessCases.facts(itemId);
+        const spec = await specWrites.facts(itemId);
+        return spec ? { ...spec, facts: { ...spec.facts, ...(await elicitation.facts(itemId).catch(() => ({}))) } } : spec;
+      },
+      /** An item's elicitation (Phase 18): stakeholders, sessions, candidates, requirements, the NFR walk, questions. */
+      elicitationFor: (itemId) => elicitation.view(itemId),
+      /** Every spec's elicitation in words (the Business analyst's home). */
+      elicitations: () => elicitation.all(),
+      /** A decision on a candidate requirement from another app: { itemId, candidateId, decision, into?, reason?, actor } (agents refused). */
+      decideCandidate: (input) => elicitation.decide(input),
+      /** A spec's accepted requirements, each with its sources and who accepted it. */
+      requirementsFor: (itemId) => elicitation.requirementsFor(itemId),
       /**
        * A person's edit of a spec's sections from outside this app (NooblyJS team chat's "Apply to spec"). The caller has
        * checked the person's permission; an agent actor is refused here. Resolves with the new { id, version }.

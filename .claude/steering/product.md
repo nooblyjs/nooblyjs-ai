@@ -49,7 +49,7 @@ Eight projects, over 370 test files, all offline by default. Phases 0–11 of th
 | --- | --- | --- | --- |
 | Business and strategy | Strategic themes, portfolios, value streams and their documents from templates; products as labels | `nooblyjs-ai-factory/product` | Partly built: portfolio epics, epics, features and requirements are **not** built |
 | Discover | Signals clustered into themes, ideas scored with RICE, the Product board, the quarter roadmap | `nooblyjs-ai-factory/product` | Built (signals are seeded; no live connector) |
-| Requirements | Spec: problem, goals (measure / today / target), user stories, Given/When/Then criteria, out of scope, readiness checks, reviewers, versions | `nooblyjs-ai-factory/product`, lifecycle engine | Built. **No elicitation**: requirements arrive already written, by an agent or a person |
+| Requirements | Spec: problem, goals (measure / today / target), user stories, Given/When/Then criteria, out of scope, readiness checks, reviewers, versions | `nooblyjs-ai-factory/product`, lifecycle engine | Built. **Elicitation since Phase 18** (§3.4): stakeholders, sessions, candidates quoting their source, requirements `REQ-033-01`, the NFR walk, questions |
 | Architecture | Container view as code, ADRs, standards check, quality attributes that become gates | `nooblyjs-ai-factory/product` | Built |
 | UX and UI design | Journeys, flows, research, screens, design-system reuse, accessibility checks, handoff preview | `nooblyjs-ai-factory/product` | Built |
 | Lifecycle and approvals | Items, 7 stages, readiness, approvals with target times and escalation, send-back, handoffs, Activity, audit | `nooblyjs-ai-host` (`src/lifecycle/`) | Built |

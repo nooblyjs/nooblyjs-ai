@@ -70,6 +70,23 @@ roles:
   # Lifecycle v3 (Phase 16b, root product.md §5): the Design and Engineer stages' people and the testers. The Solution
   # Architect and Functional Analyst homes came with Phase 16c, the Application Architect and Test analyst homes with
   # 16d; the tester's comes with 16e, and until then onboarding lands on Overview.
+  # Phase 18: the Business analyst (root product.md §5): where requirements come from.
+  - key: business-analyst
+    name: Business analyst
+    initials: BA
+    layout: business-analyst
+    blurb: Find out what people need, and keep every requirement traced to who said it.
+    promise: The analyst agent turns your session notes into candidate requirements, each quoting its source; you accept, merge or reject them.
+    tasks:
+      - { title: Run elicitation sessions, detail: 'Interviews, workshops and Teams meetings, with their notes.', where: Product · Elicitation }
+      - { title: Decide candidate requirements, detail: Nothing becomes a requirement without your decision., where: Product · Elicitation }
+      - { title: Walk the NFR catalogue, detail: Each category answered or marked not applicable., where: Product · Elicitation }
+    leadsWith: [Candidate requirements to decide, Specs with no session, Open questions]
+    agent: ada-quill
+    agents: Analyst agent · candidate requirements from your notes
+    tools: [Jira Cloud, Microsoft Teams]
+    home: /
+    firstWeek: []
   - key: solution-architect
     name: Solution Architect
     initials: SA

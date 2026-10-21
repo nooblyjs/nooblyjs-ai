@@ -126,7 +126,9 @@ many different people giving it.
   are testable", "Dependencies named", "Performance targets set", "Privacy reviewed",
   "Rollout plan") are configurable per stage. An item can't request approval until the
   required checks pass, unless a person overrides with a reason. A failing check offers one
-  agent action (e.g. "Ask Ada to draft rollout").
+  agent action (e.g. "Ask Ada to draft rollout"). **Since Phase 18** a spec with questions or assumptions has one more
+  check, "Every question is answered", failing with the open one named (`Q-033-1 "…" (owner …)`); a spec with none
+  has no such check.
 - Approvals have a **target time** and an **escalation path** (remind → escalate).
 - An item can be **sent back** to an earlier stage with a reason, and metrics track this.
 - Each stage can call a configured teammate to draft its artifact.
@@ -310,6 +312,25 @@ portfolios and value streams, and opens each document.
 > The Product Factory numbers its own stages 1–4 (Product, Architecture, UX, UI). In lifecycle v3 (Phase 16b) its
 > Product, UX and UI are the Product stage (with Discover before it), and its Architecture the Design stage, whose
 > pages the Factory shows in its Design section (`/factory/design/architecture`).
+
+### 5.3b Elicitation (the Product section, `/factory/product/elicitation/:id`, Phase 18)
+
+Opened from the spec's **Requirements** card. Root `product.md` §3.4 says what it is for.
+
+- **Stakeholders**: names (people, teams or outside parties), each affected, decides or consulted.
+- **Sessions** (`SES-033-1`): interviews, workshops and meetings with their notes. Notes a person had a teammate post
+  to the spec from Teams ("post meeting notes to PRD-033") become a session of their own (from Teams).
+- **Candidate requirements** (`CAN-033-1`): **Ask Ada** turns the notes into candidates, each quoting the sentence it
+  came from (a teammate task). A person with `accept-requirement` accepts one (a **requirement** `REQ-033-01`, with its
+  quotes and who accepted it), merges it into another (the requirement carries both quotes) or rejects it with a reason;
+  an agent is refused and audited. Acceptance criteria (`AC-033-01-1`) hang off a requirement. The spec shows its
+  requirements.
+- **Non-functional requirements**: the Design section's NFR catalogue walked category by category, each with its
+  prompt: answers with targets, or not applicable with a reason. A person who may accept requirements states accepted
+  NFRs; anyone else's answers are candidates. An accepted NFR with a target becomes a row of the item's quality
+  attributes ("… (REQ-033-03)"), which Design's solution draft turns into its NFRs.
+- **Questions and assumptions** (`Q-033-1`) with an owner: an open one fails the spec's readiness (§4) until it is
+  answered or a person overrides with a reason.
 
 ### 5.3a Design (the Factory's Design section, `/factory/design`, Phase 16c)
 
@@ -572,6 +593,8 @@ How it sits in NooblyJS:
     - **The Business owner's home** (Phase 17): business cases waiting (ideas whose case isn't complete, ideas ready to
       accept, epics with none), spend against budget per portfolio this month, and spend by value stream; each row
       links to the business case or to Metrics and Platform budgets.
+    - **The Business analyst's home** (Phase 18): candidate requirements to decide, open questions (they hold the spec
+      approval), specs with no session and NFR walks to finish, each row linking to the item's Elicitation page.
     - **The Engineering homes** (Phase 16d): the Application Architect's (architectures to draft, accept or draw again,
       stale ones, the stories in Engineer, sign-offs waiting on them) and the Test analyst's (criteria without a ready
       test case, stories with no test analysis, interfaces without a ready test, sign-offs waiting on them, and since
@@ -679,8 +702,8 @@ How it sits in NooblyJS:
 
 The last five rows were added in Phase 16a, `sign-off-tests` in Phase 16b; a data folder from before gets them built in
 (`src/middleware/roles.js` `BUILT_IN_PERMISSIONS`), and a row its `roles.yaml` lists wins. `accept-release-candidate`
-went with Verify (Phase 16b) and is no longer shown. Nothing uses `accept-requirement` or `declare-incident` yet (Phases
-18 and 23).
+went with Verify (Phase 16b) and is no longer shown. Since Phase 18 `accept-requirement` decides candidate requirements
+(and Design's business requirements); nothing uses `declare-incident` yet (Phase 23).
 
 **Since Phase 16b an approval's permission says whom it waits on**: any person but a Viewer may give any approval on
 behalf of one of them, and who gave it, for whom, is recorded (§4). The matrix still decides everything else (drafting,

@@ -20,6 +20,8 @@ const LAYOUTS = {
   'test-analyst': () => import('./for-you-design.js'),
   // Phase 17: the Business owner's home, the same lists.
   'business-owner': () => import('./for-you-design.js'),
+  // Phase 18: the Business analyst's home, the same lists.
+  'business-analyst': () => import('./for-you-design.js'),
 };
 
 function greeting(name) {

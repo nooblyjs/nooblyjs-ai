@@ -200,6 +200,16 @@ function decisionView(spec, ctx) {
   </div>`;
 }
 
+/** NooblyJS Phase 18: the spec's accepted requirements (its elicitation's), each with where it came from. */
+function requirementsView(spec, ctx) {
+  const list = spec.requirements ?? [];
+  return card({
+    title: 'Requirements', meta: `${list.length}`,
+    body: html`${list.length ? html`<ul class="pf-links" role="list">${list.map((r) => html`<li><span class="pf-links__title">${r.id} ${r.text}</span><span class="pf-links__meta">${r.quotes?.[0] ? `“${r.quotes[0].quote}”` : ''} · accepted by ${r.acceptedBy?.name ?? r.acceptedBy?.id}</span></li>`)}</ul>` : html`<p class="muted">No accepted requirement yet.</p>`}
+      <p><a href="${hrefFor(ctx, `/elicitation/${spec.id}`)}">Elicitation: stakeholders, sessions, candidates, NFRs, questions</a></p>`,
+  });
+}
+
 export async function render(view, { params, ctx }) {
   const id = params.id;
   ctx.chat.scope({ kind: 'spec', id });
@@ -245,7 +255,7 @@ export async function render(view, { params, ctx }) {
       <div class="pf-columns">
         ${editing ? editView(spec) : html`<article class="card pf-body" aria-label="${spec.id} spec">${bodyView(spec)}</article>`}
         <aside class="pf-rail" aria-label="About this spec">
-          ${briefView(spec, ctx)}${trackerView(spec)}${readinessView(spec, ctx)}${knowledgeView(spec)}${reviewersView(spec)}${versionsView(versions)}
+          ${briefView(spec, ctx)}${requirementsView(spec, ctx)}${trackerView(spec)}${readinessView(spec, ctx)}${knowledgeView(spec)}${reviewersView(spec)}${versionsView(versions)}
         </aside>
       </div>`);
     if (flash) say(view.querySelector('[data-message]'), flash.text, flash.tone);

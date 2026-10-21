@@ -82,6 +82,8 @@ export async function register(app, serverManager, { mountPath = '/design', data
       designFor: (itemId) => design.view(itemId).catch(() => null),
       /** The items in Design, each part in words. */
       items: () => design.items(),
+      /** The NFR catalogue: categories, each with its prompt and entries (NooblyJS Phase 18: the elicitation's walk). */
+      nfrCatalogue: () => catalogue.read(),
       /** Its part of an item's trace (NooblyJS Phase 16f): requirements, features, stories, criteria, interfaces. */
       trace: (itemId) => designTrace.trace(itemId),
       /** A person's acceptance of a business requirement, relayed by another app; an agent is refused and audited. */

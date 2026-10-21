@@ -97,7 +97,7 @@ inclusion: always
 | 16e | Build and Test: the AI builds and tests, engineers and testers approve | ☐ built, waiting for review |
 | 16f | One shape for checks, and the trace | ☐ built, waiting for review |
 | 17 | Strategy and the business case | ☐ built, waiting for review |
-| 18 | Requirements elicitation | ☐ |
+| 18 | Requirements elicitation | ☐ built, waiting for review |
 | 19 | Security by design (new app: Security) | ☐ |
 | 20 | Quality (the Factory's Test section) | ☐ |
 | 21 | Testing in environments | ☐ |
@@ -1200,6 +1200,13 @@ seen by value stream.
 ---
 
 ## Phase 18 — Requirements elicitation
+
+> **Built 2026-10-21, waiting for review** (started at your word, with the defaults). Spec:
+> `nooblyjs-ai-host/.claude/specs/phase-18-requirements-elicitation/`. Summary: `nooblyjs-ai-host/.claude/phases/phase-18-summary.md`.
+> Decided at the start: the NFR catalogue is the Design section's, each category now with a prompt, owned by the
+> Solution Architects `[CONFIRM]`; candidates from Teams come only from notes a person posted to an item; elicitation
+> lives in the Product section, one file per item; an NFR answer from a person who may accept requirements is accepted
+> at once; a spec has the "Every question is answered" check only while it has questions.
 
 **Goal:** every requirement says where it came from and who accepted it, and non-functional requirements are asked
 for, not remembered.

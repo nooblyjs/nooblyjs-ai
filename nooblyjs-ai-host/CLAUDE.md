@@ -37,7 +37,10 @@ and Trace tabs; `npm run trace:rebuild`) is built and waiting for review** (`.cl
 (Strategy and the business case: portfolio epics, epics and features in the Product section with ideas under features;
 a business case on an idea or epic, drafted by an agent with an estimate from the factory's history, and "Business case
 complete" before an idea is accepted; budgets by portfolio and spend by value stream in Metrics; the Business owner's
-home) is built and waiting for review** (`.claude/specs/phase-17-strategy-business-case/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
+home) is built and waiting for review** (`.claude/specs/phase-17-strategy-business-case/`). **Phase 18 (Requirements
+elicitation: stakeholders, sessions and Teams meeting notes, candidate requirements quoting their source, requirements
+`REQ-033-01` a person accepts, the NFR walk into quality attributes, open questions holding the spec approval; the
+Business analyst's home) is built and waiting for review** (`.claude/specs/phase-18-requirements-elicitation/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed
 2026-10-20)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent
