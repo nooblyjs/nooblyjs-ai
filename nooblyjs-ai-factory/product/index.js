@@ -179,6 +179,26 @@ export async function register(app, serverManager, { mountPath = '/product', dat
     },
     // What other apps may call (structure.md §6).
     services: {
+      /**
+       * NooblyJS Phase 23: a signal from production (Operations: an incident, an alert) on the Product board, linked to
+       * the release and item it came from. The same key twice is one signal, its count raised.
+       */
+      async raiseSignal({ key, title, product = null, theme = null, count = 1, unit = 'incidents', sourceLabel = 'Production', release = null, itemId = null, detail = '', actor } = {}) {
+        const words = String(title ?? '').replace(/\s+/g, ' ').trim().slice(0, 160);
+        if (!words) throw new Error('A signal needs a title.');
+        const id = `sig_${String(key ?? words).toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 30) || 'production'}`;
+        const by = { id: actor?.id ?? 'operations', name: actor?.name ?? 'Operations', kind: actor?.kind ?? 'app' };
+        const at = new Date(Number(host.clock?.now?.() ?? Date.now())).toISOString();
+        const existing = await repos.signals.get(id);
+        const record = existing
+          ? { ...existing, count: (existing.count ?? 0) + (Number(count) || 1), updatedAt: at }
+          : { id, title: words, theme, product, source: 'production', sourceLabel, count: Number(count) || 1, unit, week: null, status: 'new', release, itemId, raisedBy: by, createdAt: at, body: String(detail ?? '').slice(0, 4000) };
+        await repos.signals.write(record);
+        await host.events.emit('signal.raised', { signalId: id, title: record.title, product: record.product, release, itemId, count: record.count, summary: `raised the signal "${record.title}" from production${release ? ` (${release})` : ''}` }, { actor: by.id });
+        return record;
+      },
+      /** NooblyJS Phase 23: an idea another app opens (an incident's follow-up, an outcome review's goal missed). */
+      createIdea: ({ title, product = null, problem = '', signals = [], actor }) => ideas.createFromBody({ title: String(title ?? '').slice(0, 200), ...(product ? { product } : {}), problem, signals }, actor),
       artefactsFor: (itemId, options) => summary.artefactsFor(itemId, options),
       summary: (person) => summary.summary(person),
       // An idea's (Phase 17): "Business case complete", the Discover exit's check. A spec's: the spec's checks.

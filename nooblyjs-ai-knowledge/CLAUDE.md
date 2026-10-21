@@ -26,7 +26,7 @@ managers are missing). Search itself is not touched: it only asks the indexer an
 | `answers.js` | the answer when NO AI agent is configured (the top three sources' own sentences, cited `[1] [2] [3]`, saying no model wrote it), and a source as a link a spec can keep |
 | `processModel.js` | pure: the fenced `process-model` block (level, code, name, band, parent, order, linked-items) and the model around one page |
 | `access.js` | hosted: NooblyJS's permissions through `host.can` (`draft` for answer actions, `approve` to clear a flag, `change-repo-access` to import), an agent always refused, each write in NooblyJS's audit log. Standalone: signed in, and `admin` for the last two |
-| `index.js` | ties them together, and is what `index.mjs` returns as `services` (`contextFor`, `search`, `flagged`, `status`; `provides: ['knowledge']`) |
+| `index.js` | ties them together, and is what `index.mjs` returns as `services` (`contextFor`, `search`, `flagged`, `status`, and since NooblyJS Phase 23 `writePage`, a page another app writes for a person, such as Operations' post-incident review; `provides: ['knowledge']`) |
 
 - `/ai/chat/search` no longer answers 400 without an agent: it answers from passages, keeps every answer with
   sources (`answerId`), and `/ai/chat/status` says `searchWithoutModel`.

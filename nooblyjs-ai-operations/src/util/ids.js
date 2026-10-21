@@ -8,6 +8,12 @@ const ITEM_ID = /^[A-Z]{2,8}-\d{1,6}(-\d{1,4})?$/;
 const FEATURE_ID = /^[A-Z]{2,8}-\d{1,6}(-\d{1,4})?$/;
 
 export const isReleaseId = (id) => typeof id === 'string' && RELEASE_ID.test(id);
+// Phase 23: an SLO is SLO-<item number>-<n> (SLO-031-1), an incident INC-<NNN>, an outcome review OR-<item number>.
+export const isSloId = (id) => typeof id === 'string' && /^SLO-\d{1,6}-\d{1,4}$/.test(id);
+export const isIncidentId = (id) => typeof id === 'string' && /^INC-\d{3,}$/.test(id);
+export const isOutcomeId = (id) => typeof id === 'string' && /^OR-\d{1,6}$/.test(id);
+/** The number part of an item id: PRD-031 → 031. */
+export const numberOf = (itemId) => String(itemId).replace(/^[A-Z]+-/, '').split('-')[0];
 export const isItemId = (id) => typeof id === 'string' && ITEM_ID.test(id);
 export const isFeatureId = (id) => typeof id === 'string' && FEATURE_ID.test(id);
 /** Severities, worst first (Security's). */

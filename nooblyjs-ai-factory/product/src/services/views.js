@@ -64,7 +64,9 @@ export function signalView(signal, ctx = null) {
     week: signal.week ?? null,
     status: signal.status ?? 'new',
     idea: signal.idea ?? null,
-    text: `${signal.count ?? 0} ${unit}${names ? ` · ${signal.sourceLabel}` : ''}`,
+    // NooblyJS Phase 23: a signal from production names the release and item it came from.
+    ...(signal.release || signal.itemId ? { release: signal.release ?? null, itemId: signal.itemId ?? null } : {}),
+    text: `${signal.count ?? 0} ${unit}${names ? ` · ${signal.sourceLabel}` : ''}${signal.release ? ` · ${signal.release}` : ''}`,
     stage: stageFor('signal'),
     detail: signal.body?.trim() || null,
   };

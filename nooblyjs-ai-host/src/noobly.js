@@ -192,7 +192,9 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   const connector = createConnector({ bot: config.teams, simulator: simulator?.connector ?? null, allowLocal: config.teams.devUnsigned, fetch: teamsFetch, log });
   const cards = await loadCards();
   // Approvals reach their reviewers in Teams and Outlook (Phase 12).
-  const notify = createNotify({ store, people, profiles, connector, cards, events, auditLog, config, fetch: graphFetch, clock, log });
+  const notify = createNotify({ store, people, profiles, connector, cards, events, auditLog, config, fetch: graphFetch, clock, log, onCallSimulator: simulator ? 'sim-on-call' : null });
+  // Phase 23: on-call alerts in Teams, for the hosted apps (Operations' SLOs).
+  services.set('oncall', { alert: (input) => notify.alert(input) });
   const bot = createBot({
     agents, teams, people, roles, sessions, cards, connector, notify,
     chat, events, auditLog, store, publicBaseUrl: config.publicBaseUrl, log,

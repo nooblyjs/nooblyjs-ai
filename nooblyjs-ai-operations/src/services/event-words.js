@@ -6,6 +6,11 @@ const WORDS = {
   'release.refused': (p) => `${p.releaseId} can't go to production yet`,
   'release.deployed': (p) => `deployed ${p.releaseId} to ${p.percent}% of ${p.environment}`,
   'release.rolled_back': (p) => `rolled ${p.releaseId} back: ${p.reason}`,
+  'slo.created': (p) => `made the SLO ${p.sloId} for ${p.itemId}`,
+  'slo.alert': (p) => `alerted on ${p.sloId}: ${p.level}`,
+  'incident.declared': (p) => `declared ${p.incidentId}: ${p.title}`,
+  'incident.resolved': (p) => `resolved ${p.incidentId}`,
+  'outcome_review.closed': (p) => `closed ${p.itemId} with its outcome review`,
 };
 
 /** The host's `events`, with every emit from this app named and worded. */

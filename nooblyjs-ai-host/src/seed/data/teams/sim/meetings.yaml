@@ -13,3 +13,9 @@ meetings:
     subtitle: Checkout squad · daily 09:15
     people: [priya-s, lerato-m]
     earlier: []
+  # Phase 23: where on-call alerts land in development (Operations' SLOs); in a tenant, TEAMS_ONCALL_CONVERSATION.
+  - id: sim-on-call
+    title: On-call
+    subtitle: Delivery squad · alerts from production
+    people: [stevie, thabo-n, priya-s]
+    earlier: []

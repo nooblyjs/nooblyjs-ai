@@ -20,7 +20,7 @@ const IN_PRODUCTION = new Set(['piloting', 'complete']);
 const clean = (value, max) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '');
 const versionsText = (list) => (list ?? []).map((d) => `${d.service} ${d.version}`).join(' · ') || 'nothing';
 
-export function createReleases({ repos, host, log, policies, evidence, notes, deployer, now, mountPath }) {
+export function createReleases({ repos, host, log, policies, evidence, notes, deployer, now, mountPath, onFirstDeploy = async () => {} }) {
   const iso = () => new Date(now()).toISOString();
   const svc = (name) => host.service?.(name) ?? null;
   const emit = (type, payload, actor) => host.events.emit(type, payload, { actor: actor?.id ?? actor ?? null });
@@ -183,7 +183,11 @@ export function createReleases({ repos, host, log, policies, evidence, notes, de
     }));
     await emit('release.deployed', { releaseId: id, itemId: release.itemId, featureId: release.featureId, percent: done.percent, environment: done.environment, summary: `deployed ${id} · ${release.name} to ${done.environment}: ${step.label}` }, person);
     // The feature is in production: its stories go to Operate (the lifecycle), once.
-    if (index === 0) await svc('workflows')?.featureDeployed?.({ itemId: release.itemId, featureId: release.featureId, releaseId: id }).catch((err) => log.warn(`release ${id}: ${err.message}`));
+    if (index === 0) {
+      await svc('workflows')?.featureDeployed?.({ itemId: release.itemId, featureId: release.featureId, releaseId: id }).catch((err) => log.warn(`release ${id}: ${err.message}`));
+      // Phase 23: in production, the item's SLOs are watched and its outcome review is scheduled.
+      await onFirstDeploy(await getOr404(id)).catch((err) => log.warn(`release ${id}: ${err.message}`));
+    }
     return shape(updated);
   }
 

@@ -165,6 +165,23 @@ roles:
     tools: [Microsoft Teams]
     home: /
     firstWeek: []
+  # Phase 23: the SRE (root product.md §3.7): SLOs, incidents, post-incident reviews, outcome reviews.
+  - key: sre
+    name: SRE
+    initials: SR
+    layout: sre
+    blurb: Keep what runs in production within its SLOs, and learn from every incident.
+    promise: Alerts reach you in Teams; the SRE agent drafts each incident's timeline and review; you resolve and accept.
+    tasks:
+      - { title: Watch the error budgets, detail: Each item's quality attributes are SLOs once its first release is live., where: Operations · SLOs }
+      - { title: Run and resolve incidents, detail: 'Declare one, or raise it from an alert; follow-ups become ideas or defects.', where: Operations · Incidents }
+      - { title: Accept post-incident reviews, detail: An accepted review is written to Knowledge., where: Operations · Incidents }
+    leadsWith: [SLOs burning their budget, Open incidents, Reviews to accept, Outcome reviews due]
+    agent: pip-okafor
+    agents: SRE agent · timelines and post-incident reviews
+    tools: [Microsoft Teams]
+    home: /
+    firstWeek: []
   - key: developer
     name: Developer
     initials: DV

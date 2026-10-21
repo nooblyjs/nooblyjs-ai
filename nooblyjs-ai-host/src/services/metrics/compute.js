@@ -333,5 +333,30 @@ export function compute(facts, { range = '30d', now }) {
     spend: spend(sorted, period),
     stages: stages(visits, period),
     waiting: waitingNow(sorted, end),
+    production: production(sorted, items, period, r.days),
+  };
+}
+
+/**
+ * Phase 23: production, the DORA way, in the period. Deployment frequency: steps of releases into production. Change
+ * failure rate: releases deployed in the period that were rolled back or had an incident. Time to restore: the median
+ * from an incident's declaring to its resolving. Idea → outcome: items closed with their outcome review, from opening.
+ */
+function production(facts, items, { start, end }, days) {
+  const inPeriod = facts.filter((f) => f.t >= start && f.t <= end);
+  const deploys = inPeriod.filter((f) => f.k === 'deploy');
+  const released = [...new Set(deploys.map((f) => f.key))];
+  const failed = new Set(facts.filter((f) => f.k === 'fail' && f.t >= start).map((f) => f.key));
+  const failures = released.filter((k) => failed.has(k)).length;
+  const restores = inPeriod.filter((f) => f.k === 'restore').map((f) => f.ms);
+  const restoreMin = restores.length ? Math.round(median(restores) / 60_000) : null;
+  const outcomes = inPeriod.filter((f) => f.k === 'outcome');
+  const ideaToOutcome = outcomes.map((f) => { const opened = items.get(f.item)?.createdAt; return opened != null ? (f.t - opened) / DAY : null; }).filter((d) => d != null);
+  const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+  return {
+    deploymentFrequency: { deploys: deploys.length, releases: released.length, text: deploys.length ? `${plural(deploys.length, 'deploy')} to production in ${days} days (${plural(released.length, 'release')})` : `No deploys to production in ${days} days` },
+    changeFailureRate: { failed: failures, of: released.length, text: released.length ? `${failures} of ${released.length} (${Math.round((failures / released.length) * 100)}%) rolled back or had an incident` : 'No releases deployed in the period' },
+    timeToRestore: { minutes: restoreMin, incidents: restores.length, text: restores.length ? `${restoreMin} minutes (median of ${plural(restores.length, 'incident')})` : 'No incidents resolved in the period' },
+    ideaToOutcome: { items: outcomes.length, days: ideaToOutcome.length ? Math.round(median(ideaToOutcome) * 10) / 10 : null, goalsMet: outcomes.reduce((n, f) => n + f.met, 0), goals: outcomes.reduce((n, f) => n + f.goals, 0), text: outcomes.length ? `${plural(outcomes.length, 'item')} closed with an outcome review${ideaToOutcome.length ? `, ${Math.round(median(ideaToOutcome) * 10) / 10} d from opening` : ''}; ${outcomes.reduce((n, f) => n + f.met, 0)} of ${outcomes.reduce((n, f) => n + f.goals, 0)} goals met` : 'No item closed with an outcome review in the period' },
   };
 }

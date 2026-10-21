@@ -50,8 +50,10 @@ const APP_TYPES = new Set(['infra-design', 'devtools-write', 'threat-model', 'ri
 /**
  * Phase 22: a stage approval another app may also open on its own artefact (`ref.app`): a release's `deploy` approval
  * (Operations), with the rule's two approvers. Opened by an app it is the app's: it decides it first, and no stage moves.
+ * Phase 23: the item's outcome review (Operations, when it is due), which completes the item when it is approved.
  */
-const APP_CAPABLE = new Set([...APP_TYPES, 'deploy']);
+const APP_CAPABLE = new Set([...APP_TYPES, 'deploy', 'outcome-review']);
+const APP_MOVES = { 'outcome-review': 'complete' };
 const isAppApproval = (a) => APP_TYPES.has(a.type) || (APP_CAPABLE.has(a.type) && Boolean(a.ref?.app));
 // An app names its artefact by `designId` (Infrastructure) or `id` (Security, Phase 19).
 const refId = (r) => r?.designId ?? r?.id ?? null;
@@ -575,9 +577,11 @@ export function createEngine({ repos, host, log, clock }) {
     let handoff = null;
     if (outcome === 'approved') {
       // A pull request's Test approval moves nothing: it may merge now, and a person merges it (Phase 16e).
-      const move = isAppApproval(approval) ? null : approval.type === 'stage' ? approval.to : item.type === 'pr' && item.pr && approval.type === 'test-approval' ? null : MOVES[approval.type];
+      const move = isAppApproval(approval) ? APP_MOVES[approval.type] ?? null : approval.type === 'stage' ? approval.to : item.type === 'pr' && item.pr && approval.type === 'test-approval' ? null : MOVES[approval.type];
       // The work goes to the Software Factory with the Engineering sign-off (Phase 16b), never before.
       if (approval.type === 'engineering-signoff') handoff = await createHandoff(item, updated, person);
+      // Closed by its outcome review (Phase 23, decided 2026-10-21): what was never released is withdrawn with it.
+      if (move === 'complete' && approval.type === 'outcome-review') await withdrawUnfinished(item, person, `${item.ref ?? item.id} closed with its outcome review`);
       if (move === 'complete') await complete(item.id, person, `completed ${item.ref ?? item.id} · ${item.title}`);
       // A move to where the item already is (an approval opened before its stage was migrated) moves nothing.
       else if (move && move !== item.stage) moved = (await moveStage(item.id, move, person)).item;
@@ -637,6 +641,27 @@ export function createEngine({ repos, host, log, clock }) {
       await emit('approval.withdrawn', { approvalId: a.id, itemId: item.id, type: a.type, reason: why, summary: `withdrew the ${a.subject ?? item.ref ?? item.id} approval: ${why}` }, actor.id);
     }
     return open.length;
+  }
+
+  /**
+   * Phase 23: an item closed by its outcome review withdraws its unfinished stories (not yet in Operate), each with its
+   * open pull requests, and their open approvals, saying why.
+   */
+  async function withdrawUnfinished(item, person, why) {
+    const all = await repos.items.list();
+    const stories = all.filter((i) => i.type === 'story' && i.parentId === item.id && i.status === 'active' && i.stage !== 'operate');
+    const at = now();
+    const withdrawn = [];
+    for (const st of stories) {
+      for (const it of [...all.filter((i) => i.type === 'pr' && i.parentId === st.id && i.status === 'active'), st]) {
+        await withdrawOpenApprovals(it, person, why);
+        await repos.items.update(it.id, (current) => (current.status !== 'active' ? null : { ...current, status: 'withdrawn', withdrawnAt: at, withdrawnReason: why, version: (current.version ?? 0) + 1, updatedAt: at }));
+        await emit('item.withdrawn', { itemId: it.id, parentId: it.parentId ?? item.id, system: it.system ?? 'factory', reason: why, ...(it.type === 'pr' ? { itemType: 'pr' } : {}), summary: `withdrew ${it.ref ?? it.id} · ${it.title}: ${why}` }, person.id);
+        withdrawn.push(it.id);
+      }
+    }
+    if (withdrawn.length) await audit({ actor: person.id, action: 'item.unfinished_withdrawn', target: item.id, items: withdrawn, reason: why });
+    return withdrawn;
   }
 
   // ---------------------------------------------------------------------------- item actions

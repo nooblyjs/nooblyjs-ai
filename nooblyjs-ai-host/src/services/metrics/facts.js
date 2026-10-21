@@ -11,6 +11,10 @@
 //   run      key, cost                    a Software Factory run finished (the cost behind its PR)
 //   spend    system, cost, item?          money spent by a system (on an item, when the event names one: Phase 17)
 //   work     item, who                    an agent or a person did something on an item
+//   deploy   key, item?, percent          a release's step into production (Phase 23: DORA's deployment frequency)
+//   fail     key, item?                   a release failed in production: rolled back, or an incident on it
+//   restore  key, ms                      an incident resolved, after ms (time to restore)
+//   outcome  item, met, goals             an item closed with its outcome review
 import { systemKey } from '../platform/budgets.js';
 
 // What Activity leaves out too: sign-ins, profiles, the dev clock and live-update noise. A teammate's task is counted
@@ -86,6 +90,24 @@ export function factsOf(event, dir) {
       out.push({ t, k, key, ...(item ? { item: String(item) } : {}), ...(cost ? { cost } : {}) });
       break;
     }
+    // Phase 23: production (Operations).
+    case 'release.deployed':
+      if (p.releaseId) out.push({ t, k: 'deploy', key: String(p.releaseId), ...(item ? { item: String(item) } : {}), percent: Number(p.percent) || 100 });
+      break;
+    case 'release.rolled_back':
+      if (p.releaseId) out.push({ t, k: 'fail', key: String(p.releaseId), ...(item ? { item: String(item) } : {}) });
+      break;
+    case 'incident.declared':
+      if (p.releaseId) out.push({ t, k: 'fail', key: String(p.releaseId), ...(item ? { item: String(item) } : {}) });
+      break;
+    case 'incident.resolved': {
+      const ms = Date.parse(p.resolvedAt) - Date.parse(p.declaredAt);
+      if (p.incidentId && Number.isFinite(ms) && ms >= 0) out.push({ t, k: 'restore', key: String(p.incidentId), ms });
+      break;
+    }
+    case 'outcome_review.closed':
+      if (item) out.push({ t, k: 'outcome', item: String(item), met: Number(p.met) || 0, goals: Number(p.goals) || 0 });
+      break;
     default:
   }
 

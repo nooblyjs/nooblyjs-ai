@@ -89,6 +89,21 @@ function stages(rows) {
   </section>`;
 }
 
+/** Phase 23: production, the DORA way: deployment frequency, change failure rate, time to restore, and idea → outcome. */
+function production(p) {
+  if (!p) return '';
+  const rows = [
+    ['Deployment frequency', p.deploymentFrequency.text],
+    ['Change failure rate', p.changeFailureRate.text],
+    ['Time to restore', p.timeToRestore.text],
+    ['Idea → outcome', p.ideaToOutcome.text],
+  ];
+  return html`<section class="card spend" aria-label="Production">
+    <div class="card__head"><h2 class="card__title">Production</h2></div>
+    <ul class="spend__list" role="list">${rows.map(([label, text]) => html`<li><span>${label}</span><span class="row__meta">${text}</span></li>`)}</ul>
+  </section>`;
+}
+
 /** Phase 17: this month's agent and cloud spend by value stream, and each portfolio against its budget. */
 function byValueStream(s) {
   if (!s) return '';
@@ -134,6 +149,7 @@ export async function render(view, { ctx, query }) {
       <div class="metrics__row">${leadTime(data.weeks)}${spend(data.spend)}</div>
       ${stages(data.stages)}
       ${waiting(data.waiting)}
+      ${production(data.production)}
       ${byValueStream(data.spendByValueStream)}
       <p class="metrics__foot" role="status">Computed from the event log at ${at.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit', hour12: false })} on ${at.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}.
         Idea → merge is the median from opening an item to its last merged PR; a stage’s numbers are over the visits that ended in the period.</p>

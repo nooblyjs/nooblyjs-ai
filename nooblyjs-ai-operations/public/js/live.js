@@ -1,7 +1,7 @@
 // How an Operations page stays current (as Infrastructure's do). No imports, so it can be tested outside a browser.
 
 /** The events that change what an Operations page shows (.claude/steering/structure.md). */
-const LIVE = ['release.', 'approval.', 'environment.', 'feature.'];
+const LIVE = ['release.', 'approval.', 'environment.', 'feature.', 'slo.', 'incident.', 'outcome_review.'];
 /** With an event stream, a page redraws at most this often however busy the stream is. */
 const LIVE_EVERY_MS = 500;
 

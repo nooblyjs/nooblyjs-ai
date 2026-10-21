@@ -9,6 +9,10 @@
 //            MS_GRAPH_SENDER. Sent unless their profile turns approval emails off.
 //
 // Each notification, sent or not, is audited (notify.approval_sent / notify.approval_skipped / notify.failed).
+//
+// Phase 23: ON-CALL ALERTS (Operations: an SLO's error budget burning) go to the on-call channel in Teams: the
+// conversation TEAMS_ONCALL_CONVERSATION names ([PLACEHOLDER] until one is chosen), through the bot; in development, the
+// simulator's "On-call" channel at /dev/teams. Audited too (notify.alert_sent / notify.alert_skipped).
 const PEOPLE_DIR = ['teams', 'people'];
 const KIND_WORDS = {
   spec: 'Product handoff', adr: 'Architecture decision', 'design-handoff': 'Design handoff', 'engineering-signoff': 'Engineering sign-off',
@@ -23,7 +27,7 @@ const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
  * @param {{ createPersonal, send, configured }} o.connector  the Teams bot's connector
  * @param {{ attachment }} o.cards
  */
-export function createNotify({ store, people, profiles, connector, cards, events, auditLog, config, fetch: fetchImpl = globalThis.fetch, clock = Date, log }) {
+export function createNotify({ store, people, profiles, connector, cards, events, auditLog, config, fetch: fetchImpl = globalThis.fetch, clock = Date, log, onCallSimulator = null }) {
   const base = String(config.publicBaseUrl || '').replace(/\/+$/, '');
   const linkTo = (path) => `${base}${path}`;
   const graph = config.graph ?? {};
@@ -149,9 +153,37 @@ export function createNotify({ store, people, profiles, connector, cards, events
     return run;
   });
 
+  /**
+   * Phase 23: an alert to whoever is on call, in Teams. Resolves with { sent, where, why? }; it never throws for a
+   * channel that isn't there (the alert is still an event and an audit record).
+   */
+  async function alert({ title, text = '', link = null, itemId = null, source = null } = {}) {
+    const words = `${String(title ?? 'Alert').slice(0, 200)}${text ? `: ${String(text).slice(0, 1000)}` : ''}${link ? ` ${linkTo(link)}` : ''}`;
+    const activity = { type: 'message', text: words, channelData: { noobly: { kind: 'alert' } } };
+    const onCall = config.teams?.onCall ?? null;
+    let result;
+    try {
+      if (onCall?.serviceUrl && onCall?.conversationId && connector.configured) {
+        await connector.send({ via: 'teams', serviceUrl: onCall.serviceUrl, conversationId: onCall.conversationId, recipient: { id: `28:${config.teams?.appId}`, name: 'NooblyJS' }, from: { id: 'on-call', name: 'On call' } }, activity);
+        result = { sent: true, where: 'teams' };
+      } else if (onCallSimulator) {
+        await connector.send({ via: 'simulator', conversationId: onCallSimulator }, activity);
+        result = { sent: true, where: 'simulator', conversationId: onCallSimulator };
+      } else {
+        result = { sent: false, why: 'no on-call channel in Teams is configured (TEAMS_ONCALL_CONVERSATION)' };
+      }
+    } catch (err) {
+      result = { sent: false, why: err.message };
+    }
+    await audit({ actor: 'notify', action: result.sent ? 'notify.alert_sent' : 'notify.alert_skipped', target: result.where ?? 'teams', itemId, source, title: String(title ?? '').slice(0, 200), ...(result.why ? { reason: result.why } : {}) });
+    await events.emit('oncall.alerted', { system: 'platform', itemId, source, title, sent: result.sent, where: result.where ?? null, summary: `alerted on call${result.sent ? ' in Teams' : ' (not sent: no channel)'}: ${title}` }, { actor: null });
+    return result;
+  }
+
   return {
     remember,
     onApprovalRequested,
+    alert,
     status: () => ({ email: emailReady, teams: connector.configured, sender: emailReady ? graph.sender : null }),
     settled: async () => { while (pending.size) await Promise.allSettled([...pending]); },
     close: () => unsubscribe?.(),

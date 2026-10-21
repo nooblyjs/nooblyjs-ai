@@ -14,3 +14,10 @@ agent:
   teammates: [pip-okafor]
 featureFlags:
   tool: "[PLACEHOLDER]"
+# Phase 23: the outcome review is due this many days after an item's first release is in production [CONFIRM]; the SRE
+# agent drafts post-incident reviews; the monitoring platform is [PLACEHOLDER] (the mock until one is chosen).
+outcomeReviewDays: 30
+sre:
+  teammates: [pip-okafor]
+monitoring:
+  platform: "[PLACEHOLDER]"

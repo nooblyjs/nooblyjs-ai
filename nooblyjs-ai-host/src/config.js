@@ -130,6 +130,8 @@ export function loadConfig(env = process.env, { cwd = process.cwd() } = {}) {
       tenantId: env.TEAMS_BOT_TENANT_ID || null,
       devUnsigned: teamsDevUnsigned,
       devPerson: teamsDevUnsigned ? (env.TEAMS_BOT_DEV_PERSON || 'stevie') : null,
+      // Phase 23: the on-call channel alerts go to ([PLACEHOLDER] until one is chosen): its service URL and conversation id.
+      onCall: env.TEAMS_ONCALL_CONVERSATION ? Object.freeze({ serviceUrl: env.TEAMS_ONCALL_SERVICE_URL || 'https://smba.trafficmanager.net/emea/', conversationId: env.TEAMS_ONCALL_CONVERSATION }) : null,
     }),
     // Microsoft Graph, app-only (Phase 12): approval emails sent from MS_GRAPH_SENDER's mailbox.
     graph: Object.freeze({

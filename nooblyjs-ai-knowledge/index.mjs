@@ -134,6 +134,8 @@ export async function register(app, serverManager, { mountPath = DEFAULT_MOUNT_P
       contextOf: async (links, options) => (await knowledge()?.service.contextOf(links, options)) ?? [],
       flagged: async () => (await knowledge()?.service.flagged()) ?? [],
       status: async () => (await knowledge()?.service.status()) ?? null,
+      /** NooblyJS Phase 23: a page another app writes for a person (a post-incident review): { spaceName, path, href } or null. */
+      writePage: async (input) => (await knowledge()?.service.writePage(input)) ?? null,
     },
     /**
      * The platform writes its own first-run files (default space, settings) when it starts. The seed adds the

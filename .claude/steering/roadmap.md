@@ -102,7 +102,7 @@ inclusion: always
 | 20 | Quality (the Factory's Test section) | ☐ built, waiting for review |
 | 21 | Testing in environments | ☐ built, waiting for review |
 | 22 | Release (new app: Operations, part 1) | ☐ built, waiting for review |
-| 23 | Operate and learn (Operations, part 2) | ☐ |
+| 23 | Operate and learn (Operations, part 2) | ☐ built, waiting for review |
 
 Open bugs and changes: BUG-001 to BUG-007 and CHG-001 to CHG-007, all fixed and waiting for your checks (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 

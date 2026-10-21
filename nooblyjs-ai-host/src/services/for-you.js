@@ -104,8 +104,10 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     }
     // The Security engineer's home (Phase 19): from the Security app.
     const security = role.layout === 'security-engineer' ? await Promise.resolve(services.get('security')?.home?.()).catch(() => null) : null;
-    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business, elicitation, security, quality };
-    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst, 'business-owner': businessOwner, 'business-analyst': businessAnalyst, 'security-engineer': securityEngineer }[role.layout](ctx);
+    // The SRE's home (Phase 23): from Operations.
+    const operations = role.layout === 'sre' ? await Promise.resolve(services.get('operations')?.home?.()).catch(() => null) : null;
+    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business, elicitation, security, quality, operations };
+    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst, 'business-owner': businessOwner, 'business-analyst': businessAnalyst, 'security-engineer': securityEngineer, sre }[role.layout](ctx);
     return { ...base, layout: role.layout, engine: true, now: snapshot.at, ...shaped };
   }
 
@@ -430,6 +432,34 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
   // ---------------------------------------------------------------------------- Security engineer (Phase 19)
 
   /** Security engineer: findings past or near their fix-by date, threat models waiting, risks ending, items with none. */
+  /** SRE (Phase 23): SLOs burning their budget, open incidents, post-incident reviews to accept, outcome reviews due. */
+  function sre({ operations }) {
+    const off = 'Operations is not running here, so there are no SLOs or incidents to show.';
+    const o = operations ?? { slos: [], burning: [], open: [], reviews: [], due: [] };
+    const none = operations === null;
+    return {
+      summary: none ? off : o.open.length ? `${words(o.open.length)} ${plural(o.open.length, 'incident is', 'incidents are')} open.` : o.burning.length ? `${words(o.burning.length)} ${plural(o.burning.length, 'SLO is', 'SLOs are')} burning ${plural(o.burning.length, 'its', 'their')} error budget.` : o.slos.length ? 'Everything in production is within its SLOs.' : 'Nothing is in production yet.',
+      filters: { what: 'Production' },
+      action: { label: 'Open Incidents', href: '/operations/incidents' },
+      tiles: [
+        { key: 'burning', label: 'SLOs burning their budget', value: none ? null : o.burning.length, note: `of ${plural(o.slos.length, 'SLO')}`, tone: o.burning.some((s) => s.status === 'exhausted') ? 'danger' : o.burning.length ? 'warning' : null },
+        { key: 'incidents', label: 'Open incidents', value: none ? null : o.open.length, note: o.open.length ? null : 'None open', tone: o.open.length ? 'danger' : null },
+        { key: 'reviews', label: 'Reviews to accept', value: none ? null : o.reviews.length, note: 'Drafted by the SRE agent' },
+        { key: 'outcomes', label: 'Outcome reviews due', value: none ? null : o.due.length, note: 'A Product lead decides' },
+      ],
+      panels: {
+        lists: [
+          { key: 'incidents', title: 'Open incidents', empty: none ? off : 'No incident is open.', rows: o.open.map((i) => ({ id: i.id, title: `${i.id} · ${i.title}`, text: `${i.severityText}${i.release ? ` · ${i.release}` : ''}`, late: i.severity === 'SEV1', action: { label: 'Open', href: i.href } })) },
+          { key: 'slos', title: 'SLOs burning their budget', empty: none ? off : 'Every SLO is within its budget.', rows: o.burning.map((s) => ({ id: s.id, title: `${s.id} · ${s.name} · ${s.itemId}`, text: s.budgetText, late: s.status === 'exhausted', action: { label: 'Open', href: '/operations/slos' } })) },
+        ],
+        side: [
+          { key: 'reviews', title: 'Reviews to accept', empty: 'No review waits.', rows: o.reviews.map((i) => ({ id: i.id, title: `${i.id} · ${i.title}`, text: `Drafted by ${i.review?.draftedBy?.name ?? 'the SRE agent'}`, action: { label: 'Review', href: i.href } })) },
+          { key: 'outcomes', title: 'Outcome reviews due', empty: 'None due.', rows: o.due.map((r) => ({ id: r.id, title: `${r.id} · ${r.itemId}`, text: r.text, action: { label: 'Open', href: r.href } })) },
+        ],
+      },
+    };
+  }
+
   function securityEngineer({ security, snapshot }) {
     const off = 'The Security app is not running here, so there are no findings or threat models to show.';
     const s = security ?? { open: [], late: [], soon: [], waiting: [], risks: [], without: [] };

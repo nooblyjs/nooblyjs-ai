@@ -61,9 +61,9 @@ test('register() describes the app for the rail and the sidebar; the status card
     const { hosted } = t;
     assert.deepEqual([hosted.name, hosted.label, hosted.icon], ['operations', 'Ops', 'upload']);
     assert.deepEqual(hosted.ui, { entry: 'js/module.js', styles: ['css/operations.css'] });
-    assert.deepEqual(hosted.nav.map((n) => n.key), ['releases', 'deployments', 'policies']);
+    assert.deepEqual(hosted.nav.map((n) => n.key), ['releases', 'deployments', 'slos', 'incidents', 'outcome-reviews', 'policies']);
     const status = await hosted.status();
-    assert.deepEqual(status.badges, { releases: 0 });
+    assert.deepEqual(status.badges, { releases: 0, slos: 0, incidents: 0, outcomes: 0 });
     assert.deepEqual(status.card.pill, { text: 'No releases yet', tone: 'neutral' });
   } finally {
     await t.close();
@@ -73,7 +73,7 @@ test('register() describes the app for the rail and the sidebar; the status card
 test('page URLs answer with the host frame; files are served; a missing file is a 404', async () => {
   const t = await startApp();
   try {
-    for (const url of ['/operations', '/operations/releases', '/operations/releases/REL-001', '/operations/deployments', '/operations/policies']) {
+    for (const url of ['/operations', '/operations/releases', '/operations/releases/REL-001', '/operations/deployments', '/operations/slos', '/operations/incidents/INC-001', '/operations/outcome-reviews/OR-031', '/operations/policies']) {
       const res = await t.get(url, { as: 'stevie' });
       assert.equal(res.status, 501, url); // the stand-in host's frame answers 501
       assert.match(res.text, /NooblyJS frame/, url);

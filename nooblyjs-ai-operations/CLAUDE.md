@@ -6,9 +6,13 @@ Guidance for Claude Code in this repository.
 screens (a UI module in the NooblyJS frame) and its API at `/operations/api/v1`. **Part 1 (Phase 22)** is releases and
 deployments: a release is one feature, released on its own once all its stories have passed Test, with an evidence
 pack, release notes, a rollout and a rollback; two people give its deploy approval; the **deployer adapter** (only the
-mock until a deployment tool is chosen) applies it through Infrastructure. Part 2 (Phase 23) adds SLOs, incidents and
-outcome reviews. Progress is tracked in NooblyJS's one roadmap, `../.claude/steering/roadmap.md`; the Phase 22 spec is
-`../nooblyjs-ai-host/.claude/specs/phase-22-release/`.
+mock until a deployment tool is chosen) applies it through Infrastructure. **Part 2 (Phase 23)** is operate and learn:
+the item's quality attributes become **SLOs** with error budgets once its first release is live (the **monitoring
+adapter**, only the mock until a platform is chosen), alerts go to on call in Teams (NooblyJS's `oncall`), **incidents**
+raise a signal on the Product board and get the SRE agent's post-incident review, accepted into Knowledge, and the
+**outcome review**, due 30 days after the first release, closes the item through the lifecycle's approval. Progress is
+tracked in NooblyJS's one roadmap, `../.claude/steering/roadmap.md`; the specs are
+`../nooblyjs-ai-host/.claude/specs/phase-22-release/` and `phase-23-operate-and-learn/`.
 
 ## Part of NooblyJS (read first)
 
@@ -28,8 +32,8 @@ npm test       # node --test --test-timeout=20000 "test/**/*.test.js"   (offline
 npm run seed   # writes the policies into data/operations/ (-- --reset to start again)
 ```
 
-The roadmap's test script runs in the real app as `../nooblyjs-ai-host/test/release.test.js` (the Factory,
-Teammates, Infrastructure, Security and Operations hosted).
+The roadmaps' test scripts run in the real app as `../nooblyjs-ai-host/test/release.test.js` and `operate.test.js`
+(the Factory, Teammates, Infrastructure, Security, Operations and, for Phase 23, Knowledge hosted).
 
 ## Rules this code keeps
 
@@ -43,6 +47,12 @@ Teammates, Infrastructure, Security and Operations hosted).
   `OPERATIONS_DEPLOYER` other than `mock` is refused at start.
 - **Jira and Bitbucket writes go through NooblyJS's write gate** (`host.service('devtools').release.record`), never
   directly; while the gate is closed they are recorded, not sent.
-- **Time is the host's clock** (`host.clock`).
+- **Nothing pretends to watch production.** The mock monitor says so on SLOs, outcome reviews and Policies;
+  `OPERATIONS_MONITOR` other than `mock` is refused at start; burning a budget by hand is the mock's, for development.
+- **People resolve incidents, accept reviews and decide outcome reviews** (`draft`; `approve` for the outcome review,
+  also on someone's behalf); the SRE agent drafts.
+- **Closing an item withdraws what was never released**: the lifecycle withdraws its stories not yet in Operate when
+  its outcome review is approved; the review lists them first.
+- **Time is the host's clock** (`host.clock`): an outcome review is due on it (`clock.moved` sweeps).
 
 This project lives in the `nooblyjs-ai` monorepo; `nooblyjs-core` is a separate repo next to it (`file:../../nooblyjs-core`).

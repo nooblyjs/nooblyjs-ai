@@ -5,7 +5,10 @@
 //
 // Part 1 (Phase 22): releases and deployments. A release is one feature, with its evidence, release notes, rollout and
 // rollback plans; two people give its deploy approval; the deployer adapter (mock until a tool is chosen) applies it
-// through Infrastructure. Part 2 (Phase 23) adds SLOs, incidents and outcome reviews. Its UI is a module the frame loads.
+// through Infrastructure. Part 2 (Phase 23): SLOs from the item's quality attributes with error budgets (the monitoring
+// adapter, mock until a platform is chosen), alerts to on-call in Teams, incidents with the SRE agent's post-incident
+// review written to Knowledge, signals from production on the Product board, and the outcome review that closes an item.
+// Its UI is a module the frame loads.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +20,10 @@ import { createEvidence } from './src/services/evidence.js';
 import { createNotes } from './src/services/notes.js';
 import { createReleases } from './src/services/releases.js';
 import { createSummary } from './src/services/summary.js';
+import { createMonitor } from './src/monitors/index.js';
+import { createSlos } from './src/services/slos.js';
+import { createIncidents } from './src/services/incidents.js';
+import { createOutcomes } from './src/services/outcomes.js';
 import { withWords } from './src/services/event-words.js';
 import { seed as seedStory } from './src/seed/index.js';
 
@@ -30,6 +37,10 @@ const PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'publ
 export const NAV = [
   { key: 'releases', label: 'Releases', path: '/releases', icon: 'box', badge: 'releases' },
   { key: 'deployments', label: 'Deployments', path: '/deployments', icon: 'upload' },
+  // Phase 23: operate and learn.
+  { key: 'slos', label: 'SLOs', path: '/slos', icon: 'pulse', badge: 'slos' },
+  { key: 'incidents', label: 'Incidents', path: '/incidents', icon: 'alert', badge: 'incidents' },
+  { key: 'outcome-reviews', label: 'Outcome reviews', path: '/outcome-reviews', icon: 'check', badge: 'outcomes' },
   { key: 'policies', label: 'Policies', path: '/policies', icon: 'key', group: 'Govern' },
 ];
 
@@ -51,6 +62,7 @@ export async function register(app, serverManager, { mountPath = '/operations', 
   // Every event from here on carries `system: 'operations'` and the sentence Activity shows (event-words.js).
   host = { ...host, events: withWords(host.events) };
   const deployer = createDeployer({ name: process.env.OPERATIONS_DEPLOYER || 'mock', host });
+  const monitor = createMonitor({ name: process.env.OPERATIONS_MONITOR || 'mock', store: host.store });
 
   // The host's logging provider, as an instance named after this app (never one of our own).
   const log = serverManager.logger(serverManager.getDefaultProviderType('logging'), { instanceName: NAME });
@@ -59,19 +71,27 @@ export async function register(app, serverManager, { mountPath = '/operations', 
   const seed = (options) => seedStory(host.store, { ...options, now });
 
   const repos = createRepos(host.store, { log });
-  const policies = createPolicies({ repos, deployer });
+  const policies = createPolicies({ repos, deployer, monitor });
   const evidence = createEvidence({ host });
   const notes = createNotes({ host, policies });
-  const releases = createReleases({ repos, host, log, policies, evidence, notes, deployer, now, mountPath });
-  const summary = createSummary({ releases });
+  const slos = createSlos({ repos, host, log, monitor, now, mountPath });
+  const outcomes = createOutcomes({ repos, host, log, policies, monitor, now, mountPath });
+  const incidents = createIncidents({ repos, host, log, policies, slos, now, mountPath });
+  const onFirstDeploy = async (release) => { await slos.fromRelease(release); await outcomes.schedule(release); };
+  const releases = createReleases({ repos, host, log, policies, evidence, notes, deployer, now, mountPath, onFirstDeploy });
+  const summary = createSummary({ releases, slos, incidents, outcomes });
 
   // The release's deploy approval was decided (the lifecycle engine): two approvals deploy its first step.
   const offDecided = host.events.on?.('approval.decided', (event) => {
-    releases.onApprovalDecided(event?.payload ?? event).catch((err) => log.warn(`releases: ${err.message}`));
+    const p = event?.payload ?? event;
+    releases.onApprovalDecided(p).catch((err) => log.warn(`releases: ${err.message}`));
+    outcomes.onApprovalDecided(p).catch((err) => log.warn(`outcome reviews: ${err.message}`));
   });
+  // The dev clock moved (or the business day turned): outcome reviews that are due open their approval.
+  const offClock = host.events.on?.('clock.moved', () => { outcomes.sweep().catch((err) => log.warn(`outcome reviews: ${err.message}`)); });
 
   const router = host.express.Router();
-  router.use('/api/v1', createApi({ host, log, seed, releases, policies, summary, about: { name: NAME, version: VERSION, mountPath, deployer: deployer.name, realDeployer: deployer.real } }));
+  router.use('/api/v1', createApi({ host, log, seed, releases, policies, summary, slos, incidents, outcomes, about: { name: NAME, version: VERSION, mountPath, deployer: deployer.name, realDeployer: deployer.real, monitor: monitor.name, realMonitor: monitor.real } }));
   // The browser files (module, pages, CSS). redirect: false, or /operations would 301 to /operations/.
   router.use(host.express.static(PUBLIC_DIR, { index: false, redirect: false }));
   // Every other GET without a file extension is a page: the host's frame answers it, so deep links and refresh work.
@@ -98,7 +118,13 @@ export async function register(app, serverManager, { mountPath = '/operations', 
        * The lifecycle engine relays each person's decision on a release's deploy approval (Home · Approvals or this
        * app) before it records it: the same checks as here. Two approvals then deploy (approval.decided).
        */
-      decideApproval: ({ id, decision, person }) => releases.decideApproval({ id, decision, person }),
+      decideApproval: ({ id, decision, person }) => (String(id).startsWith('OR-') ? outcomes.decideApproval({ id, decision, person }) : releases.decideApproval({ id, decision, person })),
+      /** Phase 23: the SRE's home: SLOs burning, open incidents, reviews to accept, outcome reviews due. */
+      home: () => summary.home(),
+      /** Phase 23: an item's SLOs, incidents and outcome review. */
+      slosFor: (itemId) => slos.list({ itemId }),
+      incidents: () => incidents.list(),
+      outcomeReviews: () => outcomes.list(),
     },
     /** Writes the seed into dataDir; `reset` removes what is there first. */
     seed: async ({ reset = false, content = host.sampleData !== false } = {}) => {
@@ -106,6 +132,7 @@ export async function register(app, serverManager, { mountPath = '/operations', 
     },
     close: async () => {
       offDecided?.();
+      offClock?.();
     },
   };
 }

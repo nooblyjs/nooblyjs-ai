@@ -356,6 +356,24 @@ function createKnowledge({ appBaseDir, spaceManager, spaceFilingManager, filingS
       return out;
     },
     flagged: () => openFlags(),
+    /**
+     * NooblyJS Phase 23: another app writes a page a person accepted (Operations' post-incident review) into a space
+     * that can be written (the one named, else the first that isn't read-only), under a folder: { spaceName, path, href }.
+     */
+    async writePage({ spaceName = null, folder = 'Reviews', title, body, by = null } = {}) {
+      const name = fileSafe(title || '');
+      if (!name) return null;
+      const writable = (s) => s && s.permissions !== 'read-only' && !s.metadata?.archived;
+      const space = [spaceNamed(spaceName), ...spaceManager.getAllSpaces()].find(writable);
+      if (!space) return null;
+      const filePath = `${fileSafe(folder) || 'Reviews'}/${name}.md`;
+      await filingServiceWrapper.writeDocument(space.name, filePath, String(body ?? ''));
+      await searchIndexer.updateFileInSpace(space.name, filePath);
+      if (host?.events?.emit) {
+        await host.events.emit('knowledge.page_written', { system: 'knowledge', spaceName: space.name, path: filePath, summary: `wrote ${space.name} · ${filePath}` }, { actor: by?.id ?? null });
+      }
+      return { spaceName: space.name, path: filePath, href: hrefFor(space.name, filePath) };
+    },
     async status() {
       const [sources, flags] = await Promise.all([store.sources(), openFlags()]);
       return { spaces: spaceManager.getAllSpaces().filter((s) => !s.metadata?.archived).length, sources: sources.length, documents: sources.reduce((n, s) => n + (s.documents || 0), 0), needsReview: flags.length };

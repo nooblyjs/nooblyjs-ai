@@ -55,7 +55,11 @@ one list) is built and waiting for review** (`.claude/specs/phase-21-testing-in-
 new hosted app `nooblyjs-ai-operations` at `/operations`; a release per feature with its evidence, notes, rollout and
 rollback; the lifecycle's `deploy` approval by two people with `deploy-production`; the mock deployer through
 Infrastructure, which refuses any other change to Production (I10); the release's Jira fix version and Bitbucket tags
-through the write gate) is built and waiting for review** (`.claude/specs/phase-22-release/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
+through the write gate) is built and waiting for review** (`.claude/specs/phase-22-release/`). **Phase 23 (Operate and
+learn: SLOs from quality attributes with error budgets and the mock monitor; alerts to on call in Teams (`oncall`, the
+simulator in development); incidents with the SRE agent's post-incident review written to Knowledge, and their signal on
+the Product board; the outcome review, due 30 days after an item's first release, which closes the item; DORA measures in
+Metrics; the SRE's home) is built and waiting for review** (`.claude/specs/phase-23-operate-and-learn/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed
 2026-10-20)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent

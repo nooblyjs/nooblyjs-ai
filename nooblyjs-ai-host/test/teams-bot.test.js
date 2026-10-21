@@ -70,7 +70,7 @@ test('the endpoint is closed to everyone but the bot: no token, a wrong token an
 
 test('the simulator shows the meeting: who is in it, what was said before anyone joined, and nothing from the bot yet', async () => {
   const list = (await stevie.json('/api/v1/dev/teams')).body.meetings;
-  assert.deepEqual(list.map((m) => m.title), ['Slot rollout sync', 'Checkout stand-up']);
+  assert.deepEqual(list.map((m) => m.title), ['Slot rollout sync', 'Checkout stand-up', 'On-call']);
   const v = await view(stevie);
   assert.deepEqual([v.meeting.title, v.meeting.people.length, v.meeting.teamId, v.meeting.itemId], ['Slot rollout sync', 5, 'delivery-squad', 'PRD-031']);
   assert.deepEqual(v.earlier.map((m) => m.from.name), ['Lerato M.', 'Stevie']);
