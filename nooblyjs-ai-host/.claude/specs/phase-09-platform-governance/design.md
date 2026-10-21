@@ -1,6 +1,6 @@
 # Phase 9 — Platform and governance: design
 
-> **Status: done, signed off 2026-10-10.** Summary: `docs/phases/phase-09-summary.md`.
+> **Status: done, signed off 2026-10-10.** Summary: `.claude/phases/phase-09-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 > Requirements: `requirements.md`. Steering: `product.md` §3, §5.7, §6; `tech.md` §6, §9; `structure.md` §2, §4.

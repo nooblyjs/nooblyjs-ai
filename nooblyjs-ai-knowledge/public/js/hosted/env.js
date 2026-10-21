@@ -1,5 +1,5 @@
 // `__wikiEnv`: what the wiki's pages use in place of the browser globals a hosted page may not touch
-// (noobly docs/hosted-apps/porting-an-app.md §2). scripts/port-wiki-ui.mjs rewrites every use in the generated UI
+// (noobly .claude/guides/porting-an-app.md §2). scripts/port-wiki-ui.mjs rewrites every use in the generated UI
 // (public/app) to a call here, so the app's own code is unchanged:
 //
 //   fetch / XMLHttpRequest   send the host's CSRF token with every change

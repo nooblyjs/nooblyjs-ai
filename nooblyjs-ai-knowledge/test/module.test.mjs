@@ -1,4 +1,4 @@
-// The app's screens in the NooblyJS frame (noobly docs/hosted-apps/porting-an-app.md §4): the frame's CSS is scoped, every
+// The app's screens in the NooblyJS frame (noobly .claude/guides/porting-an-app.md §4): the frame's CSS is scoped, every
 // nav row has a route, every page exports render(), the wiki's code leaves history and <body> to the frame, page
 // URLs answer with the frame, a missing file is a 404, none of the standalone platform's pages are served, and the
 // generated UI (public/app) matches its source.

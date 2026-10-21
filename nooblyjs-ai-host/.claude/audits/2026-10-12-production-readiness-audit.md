@@ -6,8 +6,8 @@
 > fall back to mocks and passwords in production without saying so (R-07). Behind those: one process with in-memory
 > sessions and a 40-second start (R-05), and monitoring that would not notice a hosted app failing (R-06).
 >
-> Companion: `2026-10-12-security-audit.md`. Earlier: `docs/mocking-audit.md` (what is still simulated, Phase 15),
-> `docs/security/phase-13-review.md`, `docs/runbooks/`.
+> Companion: `2026-10-12-security-audit.md`. Earlier: `.claude/audits/mocking-audit.md` (what is still simulated, Phase 15),
+> `.claude/audits/phase-13-security-review.md`, `.claude/runbooks/`.
 
 ## How it was done
 
@@ -95,7 +95,7 @@ the suites (temporary folders and ports per test file); run all of it on Linux i
   without model settings plays scripted answers to real people (mocking audit A1).
 - `AUTH_METHOD=azure` with a missing client or tenant id falls back to local password sign-in with a warning, in
   production too.
-- The rest of `docs/mocking-audit.md` (A1–A11, B1–B12) is open: no container runtime, no provisioner, unresolved secret
+- The rest of `.claude/audits/mocking-audit.md` (A1–A11, B1–B12) is open: no container runtime, no provisioner, unresolved secret
   references, sample budgets and standards. That is Phase 15's scope and is right to be a phase; the two above should
   simply refuse to start.
 

@@ -104,7 +104,7 @@ accepted unsigned. `electron` is a devDependency and nothing in `src/` or `publi
    content area, chat dock). Apps, both built-in and hosted, provide UI modules that the frame
    loads into the content area. They describe their rail entry and nav as data from
    `register()`. Switching apps never reloads the page, so chat and SSE survive it
-   (`docs/adr/ADR-001-host-owned-shell.md`).
+   (`.claude/adr/ADR-001-host-owned-shell.md`).
 
 ## 3. Storage: Markdown and YAML in `data/`
 
@@ -175,7 +175,9 @@ Reuse the store from `nooblyjs-ai-teammate/src/store/fs-store.js`. Move it into
   it is missing or when the day's event file changed; today is always read from the events. The seed's sample
   history (`src/seed/metrics-history.js`) is events marked `sampleHistory: true`, which Activity and Platform's
   ledger rebuild skip. A new event type that a metric should read is added in `facts.js` (and the roll-up version
-  raised when a fact changes shape).
+  raised when a fact changes shape). Since Phase 16e `ask` and `decide` facts carry the approval's type (roll-up
+  version 2), which gives the pull requests waiting on a Build approval and on a Test approval now, with the oldest's
+  age; a pull request's own item events (`itemType: 'pr'`) are its story's work, not lead time.
 - **Knowledge search** is the Wiki Platform's own indexer over nooblyjs-core's searching service (lexical). It was
   not changed in Phase 8. Semantic search is not built `[DECIDE format]`.
 - **Knowledge (Phase 8)** is the Wiki Platform at `/wiki` (`src/wiki/knowledge/` in `nooblyjs-ai-knowledge`). An
@@ -301,7 +303,7 @@ that clock (`host.clock`), never `Date.now()`, for business time. Its offset is 
   375px and the keyboard path.
 - The Factory, Teammates and Knowledge UIs stay in their own repos as hosted apps. They
   become UI modules, pick up the kit's tokens, and move to its components over time.
-  **Teammates is done** and is the pattern (`docs/hosted-apps/porting-an-app.md`):
+  **Teammates is done** and is the pattern (`.claude/guides/porting-an-app.md`):
   - a route table over a bridge that runs the old pages unchanged
   - CSS scoped with `nooblyjs-core/scripts/scope-css.js`, with the old tokens pointing at the kit's
   - kit class-name collisions reverted inside the app's pages
@@ -583,7 +585,10 @@ makes real GET requests.
   merged by a person, `workflows.movedByMerge` is told. Since Phase 16b the Build and Test approvals move the item, so
   a merge made while the item is still in Build or Test, before them, moves nothing: it is flagged on the item
   (`mergedEarly`) as "merged in Bitbucket by …" (`item.merged`, audit `item.merged_before_approval`). A merge by NooblyJS's own Bitbucket account is ignored and audited
-  (`devtools.merge_ignored`); NooblyJS never merges.
+  (`devtools.merge_ignored`); NooblyJS never merges. **Since Phase 16e** a work item whose pull request is a lifecycle
+  pull request (a story's) is told first, per pull request (`workflows.pullRequestMergedOutside`): with its Build and Test
+  approvals for its commit the merge counts (`pr.merged`), without them it is flagged on the pull request and its story
+  (`pr.merged_early`, audit `pr.merged_before_approval`) and not counted as done.
 - **API** (`src/routes/devtools.js`): `GET /api/v1/devtools/writes` (modes, rules, outbox), `PATCH …/writes/mode`
   and `…/writes/rules`, `POST …/writes/:id/send` and `/discard` (all four `change-guardrails`, Owner),
   `POST /api/v1/devtools/sync` (`draft`), `GET /api/v1/devtools/work/:itemId`. **No route takes a write to send.**
@@ -598,7 +603,7 @@ makes real GET requests.
   into an **empty** folder and verifies every hash and the audit log. Left out: logs, Factory workspaces and caches,
   generated secrets, temporary files.
 - `npm run perf`: NooblyJS on ten times the seed volume in a temporary folder, timing the key pages' APIs (target 1 s).
-- `docs/security/phase-13-review.md` (what was checked, fixed and remains) and `docs/runbooks/`.
+- `.claude/audits/phase-13-security-review.md` (what was checked, fixed and remains) and `.claude/runbooks/`.
 - `/healthz` returns `status` and `version` only.
 
 ## 8b. Cross-app services (`host.service(name)`)
@@ -610,7 +615,7 @@ changing a function here is a shared change: update this table in the same chang
 
 | Name | Provided by | Functions | Main callers |
 | --- | --- | --- | --- |
-| `workflows` | NooblyJS, the lifecycle engine (`src/lifecycle/index.js`) | `item`, `items({ stage })`, `approvals({ type })`, `decide`, `requestApproval`, `requestAppApproval`, `closeAppApproval`, `withdrawAppApprovals`, `sendBack`, `handoff`, `handoffOf`, `syncStories`, `handoffStory`, `storiesOf` (Phase 16c: stories as items, the Design handoff per story), `signOffEngineering`, `readinessOf` (Phase 16d), `waitingFor`, `counts`, `overview`, `live`, `snapshot`, `rules`, `sweep` | Product, Design, Factory (Engineering, Pull requests, Test), Infrastructure, Home |
+| `workflows` | NooblyJS, the lifecycle engine (`src/lifecycle/index.js`) | `item`, `items({ stage })`, `approvals({ type })`, `decide`, `requestApproval`, `requestAppApproval`, `closeAppApproval`, `withdrawAppApprovals`, `sendBack`, `handoff`, `handoffOf`, `syncStories`, `handoffStory`, `storiesOf` (Phase 16c: stories as items, the Design handoff per story), `signOffEngineering`, `readinessOf` (Phase 16d), `decideApproval`, `recordPullRequest`, `canMerge`, `pullRequestMerged`, `pullRequestMergedOutside`, `pullRequest`, `pullRequests`, `featuresOf` (Phase 16e: pull requests as items, `src/lifecycle/services/pull-requests.js`), `waitingFor`, `counts`, `overview`, `live`, `snapshot`, `rules`, `sweep` | Product, Design, Factory (Engineering, Pull requests, Test, the pull request bridge), devtools (a Bitbucket merge), Infrastructure, Home |
 | `platform` | NooblyJS (`src/services/platform/index.js`) | `checkAgentWork`, `route(workType)`, `budgetFor`, `spendFor`, `guardrail(key)`, `repository(ref)`, `repositories.list()` (each with its owning `team`, Phase 16c), `environments`, `containers`, `secrets` (references only) | every agent action (Teammates, Product, Factory, Knowledge, Infrastructure) |
 | `devtools` | NooblyJS (`src/services/devtools/`): reads (Phase 11), and writes through the gate only (Phase 13) | `writes` (`status`, `outbox`, `retry`, `discard`, `setMode`, `setRule`), `sync` (`onHandoff`, `onRunStarted`, `poll`, `workFor`), `forge` (`pushBranch`, `openOrUpdatePullRequest`, for the Factory), `decideApproval`, `status`, `repositories`, `repository(slug)`, `file(slug, path, { ref })`, `jira.search` / `issue` / `issues` / `projects`, `links` | Product (Architecture · Repositories), Factory |
 | `teams` | NooblyJS | `list`, `get(id)` (NooblyJS teams, for billing and homes) | Teammates, Factory |

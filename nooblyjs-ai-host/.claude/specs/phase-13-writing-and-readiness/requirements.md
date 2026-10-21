@@ -1,6 +1,6 @@
 # Phase 13 — Writing to Bitbucket and Jira, and production readiness: requirements
 
-> **Status: built 2026-10-11, waiting for review.** Summary: `docs/phases/phase-13-summary.md`.
+> **Status: built 2026-10-11, waiting for review.** Summary: `.claude/phases/phase-13-summary.md`.
 > Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Source: `.claude/steering/roadmap.md` Phase 13, `product.md` §3 and §9, `tech.md` §8a.

@@ -31,7 +31,7 @@ inclusion: always
 
 ## 2. Screens (this repo's UI module)
 
-The Product Factory screens are this repo's, like Teammates' (`../../nooblyjs-ai-host/docs/hosted-apps/porting-an-app.md`).
+The Product Factory screens are this repo's, like Teammates' (`../../nooblyjs-ai-host/.claude/guides/porting-an-app.md`).
 `public/js/module.js` exports the route table; each page in `public/js/pages/` takes
 `render(view, { params, query, ctx, route })` and talks to the API only through `ctx.api` (which sends the
 host's CSRF token). Rules:

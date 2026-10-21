@@ -34,7 +34,7 @@ There is no build step and no linter. On Windows, two assertions in `test/core.t
 ## Where the code is against the contract
 
 Teammates **runs inside the NooblyJS frame**. It is the first hosted app, and the worked example in
-`../nooblyjs-ai-host/docs/hosted-apps/porting-an-app.md`:
+`../nooblyjs-ai-host/.claude/guides/porting-an-app.md`:
 
 - **Server.** `register()` returns `ui: { entry: 'js/module.js', styles: ['css/teammates.css'] }`, kit icon
   names and a status card in the shell shape. The router answers every page URL with `host.frame`, sets no CSP

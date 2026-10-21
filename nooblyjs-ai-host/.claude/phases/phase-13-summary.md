@@ -20,8 +20,8 @@ Targetprocess is removed, as you asked.
 | Screens | Platform · Settings · Integrations: Record only or Sending per system, the rule per kind, and the outbox with **Send now** and **Discard**. The item page: its work items with their Jira issue and pull request |
 | Backup and restore | `npm run backup` (dated copy with a manifest of every file's hash; nightly when `BACKUP_DIR` is set). `npm run restore -- <name>` into an empty folder, verified file by file and against the audit log |
 | Performance | `npm run perf`: NooblyJS on ten times the seed volume, timing the key pages' APIs |
-| Security review | `docs/security/phase-13-review.md`: what was checked, one fix (`/healthz` no longer reveals the data folder's path), and what remains |
-| Runbooks | `docs/runbooks/`: start and stop, backup and restore, writing to Jira and Bitbucket, a stuck sync, a leaked token, a budget that stops work |
+| Security review | `.claude/audits/phase-13-security-review.md`: what was checked, one fix (`/healthz` no longer reveals the data folder's path), and what remains |
+| Runbooks | `.claude/runbooks/`: start and stop, backup and restore, writing to Jira and Bitbucket, a stuck sync, a leaked token, a budget that stops work |
 
 ## Test script result (roadmap Phase 13)
 
@@ -58,7 +58,7 @@ Still for you to confirm:
 1. Make two write tokens limited to those, and set `DEVTOOLS_WRITES=true`, `JIRA_WRITE_API_TOKEN` and
    `BITBUCKET_WRITE_API_TOKEN` in `.env`.
 2. Leave both systems on **Record only**, approve a handoff, and read the outbox: it says exactly what would be sent.
-3. Switch Jira to **Send** and press **Send now** on one line. Then Bitbucket. `docs/runbooks/writes.md` has each step.
+3. Switch Jira to **Send** and press **Send now** on one line. Then Bitbucket. `.claude/runbooks/writes.md` has each step.
 
 ## What is not done, and what I found
 
@@ -67,7 +67,7 @@ Still for you to confirm:
   intake's choice of forge are each tested; the whole chain with a real run is not.
 - The exact scope names for the write tokens are not confirmed.
 - Found: the old standalone wiki's `/api/auth/identity` trusts any email it is sent. NooblyJS does not serve it; the
-  standalone wiki does wherever it still runs (`docs/security/phase-13-review.md`).
+  standalone wiki does wherever it still runs (`.claude/audits/phase-13-security-review.md`).
 - Google Drive / SharePoint and Datadog were removed from Platform · Integrations on 2026-10-11, as you asked:
   nothing was built for them.
 - Pre-existing, not from this phase: one Windows path failure in the Factory's local forge test, and two in Teammates.

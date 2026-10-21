@@ -89,6 +89,14 @@ function stages(rows) {
   </section>`;
 }
 
+/** Phase 16e: the pull requests waiting on a person now, by approval, with the oldest's age. */
+function waiting(rows = []) {
+  return html`<section class="card" aria-label="Pull requests waiting on people">
+    <div class="card__head"><h2 class="card__title">Waiting on people now</h2></div>
+    <ul class="spend__list" role="list">${rows.map((r) => html`<li class="spend__row"><div class="spend__head"><span>${r.label}</span><span class="mono">${r.count}</span></div><p class="row__meta">${r.text}</p></li>`)}</ul>
+  </section>`;
+}
+
 export async function render(view, { ctx, query }) {
   let range = RANGES.includes(query.get('range')) ? query.get('range') : '30d';
 
@@ -112,6 +120,7 @@ export async function render(view, { ctx, query }) {
       ${tiles(data.tiles)}
       <div class="metrics__row">${leadTime(data.weeks)}${spend(data.spend)}</div>
       ${stages(data.stages)}
+      ${waiting(data.waiting)}
       <p class="metrics__foot" role="status">Computed from the event log at ${at.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit', hour12: false })} on ${at.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}.
         Idea → merge is the median from opening an item to its last merged PR; a stage’s numbers are over the visits that ended in the period.</p>
     </div>`);

@@ -1,6 +1,6 @@
 # Phase 11 — Development tools: design
 
-> **Status: done, signed off 2026-10-10.** Summary: `docs/phases/phase-11-summary.md`.
+> **Status: done, signed off 2026-10-10.** Summary: `.claude/phases/phase-11-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 > Requirements: `requirements.md`. Steering: `product.md` §9, `tech.md` §9, `structure.md` §2a.

@@ -1,6 +1,6 @@
 # Phase 16a — Nine stages: requirements
 
-> **Status: built 2026-10-19, waiting for review.** Summary: `docs/phases/phase-16a-summary.md`.
+> **Status: built 2026-10-19, waiting for review.** Summary: `.claude/phases/phase-16a-summary.md`.
 > Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Source: the root roadmap (`../.claude/steering/roadmap.md`) Phase 16, split into 16a (this) and 16b (one shape for

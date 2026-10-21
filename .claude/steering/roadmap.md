@@ -48,7 +48,7 @@ inclusion: always
 3. **Demo:** the phase ends with `npm start` plus the phase's **test script**. Every step says
    what you should see. Automated tests cover the same steps.
 4. **Review and steer:** use the *Guide points* to decide what to change. A summary goes to
-   `nooblyjs-ai-host/docs/phases/phase-NN-summary.md`: what was built, the test script result, any
+   `nooblyjs-ai-host/.claude/phases/phase-NN-summary.md`: what was built, the test script result, any
    placeholders used, and the open questions.
 5. **Gate:** the next phase starts only when you mark this one ✅ in the tracker.
 6. **After the gate:** a done phase's spec is not edited again (each one says so at the top). Bugs and small
@@ -94,7 +94,7 @@ inclusion: always
 | 16b | Eight stages, and the Factory's five groups | ☐ built, waiting for review |
 | 16c | The Design section: business requirements, solution architecture, functional analysis, stories | ☐ built, waiting for review |
 | 16d | Engineering: application architecture from the code, and test analysis | ☐ built, waiting for review |
-| 16e | Build and Test: the AI builds and tests, engineers and testers approve | ☐ |
+| 16e | Build and Test: the AI builds and tests, engineers and testers approve | ☐ built, waiting for review |
 | 16f | One shape for checks, and the trace | ☐ |
 | 17 | Strategy and the business case | ☐ |
 | 18 | Requirements elicitation | ☐ |
@@ -428,7 +428,7 @@ Decide whether to commission the missing three "For you" designs.
 ## Phase 6 — Digital Teammates everywhere (and the Teams simulator)
 
 > **Started early (2026-10-09):** Teammates is already hosted in the frame, as the pattern for Factory
-> and Knowledge (`docs/hosted-apps/porting-an-app.md`). Its rail item, nav, status card, UI module (old pages through
+> and Knowledge (`.claude/guides/porting-an-app.md`). Its rail item, nav, status card, UI module (old pages through
 > a bridge), scoped CSS, NooblyJS permissions, CSRF and audit pass checklist steps 1–5, 7 and 10–11 (tests in
 > `test/teammates.test.js` and `test/e2e/shell.spec.js`). Still open for this phase: moving its own EventSource to
 > `ctx.sse`, checklist steps 6, 8 and 9 (step 12 doesn't apply: Teammates is a library with no `server.js`),
@@ -489,7 +489,7 @@ answers, and `nooblyjs-ai-teammate` passes the **hosted-app checklist**.
 **Repos:** `nooblyjs-ai-factory`, `nooblyjs-ai-harness`, `nooblyjs-ai-host`.
 
 > **Approved 2026-10-10.** Spec: `.claude/specs/phase-07-software-factory/`. Summary:
-> `docs/phases/phase-07-summary.md`. Steps 1–5 pass offline; the one run with a real model stopped at triage
+> `.claude/phases/phase-07-summary.md`. Steps 1–5 pass offline; the one run with a real model stopped at triage
 > ("Needs information"), so "once with a real model" is still open. The test script runs on the seeded **PRD-028** handoff (six work items, four
 > repositories): the demo repository stands in for `web-storefront`, so two work items become runs and four wait
 > for a repository.
@@ -531,7 +531,7 @@ answers, and `nooblyjs-ai-teammate` passes the **hosted-app checklist**.
 **Repos:** `nooblyjs-ai-knowledge`, `nooblyjs-ai-host`, `nooblyjs-ai-product`.
 
 > **Done 2026-10-10** (signed off as built, with the summary's decisions accepted). Spec: `.claude/specs/phase-08-knowledge-repository/`. Summary:
-> `docs/phases/phase-08-summary.md`. `nooblyjs-ai-knowledge` is the existing Wiki Platform, hosted at **`/wiki`**;
+> `.claude/phases/phase-08-summary.md`. `nooblyjs-ai-knowledge` is the existing Wiki Platform, hosted at **`/wiki`**;
 > this phase extended its own modules instead of building the screens listed below from scratch.
 
 **Before you start** (answered 2026-10-10)
@@ -581,7 +581,7 @@ answers, and `nooblyjs-ai-teammate` passes the **hosted-app checklist**.
   and each model route names its provider. Development and test stay on the Anthropic API, refused in production.
 
 > **Done 2026-10-10** (signed off as built). Spec: `.claude/specs/phase-09-platform-governance/`. Summary:
-> `docs/phases/phase-09-summary.md`. Infrastructure (`nooblyjs-ai-infrastructure`) owns environments and previews and
+> `.claude/phases/phase-09-summary.md`. Infrastructure (`nooblyjs-ai-infrastructure`) owns environments and previews and
 > joins NooblyJS next; Platform · Environments is a read-only summary.
 
 **Build**
@@ -613,7 +613,7 @@ passes the hosted-app checklist, and works with Home, Platform and the lifecycle
 
 > Added 2026-10-10 at Stevie's request, between Phases 9 and 10 (so the later phases keep their numbers). Spec:
 > `.claude/specs/phase-09a-infrastructure/`. **Done 2026-10-10** (signed off as built): summary in
-> `docs/phases/phase-09a-summary.md`. The app already ran standalone with nine screens and a mock
+> `.claude/phases/phase-09a-summary.md`. The app already ran standalone with nine screens and a mock
 > provisioner; this phase is its own roadmap's **I6** plus the open items of **I3–I5** that need no cloud decision.
 
 **Before you start** (answered 2026-10-10)
@@ -653,7 +653,7 @@ Who is the "platform owner" who approves designs?
 **Repos:** `nooblyjs-ai-host`.
 
 > **Done 2026-10-10** (signed off as built). Spec: `.claude/specs/phase-10-metrics/`; summary and the decisions to
-> confirm: `docs/phases/phase-10-summary.md`. Steps 1 to 4 pass. nooblyjs-core's measuring service is not used (it
+> confirm: `.claude/phases/phase-10-summary.md`. Steps 1 to 4 pass. nooblyjs-core's measuring service is not used (it
 > keeps counters in memory; these numbers are regenerable from the event files). The seed writes a sample history
 > of events from which the mockup's numbers are computed.
 
@@ -682,7 +682,7 @@ issues, branches, commits and pull requests next to the item. **Nothing is writt
 > Added 2026-10-10 at Stevie's request, ahead of the Teams bot (which moves to Phase 12). Bitbucket replaces GitHub
 > everywhere in NooblyJS: the company's source control is Bitbucket Cloud (workspace `acme`). Jira and Bitbucket
 > are production systems, so this phase is read-only by construction; writing is Phase 13. **Done 2026-10-10**
-> (signed off as built): summary in `docs/phases/phase-11-summary.md`. Spec:
+> (signed off as built): summary in `.claude/phases/phase-11-summary.md`. Spec:
 > `.claude/specs/phase-11-development-tools/`.
 
 **Before you start:** read-only API tokens for Jira and Bitbucket (the first ones could write; see the spec), and
@@ -720,7 +720,7 @@ the first slice: the repository `nooblyjs-ai-harness`, then Digital Commerce.
 **Repos:** `nooblyjs-ai-host`, `nooblyjs-core` (the Entra sign-in reads the job title).
 
 > **Built 2026-10-11, reviewed 2026-10-20.** Spec: `.claude/specs/phase-12-microsoft-365/`; summary:
-> `docs/phases/phase-12-summary.md`. Steps 1–6 pass offline (a test signing key plays the Bot Framework) and steps
+> `.claude/phases/phase-12-summary.md`. Steps 1–6 pass offline (a test signing key plays the Bot Framework) and steps
 > 3–5 in the Agents Playground; the tenant run waits for the bot's registration.
 
 **Before you start:** the Entra app registrations (SSO + bot), the tenant for sideloading, and
@@ -751,7 +751,7 @@ who may add teammates to meetings (`product.md` §12 Q10).
 **Repos:** all.
 
 > **Built 2026-10-11, reviewed 2026-10-20.** Spec: `.claude/specs/phase-13-writing-and-readiness/`; summary:
-> `docs/phases/phase-13-summary.md`. Steps 1 and 2 pass offline against a fake Jira and Bitbucket; steps 3 and 4 pass
+> `.claude/phases/phase-13-summary.md`. Steps 1 and 2 pass offline against a fake Jira and Bitbucket; steps 3 and 4 pass
 > for real on this machine. **Nothing has been written to the real Jira or Bitbucket**: NooblyJS records writes until a
 > deployment, an Owner and a write token allow them. The run against real systems and the pilot's sign-off are open.
 > Targetprocess was removed from scope on 2026-10-11.
@@ -824,7 +824,7 @@ first, and how it is installed (Edge policy or opt-in). Register the extension i
 
 **Goal:** nothing in NooblyJS pretends. Every number is measured, every agent answer comes from a model, every
 environment and container exists, and a new installation starts empty and is filled by people using it.
-**Repos:** all. **The list:** `docs/mocking-audit.md` (2026-10-11), items A1–A11 (mock or simulated behaviour) and
+**Repos:** all. **The list:** `.claude/audits/mocking-audit.md` (2026-10-11), items A1–A11 (mock or simulated behaviour) and
 B1–B12 (static data shown as real).
 
 **Already there (2026-10-11):** `npm run seed:blank` makes a data folder with the system files and no sample
@@ -864,7 +864,7 @@ architecture standards, budgets and teammate rates.
 4. `grep` of the audit's file list finds no mock on a production path; the guard test passes.
 5. Home · Metrics shows only what happened in steps 1–4.
 
-**Done when:** steps 1–5 pass and `docs/mocking-audit.md` has no open item (or each one left is a decision you took).
+**Done when:** steps 1–5 pass and `.claude/audits/mocking-audit.md` has no open item (or each one left is a decision you took).
 **Guide points:** which mocks stay on purpose (the offline test doubles; Record only as the default for writes)?
 
 
@@ -875,7 +875,7 @@ architecture standards, budgets and teammate rates.
 ## Phase 16a — Nine stages
 
 > **Built 2026-10-19, waiting for review.** Spec: `nooblyjs-ai-host/.claude/specs/phase-16a-nine-stages/`. Summary:
-> `nooblyjs-ai-host/docs/phases/phase-16a-summary.md`. Phase 16 was split in two: the stages here, the checks and the
+> `nooblyjs-ai-host/.claude/phases/phase-16a-summary.md`. Phase 16 was split in two: the stages here, the checks and the
 > trace in 16b (now 16f, after the lifecycle v3 phases 16b–16e), so the small change everything else needs did not wait on the one that touches every app.
 
 **Goal:** the lifecycle has nine stages, and leaving each new one is a person's decision with its own permission.
@@ -918,7 +918,7 @@ time after release, or when its measure has data?
 ## Phase 16b — Eight stages, and the Factory's five groups
 
 > **Built 2026-10-20, waiting for review.** Spec: `nooblyjs-ai-host/.claude/specs/phase-16b-product-design-build/`.
-> Summary: `nooblyjs-ai-host/docs/phases/phase-16b-summary.md`.
+> Summary: `nooblyjs-ai-host/.claude/phases/phase-16b-summary.md`.
 
 **Goal:** the lifecycle has the eight stages of version 3, every handoff between them is a person's decision with its
 own permission, and the Software Factory's sidebar follows the work.
@@ -979,7 +979,7 @@ phase; 16c makes them per story.
 ## Phase 16c — The Design section
 
 > **Built 2026-10-20, waiting for review** (started at your word with 16a and 16b still waiting for review). Spec:
-> `nooblyjs-ai-host/.claude/specs/phase-16c-design-section/`. Summary: `nooblyjs-ai-host/docs/phases/phase-16c-summary.md`.
+> `nooblyjs-ai-host/.claude/specs/phase-16c-design-section/`. Summary: `nooblyjs-ai-host/.claude/phases/phase-16c-summary.md`.
 > Decided at the start: story ids `STORY-031-1` (and `BR-031-01`, `NFR-031-01`, `IF-031-01`, `TR-031-01`, `FEAT-031-1`),
 > and the NFR catalogue as the Design section's `nfr-catalogue.yaml`, seven categories with `[CONFIRM]` targets.
 
@@ -1029,7 +1029,7 @@ Design handoff per story), `nooblyjs-ai-knowledge` (context for impacted systems
 ## Phase 16d — Engineering: application architecture from the code, and test analysis
 
 > **Built 2026-10-20, waiting for review** (started at your word, with your defaults). Spec:
-> `nooblyjs-ai-host/.claude/specs/phase-16d-engineering/`. Summary: `nooblyjs-ai-host/docs/phases/phase-16d-summary.md`.
+> `nooblyjs-ai-host/.claude/specs/phase-16d-engineering/`. Summary: `nooblyjs-ai-host/.claude/phases/phase-16d-summary.md`.
 > Decided at the start: agents read every repository Platform lists, as each one's agent access says; test cases are
 > given/when/then, with the levels the AI automates in the Test section's `test-policy.yaml`; the Test section is
 > `nooblyjs-ai-factory/quality/` at `/factory/quality`. STORY-027-1's CHG-008 sample is now the seed of the real formats.
@@ -1079,8 +1079,13 @@ before the first line is written?
 
 ## Phase 16e — Build and Test: the AI builds and tests, engineers and testers approve
 
-> **Until it is built** Build · Pull requests and Test · Test approvals show the lifecycle's pull requests and approvals
-> with the sample's last test run (CHG-008).
+> **Built 2026-10-21, waiting for review** (started at your word, with the defaults). Spec:
+> `nooblyjs-ai-host/.claude/specs/phase-16e-build-and-test/`. Summary: `nooblyjs-ai-host/.claude/phases/phase-16e-summary.md`.
+> Decided at the start: each pull request is a lifecycle item of its own (type `pr`, its story's child) with its Build
+> and Test approvals; a person presses Merge after both (the Factory merges on the local forge in their name; Bitbucket
+> pull requests are merged in Bitbucket); a Bitbucket merge without both approvals is flagged, not counted `[CONFIRM]`.
+> The script counts the ten automated cases the test analysis gives web-storefront ("9 of 10 required tests present
+> (TC-031-1-4 missing)"), not the roadmap's "3 of 4", and runs its steps in the order 1, 2, 3, 6, 4, the merge, 5.
 
 **Goal:** the AI writes the code and the automated tests the test analysis asked for; an engineer gives the Build
 approval; a human tester verifies the pull request and gives the Test approval; only then does it merge. A feature
@@ -1423,7 +1428,7 @@ check are in Phase 13 for all of NooblyJS.
 ## After Phase 23
 
 - **Phase 15 (No mocks)** turns each adapter real as its decision is taken: models, runtime, provisioner, scanners,
-  test runner, deployer, monitoring. Its audit (`nooblyjs-ai-host/docs/mocking-audit.md`) gains a line per new
+  test runner, deployer, monitoring. Its audit (`nooblyjs-ai-host/.claude/audits/mocking-audit.md`) gains a line per new
   adapter.
 - **Pilot the whole loop** with one squad on one product, idea to outcome review, and measure it against today's
   idea → merge baseline.

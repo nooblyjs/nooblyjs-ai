@@ -53,9 +53,9 @@
 
 1. A change that alters what NooblyJS does or how it is built updates the steering doc that owns it (`product.md`,
    `tech.md`, `structure.md`) in the same commit, and the entry names the section.
-2. A change that touches what every repo shares updates `docs/steering/nooblyjs-ai-shared-rules.md` and runs
+2. A change that touches what every repo shares updates `.claude/steering/nooblyjs-ai-shared-rules.md` and runs
    `npm run steering:sync`.
 3. A change bigger than a small piece of work (a new screen, service, integration or repo, or more than a
    couple of days) becomes a roadmap phase. The entry is closed as **moved to Phase NN**.
 4. The phase specs that are done stay as they were built. A change here does not edit them; their summary in
-   `docs/phases/` may get a line pointing to the entry.
+   `.claude/phases/` may get a line pointing to the entry.

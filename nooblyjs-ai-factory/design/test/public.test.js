@@ -1,4 +1,4 @@
-// Phase 16c: the Design section's pages in the NooblyJS frame (noobly docs/hosted-apps/porting-an-app.md §4): the CSS
+// Phase 16c: the Design section's pages in the NooblyJS frame (noobly .claude/guides/porting-an-app.md §4): the CSS
 // is scoped, every nav row has a route, and pages leave history and <body> to the frame.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

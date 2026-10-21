@@ -12,7 +12,7 @@ import { compute, windowStart, RANGES, DAY } from './compute.js';
 export { RANGES } from './compute.js';
 
 // Raised when a fact changes shape, so roll-ups written by older code are rebuilt.
-const ROLLUP_VERSION = 1;
+const ROLLUP_VERSION = 2; // 2: ask and decide facts carry the approval type (Phase 16e)
 const dayOf = (ms) => new Date(ms).toISOString().slice(0, 10);
 
 /**

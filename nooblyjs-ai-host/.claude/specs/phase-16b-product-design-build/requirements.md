@@ -1,6 +1,6 @@
 # Phase 16b — Eight stages, and the Factory's five groups: requirements
 
-> **Status: built 2026-10-20, waiting for review.** Summary: `docs/phases/phase-16b-summary.md`. Written 2026-10-20 for
+> **Status: built 2026-10-20, waiting for review.** Summary: `.claude/phases/phase-16b-summary.md`. Written 2026-10-20 for
 > lifecycle version 3 (root `product.md` §3.2, §3.2a–c, §4; root `roadmap.md` Phase 16b). Bugs found while reviewing it
 > go in `.claude/specs/bugs-and-changes/`.
 

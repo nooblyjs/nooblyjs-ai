@@ -1,6 +1,6 @@
 # Phase 7 — Software Factory integration: requirements
 
-> **Status: done, approved 2026-10-10 (the real-model run to a PR and the decisions in the summary are still open).** Summary: `docs/phases/phase-07-summary.md`.
+> **Status: done, approved 2026-10-10 (the real-model run to a PR and the decisions in the summary are still open).** Summary: `.claude/phases/phase-07-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 > `nooblyjs-ai-workflows` below is now the lifecycle engine inside `nooblyjs-ai-host` (`src/lifecycle/`, since 2026-10-10).
 

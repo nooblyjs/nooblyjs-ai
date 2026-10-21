@@ -23,7 +23,8 @@ nooblyjs-ai/                   the monorepo
   nooblyjs-ai-factory/         Software Factory: one app at /factory           (module + workers + CLI)
     product/                   its Product section: screens, artefacts + drafting (was nooblyjs-ai-product)
     design/                    its Design section: requirements, solution, functional analysis, stories (Phase 16c)
-    quality/                   its Test section: test analysis (Phase 16d); test approvals, runs, coverage later
+    quality/                   its Test section: test analysis (Phase 16d); runs, coverage, defects later (Phase 20).
+                               The Test approvals are the Factory's own pages (src/services/pull-requests/, Phase 16e)
   nooblyjs-ai-infrastructure/  Infrastructure: designs, environments, runs, drift, cost   (module + standalone server)
   nooblyjs-ai-teammate/        Digital Teammates                               (module + standalone server)
   nooblyjs-ai-knowledge/       Knowledge Repository                            (module + workers)
@@ -60,7 +61,7 @@ once, in the repo that owns it; other repos link to it and never copy it, becaus
 | The cross-app services (`host.service(name)`: who provides what, who calls it) | nooblyjs-ai-host | `tech.md` §8b |
 | The roadmap: every phase for every repo, the hosted-app checklist, the hosted apps' open work | monorepo root | `../.claude/steering/roadmap.md` |
 | The whole factory across the SDLC: stages, systems, trace, checks, target stack | monorepo root | `../.claude/steering/{product,design,stack}.md` |
-| The shared rules in brief, loaded in every other repo | nooblyjs-ai-host | `docs/steering/nooblyjs-ai-shared-rules.md`, copied as `.claude/steering/nooblyjs-ai.md` |
+| The shared rules in brief, loaded in every other repo | nooblyjs-ai-host | `.claude/steering/nooblyjs-ai-shared-rules.md`, copied as `.claude/steering/nooblyjs-ai.md` |
 | What an app does: its screens, capabilities, data and open points | that repo | its `product.md` |
 | Where its code and data live, the `services` it returns and the events it emits | that repo | its `structure.md` |
 | Its own values for the contract, its deviations from the defaults, and its state today | that repo | its `tech.md` |
@@ -69,7 +70,7 @@ How it works:
 
 - **Kiro and Claude Code only load the steering of the repo they are opened in**, and Kiro resolves file references
   from that repo's root. So each repo gets **`.claude/steering/nooblyjs-ai.md`**: the shared rules in brief, with a table
-  of where each shared topic lives in `../nooblyjs-ai-host`. It is generated from `docs/steering/nooblyjs-ai-shared-rules.md` by
+  of where each shared topic lives in `../nooblyjs-ai-host`. It is generated from `.claude/steering/nooblyjs-ai-shared-rules.md` by
   `npm run steering:sync` (in nooblyjs-ai-host), and `test/steering.test.js` fails while any copy is out of date. Never
   edit a copy.
 - **A repo's own `tech.md`** starts by pointing at `NOOBLY.md` and then gives only its values (mount path, entry,
@@ -123,7 +124,9 @@ noobly/
                             containers.js (the simulated ContainerRuntime) · governance.js (members, audit query)
     lifecycle/              the lifecycle engine (was the repo nooblyjs-ai-workflows until 2026-10-10): index.js (register, the
                             services other apps call as host.service('workflows')) · services/engine.js (items, stages,
-                            approvals, handoffs, send-back, the sweep) · services/views.js (Overview, Lifecycle,
+                            approvals, handoffs, send-back, the sweep) · services/pull-requests.js (Phase 16e: pull
+                            requests as items, their Build and Test approvals, merges, the story and its feature
+                            following them) · services/views.js (Overview, Lifecycle,
                             Approvals) · routes.js (/workflows/api/v1) · repos.js · stages.js · working-days.js ·
                             config.js (approval rules, readiness) · seed/ (the PRD-031 story's items and approvals)
     teams/                  the Teams bot: activities.js · cards.js + cards/*.yaml · sessions.js · bot.js · simulator.js
@@ -148,12 +151,17 @@ noobly/
   test/                     mirrors src/: test/services/*.test.js, test/routes/*.test.js, test/teams/*.test.js
     fixtures/               temp DATA_DIR builders, recorded Bot Framework activities
     e2e/                    Playwright + axe, one spec per screen (dev only)
-  docs/
-    adr/                    ADR-NNN-<slug>.md (decisions about NooblyJS itself, e.g. ADR-001-host-owned-shell.md)
+  .claude/                  every document of this repo (there is no docs/ folder: it moved here on 2026-10-21)
+    steering/               product.md · tech.md · structure.md · roadmap.md (a pointer to the root) ·
+                            nooblyjs-ai-shared-rules.md (the source of every child's nooblyjs-ai.md, npm run steering:sync) ·
+                            brief/ (design input, read-only)
+    specs/                  per-phase Kiro specs (requirements, design, tasks) · bugs-and-changes/ (BUG-NNN, CHG-NNN)
     phases/                 phase-NN-summary.md written at the end of each roadmap phase
-  .claude/
-    steering/               product.md · tech.md · structure.md · roadmap.md (a pointer to the root) · brief/ (design input, read-only)
-    specs/                  per-feature Kiro specs (requirements, design, tasks)
+    adr/                    ADR-NNN-<slug>.md (decisions about NooblyJS itself, e.g. ADR-001-host-owned-shell.md)
+    guides/                 how-tos for people building on NooblyJS (porting-an-app.md)
+    runbooks/               operating NooblyJS: start-stop, backup-restore, budget, sync, tokens, writes
+    audits/                 dated audits and reviews (security, production readiness, mocking-audit.md)
+    learning/ · skills/     tutorials (the learning skill) and project skills
     style/                  brand assets
 ```
 
@@ -168,7 +176,7 @@ In the browser, `nooblyjs-ai-host` owns **one frame**: the suite rail, the modul
 status card, signed-in person), the content area and the docked chat panel. A hosted app
 doesn't draw any of that. It provides a **UI module**, an ES module that the frame loads into
 the content area. Moving between apps is client-side, so the frame (and an open chat thread)
-stays in place. Why: `docs/adr/ADR-001-host-owned-shell.md`.
+stays in place. Why: `.claude/adr/ADR-001-host-owned-shell.md`.
 
 | Child project | Mount path | Has a UI module (`public/js/module.js`) | API base |
 | --- | --- | --- | --- |
@@ -492,7 +500,7 @@ export function destroy() {}                                       // optional
   ever interpolated through `html`.
 
 **Porting an app that had its own page** (sidebar, router, sign-in): follow
-`docs/hosted-apps/porting-an-app.md`. `nooblyjs-ai-teammate` is the worked example: a route table over a bridge
+`.claude/guides/porting-an-app.md`. `nooblyjs-ai-teammate` is the worked example: a route table over a bridge
 that runs the old pages unchanged, CSS scoped with `nooblyjs-core/scripts/scope-css.js` with its tokens pointed at the
 kit's, and kit class collisions reverted inside the app's pages.
 
@@ -607,9 +615,10 @@ data/
   people/<person-id>/     PERSON.md (name, email, access role, job title) · profile.md (work role, teams, onboarding)
   teams/<team-id>.md      people + teammates, focus areas, Teams channel
   workflows/              (owned by the lifecycle engine, noobly/src/lifecycle/; the folder keeps its name)
-    items/<ITEM-ID>.md    IDEA-018, PRD-031, slots-api-482 … (stage, status, owner, work, history)
-    approvals/<apr_id>.md · handoffs/<hof_id>.md
-    approval-rules.yaml (Who approves what) · readiness.yaml (checks per stage)
+    items/<ITEM-ID>.md    IDEA-018, PRD-031, STORY-031-1, PR-031-1-1, slots-api-482 … (stage, status, owner, work, history;
+                          a story's passedTestAt; a pull request's `pr`: run, commit, evidence, Phase 16e)
+    approvals/<apr_id>.md · handoffs/<hof_id>.md   (a pull request's Build and Test approvals carry its commit, `sha`)
+    approval-rules.yaml (Who approves what) · readiness.yaml (checks per stage, and a pull request's, Phase 16e)
   chat/
     threads/<thread-id>.md                   scope (item | repo | channel), participants, Teams mirror
     messages/<thread-id>/YYYY-MM-DD.yaml     append-only
@@ -700,5 +709,5 @@ Each module writes only under its own folder. Shared folders (`events/`, `audit/
   `src/seed/data/`, and the event names it emits.
 - **A new rule or policy:** a service function plus a "refuses" test. If people should change
   it at runtime, it is configured in `data/**/*.yaml`.
-- **A decision about NooblyJS itself:** `docs/adr/ADR-NNN-<slug>.md`.
+- **A decision about NooblyJS itself:** `.claude/adr/ADR-NNN-<slug>.md`.
 - **Design input:** `.claude/steering/brief/` is read-only. Never edit the mockups.

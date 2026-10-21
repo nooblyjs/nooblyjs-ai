@@ -123,12 +123,24 @@ export const BUILT_IN_READINESS = {
     { key: 'criteria-ready', passed: 'Every criterion has a ready test case', failed: 'A criterion has no ready test case' },
     { key: 'interfaces-tested', passed: 'Every interface has an integration test', failed: 'An interface has no integration test' },
   ],
+  // Phase 16e: before a pull request's Test approval, worked out from the evidence the Software Factory recorded. Not a
+  // stage: the checks of a pull request in Test (other items in Test keep Test's own, or Verify's from before).
+  'pull-request': [
+    { key: 'required-tests', passed: 'Every required test is present and passing', failed: 'A required test is missing or not passing' },
+    { key: 'gates-passed', passed: 'The checks passed on this commit', failed: 'The checks did not pass on this commit' },
+  ],
 };
 
 /** The readiness checks a stage requires: [{ key, passed, failed }]. Empty when the stage has none. */
 export async function loadReadiness(repos, stage) {
   const doc = await repos.readYaml('readiness.yaml');
   return doc?.stages?.[stage] ?? doc?.stages?.[READINESS_BEFORE[stage]] ?? BUILT_IN_READINESS[stage] ?? [];
+}
+
+/** A pull request's Test checks (Phase 16e): readiness.yaml's `pull-request`, else the built-in ones. */
+export async function loadPullRequestReadiness(repos) {
+  const doc = await repos.readYaml('readiness.yaml');
+  return doc?.stages?.['pull-request'] ?? BUILT_IN_READINESS['pull-request'];
 }
 
 /** How many days an item may wait on a person before Lifecycle calls it "waiting too long". */

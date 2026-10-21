@@ -213,10 +213,16 @@ export function createSync({ store, config, jira, bitbucket, writes, links, serv
       await tell('merge.refused', { itemId: entry.itemId ?? null, workItemId, reason, summary: `did not count the merge of pull request #${entry.pr.id} on ${entry.pr.slug}: ${reason}` });
       return;
     }
-    await tell('pr.merged', {
-      itemId: entry.itemId ?? null, workItemId, system: 'factory', pr: { slug: entry.pr.slug, id: entry.pr.id, url: pr.url }, mergedBy: pr.mergedBy.name, actorName: pr.mergedBy.name,
-      summary: `merged pull request #${entry.pr.id} on ${entry.pr.slug} in Bitbucket`,
-    });
+    // Phase 16e: a work item that is a lifecycle pull request is counted only with its Build and Test approvals for its
+    // commit; without them it is flagged on its story. The lifecycle says so in its own events.
+    const lifecycle = await workflows()?.pullRequestMergedOutside?.({ workItemId, mergedBy: pr.mergedBy.name, url: pr.url ?? null })
+      .catch((err) => { log?.warn?.(`devtools sync: ${workItemId}: ${err.message}`); return null; });
+    if (!lifecycle) {
+      await tell('pr.merged', {
+        itemId: entry.itemId ?? null, workItemId, system: 'factory', pr: { slug: entry.pr.slug, id: entry.pr.id, url: pr.url }, mergedBy: pr.mergedBy.name, actorName: pr.mergedBy.name,
+        summary: `merged pull request #${entry.pr.id} on ${entry.pr.slug} in Bitbucket`,
+      });
+    }
     await moveIssue(workItemId, 'done', `pull request #${entry.pr.id} was merged`).catch((err) => log?.warn?.(`devtools sync: ${workItemId}: ${err.message}`));
     await maybeShip(entry.itemId);
   }

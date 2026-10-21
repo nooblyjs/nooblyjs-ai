@@ -141,10 +141,25 @@ export async function render(view, { ctx, params }) {
         })}`,
       })
       : '';
+    // Phase 16e: an item's features (each released on its own), a story's pull requests, and a story that passed Test.
+    const featuresCard = item.features?.length
+      ? card({
+        title: 'Features', meta: `${item.features.filter((f) => f.stage === 'release').length} of ${item.features.length} in Release`,
+        body: html`<ul class="waits" role="list">${item.features.map((f) => html`<li class="wait"><div class="wait__main"><span class="wait__title">${f.id} · ${f.title}</span><span class="row__meta">${f.stories.map((st) => html`<a href="/home/lifecycle/${encodeURIComponent(st.id)}">${st.ref}</a> `)}</span></div>${statusPill({ text: f.text, tone: f.stage === 'release' ? 'success' : 'neutral' })}</li>`)}</ul>`,
+      })
+      : '';
+    const pullsCard = item.pullRequests?.length
+      ? card({
+        title: 'Pull requests', meta: `${item.pullRequests.filter((p) => p.status === 'completed').length} of ${item.pullRequests.length} merged`,
+        body: html`<ul class="waits" role="list">${item.pullRequests.map((p) => html`<li class="wait"><div class="wait__main"><a class="wait__title" href="${p.href}">${p.ref} · ${p.title}</a>${p.evidence ? html`<span class="row__meta">${p.evidence}</span>` : ''}</div>${statusPill({ text: p.status === 'completed' ? 'Merged' : `In ${p.stageLabel}`, tone: p.status === 'completed' ? 'success' : 'neutral' })}</li>`)}</ul>
+          ${item.passedTest ? html`<p class="row__meta">Passed Test: its last pull request is merged.${item.passedTest.notBuiltHere?.length ? ` Not built here: ${item.passedTest.notBuiltHere.map((w) => `${w.repo} (${w.reason})`).join('; ')}.` : ''}</p>` : ''}`,
+      })
+      : '';
+    const earlyNote = item.mergedEarly ? html`<p class="flash flash--error" role="alert">Merged in Bitbucket by ${item.mergedEarly.by} before ${item.mergedEarly.missing.join(' and ')}: not counted as done.</p>` : '';
     ctx.setTitle(`${item.ref} · ${item.title}`);
     const failing = readiness.failing.length > 0;
     const approvals = data.approvals.length
-      ? html`<ul class="waits" role="list">${data.approvals.map((a) => html`<li class="wait">${statusPill({ text: a.tag, tone: a.tone, dot: false })}<div class="wait__main"><a class="wait__title" href="${a.href}">${a.title}</a><span class="row__meta">${a.status === 'open' ? `Waiting ${a.age}${a.due ? ` · ${a.due.text}` : ''}` : a.status === 'approved' ? `Approved${a.decidedByName ? ` by ${a.decidedByName}` : ''}` : a.status === 'withdrawn' ? 'Withdrawn' : 'Changes requested'}</span></div></li>`)}</ul>`
+      ? html`<ul class="waits" role="list">${data.approvals.map((a) => html`<li class="wait">${statusPill({ text: a.tag, tone: a.tone, dot: false })}<div class="wait__main"><a class="wait__title" href="${a.href}">${a.title}</a><span class="row__meta">${a.status === 'open' ? `Waiting ${a.age}${a.due ? ` · ${a.due.text}` : ''}` : a.status === 'approved' ? `Approved${a.decidedByName ? ` by ${a.decidedByName}` : ''}` : a.status === 'withdrawn' ? 'Withdrawn' : a.status === 'cleared' ? 'Cleared by a new commit' : 'Changes requested'}</span></div></li>`)}</ul>`
       : html`<p class="row__meta">No approvals yet.</p>`;
 
     const advance = actions.canAdvance ? html`<form class="form" data-form="advance">
@@ -156,15 +171,19 @@ export async function render(view, { ctx, params }) {
         <label class="field">Why is it going back?<textarea name="reason" rows="2" required maxlength="2000"></textarea></label>
         <div class="actions">${button({ label: 'Send back', kind: 'secondary', type: 'submit' })}</div>
       </form>` : '';
-    const nothing = !advance && !sendBack ? html`<p class="row__meta">${item.status === 'completed' ? 'This item is complete.' : 'Moving an item on or sending it back needs the approve permission.'}</p>` : '';
+    const perPr = actions.perPullRequest ? html`<p class="row__meta">${actions.perPullRequest}</p>` : '';
+    const nothing = !advance && !sendBack && !perPr ? html`<p class="row__meta">${item.status === 'completed' ? 'This item is complete.' : 'Moving an item on or sending it back needs the approve permission.'}</p>` : '';
 
     view.innerHTML = String(html`${pageHead({
       eyebrow: 'NooblyJS · Lifecycle', title: item.title,
       lead: `${item.ref} · ${item.status === 'completed' ? 'Completed' : `in ${item.stageLabel}`} · owned by ${item.ownerName} · ${item.age} old`,
-      actions: html`${item.specHref ? button({ label: 'Open the spec', kind: 'secondary', href: item.specHref }) : ''}${button({ label: 'All items', kind: 'secondary', href: '/home/lifecycle' })}`,
+      actions: html`${item.specHref ? button({ label: 'Open the spec', kind: 'secondary', href: item.specHref }) : ''}${item.pullRequest ? button({ label: 'Open the pull request', kind: 'secondary', href: item.pullRequest.href }) : ''}${item.parent ? button({ label: item.parent.ref, kind: 'secondary', href: item.parent.href }) : ''}${button({ label: 'All items', kind: 'secondary', href: '/home/lifecycle' })}`,
     })}
     ${message ? html`<p class="flash flash--${message.tone}" role="${message.tone === 'error' ? 'alert' : 'status'}">${message.text}</p>` : ''}
+    ${earlyNote}
     ${card({ title: 'Where this is', body: tracker(item) })}
+    ${featuresCard}
+    ${pullsCard}
     <div class="split">
       ${card({ title: 'Readiness', meta: readiness.total ? `${readiness.passed} of ${readiness.total} checks` : null, body: readiness.total ? checklist({ label: 'Readiness checks', items: readiness.checks.map((c) => ({ text: c.text, state: c.passed ? 'done' : 'failed' })) }) : html`<p class="row__meta">${item.stageLabel} has no readiness checks.</p>` })}
       ${card({ title: 'Approvals', body: approvals })}
@@ -175,7 +194,7 @@ export async function render(view, { ctx, params }) {
     ${runsCard}
     <div class="split">
       ${card({ title: 'History', body: history(data.history, data.at) })}
-      ${card({ title: 'Decide', meta: 'Only a person can do these', body: html`${advance}${sendBack}${nothing}` })}
+      ${card({ title: 'Decide', meta: 'Only a person can do these', body: html`${perPr}${advance}${sendBack}${nothing}` })}
     </div>`);
   }
 
@@ -255,5 +274,5 @@ export async function render(view, { ctx, params }) {
     // Don't redraw under someone who is typing a reason.
     if ([...view.querySelectorAll('textarea, [data-form="jira"] input')].some((t) => t.value.trim())) return;
     return draw();
-  }, { types: ['item.', 'approval.', 'handoff.', 'readiness.', 'clock.', 'run.', 'pr.', 'jira.'] });
+  }, { types: ['item.', 'approval.', 'handoff.', 'readiness.', 'clock.', 'run.', 'pr.', 'jira.', 'story.', 'feature.'] });
 }

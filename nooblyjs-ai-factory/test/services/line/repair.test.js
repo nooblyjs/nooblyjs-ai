@@ -111,3 +111,17 @@ test('a NEW build forgets the old build\'s repairs', async () => {
   assert.equal(again.status, 'delivered');
   assert.deepEqual(store.get('runs', first.runId).repairs, [], 'the old repairs were fixes to the old build');
 });
+
+test('NooblyJS Phase 16e: a person asking for changes is not the factory trying again, so repairAttempts does not stop it', async () => {
+  const env = testEnv({ repairAttempts: 0 });
+  const store = openStore({ env });
+  const good = createMockProvider([{ text: 'Writing half.', tools: [write('half.js', 'export const half = (n) => n / 2;\n')] }, { text: 'Done.' }]);
+  const first = await runJob({ issueFile: issueFile(), repo: makeRepo(GATED), allowUnsandboxed: true, providers: { triage: triage(), build: good, review: await approve() } }, { env, store });
+  assert.equal(first.status, 'delivered');
+  store.append(`run:${first.runId}`, 'pr.changes_requested', { runId: first.runId, body: 'Lerato M. asked for changes at the Build approval: add a comment', by: 'Lerato M.' });
+  const fix = fixer({ 'half.js': '// Half of n.\nexport const half = (n) => n / 2;\n' });
+  const again = await retryRun(store, first.runId, { from: 'repair', live: { providers: { 'fix#1': fix, review: await approve() } } });
+  assert.equal(again.status, 'delivered');
+  assert.deepEqual(store.get('runs', first.runId).repairs.map((r) => [r.trigger, r.outcome]), [['human', 'success']]);
+  assert.match(JSON.stringify(fix.requests[0].messages), /REQUESTED CHANGES \(Lerato M\.\)[\s\S]*add a comment/);
+});

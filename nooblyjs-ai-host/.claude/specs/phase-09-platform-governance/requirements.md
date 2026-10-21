@@ -1,6 +1,6 @@
 # Phase 9 — Platform and governance: requirements
 
-> **Status: done, signed off 2026-10-10.** Summary: `docs/phases/phase-09-summary.md`.
+> **Status: done, signed off 2026-10-10.** Summary: `.claude/phases/phase-09-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 > Source: `.claude/steering/roadmap.md` Phase 9. Goal: repositories, sandboxes, models, budgets and guardrails are

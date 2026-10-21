@@ -4,7 +4,7 @@ inclusion: always
 
 # NooblyJS: the shared rules (read this first)
 
-> **Generated from `../nooblyjs-ai-host/docs/steering/nooblyjs-ai-shared-rules.md` by `npm run steering:sync` in `../nooblyjs-ai-host`. Do not edit
+> **Generated from `../nooblyjs-ai-host/.claude/steering/nooblyjs-ai-shared-rules.md` by `npm run steering:sync` in `../nooblyjs-ai-host`. Do not edit
 > it here: change the source in nooblyjs-ai-host, and run the sync.** This project's other steering files describe only this project.
 
 This project is part of **NooblyJS AI**, an engineering-lifecycle platform (idea → spec → architecture → design →
@@ -26,8 +26,8 @@ disagree with it, nooblyjs-ai-host wins, so fix this repo's docs in the same cha
 | **The cross-app services** (`host.service('workflows' / 'teammates' / 'knowledge' / 'product' / 'factory' / 'platform' / 'devtools' …)`) | `.claude/steering/tech.md` §8b |
 | **The one roadmap**: every phase for every repo, the hosted-app checklist, and the hosted apps' open work | **`../.claude/steering/roadmap.md`**, in the monorepo root, not in nooblyjs-ai-host |
 | **The whole factory across the SDLC**: the eight stages, the new systems, the trace, checks, the target stack | `../.claude/steering/{product,design,stack}.md`, in the monorepo root |
-| Why the host owns the shell | `docs/adr/ADR-001-host-owned-shell.md` |
-| Porting an app with its own UI into the frame | `docs/hosted-apps/porting-an-app.md` |
+| Why the host owns the shell | `.claude/adr/ADR-001-host-owned-shell.md` |
+| Porting an app with its own UI into the frame | `.claude/guides/porting-an-app.md` |
 
 **This project owns only itself:** what it does and its screens (`product.md`), where its code and data live and the
 `services` and events it offers (`structure.md`), and its own values for the contract and how it differs from the

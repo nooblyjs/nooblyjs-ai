@@ -1,6 +1,6 @@
 # Phase 8 — Knowledge Repository: design
 
-> **Status: done, signed off 2026-10-10.** Summary: `docs/phases/phase-08-summary.md`.
+> **Status: done, signed off 2026-10-10.** Summary: `.claude/phases/phase-08-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 How the requirements are met. Everything new on the server is one folder in the wiki, `src/wiki/knowledge/`

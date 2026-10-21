@@ -1,6 +1,6 @@
 # Phase 5 — Product Factory: tasks
 
-> **Status: done, approved 2026-10-10.** Summary: `docs/phases/phase-05-summary.md`.
+> **Status: done, approved 2026-10-10.** Summary: `.claude/phases/phase-05-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 The build tasks are in `nooblyjs-ai-product/.claude/steering/roadmap.md` (P0–P7, all done). For the host:

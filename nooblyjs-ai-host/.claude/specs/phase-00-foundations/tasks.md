@@ -1,6 +1,6 @@
 # Phase 0 — Foundations: tasks
 
-> **Status: done 2026-10-08.** Summary: `docs/phases/phase-00-summary.md`.
+> **Status: done 2026-10-08.** Summary: `.claude/phases/phase-00-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 - [x] 1. FsStore in nooblyjs-core
@@ -26,5 +26,5 @@
   - [x] 6.2 `src/hosted-apps.js` (loader, host object, failure isolation)
   - [x] 6.3 fixtures `hello-app`, `broken-app` + `test/hosted-apps.test.js`
 - [x] 7. `app.js` composition root (createApp, server, listen, graceful shutdown)
-- [x] 8. Run the Phase 0 test script (steps 1–10) and write `docs/phases/phase-00-summary.md`
+- [x] 8. Run the Phase 0 test script (steps 1–10) and write `.claude/phases/phase-00-summary.md`
 - [x] 9. Note in `nooblyjs-ai-teammate/.claude/steering/tech.md` that FsStore now lives in nooblyjs-core

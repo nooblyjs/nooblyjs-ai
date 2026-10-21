@@ -9,7 +9,7 @@ inclusion: always
 > moved there unchanged, followed by Phases 16–23, which take the factory across the whole SDLC.
 >
 > Inside the moved phases, paths such as `data/…`, `src/…`, `.claude/specs/…` and commands such as `npm run seed` are
-> still relative to this repo. Phase specs and summaries stay here (`.claude/specs/phase-NN-…/`, `docs/phases/`), and so
+> still relative to this repo. Phase specs and summaries stay here (`.claude/specs/phase-NN-…/`, `.claude/phases/`), and so
 > does the one bug and change log (`.claude/specs/bugs-and-changes/`).
 >
 > Don't add phases or tick boxes in this file.

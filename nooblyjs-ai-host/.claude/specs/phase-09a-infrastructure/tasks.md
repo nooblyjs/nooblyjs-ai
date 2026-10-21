@@ -1,6 +1,6 @@
 # Phase 9a — Infrastructure joins NooblyJS: tasks
 
-> **Status: done, signed off 2026-10-10.** Summary: `docs/phases/phase-09a-summary.md`.
+> **Status: done, signed off 2026-10-10.** Summary: `.claude/phases/phase-09a-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 > `nooblyjs-ai-workflows` below is now the lifecycle engine inside `nooblyjs-ai-host` (`src/lifecycle/`, since 2026-10-10).
 
@@ -12,4 +12,4 @@
 - [x] 6. **nooblyjs-ai-infrastructure** — live progress from `ctx.sse` (no polling); the run detail page and API; tests. _R4.4, R5_
 - [x] 7. **nooblyjs-ai-host** — Platform · Environments from Infrastructure; the preview pool counts its previews. _R6_
 - [x] 8. **nooblyjs-ai-host** — `test/infrastructure.test.js` (checklist, steps 2–7) and `test/e2e/infrastructure.story.js` (steps 1–7, axe, 375px). _Test script, R7_
-- [x] 9. Steering in `nooblyjs-ai-host` (`product.md`, `structure.md`, `tech.md`, `roadmap.md`), Infrastructure's roadmap (I3–I6), `nooblyjs-ai-workflows`' steering, `docs/phases/phase-09a-summary.md`, CLAUDE.md. _R1.5_
+- [x] 9. Steering in `nooblyjs-ai-host` (`product.md`, `structure.md`, `tech.md`, `roadmap.md`), Infrastructure's roadmap (I3–I6), `nooblyjs-ai-workflows`' steering, `.claude/phases/phase-09a-summary.md`, CLAUDE.md. _R1.5_

@@ -285,6 +285,29 @@ function stages(visits, { start, end }) {
   return shown.map((r) => ({ ...r, slowest: slowest > 0 && r.p90Days === slowest }));
 }
 
+const WAITING = { 'build-approval': 'Build approval', 'test-approval': 'Test approval' };
+const hoursText = (h) => (h < 1 ? 'under an hour' : h < 48 ? `${Math.round(h)} h` : `${r1(h / 24)} d`);
+
+/**
+ * Pull requests waiting on a person now (Phase 16e): each Build and Test approval asked for and not yet decided or
+ * withdrawn, with how long the oldest has waited. A merge (the item's `merge` approval, from before) counts as a Build
+ * approval.
+ */
+function waitingNow(facts, now) {
+  const open = new Map();
+  for (const f of facts) {
+    if (f.k === 'ask' && (WAITING[f.type] || f.type === 'merge')) open.set(f.key, { type: f.type === 'merge' ? 'build-approval' : f.type, t: f.t, item: f.item });
+    else if (f.k === 'decide') open.delete(f.key);
+  }
+  return Object.entries(WAITING).map(([type, label]) => {
+    const ages = [...open.values()].filter((o) => o.type === type).map((o) => (now - o.t) / 3_600_000).sort((a, b) => b - a);
+    return {
+      key: type, label: `Pull requests waiting on a ${label}`, count: ages.length, oldestHours: ages.length ? r1(ages[0]) : null,
+      text: ages.length ? `${ages.length} waiting · the oldest for ${hoursText(ages[0])}` : 'None waiting',
+    };
+  });
+}
+
 /**
  * The metrics of one range. `facts` are the facts from windowStart(range, now) on, in any order; `now` is ms.
  */
@@ -309,5 +332,6 @@ export function compute(facts, { range = '30d', now }) {
     weeks: weeks(visits, items, end),
     spend: spend(sorted, period),
     stages: stages(visits, period),
+    waiting: waitingNow(sorted, end),
   };
 }

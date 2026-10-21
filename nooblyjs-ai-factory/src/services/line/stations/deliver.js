@@ -2,11 +2,13 @@
 // Phase F03/F05: push the PR branch and write the PR, as idempotent effects.
 // Phase F07: …as a station, reading the build and verify stations' results.
 // Phase F14: …with the EVIDENCE BUNDLE as the PR body (src/services/evidence/bundle.js).
+// NooblyJS Phase 16e: …and the REQUIRED TESTS of the story's test analysis, each found by its id (pull-requests/evidence.js).
 import { scanCommits } from '../../security/secret-scan.js';
 import { entriesFor, openEntry } from '../../../models/inbox.js';
 import { deliver } from '../../job/deliver.js';
 import { headOf } from './common.js';
 import { buildEvidence, testLinks } from '../../evidence/bundle.js';
+import { requiredTests } from '../../pull-requests/evidence.js';
 
 /** @param {import('./common.js').StationContext} ctx */
 export async function run(ctx) {
@@ -19,6 +21,8 @@ export async function run(ctx) {
   const ids = spec ? spec.trace.criteria.map((c) => c.id) : [];
   const links = build?.sha ? await testLinks(build.workspace.mirror, build.prBaseSha, build.sha, ids) : {};
   const decisions = ctx.store.read({ stream: `run:${ctx.runId}`, types: ['decision.recorded'] }).map((e) => e.data);
+  const cases = ctx.request.noobly?.testCases ?? [];
+  const required = build?.sha && cases.length ? await requiredTests({ mirror: build.workspace.mirror, sha: build.sha, cases, gates: verify?.gates ?? null }) : null;
   const escalated = repair?.escalated ? repair : null;
 
   // Phase F24: nothing leaves the factory with a secret (or a risky change) in ANY of its commits.
@@ -40,9 +44,9 @@ export async function run(ctx) {
     escalated,
     reviews,
     render: (verdict) =>
-      buildEvidence({ runId: ctx.runId, run: ctx.run, issue: ctx.issue, head, base: build.workspace.baseRef, repo: ctx.request.repo, build, verify, reviews, repairs: (ctx.run.repairs ?? []), escalated, spec, links, decisions, verdict, noobly: ctx.request.noobly }),
+      buildEvidence({ runId: ctx.runId, run: ctx.run, issue: ctx.issue, head, base: build.workspace.baseRef, repo: ctx.request.repo, build, verify, reviews, repairs: (ctx.run.repairs ?? []), escalated, spec, links, decisions, verdict, noobly: ctx.request.noobly, required }),
   });
-  return { costUsd: 0, ...delivered };
+  return { costUsd: 0, ...delivered, sha: build?.sha ?? null, ...(required ? { requiredTests: required } : {}) };
 }
 
 /** Phase F24: scan every commit; park on a finding until a person decides. Returns a station result, or null to go on. */

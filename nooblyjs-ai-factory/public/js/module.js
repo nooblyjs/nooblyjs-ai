@@ -34,6 +34,7 @@ export const routes = [
   // Engineering, Pull requests and Test (CHG-008): the lifecycle's stories, pull requests and approvals, with the seed
   // story's sample architecture, test analysis, runs and defects until Phases 16d, 16e and 20 build them.
   view('/pull-requests', 'pull-requests', 'Pull requests', 'testing', 'pull-requests'),
+  view('/pull-requests/:id', 'pull-requests', 'Pull request', 'testing', 'pull-request'),
   view('/engineering/architecture', 'app-architecture', 'Application architecture', 'engineering', 'architecture'),
   view('/engineering/architecture/:id', 'app-architecture', 'Application architecture', 'engineering', 'architecture-detail'),
   // Test analysis is the Test section's since Phase 16d (/quality/test-analysis): old links keep working.

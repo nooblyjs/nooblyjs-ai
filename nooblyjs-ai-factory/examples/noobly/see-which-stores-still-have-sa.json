@@ -1,5 +1,5 @@
 {
-  "_comment": "NooblyJS Phase 16d seed: the scripted agent for STORY-031-1's web-storefront work item \"See which stores still have same-day capacity\" on the demo repository, as its application architecture proposes (stores-same-day-capacity.js, using formatSlot) and with tests named after its test cases. The gate passes and the PR is ready. Sample data.",
+  "_comment": "NooblyJS Phase 16e seed: the scripted agent for STORY-031-1's web-storefront work item \"See which stores still have same-day capacity\" on the demo repository, as its application architecture proposes (stores-same-day-capacity.js, using formatSlot), with its required tests named by test case id. The build leaves TC-031-1-4 out (the evidence says 9 of 10); fix#1 adds it when an engineer asks for it at the Build approval; fix#2 strengthens TC-031-1-9 when a tester sends it back. Sample data.",
   "triage": [
     {
       "text": "I read the work item, its application architecture and its test cases.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"One new module next to format-slot.js, as the architecture proposes, with the test cases automated.\"\n}\n```"
@@ -30,13 +30,13 @@
       ]
     },
     {
-      "text": "And the automated test cases.",
+      "text": "And the automated test cases, each named after its id.",
       "tools": [
         {
           "name": "Write",
           "input": {
             "file_path": "test/stores-same-day-capacity.test.js",
-            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { storesSameDayCapacity } from '../stores-same-day-capacity.js';\n\nconst stores = [\n  { id: 'a', slots: [{ start: '18:00', end: '19:00', left: 1 }, { start: '19:00', end: '20:00', left: 0 }] },\n  { id: 'b', slots: [{ start: '18:00', end: '19:00', left: 0 }] },\n];\n\ntest('TC-031-1-1: the last slot goes to one customer; the store shows the next one', () => {\n  assert.deepEqual(storesSameDayCapacity(stores), [{ id: 'a', slots: ['18:00–19:00'] }]);\n});\n\ntest('TC-031-1-2: a store with no capacity left is not listed', () => {\n  assert.equal(storesSameDayCapacity(stores).some((s) => s.id === 'b'), false);\n});\n"
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { storesSameDayCapacity } from '../stores-same-day-capacity.js';\n\nconst stores = [\n  { id: 'a', slots: [{ start: '18:00', end: '19:00', left: 1 }, { start: '19:00', end: '20:00', left: 0 }] },\n  { id: 'b', slots: [{ start: '18:00', end: '19:00', left: 0 }] },\n];\n\ntest('TC-031-1-1: the last slot goes to one customer; the store shows the next one', () => {\n  assert.deepEqual(storesSameDayCapacity(stores), [{ id: 'a', slots: ['18:00–19:00'] }]);\n});\n\ntest('TC-031-1-2: the customer app gets each store with capacity as { id, slots }', () => {\n  assert.deepEqual(Object.keys(storesSameDayCapacity(stores)[0]), ['id', 'slots']);\n});\n\ntest('TC-031-1-3: the store manager console reads the same stores as customers', () => {\n  assert.equal(storesSameDayCapacity(stores).length, 1);\n});\n\ntest('TC-031-1-5: slots come back as people read them', () => {\n  assert.deepEqual(storesSameDayCapacity(stores)[0].slots, ['18:00–19:00']);\n});\n\ntest('TC-031-1-6: a store with no capacity left is not listed', () => {\n  assert.equal(storesSameDayCapacity(stores).some((s) => s.id === 'b'), false);\n});\n\ntest('TC-031-1-7: a store whose inventory has no slots lists nothing', () => {\n  assert.deepEqual(storesSameDayCapacity([{ id: 'c', slots: [] }]), []);\n});\n\ntest('TC-031-1-8: the delivery planner gets the stores in the order it gave them', () => {\n  const two = [{ id: 'y', slots: [{ start: '18:00', end: '19:00', left: 1 }] }, { id: 'x', slots: [{ start: '18:00', end: '19:00', left: 2 }] }];\n  assert.deepEqual(storesSameDayCapacity(two).map((s) => s.id), ['y', 'x']);\n});\n\ntest('TC-031-1-9: see which stores still have same-day capacity, from start to end', () => {\n  const shown = storesSameDayCapacity(stores);\n  assert.deepEqual(shown.map((s) => s.id), ['a']);\n});\n\ntest('TC-031-1-10: a thousand stores are listed in under 300 ms', () => {\n  const many = Array.from({ length: 1000 }, (_, i) => ({ id: `s${i}`, slots: [{ start: '18:00', end: '19:00', left: 1 }] }));\n  const started = performance.now();\n  storesSameDayCapacity(many);\n  assert.ok(performance.now() - started < 300);\n});\n"
           }
         }
       ]
@@ -54,6 +54,74 @@
   "review": [
     {
       "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"A small module in the repository's style, as the architecture proposes, with the test cases automated.\", \"findings\": []}\n```"
+    }
+  ],
+  "fix#1": [
+    {
+      "text": "I'll read the test cases already automated.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "test/stores-same-day-capacity.test.js"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Adding the missing test case, TC-031-1-4, as the engineer asked.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/stores-same-day-capacity.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { storesSameDayCapacity } from '../stores-same-day-capacity.js';\n\nconst stores = [\n  { id: 'a', slots: [{ start: '18:00', end: '19:00', left: 1 }, { start: '19:00', end: '20:00', left: 0 }] },\n  { id: 'b', slots: [{ start: '18:00', end: '19:00', left: 0 }] },\n];\n\ntest('TC-031-1-1: the last slot goes to one customer; the store shows the next one', () => {\n  assert.deepEqual(storesSameDayCapacity(stores), [{ id: 'a', slots: ['18:00–19:00'] }]);\n});\n\ntest('TC-031-1-2: the customer app gets each store with capacity as { id, slots }', () => {\n  assert.deepEqual(Object.keys(storesSameDayCapacity(stores)[0]), ['id', 'slots']);\n});\n\ntest('TC-031-1-3: the store manager console reads the same stores as customers', () => {\n  assert.equal(storesSameDayCapacity(stores).length, 1);\n});\n\ntest('TC-031-1-4: the slot API\\'s slots are read by their start, end and places left', () => {\n  assert.deepEqual(storesSameDayCapacity([{ id: 'c', slots: [{ start: '07:00', end: '08:00', left: 3 }] }]), [{ id: 'c', slots: ['07:00–08:00'] }]);\n});\n\ntest('TC-031-1-5: slots come back as people read them', () => {\n  assert.deepEqual(storesSameDayCapacity(stores)[0].slots, ['18:00–19:00']);\n});\n\ntest('TC-031-1-6: a store with no capacity left is not listed', () => {\n  assert.equal(storesSameDayCapacity(stores).some((s) => s.id === 'b'), false);\n});\n\ntest('TC-031-1-7: a store whose inventory has no slots lists nothing', () => {\n  assert.deepEqual(storesSameDayCapacity([{ id: 'c', slots: [] }]), []);\n});\n\ntest('TC-031-1-8: the delivery planner gets the stores in the order it gave them', () => {\n  const two = [{ id: 'y', slots: [{ start: '18:00', end: '19:00', left: 1 }] }, { id: 'x', slots: [{ start: '18:00', end: '19:00', left: 2 }] }];\n  assert.deepEqual(storesSameDayCapacity(two).map((s) => s.id), ['y', 'x']);\n});\n\ntest('TC-031-1-9: see which stores still have same-day capacity, from start to end', () => {\n  const shown = storesSameDayCapacity(stores);\n  assert.deepEqual(shown.map((s) => s.id), ['a']);\n});\n\ntest('TC-031-1-10: a thousand stores are listed in under 300 ms', () => {\n  const many = Array.from({ length: 1000 }, (_, i) => ({ id: `s${i}`, slots: [{ start: '18:00', end: '19:00', left: 1 }] }));\n  const started = performance.now();\n  storesSameDayCapacity(many);\n  assert.ok(performance.now() - started < 300);\n});\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "TC-031-1-4 is automated now. All tests pass."
+    },
+    {
+      "text": "All tests pass."
+    },
+    {
+      "text": "All tests pass."
+    }
+  ],
+  "fix#2": [
+    {
+      "text": "I'll read the test cases, TC-031-1-9 first.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "test/stores-same-day-capacity.test.js"
+          }
+        }
+      ]
+    },
+    {
+      "text": "The tester asked TC-031-1-9 to check that a store disappears once its last slot is taken: adding that.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/stores-same-day-capacity.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { storesSameDayCapacity } from '../stores-same-day-capacity.js';\n\nconst stores = [\n  { id: 'a', slots: [{ start: '18:00', end: '19:00', left: 1 }, { start: '19:00', end: '20:00', left: 0 }] },\n  { id: 'b', slots: [{ start: '18:00', end: '19:00', left: 0 }] },\n];\n\ntest('TC-031-1-1: the last slot goes to one customer; the store shows the next one', () => {\n  assert.deepEqual(storesSameDayCapacity(stores), [{ id: 'a', slots: ['18:00–19:00'] }]);\n});\n\ntest('TC-031-1-2: the customer app gets each store with capacity as { id, slots }', () => {\n  assert.deepEqual(Object.keys(storesSameDayCapacity(stores)[0]), ['id', 'slots']);\n});\n\ntest('TC-031-1-3: the store manager console reads the same stores as customers', () => {\n  assert.equal(storesSameDayCapacity(stores).length, 1);\n});\n\ntest('TC-031-1-4: the slot API\\'s slots are read by their start, end and places left', () => {\n  assert.deepEqual(storesSameDayCapacity([{ id: 'c', slots: [{ start: '07:00', end: '08:00', left: 3 }] }]), [{ id: 'c', slots: ['07:00–08:00'] }]);\n});\n\ntest('TC-031-1-5: slots come back as people read them', () => {\n  assert.deepEqual(storesSameDayCapacity(stores)[0].slots, ['18:00–19:00']);\n});\n\ntest('TC-031-1-6: a store with no capacity left is not listed', () => {\n  assert.equal(storesSameDayCapacity(stores).some((s) => s.id === 'b'), false);\n});\n\ntest('TC-031-1-7: a store whose inventory has no slots lists nothing', () => {\n  assert.deepEqual(storesSameDayCapacity([{ id: 'c', slots: [] }]), []);\n});\n\ntest('TC-031-1-8: the delivery planner gets the stores in the order it gave them', () => {\n  const two = [{ id: 'y', slots: [{ start: '18:00', end: '19:00', left: 1 }] }, { id: 'x', slots: [{ start: '18:00', end: '19:00', left: 2 }] }];\n  assert.deepEqual(storesSameDayCapacity(two).map((s) => s.id), ['y', 'x']);\n});\n\ntest('TC-031-1-9: see which stores still have same-day capacity, from start to end', () => {\n  const shown = storesSameDayCapacity(stores);\n  assert.deepEqual(shown.map((s) => s.id), ['a']);\n  // When store a's last slot is taken, it disappears for the next customer (the tester's check).\n  const after = stores.map((s) => ({ ...s, slots: s.slots.map((slot) => ({ ...slot, left: 0 })) }));\n  assert.deepEqual(storesSameDayCapacity(after), []);\n});\n\ntest('TC-031-1-10: a thousand stores are listed in under 300 ms', () => {\n  const many = Array.from({ length: 1000 }, (_, i) => ({ id: `s${i}`, slots: [{ start: '18:00', end: '19:00', left: 1 }] }));\n  const started = performance.now();\n  storesSameDayCapacity(many);\n  assert.ok(performance.now() - started < 300);\n});\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "TC-031-1-9 checks it now. All tests pass."
+    },
+    {
+      "text": "All tests pass."
+    },
+    {
+      "text": "All tests pass."
     }
   ]
 }

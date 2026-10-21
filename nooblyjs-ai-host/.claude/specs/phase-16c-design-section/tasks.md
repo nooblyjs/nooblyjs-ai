@@ -1,6 +1,6 @@
 # Phase 16c — The Design section: tasks
 
-> **Status: built 2026-10-20, waiting for review.** Summary: `docs/phases/phase-16c-summary.md`.
+> **Status: built 2026-10-20, waiting for review.** Summary: `.claude/phases/phase-16c-summary.md`.
 > Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 - [x] 1. Platform: a repository's owning `team` (on its record and in `repositories.list()`); teams on the sample repositories. _R2_

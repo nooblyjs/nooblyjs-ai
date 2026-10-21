@@ -1,6 +1,6 @@
 # Phase 0 — Foundations: design
 
-> **Status: done 2026-10-08.** Summary: `docs/phases/phase-00-summary.md`.
+> **Status: done 2026-10-08.** Summary: `.claude/phases/phase-00-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 ## 1. Files

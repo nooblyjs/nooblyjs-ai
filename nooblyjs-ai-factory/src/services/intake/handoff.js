@@ -11,7 +11,8 @@
 //       submitJob(…, { key })                 the key makes a second delivery of the same handoff a no-op
 //
 // A run started here carries what it is for in NooblyJS (request.noobly): the lifecycle item, the
-// work item, the handoff and the item's quality attributes. Hosted runs never merge
+// work item, the handoff, the item's quality attributes and (Phase 16e) the test cases it must automate, which its
+// pull request's evidence looks for (src/services/pull-requests/evidence.js). Hosted runs never merge
 // (stations/merge.js), and unsandboxed commands are allowed only when the host says this
 // is development.
 import fs from 'node:fs';
@@ -34,10 +35,11 @@ export function modelConfigured(env = process.env) {
 export const scriptFor = (env, title) => path.join(factoryHome(env), 'scripts', `${slugify(title)}.json`);
 
 /**
- * @param {{ store: import('../../models/store/events.js').Store, env: NodeJS.ProcessEnv, host: any, development?: boolean, log?: any, workContext?: ((itemId: string, repo: string) => Promise<string[]>) | null }} options
+ * @param {{ store: import('../../models/store/events.js').Store, env: NodeJS.ProcessEnv, host: any, development?: boolean, log?: any, workContext?: ((itemId: string, repo: string) => Promise<string[]>) | null, testCases?: ((itemId: string, repo: string) => Promise<Array<{ id: string, title: string, level: string, automate: boolean }>>) | null }} options
  *   workContext: what a work item carries besides its spec (Phase 16d: its architecture and test cases), as lines
+ *   testCases: the test cases that run against the work item's repository (Phase 16e), carried by the run
  */
-export function createIntake({ store, env, host, development = false, log = console, workContext = null }) {
+export function createIntake({ store, env, host, development = false, log = console, workContext = null, testCases = null }) {
   const home = factoryHome(env);
 
   function wait(handoff, workItem, reason) {
@@ -121,6 +123,7 @@ export function createIntake({ store, env, host, development = false, log = cons
       const hasScript = fs.existsSync(script);
       if (!hasScript && !modelConfigured(env)) { out.push(wait(handoff, workItem, 'no model is configured, and there is no script for this work item')); continue; }
       const context = workContext ? await workContext(handoff.itemId, workItem.repo).catch(() => []) : [];
+      const cases = testCases ? await testCases(handoff.itemId, workItem.repo).catch(() => []) : [];
       const runId = submitJob(store, {
         issueFile: issueFile(handoff, workItem, spec, knowledge, context),
         repo,
@@ -130,7 +133,7 @@ export function createIntake({ store, env, host, development = false, log = cons
         allowUnsandboxed: development === true,
         agent: hasScript ? { script } : {},
         ...(fromBitbucket ? { forge: { kind: 'bitbucket', name: short } } : {}),
-        noobly: { itemId: handoff.itemId, workItemId: workItem.id, handoffId: handoff.id, repoName: workItem.repo, attributes },
+        noobly: { itemId: handoff.itemId, workItemId: workItem.id, handoffId: handoff.id, repoName: workItem.repo, attributes, ...(cases.length ? { testCases: cases } : {}) },
       }, { key });
       if (runId) log.info?.(`factory intake: ${workItem.id} "${workItem.title}" → run ${runId} on ${workItem.repo}`);
       if (runId && asked === 'L3') {

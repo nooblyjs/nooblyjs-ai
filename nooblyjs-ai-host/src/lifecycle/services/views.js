@@ -23,6 +23,11 @@ const TAG_TONES = {
 // The approvals on a pull request: their title is the item, and their line names no requester.
 const PR_TYPES = new Set(['build-approval', 'test-approval', 'merge']);
 // What Approve & move says on an item's page, for the stages whose exit is a named decision (Phases 16a, 16b).
+/** How moves nobody decided read in an item's history (Phase 16c–16e). */
+const HISTORY_WORDS = {
+  'new-commit': 'A new commit cleared its approvals: back in', 'pull-requests': 'Followed its pull requests to', feature: 'Its feature went to',
+};
+
 const ADVANCE_LABELS = {
   product: 'Approve & hand off to Design',
   design: 'Approve & hand off to Engineering',
@@ -116,6 +121,8 @@ export function createViews({ repos, host, engine }) {
       mine: item.owner === personId || w.open.some((a) => waitingOn(a, personId)),
       href: `/home/lifecycle/${encodeURIComponent(item.id)}`,
       specHref: item.system === 'product' && item.type === 'spec' && item.inProduct !== false ? `/factory/product/specs/${encodeURIComponent(item.id)}` : null,
+      // A pull request the Software Factory delivered has its own page there (Phase 16e).
+      prHref: item.type === 'pr' && item.pr ? `/factory/pull-requests/${encodeURIComponent(item.id)}` : null,
     };
   }
 
@@ -258,6 +265,11 @@ export function createViews({ repos, host, engine }) {
       .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
     const handedOff = stories.filter((st) => stageIndex(st.stage) > stageIndex('design') || st.status === 'completed').length;
     const parent = found.parentId ? ctx.items.find((i) => i.id === found.parentId) : null;
+    // Phase 16e: a story's pull requests (each a lifecycle item with its Build and Test approvals), and an item's features.
+    const pulls = ctx.items.filter((i) => i.type === 'pr' && i.parentId === found.id && i.pr && i.status !== 'withdrawn')
+      .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
+    const features = stories.length ? await engine.pullRequests.featuresOf(found.id) : [];
+    const prLink = (id) => `/factory/pull-requests/${encodeURIComponent(id)}`;
     return {
       at: ctx.at,
       item: {
@@ -267,7 +279,17 @@ export function createViews({ repos, host, engine }) {
           feature: found.feature ?? null,
           parent: parent ? { id: parent.id, ref: parent.ref ?? parent.id, title: parent.title, href: `/home/lifecycle/${encodeURIComponent(parent.id)}` } : null,
           designHref: parent ? `/factory/design/stories/${encodeURIComponent(parent.id)}` : null,
+          ...(found.passedTestAt ? { passedTest: { at: found.passedTestAt, notBuiltHere: found.notBuiltHere ?? [] } } : {}),
         } : {}),
+        ...(found.mergedEarly ? { mergedEarly: found.mergedEarly } : {}),
+        ...(found.type === 'pr' && found.pr ? {
+          pullRequest: { ...found.pr, href: prLink(found.id), mergedBy: found.mergedBy ?? null, mergedAt: found.mergedAt ?? null },
+          parent: parent ? { id: parent.id, ref: parent.ref ?? parent.id, title: parent.title, href: `/home/lifecycle/${encodeURIComponent(parent.id)}` } : null,
+        } : {}),
+        ...(pulls.length ? {
+          pullRequests: pulls.map((p) => ({ id: p.id, ref: p.ref ?? p.id, title: p.title, stage: p.stage, stageLabel: stageLabel(p.stage), status: p.status, evidence: p.pr.evidence?.text ?? null, href: prLink(p.id) })),
+        } : {}),
+        ...(features.length ? { features } : {}),
         ...(stories.length ? {
           stories: {
             total: stories.length, handedOff,
@@ -280,15 +302,20 @@ export function createViews({ repos, host, engine }) {
       history: (found.history ?? []).map((h, i, all) => ({
         stage: h.stage, label: stageLabel(h.stage), enteredAt: h.enteredAt, leftAt: h.leftAt ?? null, byName: h.by ? nameOf(h.by) : null,
         kind: h.kind ?? (i === 0 ? 'entered' : 'forward'), reason: h.reason ?? null,
-        text: h.kind === 'sent-back' ? `Sent back from ${stageLabel(h.from)} to ${h.label ?? stageLabel(h.stage)}: ${h.reason}` : i === 0 ? `Entered ${stageLabel(h.stage)}` : handoffLabel(all[i - 1].stage, h.stage),
+        text: h.kind === 'sent-back' ? `Sent back from ${stageLabel(h.from)} to ${h.label ?? stageLabel(h.stage)}: ${h.reason}`
+          : HISTORY_WORDS[h.kind] ? `${HISTORY_WORDS[h.kind]} ${stageLabel(h.stage)}${h.reason ? `: ${h.reason}` : ''}`
+            : i === 0 ? `Entered ${stageLabel(h.stage)}` : handoffLabel(all[i - 1].stage, h.stage),
       })).reverse(),
       approvals: await Promise.all(approvals.map((a) => queueRow(a, ctx, nameOf))),
       actions: {
         canSendBack: canApprove && found.status === 'active' && stageIndex(found.stage) > 0,
         sendBackTo: STAGES.slice(0, Math.max(0, stageIndex(found.stage))).map((s) => ({ key: s.key, label: s.label })),
-        // An item with stories goes on story by story (Phase 16c).
-        canAdvance: mayApprove && found.status === 'active' && !blocking.length && !stories.length,
+        // An item with stories goes on story by story (Phase 16c); a story with pull requests, and a pull request, pull
+        // request by pull request (Phase 16e).
+        canAdvance: mayApprove && found.status === 'active' && !blocking.length && !stories.length && !(found.type === 'pr' && found.pr) && !(pulls.length && ['build', 'test'].includes(found.stage)),
         ...(stories.length ? { perStory: `${found.ref ?? found.id} goes on story by story: hand each one off in Design.` } : {}),
+        ...(found.type === 'pr' && found.pr ? { perPullRequest: `${found.ref ?? found.id} moves on with its own Build and Test approvals: decide them on its page or in Approvals.` }
+          : pulls.length && ['build', 'test'].includes(found.stage) ? { perPullRequest: `${found.ref ?? found.id} goes on pull request by pull request: decide each one's Build and Test approvals.` } : {}),
         advanceLabel: ADVANCE_LABELS[found.stage] ?? `Approve & move to ${next?.label}`,
         blockedBy: blocking.map((a) => a.id),
       },

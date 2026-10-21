@@ -1,6 +1,6 @@
 # Phase 12 — Microsoft 365: SSO, notifications, the real Teams bot: requirements
 
-> **Status: built 2026-10-11, waiting for review.** Summary: `docs/phases/phase-12-summary.md`.
+> **Status: built 2026-10-11, waiting for review.** Summary: `.claude/phases/phase-12-summary.md`.
 > Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Source: `.claude/steering/roadmap.md` Phase 12, `product.md` §5.10 and §9, `tech.md` §7.3.

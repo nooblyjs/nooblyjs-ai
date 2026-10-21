@@ -6,7 +6,7 @@
 > default and nothing was listening while this was written, so as far as this audit can tell it has not been exposed;
 > see S-01 for what to check.
 >
-> Companion: `2026-10-12-production-readiness-audit.md`. Earlier review: `docs/security/phase-13-review.md` (this audit
+> Companion: `2026-10-12-production-readiness-audit.md`. Earlier review: `.claude/audits/phase-13-security-review.md` (this audit
 > covers what it did not: the hosted apps, nooblyjs-core's own routes and the sibling repos' dependencies).
 
 ## How it was done
@@ -90,7 +90,7 @@ setups. `[CONFIRM]`
    behind core's admin check (Owners). Better still: NooblyJS does not use these routes for its own pages — do not mount
    core's filing HTTP API at all when hosted, and let the wiki reach filing in-process.
 3. Default `baseDir` to a folder inside `DATA_DIR`, never the working folder, and refuse a `baseDir` outside `DATA_DIR`.
-4. If any exposure is found under "Exposure today", rotate everything in `.env` (`docs/runbooks/tokens.md`) — the Jira
+4. If any exposure is found under "Exposure today", rotate everything in `.env` (`.claude/runbooks/tokens.md`) — the Jira
    and Bitbucket tokens first, since those are production systems.
 5. Keep the probe: a test that starts NooblyJS with every hosted app and asserts that every route answers 401/403/404 to a
    signed-out caller (an allow-list for `/healthz`, `/login`, the sign-in pages and scripts), and that every write

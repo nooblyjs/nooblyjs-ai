@@ -1,6 +1,6 @@
 # Phase 8 — Knowledge Repository: requirements
 
-> **Status: done, signed off 2026-10-10.** Summary: `docs/phases/phase-08-summary.md`.
+> **Status: done, signed off 2026-10-10.** Summary: `.claude/phases/phase-08-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 > Source: `.claude/steering/roadmap.md` Phase 8. Goal: one searchable, cited memory that agents use when they

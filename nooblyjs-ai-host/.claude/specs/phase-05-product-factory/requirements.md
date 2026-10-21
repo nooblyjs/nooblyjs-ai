@@ -1,6 +1,6 @@
 # Phase 5 — Product Factory: requirements
 
-> **Status: done, approved 2026-10-10.** Summary: `docs/phases/phase-05-summary.md`.
+> **Status: done, approved 2026-10-10.** Summary: `.claude/phases/phase-05-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 > Source: `.claude/steering/roadmap.md` Phase 5. Goal: PRD-031 goes from signal to **Send to Software

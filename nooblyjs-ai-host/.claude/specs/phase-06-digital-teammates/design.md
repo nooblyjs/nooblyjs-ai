@@ -1,6 +1,6 @@
 # Phase 6 — Digital Teammates everywhere: design
 
-> **Status: done, approved 2026-10-10.** Summary: `docs/phases/phase-06-summary.md`.
+> **Status: done, approved 2026-10-10.** Summary: `.claude/phases/phase-06-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 ## Pieces

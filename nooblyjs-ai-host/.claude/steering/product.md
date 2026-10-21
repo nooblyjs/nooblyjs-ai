@@ -102,8 +102,8 @@ it said.
 | Product | Spec/PRD (problem, goals, user stories, acceptance criteria, readiness checks), journeys and flows, screens | Product, design and UI agents | **Product handoff** (Product lead + Engineering) |
 | Design | Business requirements, impacted systems, NFRs, the feature landscape, interfaces and technical requirements, the **stories** (Phase 16c); the container diagram, ADRs, standards check and quality attributes | Analyst agent (Ada Quill stands in), architect agent (e.g. Rhea Voss) | **Design handoff per story** (Solution Architect, `accept-decisions`; any person but a Viewer may give it for them), with the story's work items; ADR acceptance when a new dependency is added. An item without stories (from before 16c) keeps one Design handoff |
 | Engineer | Per story: the application architecture per system, drawn from the code; the test analysis (Phase 16d) | Application architect agent (Rhea Voss stands in), test agent (Ada Quill stands in) | **Engineering sign-off** (an Application Architect and a test lead, one approval), with its checks: the work items go to the Software Factory, each with its architecture and test cases |
-| Build | Work items → Software Factory runs → PRs | Factory stations / engineering teammates | Gates pass (tests, contracts, quality attributes); **Build approval** (an engineer, the code owner) |
-| Test | The pull request verified by a person (tests in environments: root roadmap Phases 19–21) | Test agent, security agent | **Test approval** (a tester, `sign-off-tests`); then the PR may merge |
+| Build | Work items → Software Factory runs → PRs, each a lifecycle item of its own with the required tests of the story's test analysis in its evidence (Phase 16e) | Factory stations / engineering teammates | Gates pass (tests, contracts, quality attributes); **Build approval per pull request** (an engineer, the code owner, `merge`) or changes asked for, which the line repairs |
+| Test | The pull request verified by a person (tests in environments: root roadmap Phases 19–21) | Test agent, security agent | **Test approval per pull request** (a tester, `sign-off-tests`), with its checks (every required test present and passing, the gates passed), or sent back to Build; then a person merges it. A new commit clears both. A story is done when its last pull request is merged; a feature goes to Release when all its stories are done (Phase 16e) |
 | Release | Release, rollout and rollback plans (the Operations app, Phase 22) | Release agent | **Production deploy** (two different people, `deploy-production`) |
 | Operate | SLOs, incidents, the outcome review (Operations, Phase 23) | SRE agent | **Outcome review** (Product lead): the item is done |
 
@@ -364,9 +364,19 @@ checks (the architecture accepted and current, every criterion with a ready test
 integration test), each naming what fails, and Sign off & send to Build, with an override reason when a check fails. A
 work item then carries its system's architecture and its test cases into the Software Factory.
 
-**Pull requests and Test** (CHG-008): Pull requests shows each one's Build and Test approvals; Test approvals what waits
-on a tester, what is in Test and what was given; Test runs, Coverage and Defects. The pull requests and approvals are
-the lifecycle's, live; the runs and defects are the seed story's sample, said so, until Phases 16e and 20.
+**Pull requests and Test** (Phase 16e, root `product.md` §3.2c; CHG-008 before it). A pull request the line delivers for a
+story is a lifecycle item (`PR-031-1-1`, the story's child). **Pull requests** lists each one with its stage, its Build
+and Test approvals in words and its evidence ("9 of 10 required tests present (TC-031-1-4 missing)"). **A pull
+request's page** (`/factory/pull-requests/:id`): the evidence (each required test by test case id: where it is found,
+passing, failing, not proven or missing; what a person checks), the approvals (who gave each and for whom, cleared ones,
+sent-back ones with the reason), Give the Build approval / Ask for changes (the line repairs it with the reason as its
+brief), Give the Test approval / Send back to Build (for yourself or on someone's behalf; an override reason when a check
+fails), and **Merge** (a person with `merge`, after both approvals for the pull request's commit and passing checks; the
+Factory merges it on the local forge, on record as theirs; a Bitbucket one is merged in Bitbucket). A commit pushed to the
+pull request's branch clears both approvals and is checked again. **Test approvals**: what waits on a tester (with the
+evidence), what is in Test, what was given (by whom, for whom). Test runs, Coverage and Defects stay the seed story's
+sample, said so, until Phase 20. The item page shows a story's pull requests and an item's features (each in Release on
+its own once all its stories passed Test).
 
 ### 5.5 Digital Teammates (`teammates`): existing, restyle to NooblyJS
 
@@ -549,7 +559,9 @@ How it sits in NooblyJS:
       to finish: no criteria or no business requirement, items in Design), each row linking to its Design page.
     - **The Engineering homes** (Phase 16d): the Application Architect's (architectures to draft, accept or draw again,
       stale ones, the stories in Engineer, sign-offs waiting on them) and the Test analyst's (criteria without a ready
-      test case, stories with no test analysis, interfaces without a ready test, sign-offs waiting on them).
+      test case, stories with no test analysis, interfaces without a ready test, sign-offs waiting on them, and since
+      Phase 16e the pull requests waiting on a Test approval, each linking to its page). The Developer's pull requests
+      link to their page and say what their evidence says (Phase 16e).
     - **Your first week** checklist (Hide). It tracks the onboarding's first three things
       plus "Pick your role and teams" to completion, and drives the Getting started card.
 
@@ -816,7 +828,7 @@ Resolve these before building the affected slice:
 12. "For you" layouts for Designer, Engineering lead and Platform engineer. Until they are
     designed, they land on Overview or Platform · Repositories, as the onboarding mockup does.
 13. ~~One page per app, or one shell~~: decided. NooblyJS owns one frame (rail, sidebar, chat dock),
-    and each app supplies a UI module that loads into it (`docs/adr/ADR-001-host-owned-shell.md`).
+    and each app supplies a UI module that loads into it (`.claude/adr/ADR-001-host-owned-shell.md`).
 14. The Edge extension (§5.11): is filling a Jira field for the person to save a "write to Jira" under the
     production rule (NooblyJS only reads Jira until Phase 13), or the person's own write? Proposed: the person's, because
     they press Save in Jira, under their own Jira permissions. Which pages after Jira (Bitbucket, Confluence,

@@ -1,4 +1,4 @@
-// The wiki, in the NooblyJS frame (noobly docs/hosted-apps/porting-an-app.md §2, "the bridge").
+// The wiki, in the NooblyJS frame (noobly .claude/guides/porting-an-app.md §2, "the bridge").
 //
 // The wiki's UI was one page: a single block of markup whose views it shows and hides itself, driven by ~60
 // modules that hold their state for the life of the tab. It moves in whole. This page puts that markup into the

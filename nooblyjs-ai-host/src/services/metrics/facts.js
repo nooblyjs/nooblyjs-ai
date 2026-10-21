@@ -5,8 +5,8 @@
 //   created  item, stage                  an item was opened in a stage
 //   stage    item, from, to, back?        it moved; back: it was sent back
 //   done     item                         it was completed (the end of Ship)
-//   ask      item, key                    an approval was opened        } the time between them is waiting for
-//   decide   item, key                    … and decided or withdrawn    } sign-off
+//   ask      item, key, type?             an approval was opened        } the time between them is waiting for
+//   decide   item, key, type?             … and decided or withdrawn    } sign-off (type: the approval's, Phase 16e)
 //   open · gate · edit · merge   key, item?, cost?   a pull request: opened, failed a gate, changed by a person, merged
 //   run      key, cost                    a Software Factory run finished (the cost behind its PR)
 //   spend    system, cost                 money spent by a system
@@ -53,7 +53,10 @@ export function factsOf(event, dir) {
   // The work of moving an item out of a stage belongs to the stage it leaves, so it is read before the move.
   if (work && event.type !== 'item.created') out.push(work);
 
-  switch (event.type) {
+  // A pull request is a lifecycle item of its own since Phase 16e (itemType 'pr'): its approvals count as waiting, but
+  // its moves are its story's work, not an item's lead time.
+  const pr = p.itemType === 'pr';
+  switch (pr && ['item.created', 'item.stage_changed', 'item.sent_back', 'item.completed'].includes(event.type) ? null : event.type) {
     case 'item.created':
       if (item) out.push({ t, k: 'created', item: String(item), stage: p.stage ?? 'discover' });
       break;
@@ -65,12 +68,12 @@ export function factsOf(event, dir) {
       if (item) out.push({ t, k: 'done', item: String(item) });
       break;
     case 'approval.requested':
-      if (item) out.push({ t, k: 'ask', item: String(item), key: String(p.approvalId ?? `${item}:${p.type ?? ''}`) });
+      if (item) out.push({ t, k: 'ask', item: String(item), key: String(p.approvalId ?? `${item}:${p.type ?? ''}`), ...(p.type ? { type: String(p.type) } : {}) });
       break;
     case 'approval.decided':
     case 'approval.withdrawn':
       // One reviewer of several approving leaves it open.
-      if (item && p.outcome !== 'pending') out.push({ t, k: 'decide', item: String(item), key: String(p.approvalId ?? `${item}:${p.type ?? ''}`) });
+      if (item && p.outcome !== 'pending') out.push({ t, k: 'decide', item: String(item), key: String(p.approvalId ?? `${item}:${p.type ?? ''}`), ...(p.type ? { type: String(p.type) } : {}) });
       break;
     case 'pr.opened':
     case 'gate.failed':

@@ -36,13 +36,16 @@ export async function run(ctx) {
   if (!failure) return { repaired: false, reason: 'nothing to repair', costUsd: 0 };
   const limit = ctx.config?.repairAttempts ?? 2;
   const attempt = repairs.length + 1;
+  // The limit bounds the factory's own loop (its checks and its review). A person asking for changes (NooblyJS Phase 16e:
+  // a Build approval or a Test approval sent back), or a commit a person pushed, is not the factory trying again.
+  const own = repairs.filter((r) => r.trigger === 'gates' || r.trigger === 'review').length;
 
   const escalate = (reason) => {
     log(`repair: escalating (${reason})`);
     const inboxId = openEntry(store, { runId, kind: 'escalation', title: `${issue.ref} needs a person: ${failure.title}`, body: `${reason}.\n\n${failure.brief}`, detail: { attempts: repairs.length, signature: failure.signature } });
     return { escalated: true, reason, attempts: repairs.length, inboxId, failure: failure.title, costUsd: 0 };
   };
-  if (repairs.length >= limit) return escalate(`the factory already tried ${repairs.length} repair(s)${limit ? '' : ' (repairAttempts is 0)'}`);
+  if (failure.kind !== 'human' && own >= limit) return escalate(`the factory already tried ${own} repair(s)${limit ? '' : ' (repairAttempts is 0)'}`);
   if (repairs.at(-1)?.signature === failure.signature) return escalate(`the same failure came back after repair ${repairs.length}: the fix didn't work`);
 
   log(`repair ${attempt}/${limit}: ${failure.title}`);

@@ -30,7 +30,7 @@ npm test               # every project's tests, offline
 npm run start:teammate # one app on its own (also :infrastructure, :desktop, :knowledge, :factory, :harness)
 ```
 
-The shared rules every project follows are in `nooblyjs-ai-host/docs/steering/nooblyjs-ai-shared-rules.md`, copied
+The shared rules every project follows are in `nooblyjs-ai-host/.claude/steering/nooblyjs-ai-shared-rules.md`, copied
 into each project's `.claude/steering/nooblyjs-ai.md` by `npm run steering:sync`. The whole factory, across the full
 lifecycle from business case to production and back, is in [`.claude/steering/`](.claude/steering): `product.md`,
 `design.md`, `stack.md` and `roadmap.md`.

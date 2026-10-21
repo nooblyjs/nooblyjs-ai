@@ -1,6 +1,6 @@
 # Phase 16d — Engineering: tasks
 
-> **Status: built 2026-10-20, waiting for review.** Summary: `docs/phases/phase-16d-summary.md`.
+> **Status: built 2026-10-20, waiting for review.** Summary: `.claude/phases/phase-16d-summary.md`.
 > Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 - [x] 1. Lifecycle: the `engineer` readiness checks from the Factory, `signOffEngineering`. _R4_

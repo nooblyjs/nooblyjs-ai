@@ -1,6 +1,6 @@
 # Phase 2 — Lifecycle core: items, approvals, activity: requirements
 
-> **Status: done, built 2026-10-09.** Summary: `docs/phases/phase-02-summary.md`.
+> **Status: done, built 2026-10-09.** Summary: `.claude/phases/phase-02-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 > `nooblyjs-ai-workflows` below is now the lifecycle engine inside `nooblyjs-ai-host` (`src/lifecycle/`, since 2026-10-10).
 

@@ -1,6 +1,6 @@
 # Phase 13 — Writing to Bitbucket and Jira, and production readiness: tasks
 
-> **Status: built 2026-10-11, waiting for review.** Summary: `docs/phases/phase-13-summary.md`.
+> **Status: built 2026-10-11, waiting for review.** Summary: `.claude/phases/phase-13-summary.md`.
 > Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 - [x] 1. Remove Targetprocess: steering, Integrations, config, onboarding copy. _R5_
@@ -12,4 +12,4 @@
 - [x] 7. Backup and restore of `data/`, nightly, verified. _R4_
 - [x] 8. The performance check at 10× the seed volume. _R4_
 - [x] 9. The security review and the runbooks. _R4_
-- [x] 10. Tests for every refusal, steering, `docs/phases/phase-13-summary.md`, CLAUDE.md. _Working agreement_
+- [x] 10. Tests for every refusal, steering, `.claude/phases/phase-13-summary.md`, CLAUDE.md. _Working agreement_

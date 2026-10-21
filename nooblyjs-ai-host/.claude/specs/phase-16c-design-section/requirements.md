@@ -1,6 +1,6 @@
 # Phase 16c — The Design section: requirements
 
-> **Status: built 2026-10-20, waiting for review.** Summary: `docs/phases/phase-16c-summary.md`. Root `product.md` §3.2,
+> **Status: built 2026-10-20, waiting for review.** Summary: `.claude/phases/phase-16c-summary.md`. Root `product.md` §3.2,
 > §3.2a, §4; root `roadmap.md` Phase 16c. Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Asked 2026-10-20: "Please continue with 16c" (Phases 16a and 16b are built and waiting for review; 12–14 reviewed the

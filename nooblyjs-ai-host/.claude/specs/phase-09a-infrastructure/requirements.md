@@ -1,6 +1,6 @@
 # Phase 9a — Infrastructure joins NooblyJS: requirements
 
-> **Status: done, signed off 2026-10-10.** Summary: `docs/phases/phase-09a-summary.md`.
+> **Status: done, signed off 2026-10-10.** Summary: `.claude/phases/phase-09a-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 > `nooblyjs-ai-workflows` below is now the lifecycle engine inside `nooblyjs-ai-host` (`src/lifecycle/`, since 2026-10-10).
 

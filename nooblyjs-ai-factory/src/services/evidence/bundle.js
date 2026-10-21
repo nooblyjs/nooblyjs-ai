@@ -19,6 +19,7 @@ import { git } from '../exec/workspace/git.js';
 import { formatReview } from '../../models/findings.js';
 import { isTestFile } from '../review/tampering.js';
 import { nooblySection } from '../intake/attributes.js';
+import { requiredTestsSection } from '../pull-requests/evidence.js';
 
 /**
  * Which test lines mention each criterion id (R1.2), in the change's test files.
@@ -42,7 +43,8 @@ export async function testLinks(mirrorDir, baseSha, sha, ids) {
  * @param {{ runId: string, run: any, issue: any, head: string, base: string, repo: string, build: any, verify: any,
  *           reviews: any[], repairs: any[], escalated: any, spec: any, links: Record<string, string[]>, decisions: any[],
  *           verdict: { status: 'draft' | 'ready', problems: string[], final: string },
- *           noobly?: any }} f   noobly: what the run is for in NooblyJS (request.noobly), when a handoff started it
+ *           noobly?: any, required?: any }} f   noobly: what the run is for in NooblyJS (request.noobly), when a handoff started it;
+ *   required (NooblyJS Phase 16e): the required tests of the story's test analysis, each found by its id, or null
  * @returns {{ md: string, json: object }}
  */
 export function buildEvidence(f) {
@@ -85,6 +87,7 @@ export function buildEvidence(f) {
     stations,
     costUsd: f.run.costUsd,
     ...(f.noobly?.itemId ? { noobly: { itemId: f.noobly.itemId, workItemId: f.noobly.workItemId ?? null, handoffId: f.noobly.handoffId ?? null, attributes: noobly.checks } } : {}),
+    ...(f.required ? { requiredTests: f.required } : {}),
   };
 
   // ── the same facts, for people ──
@@ -99,6 +102,7 @@ export function buildEvidence(f) {
       ? `## Requirements → tasks → tests\n\nFrom the spec in \`${spec.specDir}/\` (in this PR). "Tests" are the test lines that name the criterion.\n\n| Criterion | Acceptance criterion | Task(s) | Tests |\n|---|---|---|---|\n${coverage.map((c) => `| ${c.id} | ${c.text.replace(/\|/g, '\\|')} | ${c.tasks.join(', ') || '⚠️ none'} | ${c.tests.length ? c.tests.map((t) => `\`${t}\``).join(' ') : '⚠️ none named'} |`).join('\n')}`
       : '',
     agent.outcome === 'success' ? formatGates(verify?.gates?.results ?? []) : '',
+    requiredTestsSection(f.required),
     noobly.md,
     scope ? scopeSection(scope, spec) : '',
     reviews.length ? formatReview(reviews) : '',
@@ -119,7 +123,8 @@ function scopeSection(scope, spec) {
 }
 
 function repairSection(repairs, escalated) {
-  const rows = repairs.map((r) => `| ${r.attempt} | ${r.trigger === 'gates' ? 'checks' : 'review'}: ${r.title} | ${r.outcome === 'success' ? `fixed in \`${String(r.sha).slice(0, 8)}\`` : r.outcome} |`);
+  const TRIGGER = { gates: 'checks', review: 'review', human: 'a person', push: 'a pushed commit' };
+  const rows = repairs.map((r) => `| ${r.attempt} | ${TRIGGER[r.trigger] ?? r.trigger}: ${r.title} | ${r.outcome === 'success' ? `${r.trigger === 'push' ? 'checked again at' : 'fixed in'} \`${String(r.sha).slice(0, 8)}\`` : r.outcome} |`);
   const esc = escalated ? `\n\n⚠️ **Escalated:** ${escalated.reason}. A person needs to look (\`factory inbox\`).` : '';
   return `## Repairs\n\n| # | What failed | Result |\n|---|---|---|\n${rows.join('\n')}${esc}`;
 }

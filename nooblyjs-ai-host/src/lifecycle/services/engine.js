@@ -8,9 +8,10 @@
 import { HttpError, badRequest, forbidden, notFound, conflict, refused } from '../errors.js';
 import { STAGE_KEYS, LEGACY, stageKey, stageLabel, stageIndex, nextStage, currentStage } from '../stages.js';
 import { addWorkingDays, dueFrom } from '../working-days.js';
-import { loadRules, loadReadiness } from '../config.js';
+import { loadRules, loadReadiness, loadPullRequestReadiness } from '../config.js';
 import { newId } from '../ids.js';
 import { ITEM_ID } from '../repos.js';
+import { createPullRequests } from './pull-requests.js';
 
 const DECISIONS = new Set(['approve', 'request-changes']);
 const MAX_TEXT = 2000;
@@ -123,6 +124,8 @@ export function createEngine({ repos, host, log, clock }) {
    * Factory works them out from the story's application architecture and test analysis, the same way.
    */
   async function readinessOf(item) {
+    // A pull request's Test approval (Phase 16e): worked out from the evidence of its commit.
+    if (item.stage === 'test' && item.type === 'pr' && item.pr) return pullRequestReadiness(item);
     const checks = await loadReadiness(repos, item.stage);
     if (!checks.length) return NO_CHECKS;
     let results = item.readiness?.results ?? {};
@@ -175,6 +178,26 @@ export function createEngine({ repos, host, log, clock }) {
     return { passed: view.length - failing.length, total: view.length, checks: view, failing, source };
   }
 
+  /**
+   * A pull request's Test readiness (Phase 16e), from the evidence the Software Factory recorded for its commit: every
+   * required test present and passing, and the gates passed on that commit.
+   */
+  async function pullRequestReadiness(item) {
+    const checks = await loadPullRequestReadiness(repos);
+    const ev = item.pr.evidence ?? null;
+    const sha = String(item.pr.sha ?? '').slice(0, 7);
+    const facts = {
+      'required-tests': ev && !ev.missing?.length && !ev.failing?.length && !ev.unproven?.length
+        ? { value: true }
+        : { value: false, detail: ev ? ev.text : 'no evidence was recorded for this commit' },
+      'gates-passed': item.pr.gates === 'passed' ? { value: true } : { value: false, detail: item.pr.checking ? `the Factory is still checking ${sha}` : item.pr.gates === 'failed' ? `they failed on ${sha}` : `none ran on ${sha}` },
+    };
+    const { results, details } = factsOf(facts);
+    const view = checks.map((c) => ({ key: c.key, passed: results[c.key] === true, text: results[c.key] === true ? c.passed : details[c.key] ? `${c.failed}: ${details[c.key]}` : c.failed }));
+    const failing = view.filter((c) => !c.passed);
+    return { passed: view.length - failing.length, total: view.length, checks: view, failing, source: 'factory' };
+  }
+
   /** Refuses (422) when readiness fails, unless a person gives an override reason. Returns the override, if any. */
   async function readinessGate(item, override, person, approvalId) {
     const readiness = await readinessOf(item);
@@ -210,9 +233,10 @@ export function createEngine({ repos, host, log, clock }) {
     });
     if (!item) throw notFound(`There is no item ${itemId}.`);
     if (kind === 'forward') {
-      await emit('item.stage_changed', { itemId, system: item.system, from, to, summary: `moved ${item.ref ?? itemId} · ${item.title} to ${stageLabel(to)}` }, actor.id);
+      await emit('item.stage_changed', { itemId, system: item.system, from, to, ...(item.type === 'pr' ? { itemType: 'pr', parentId: item.parentId } : {}), summary: `moved ${item.ref ?? itemId} · ${item.title} to ${stageLabel(to)}` }, actor.id);
     }
-    if (item.parentId) await followStories(item.parentId);
+    // A story follows its pull requests (Phase 16e); an item its stories (Phase 16c).
+    if (item.parentId) await (item.type === 'pr' ? prs.followPullRequests(item.parentId) : followStories(item.parentId));
     return { item, from };
   }
 
@@ -230,6 +254,20 @@ export function createEngine({ repos, host, log, clock }) {
     const stories = await storiesOf(item.id);
     if (!stories.length) return;
     throw refused('per_story', `${item.ref ?? item.id} goes on story by story: ${what} each of its ${stories.length} stories (${stories.map((st) => st.ref ?? st.id).join(', ')}) instead.`, { stories: stories.map((st) => st.id) });
+  }
+
+  /**
+   * Refuses a Build or Test decision on a story as a whole once the Factory has delivered pull requests for it, and on a
+   * pull request outside its own approvals: from Phase 16e it goes pull request by pull request.
+   */
+  async function refuseWithPullRequests(item, what) {
+    if (item.type === 'pr' && item.pr) {
+      throw refused('per_pull_request', `${item.ref ?? item.id} moves on with its own Build and Test approvals: decide them in Approvals or on its page.`);
+    }
+    if (item.type !== 'story' || !['build', 'test'].includes(item.stage)) return;
+    const list = (await prs.prsOf(item.id)).filter((p) => p.pr);
+    if (!list.length) return;
+    throw refused('per_pull_request', `${item.ref ?? item.id} goes on pull request by pull request: ${what} each of ${list.map((p) => p.ref ?? p.id).join(', ')} with its Build and Test approvals instead.`, { pullRequests: list.map((p) => p.id) });
   }
 
   /**
@@ -496,24 +534,31 @@ export function createEngine({ repos, host, log, clock }) {
       decision, outcome, role: reviewer?.role ?? null, reason: reason ?? comment ?? null, version: input.version ?? approval.artefactVersion ?? null, summary: words,
       by: person.id, for: forReviewer.id, onBehalf,
       ...(approval.ref ? { ref: approval.ref } : {}),
+      ...(item.type === 'pr' ? { itemType: 'pr', parentId: item.parentId ?? null, sha: approval.sha ?? null } : {}),
     }, person.id);
     if (onBehalf) await audit({ actor: person.id, action: 'approval.on_behalf', target: approvalId, itemId: item.id, for: forReviewer.id, decision });
 
     let moved = null;
     let handoff = null;
     if (outcome === 'approved') {
-      const move = approval.type === 'stage' ? approval.to : MOVES[approval.type];
+      // A pull request's Test approval moves nothing: it may merge now, and a person merges it (Phase 16e).
+      const move = approval.type === 'stage' ? approval.to : item.type === 'pr' && item.pr && approval.type === 'test-approval' ? null : MOVES[approval.type];
       // The work goes to the Software Factory with the Engineering sign-off (Phase 16b), never before.
       if (approval.type === 'engineering-signoff') handoff = await createHandoff(item, updated, person);
       if (move === 'complete') await complete(item.id, person, `completed ${item.ref ?? item.id} · ${item.title}`);
       // A move to where the item already is (an approval opened before its stage was migrated) moves nothing.
       else if (move && move !== item.stage) moved = (await moveStage(item.id, move, person)).item;
     }
+    if (item.type === 'pr' && item.pr && outcome !== 'pending') {
+      await prs.afterDecision({ approval, outcome, item, person, reason: reason ?? comment });
+      moved = moved ?? await repos.items.get(item.id);
+    }
     const forText = onBehalf ? ` for ${forName}` : '';
     return {
       approval: updated, outcome, item: moved ?? await repos.items.get(item.id), handoff, by: person.id, for: forReviewer.id, ...(carried ? { carried } : {}),
       text: carried?.text ? carried.text : outcome === 'approved'
-        ? (moved ? `Approved${forText}. ${item.ref ?? item.id} moved to ${stageLabel(moved.stage)}.` : `Approved${forText}.`)
+        ? (approval.type === 'test-approval' && item.type === 'pr' && item.pr ? `Approved${forText}. ${item.ref ?? item.id} may merge now: a person merges it.`
+          : moved && moved.stage !== item.stage ? `Approved${forText}. ${item.ref ?? item.id} moved to ${stageLabel(moved.stage)}.` : `Approved${forText}.`)
         : outcome === 'pending' ? `Your approval${forText} is recorded. Still waiting on ${updated.reviewers.filter((r) => r.status === 'waiting').map((r) => r.id).join(', ')}.`
           : `Changes requested${forText}. The requester has been told why.`,
     };
@@ -688,6 +733,7 @@ export function createEngine({ repos, host, log, clock }) {
     const item = await itemOr404(itemId);
     if (item.status !== 'active') throw conflict('not_active', `${item.ref ?? item.id} is ${item.status}.`);
     await refuseWithStories(item, 'move on');
+    await refuseWithPullRequests(item, 'move on');
     const open = (await repos.approvals.list()).filter((a) => a.itemId === item.id && a.status === 'open' && a.from === item.stage);
     if (open.length) throw conflict('approval_open', `${item.ref ?? item.id} already has an approval waiting for this step. Decide it in Approvals.`, { approvalIds: open.map((a) => a.id) });
     const type = LEAVES_BY[item.stage] ?? 'stage';
@@ -1019,5 +1065,9 @@ export function createEngine({ repos, host, log, clock }) {
     return { items: items.map((i) => i.id), approvals, withdrawn };
   }
 
-  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories, signOffEngineering };
+  // Pull requests as lifecycle items (Phase 16e): their Build and Test approvals, merges, and the stories and features
+  // that follow them.
+  const prs = createPullRequests({ repos, host, log, now, emit, audit, personFor, requirePermission, reviewersFor, ruleOr500, itemOr404, storiesOf, followStories, moveStage });
+
+  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories, signOffEngineering, pullRequests: prs };
 }

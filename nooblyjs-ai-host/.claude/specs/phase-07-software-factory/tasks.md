@@ -1,6 +1,6 @@
 # Phase 7 — Software Factory integration: tasks
 
-> **Status: done, approved 2026-10-10 (the real-model run to a PR and the decisions in the summary are still open).** Summary: `docs/phases/phase-07-summary.md`.
+> **Status: done, approved 2026-10-10 (the real-model run to a PR and the decisions in the summary are still open).** Summary: `.claude/phases/phase-07-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 Each task is one small change with its tests. The repo is in brackets.

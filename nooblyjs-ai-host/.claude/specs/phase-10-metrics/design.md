@@ -1,6 +1,6 @@
 # Phase 10 — Metrics: design
 
-> **Status: done, signed off 2026-10-10.** Summary: `docs/phases/phase-10-summary.md`.
+> **Status: done, signed off 2026-10-10.** Summary: `.claude/phases/phase-10-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 > Requirements: `requirements.md`. Steering: `product.md` §8, `tech.md` §3.3, `structure.md` §2 and §4.

@@ -31,6 +31,8 @@ import { seedDemo } from './intake/demo-repo.js';
 import { seedSamples } from './engineering/samples.js';
 import { engineeringRoutes, ENGINEERING_PERMISSIONS } from './engineering/views.js';
 import { createArchitecture } from './engineering/architecture.js';
+import { createBridge } from './pull-requests/bridge.js';
+import { pullRequestRoutes, PULL_REQUEST_PERMISSIONS } from './pull-requests/views.js';
 import { executeRun } from './job/run-job.js';
 import { workerName } from './scheduler/leases.js';
 import { createScheduler } from './scheduler/scheduler.js';
@@ -216,16 +218,30 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     };
   }
 
+  /** The test cases that run against one repository's work item (the Test section's), as the run carries them. */
+  async function testCasesFor(itemId, repo) {
+    const cases = (await host.service?.('quality')?.casesFor?.(itemId, repo).catch(() => [])) ?? [];
+    return cases.map((c) => ({ id: c.id, title: c.title, level: c.level, automate: c.automate !== false }));
+  }
+
   /** What a work item on one repository carries (Phase 16d): its system's architecture and its test cases, as lines. */
   async function workContext(itemId, repo) {
     const archLines = await architecture.contextFor(itemId, repo).catch(() => []);
     const cases = (await host.service?.('quality')?.casesFor?.(itemId, repo).catch(() => [])) ?? [];
-    const caseLines = cases.length ? ['', '## Test cases to automate and run (the test analysis)', '', ...cases.map((c) => `- ${c.id} (${c.level}${c.automate ? ', automated by you' : ', checked by a person'}): ${c.title}${c.given ? `. Given ${c.given}, when ${c.when}, then ${c.then}.` : ''}`)] : [];
+    const caseLines = cases.length ? ['', '## Test cases to automate and run (the test analysis)', '',
+      // Phase 16e: the pull request's evidence finds each required test by its id.
+      'Write a test for each case automated by you, and name it after the case\'s id (`test(\'TC-031-1-1: …\')`): the pull request\'s evidence looks for each id, and an engineer and a tester read them.', '',
+      ...cases.map((c) => `- ${c.id} (${c.level}${c.automate ? ', automated by you' : ', checked by a person'}): ${c.title}${c.given ? `. Given ${c.given}, when ${c.when}, then ${c.then}.` : ''}`)] : [];
     return [...archLines, ...caseLines];
   }
 
-  // The Engineering, Pull requests and Test pages (CHG-008; Engineering is real since Phase 16d).
-  const extra = engineeringRoutes({ home: dataDir, host, architecture });
+  // Phase 16e: a pull request the line delivers for a story is a lifecycle item, with its Build and Test approvals
+  // (src/services/pull-requests/bridge.js).
+  const bridge = createBridge({ store, env, host, mountPath, log });
+
+  // The Engineering, Pull requests and Test pages (CHG-008; Engineering is real since Phase 16d, Pull requests and Test
+  // approvals since 16e).
+  const extra = [...engineeringRoutes({ home: dataDir, host, architecture }), ...pullRequestRoutes({ home: dataDir, host, store, bridge, mountPath })];
   const engineeringList = /** @type {Function} */ (extra.find(([m, p]) => m === 'GET' && p === '/api/engineering')?.[2]);
 
   let router;
@@ -234,7 +250,7 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     const routes = apiRoutes({ store, env, extra }).filter(([, pattern]) => pattern !== '/api/events'); // live updates are the host's stream
     const before = (method, pattern) => {
       if (method === 'GET') return [host.requireRole('read')];
-      const permission = PERMISSIONS[`${method} ${pattern}`] ?? ENGINEERING_PERMISSIONS[`${method} ${pattern}`];
+      const permission = PERMISSIONS[`${method} ${pattern}`] ?? ENGINEERING_PERMISSIONS[`${method} ${pattern}`] ?? PULL_REQUEST_PERMISSIONS[`${method} ${pattern}`];
       if (!permission) throw new Error(`${method} ${pattern} has no permission in PERMISSIONS.`);
       return pattern === '/api/inbox/:id' ? [host.requireRole(permission), inboxGate, host.audit] : [host.requireRole(permission), host.audit];
     };
@@ -265,17 +281,27 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       for (const [type, summary, extra = {}] of SHARED[e.type]?.(e, run) ?? []) {
         await host.events.emit(type, { system: NAME, runId: e.data.runId ?? null, itemId: run?.request?.noobly?.itemId ?? null, workItemId: run?.request?.noobly?.workItemId ?? null, repo: run?.request?.noobly?.repoName ?? null, summary, ...extra });
       }
+      // Phase 16e: a delivered pull request for a story is the lifecycle's, with its Build and Test approvals.
+      if (e.type === 'run.finished' && run?.pr) await bridge.record(run).catch((error) => log.warn?.(`factory: run ${run.id}'s pull request was not recorded in NooblyJS: ${error.message}`));
     }
   }
-  const timer = pollMs > 0 ? setInterval(() => flush().catch((error) => log.warn?.(`factory events: ${error.message}`)), pollMs) : null;
+  const timer = pollMs > 0 ? setInterval(() => {
+    flush().catch((error) => log.warn?.(`factory events: ${error.message}`));
+    // A commit a person pushed to a pull request's branch clears its approvals and is checked again (Phase 16e).
+    bridge.syncPushes().catch((error) => log.warn?.(`factory pull requests: ${error.message}`));
+  }, pollMs) : null;
   timer?.unref();
 
   // A handoff approved in NooblyJS becomes runs (once per work item, however often the event arrives).
-  const intake = createIntake({ store, env, host, development, log, workContext });
+  const intake = createIntake({ store, env, host, development, log, workContext, testCases: testCasesFor });
   // A run on a repository from Bitbucket asks NooblyJS to push and open its pull request (NooblyJS Phase 13).
   setHostDevtools(() => host.service?.('devtools') ?? null);
   const offHandoff = host.events.on?.('handoff.created', (event) => {
     intake.onHandoff(event?.payload ?? event).catch((error) => log.error?.(`factory intake: ${error.message}`));
+  });
+  // A person asked for changes on a pull request, or sent its Test approval back: the line repairs it (Phase 16e).
+  const offDecided = host.events.on?.('approval.decided', (event) => {
+    bridge.onDecided({ ...(event?.payload ?? event), by: event?.payload?.by ?? event?.actor }).catch((error) => log.error?.(`factory pull requests: ${error.message}`));
   });
 
   // The scheduler: the same loop `factory serve` runs, here in the NooblyJS process. Leases and
@@ -439,6 +465,7 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     async close() {
       setHostDevtools(null);
       offHandoff?.();
+      offDecided?.();
       offBudget?.();
       if (timer) clearInterval(timer);
       await scheduler.stop('NooblyJS is stopping');
@@ -449,6 +476,6 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     /** For the tests: pass new log events on to the host now. */
     flush,
     /** For the tests: the scheduler (tick(), idle()), the intake and the store. */
-    internals: { scheduler, intake, store, env, sections: Object.fromEntries(sections.list.map(({ section, hosted }) => [section.key, hosted])) },
+    internals: { scheduler, intake, store, env, bridge, sections: Object.fromEntries(sections.list.map(({ section, hosted }) => [section.key, hosted])) },
   };
 }

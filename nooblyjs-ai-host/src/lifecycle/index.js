@@ -98,6 +98,22 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       handoffStory: (input) => engine.handoffStory(input),
       /** The Engineering sign-off of an item in Engineer (Phase 16d), with its readiness checks or an override. */
       signOffEngineering: (input) => engine.signOffEngineering(input),
+      /** A person's decision on one approval (the Factory's pull request page): approve or request changes, `for` someone. */
+      decideApproval: ({ approvalId, actor, ...input } = {}) => engine.decideApproval(approvalId, input, actor),
+      /** The Software Factory delivered a pull request for a story, or its branch moved (Phase 16e): see pull-requests.js. */
+      recordPullRequest: (input) => engine.pullRequests.recordPullRequest(input),
+      /** Refuses (422, saying what is missing) unless this person may merge the pull request now. */
+      canMerge: (input) => engine.pullRequests.canMerge(input),
+      /** A person merged the pull request (the Factory carried it out): it is done, and its story follows. */
+      pullRequestMerged: (input) => engine.pullRequests.pullRequestMerged(input),
+      /** A pull request merged in Bitbucket: counted with both approvals, else flagged. Null when it is not a lifecycle pull request. */
+      pullRequestMergedOutside: (input) => engine.pullRequests.pullRequestMergedOutside(input),
+      /** One pull request with its approvals, who gave them for whom, and what stops a merge. */
+      pullRequest: ({ prId } = {}) => engine.pullRequests.pullRequestView(prId),
+      /** A story's pull requests, or every pull request the Factory delivered. */
+      pullRequests: async ({ storyId = null } = {}) => (storyId ? engine.pullRequests.prsOf(storyId) : (await repos.items.list()).filter((i) => i.type === 'pr')),
+      /** An item's features, each with its stories and where it is (Phase 16e). */
+      featuresOf: ({ itemId } = {}) => engine.pullRequests.featuresOf(itemId),
       /** The readiness of an item for its current stage's decision (the Factory's Engineering sign-off page). */
       readinessOf: async ({ itemId } = {}) => {
         const item = await repos.items.get(itemId);

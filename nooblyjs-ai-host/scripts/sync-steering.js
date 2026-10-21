@@ -1,4 +1,4 @@
-// npm run steering:sync          copies docs/steering/nooblyjs-ai-shared-rules.md into every sibling project's
+// npm run steering:sync          copies .claude/steering/nooblyjs-ai-shared-rules.md into every sibling project's
 //                                .claude/steering/nooblyjs-ai.md, so an agent working there loads the shared rules
 // npm run steering:sync -- --check  changes nothing; exits 1 if any copy is missing or out of date
 // nooblyjs-ai-host owns everything shared (structure.md §1a); the copies are generated and never edited by hand.
@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const NOOBLY = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const SOURCE = path.join(NOOBLY, 'docs', 'steering', 'nooblyjs-ai-shared-rules.md');
+export const SOURCE = path.join(NOOBLY, '.claude', 'steering', 'nooblyjs-ai-shared-rules.md');
 // The projects next to this one in the nooblyjs-ai monorepo (nooblyjs-core, with the AI module, is a general library
 // outside it, so it gets no copy).
 // The Software Factory's Product section (nooblyjs-ai-factory/product) reads the Factory's copy: its CLAUDE.md imports
@@ -35,7 +35,7 @@ async function main() {
   const stale = copies.filter((c) => !c.current);
   if (check) {
     for (const c of stale) console.error(`out of date: ${c.repo}/.claude/steering/nooblyjs-ai.md (run npm run steering:sync)`);
-    if (!stale.length) console.log(`steering: ${copies.length} copies match docs/steering/nooblyjs-ai-shared-rules.md`);
+    if (!stale.length) console.log(`steering: ${copies.length} copies match .claude/steering/nooblyjs-ai-shared-rules.md`);
     process.exitCode = stale.length ? 1 : 0;
     return;
   }

@@ -1,6 +1,6 @@
 # Phase 4 — Team chat: design
 
-> **Status: done, accepted 2026-10-09.** Summary: `docs/phases/phase-04-summary.md`.
+> **Status: done, accepted 2026-10-09.** Summary: `.claude/phases/phase-04-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 ## Pieces

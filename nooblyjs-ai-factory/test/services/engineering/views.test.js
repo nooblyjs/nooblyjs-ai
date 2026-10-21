@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { seedSamples, readSamples } from '../../../src/services/engineering/samples.js';
 import { engineeringRoutes } from '../../../src/services/engineering/views.js';
+import { pullRequestRoutes } from '../../../src/services/pull-requests/views.js';
 import { tmpDir } from '../../helpers.js';
 
 const ANCHOR = Date.parse('2026-10-09T10:00:00.000Z');
@@ -49,7 +50,9 @@ function setUp({ workflows = true } = {}) {
   const architecture = {
     view: async (id) => ({ storyId: id, summary: { systems: 2, accepted: 1, text: '1 of 2 systems accepted' }, systems: [{ name: 'web-storefront', status: 'accepted', statusText: 'Accepted by Thabo N.' }, { name: 'delivery-planner', status: 'proposed', statusText: 'Proposed: an Application Architect accepts it' }], sample: true }),
   };
-  const routes = Object.fromEntries(engineeringRoutes({ home, host, architecture }).map(([method, pattern, fn]) => [`${method} ${pattern}`, fn]));
+  // Pull requests and Test approvals are src/services/pull-requests/views.js since Phase 16e (tested in its own tests too).
+  const bridge = /** @type {any} */ ({ syncPushes: async () => [] });
+  const routes = Object.fromEntries([...engineeringRoutes({ home, host, architecture }), ...pullRequestRoutes({ home, host, store: { get: () => null }, bridge })].map(([method, pattern, fn]) => [`${method} ${pattern}`, fn]));
   const get = async (pattern, params = {}) => (await routes[`GET ${pattern}`]({ params, query: {} })).json;
   const send = async (pattern, params, body, person) => (await routes[`POST ${pattern}`]({ params, body, query: {}, req: { person } })).json;
   return { home, get, send, signedOff };

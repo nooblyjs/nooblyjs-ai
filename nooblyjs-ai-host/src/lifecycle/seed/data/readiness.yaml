@@ -22,3 +22,8 @@ stages:
     - { key: architecture-accepted, passed: The application architecture is accepted and current, failed: The application architecture is not accepted }
     - { key: criteria-ready, passed: Every criterion has a ready test case, failed: A criterion has no ready test case }
     - { key: interfaces-tested, passed: Every interface has an integration test, failed: An interface has no integration test }
+  # Before a pull request's Test approval (Phase 16e). Not a stage: the checks of a pull request the Software Factory
+  # delivered, worked out from the evidence it recorded for the pull request's commit.
+  pull-request:
+    - { key: required-tests, passed: Every required test is present and passing, failed: A required test is missing or not passing }
+    - { key: gates-passed, passed: The checks passed on this commit, failed: The checks did not pass on this commit }

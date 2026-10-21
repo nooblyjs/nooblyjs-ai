@@ -1,6 +1,6 @@
 # Phase 1 — Shell and design system: tasks
 
-> **Status: done, built 2026-10-09.** Summary: `docs/phases/phase-01-summary.md`.
+> **Status: done, built 2026-10-09.** Summary: `.claude/phases/phase-01-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 - [x] 1. UI kit CSS in nooblyjs-core: tokens.css (with @font-face), base.css, shell.css, components.css

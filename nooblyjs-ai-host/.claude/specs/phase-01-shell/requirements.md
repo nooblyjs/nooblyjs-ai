@@ -1,11 +1,11 @@
 # Phase 1 — Shell and design system: requirements
 
-> **Status: done, built 2026-10-09.** Summary: `docs/phases/phase-01-summary.md`.
+> **Status: done, built 2026-10-09.** Summary: `.claude/phases/phase-01-summary.md`.
 > Bugs and changes found since go in `.claude/specs/bugs-and-changes/`, not here.
 
 > Source: `.claude/steering/roadmap.md` Phase 1. Goal: the NooblyJS shell matches the mockups, every
 > link goes somewhere, and hosted apps load into it. Repos: `nooblyjs-ai-host`, `nooblyjs-core` (the UI kit and
-> `createShell()`). Contract: `structure.md` §2a. Why: `docs/adr/ADR-001-host-owned-shell.md`.
+> `createShell()`). Contract: `structure.md` §2a. Why: `.claude/adr/ADR-001-host-owned-shell.md`.
 
 ## Decisions taken before starting
 

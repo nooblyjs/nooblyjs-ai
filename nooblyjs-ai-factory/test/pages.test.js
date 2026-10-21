@@ -7,6 +7,7 @@ import { createRequire, registerHooks } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { seedSamples } from '../src/services/engineering/samples.js';
 import { engineeringRoutes } from '../src/services/engineering/views.js';
+import { pullRequestRoutes } from '../src/services/pull-requests/views.js';
 import { createArchitecture } from '../src/services/engineering/architecture.js';
 import { tmpDir } from './helpers.js';
 
@@ -72,7 +73,8 @@ before(() => {
     service: (name) => services[name],
   };
   const architecture = createArchitecture({ home, env: { FACTORY_HOME: home }, host });
-  const routes = engineeringRoutes({ home, host, architecture }).filter(([method]) => method === 'GET').map(([, pattern, fn]) => [new RegExp(`^${pattern.replace('/api/', '').replace(':id', '([^/]+)')}$`), fn]);
+  const bridge = /** @type {any} */ ({ syncPushes: async () => [] });
+  const routes = [...engineeringRoutes({ home, host, architecture }), ...pullRequestRoutes({ home, host, store: { get: () => null }, bridge })].filter(([method]) => method === 'GET').map(([, pattern, fn]) => [new RegExp(`^${pattern.replace('/api/', '').replace(':id', '([^/]+)')}$`), fn]);
   api = {
     get: async (path) => {
       for (const [re, fn] of routes) {

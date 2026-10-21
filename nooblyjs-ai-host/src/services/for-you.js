@@ -307,9 +307,14 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     };
   }
 
-  /** Test analyst: criteria without a ready test case, interfaces without a test, and the sign-offs waiting on them. */
-  function testAnalyst({ mine, engineering }) {
+  /**
+   * Test analyst: criteria without a ready test case, interfaces without a test, the sign-offs waiting on them, and
+   * (Phase 16e) the pull requests waiting on a Test approval.
+   */
+  function testAnalyst({ mine, engineering, snapshot, items }) {
     const stories = engineering ?? [];
+    const inScope = new Set(items.map((i) => i.id));
+    const testing = snapshot.approvals.filter((a) => a.type === 'test-approval' && (a.mine || inScope.has(a.itemId))).sort((a, b) => b.ageHours - a.ageHours);
     const missing = stories.reduce((n, s) => n + Math.max(0, (s.testAnalysis.criteria ?? 0) - (s.testAnalysis.ready ?? 0)), 0);
     const untouched = stories.filter((s) => !s.testAnalysis.cases);
     const untested = stories.flatMap((s) => (s.testAnalysis.untestedInterfaces ?? []).map((id) => ({ s, id })));
@@ -324,9 +329,15 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         { key: 'untouched', label: 'Stories with no test analysis', value: untouched.length, note: untouched.length ? 'Ask for a draft' : 'None' },
         { key: 'interfaces', label: 'Interfaces without a ready test', value: untested.length, note: 'contract or integration' },
         { key: 'sign-offs', label: 'Sign-offs waiting on you', value: yours.length, note: yours.length ? null : 'Nothing waiting' },
+        { key: 'test-approvals', label: 'Pull requests waiting on a Test approval', value: testing.length, note: testing.length ? `oldest ${testing[0].age}` : 'Nothing waiting' },
       ],
       panels: {
         lists: [
+          {
+            key: 'test-approvals', title: 'Pull requests waiting on a Test approval', link: { label: 'Test approvals', href: '/factory/test/approvals' },
+            empty: 'No pull request is waiting on a Test approval.',
+            rows: testing.map((a) => ({ id: a.itemId, title: a.title, text: `${a.summary ?? a.line} · waiting on ${a.waitingOnNames.join(', ')} · ${a.age}`, late: Boolean(a.overdue), action: { label: 'Verify', href: `/factory/pull-requests/${encodeURIComponent(a.itemId)}` } })),
+          },
           {
             key: 'analyses', title: 'Test analyses to finish', link: { label: 'Test analysis', href: '/factory/quality/test-analysis' },
             empty: engineering === null ? ENGINEERING_OFF : 'Every story in Engineer has a ready test case for each criterion.',
@@ -349,7 +360,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const merged = items.filter((i) => i.type === 'pr' && i.status === 'completed' && (i.completedAt ?? '') >= snapshot.weekStart);
     const rows = prs.map((i) => {
       const a = snapshot.approvals.find((x) => x.itemId === i.id && ['build-approval', 'merge'].includes(x.type));
-      return { id: i.id, ref: i.ref, title: i.title, context: a ? `${a.context ?? a.line} · waiting on ${a.waitingOnNames.join(', ')}` : i.now, stage: i.stageLabel, href: i.href, age: i.age };
+      return { id: i.id, ref: i.ref, title: i.title, context: a ? `${i.prHref && a.summary ? a.summary : a.context ?? a.line} · waiting on ${a.waitingOnNames.join(', ')}` : i.now, stage: i.stageLabel, href: i.prHref ?? i.href, age: i.age };
     });
     const team = person.teams?.[0] ?? null;
     const off = { text: 'The Software Factory is not running here, so there are no runs to show.' };

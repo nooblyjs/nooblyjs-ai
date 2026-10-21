@@ -22,7 +22,7 @@ inclusion: always
 | Standalone | **None**: this repo is a library (§2). Express is only a devDependency, for the tests' stand-in host |
 | `agent.action` | `system: 'teammates'`, or the calling app's system for a `runTask` on its behalf |
 | `services` | `host.service('teammates')`: `roster`, `get`, `availability`, `provider`, **`runTask`**, listed in noobly `tech.md` §8b. Every agent action in NooblyJS is a `runTask`, so keep them small and stable |
-| Pages | The old pages run unchanged through `public/js/bridge.js` (`legacyPage`); port them to the frame's contract one at a time (`../nooblyjs-ai-host/docs/hosted-apps/porting-an-app.md`, which uses this repo as the worked example) |
+| Pages | The old pages run unchanged through `public/js/bridge.js` (`legacyPage`); port them to the frame's contract one at a time (`../nooblyjs-ai-host/.claude/guides/porting-an-app.md`, which uses this repo as the worked example) |
 
 ## 2. Hosted, and standalone for development
 

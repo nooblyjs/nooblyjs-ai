@@ -245,12 +245,12 @@ know; "steps" can be one line.
     Factory's `sections`, `register` and `module` tests 22/22; host 317, 122 pass, against 316 and 121 for the same tree
     without this change: no test that passed fails, and the new `foldData` test passes (the rest fail on the missing
     sample story, BUG-006). Not checked in a browser; the e2e specs were updated but not run (BUG-006).
-  - Notes: the history notes in docs/phases, `.claude/learning/` and the dated audits still describe it as they were.
+  - Notes: the history notes in .claude/phases (docs/phases until 2026-10-21), `.claude/learning/` and the dated audits still describe it as they were.
     Decided the same day: Quality is the Factory's Test section, not a separate app (root `product.md` §4, §9;
     `roadmap.md` Phase 20; `stack.md` §2; `design.md`).
   - Steering: root `product.md` §2, §4, §9, `stack.md` §2–§3, `roadmap.md` (note at the top, Phase 16b and later,
     open work); host `product.md` §5.1, §5.7, §5.7a, §10, `structure.md` §1, §2a, §4, `tech.md` (intro), §8, §8b,
-    `CLAUDE.md`, `docs/mocking-audit.md`; the Factory's `CLAUDE.md` and `.claude/steering/{product,structure,tech,
+    `CLAUDE.md`, `.claude/audits/mocking-audit.md`; the Factory's `CLAUDE.md` and `.claude/steering/{product,structure,tech,
     Architecture}.md`; `nooblyjs-ai-infrastructure/CLAUDE.md`.
 
 ## Closed

@@ -111,16 +111,19 @@ export function createLocalForge({ root, env = process.env } = {}) {
      * Phase F12: MERGE a PR into its base, in the local repository (autonomy L3 only).
      * Only when it's safe to do in someone's checkout: the base branch is checked out and
      * clean. Otherwise it says why, and a person merges. Merging twice is a no-op.
+     * NooblyJS Phase 16e: a person's merge (after the Build and Test approvals) names them as its `author`.
+     * @param {string} repoPath
+     * @param {{ head: string, base: string, message: string, author?: { name: string, email: string } }} pr
      * @returns {Promise<{ merged: boolean, sha?: string, reason?: string }>}
      */
-    async merge(repoPath, { head, base, message }) {
+    async merge(repoPath, { head, base, message, author }) {
       const already = await git(['merge-base', '--is-ancestor', `refs/heads/${head}`, `refs/heads/${base}`], { cwd: repoPath }).then(() => true, () => false);
       if (already) return { merged: true, sha: await git(['rev-parse', base], { cwd: repoPath }), reason: 'already merged' };
       const current = await git(['branch', '--show-current'], { cwd: repoPath }).catch(() => '');
       if (current !== base) return { merged: false, reason: `the checkout is on "${current || 'a detached HEAD'}", not "${base}": a person merges` };
       if (await git(['status', '--porcelain', '--untracked-files=no'], { cwd: repoPath })) return { merged: false, reason: 'the checkout has uncommitted changes: a person merges' };
-      const email = await git(['config', 'user.email'], { cwd: repoPath }).catch(() => '');
-      const who = email ? [] : ['-c', 'user.name=factory', '-c', 'user.email=factory@localhost'];
+      const email = author ? '' : await git(['config', 'user.email'], { cwd: repoPath }).catch(() => '');
+      const who = author ? ['-c', `user.name=${author.name}`, '-c', `user.email=${author.email}`] : email ? [] : ['-c', 'user.name=factory', '-c', 'user.email=factory@localhost'];
       await git([...who, 'merge', '--no-ff', '--no-edit', '-m', message, `refs/heads/${head}`], { cwd: repoPath });
       return { merged: true, sha: await git(['rev-parse', 'HEAD'], { cwd: repoPath }) };
     },

@@ -7,7 +7,7 @@ inclusion: always
 > **Status:** Draft v1 · 2026-10-19. What the factory is built with, what each project actually uses today
 > (checked against every `package.json` on 2026-10-19), where projects differ from the rules, and the tools the new
 > SDLC stages need. The full rules are in `nooblyjs-ai-host/.claude/steering/tech.md`, and the summary every project
-> carries is `nooblyjs-ai-host/docs/steering/nooblyjs-ai-shared-rules.md`. This file does not repeat them; it adds
+> carries is `nooblyjs-ai-host/.claude/steering/nooblyjs-ai-shared-rules.md`. This file does not repeat them; it adds
 > the whole-factory view and the decisions still to take.
 
 ---
