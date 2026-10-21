@@ -1,6 +1,6 @@
 # Phase 22 — Release (new app: Operations, part 1): requirements
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-22-summary.md`. Root `product.md`
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-22-summary.md`. Root `product.md`
 > §3.7, `design.md` §9; root `roadmap.md` Phase 22 (Infrastructure I10).
 
 > Asked 2026-10-21: "Yes please commit, push and start the next phase" (Phase 21 committed as `6603446`).

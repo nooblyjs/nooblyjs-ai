@@ -1,6 +1,6 @@
 # Phase 24 — Housekeeping: design
 
-> **Status: built 2026-10-21, waiting for review.** Requirements: `requirements.md`.
+> **Status: done (built and reviewed 2026-10-21).** Requirements: `requirements.md`.
 
 ## Where it lives
 

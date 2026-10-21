@@ -1,6 +1,6 @@
 # Phase 22 — Release (new app: Operations, part 1): tasks
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-22-summary.md`.
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-22-summary.md`.
 
 - [x] 1. The app `nooblyjs-ai-operations`: register, standalone server, fixture host, seed, policies. _R1_
 - [x] 2. A release of one feature: the evidence pack, the release agent's notes, rollout and rollback. _R2_

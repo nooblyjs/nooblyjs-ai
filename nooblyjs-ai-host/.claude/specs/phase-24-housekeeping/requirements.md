@@ -1,6 +1,6 @@
 # Phase 24 — Housekeeping: requirements
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-24-summary.md`. Root `roadmap.md`
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-24-summary.md`. Root `roadmap.md`
 > "After Phase 23" (housekeeping found in the review) and Phase 24.
 
 > Asked 2026-10-21: "Please commit and push then complete phase 24" (Phase 23 committed as `7919bab`). The roadmap had

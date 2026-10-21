@@ -1,6 +1,6 @@
 # Phase 22 — Release (new app: Operations, part 1): summary
 
-**Status:** built 2026-10-21, waiting for your review (started at your word, with the defaults, after Phase 21 was
+**Status:** done (built and reviewed 2026-10-21) (started at your word, with the defaults, after Phase 21 was
 committed as `6603446`). Spec: `.claude/specs/phase-22-release/` (all 8 tasks done). Root `product.md` §3.7 and roadmap
 I10 are what it builds. The work is the new hosted app `nooblyjs-ai-operations` (at `/operations`, rail label Ops),
 Infrastructure (I10: Production only through a release), the lifecycle engine (a release's `deploy` approval, the

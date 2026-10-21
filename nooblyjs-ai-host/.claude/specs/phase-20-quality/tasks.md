@@ -1,6 +1,6 @@
 # Phase 20 — Quality (the Factory's Test section): tasks
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-20-summary.md`.
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-20-summary.md`.
 
 - [x] 1. Test runs: recorded from the line's verify and deliver steps, against cases and requirements. _R2_
 - [x] 2. Coverage of an item, its features and stories, in words. _R1_

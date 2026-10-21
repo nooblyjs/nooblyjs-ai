@@ -1,6 +1,6 @@
 # Phase 21 — Testing in environments: design
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-21-summary.md`. Requirements: `requirements.md`.
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-21-summary.md`. Requirements: `requirements.md`.
 
 ## Where it lives
 

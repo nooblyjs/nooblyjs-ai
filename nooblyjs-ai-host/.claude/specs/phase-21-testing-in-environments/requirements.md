@@ -1,6 +1,6 @@
 # Phase 21 — Testing in environments: requirements
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-21-summary.md`. Root `product.md` §3.6, `design.md` §7; root `roadmap.md` Phase 21
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-21-summary.md`. Root `product.md` §3.6, `design.md` §7; root `roadmap.md` Phase 21
 > (Infrastructure I8). Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Asked 2026-10-21: "Yes commit and push, then start Phase 21 with the defaults" (Phases 19 and 20 committed as

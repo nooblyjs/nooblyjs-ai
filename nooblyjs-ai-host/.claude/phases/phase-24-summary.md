@@ -1,6 +1,6 @@
 # Phase 24 — Housekeeping: summary
 
-**Status:** built 2026-10-21, waiting for your review (started at your word after Phase 23 was committed as `7919bab`;
+**Status:** done (built and reviewed 2026-10-21) (started at your word after Phase 23 was committed as `7919bab`;
 the roadmap had no Phase 24, and you chose "Housekeeping"). Spec: `.claude/specs/phase-24-housekeeping/` (all 6 tasks
 done). It closes the housekeeping the roadmap's "After Phase 23" lists. The work is in `nooblyjs-ai-knowledge`,
 `nooblyjs-ai-teammate` and `nooblyjs-ai-host`.

@@ -1,6 +1,6 @@
 # Phase 24 — Housekeeping: tasks
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-24-summary.md`.
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-24-summary.md`.
 
 - [x] 1. Knowledge's model clients run as teammate tasks (main process and workflow workers); refused without Teammates. _R1_
 - [x] 2. The AI panel answers from the sources when Teammates has no model. _R1_

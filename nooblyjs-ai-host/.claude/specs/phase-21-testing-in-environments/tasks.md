@@ -1,6 +1,6 @@
 # Phase 21 — Testing in environments: tasks
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-21-summary.md`.
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-21-summary.md`.
 
 - [x] 1. The test runner adapter (mock) and the suites per environment kind. _R2_
 - [x] 2. Environment test runs in the Test section; failing tests linked to cases and criteria. _R2_

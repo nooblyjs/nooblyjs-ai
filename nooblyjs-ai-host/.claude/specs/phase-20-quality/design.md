@@ -1,6 +1,6 @@
 # Phase 20 — Quality (the Factory's Test section): design
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-20-summary.md`. Requirements: `requirements.md`.
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-20-summary.md`. Requirements: `requirements.md`.
 
 ## Where it lives
 

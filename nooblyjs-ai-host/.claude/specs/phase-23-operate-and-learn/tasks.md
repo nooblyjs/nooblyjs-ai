@@ -1,6 +1,6 @@
 # Phase 23 — Operate and learn (Operations, part 2): tasks
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-23-summary.md`.
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-23-summary.md`.
 
 - [x] 1. The monitoring adapter (mock) and SLOs from quality attributes, with error budgets. _R1_
 - [x] 2. Alerts to on call in Teams (NooblyJS's `oncall`, the simulator in development). _R1_

@@ -1,6 +1,6 @@
 # Phase 20 — Quality (the Factory's Test section): requirements
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-20-summary.md`. Root `product.md` §3.6, §4; `design.md` §4–§5, §7; root `roadmap.md` Phase 20.
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-20-summary.md`. Root `product.md` §3.6, §4; `design.md` §4–§5, §7; root `roadmap.md` Phase 20.
 > Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Asked 2026-10-21: "Please consider all previous phases reviewed and Please continue with phase 20." (16a–19 marked

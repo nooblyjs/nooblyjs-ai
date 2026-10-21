@@ -1,6 +1,6 @@
 # Phase 20 — Quality (the Factory's Test section): summary
 
-**Status:** built 2026-10-21, waiting for your review (started at your word, with the defaults, once 16a–19 were marked
+**Status:** done (built and reviewed 2026-10-21) (started at your word, with the defaults, once 16a–19 were marked
 reviewed). Spec: `.claude/specs/phase-20-quality/`. Root `product.md` §3.6 is what it builds. The work is in
 `nooblyjs-ai-factory/quality` (test runs, coverage, defects, cases kept in step), the Factory (the log → test runs, the
 Test group's pages, STORY-031-2's scripted agent), `nooblyjs-ai-factory/design` (changing one criterion after handoff)

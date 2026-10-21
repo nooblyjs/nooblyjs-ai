@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-008, CHG-009.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-008, CHG-010.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -253,9 +253,13 @@ know; "steps" can be one line.
     `CLAUDE.md`, `.claude/audits/mocking-audit.md`; the Factory's `CLAUDE.md` and `.claude/steering/{product,structure,tech,
     Architecture}.md`; `nooblyjs-ai-infrastructure/CLAUDE.md`.
 
-- [ ] CHG-009 — Product and Design are hosted apps of their own, on the rail before the Factory · Rail, Product, Design, Factory · nooblyjs-ai-product, nooblyjs-ai-design, nooblyjs-ai-factory, nooblyjs-ai-host, monorepo root · Phase 16a+
+## Closed
+
+_Verified, won't fix, duplicates and changes moved to a phase, newest first._
+
+- [x] CHG-009 — Product and Design are hosted apps of their own, on the rail before the Factory · Rail, Product, Design, Factory · nooblyjs-ai-product, nooblyjs-ai-design, nooblyjs-ai-factory, nooblyjs-ai-host, monorepo root · Phase 16a+
   - Asked: 2026-10-21 ("move the Product capability out of Factory, like we did with infrastructure as it is a standalone
-    product that feeds into Design … make them specific sections in the greater primary left navigation") · Status: fixed
+    product that feeds into Design … make them specific sections in the greater primary left navigation") · Status: verified (2026-10-21, at your word)
   - What and why: the Factory's Product section (`nooblyjs-ai-factory/product`, `public/product`) is `nooblyjs-ai-product`
     again and its Design section (`design/`, `public/design`) is `nooblyjs-ai-design` (`git mv`, history kept), each with
     its own `package.json`, tests and `CLAUDE.md`, hosted at `/product` (rail label Product) and `/design` (Design). The
@@ -280,10 +284,6 @@ know; "steps" can be one line.
   - Steering: root `product.md` §2, §3.2a, §4, `stack.md` §2–§3, `design.md`, `roadmap.md` (note at the top), `README.md`;
     host `product.md` §5, §5.3a, §5.3b, §10, `structure.md` §1, §2a, §4, `tech.md` §1, §8, §8b, `CLAUDE.md`; the
     Factory's `CLAUDE.md` and `.claude/steering/{product,structure,tech,Architecture}.md`; both apps' `CLAUDE.md`.
-
-## Closed
-
-_Verified, won't fix, duplicates and changes moved to a phase, newest first._
 
 - [ ] CHG-008 — Sample content on the Design, Engineering, Build and Test pages: PRD-027's design and stories, application architecture, test analysis, test runs and defects · Factory, Design, lifecycle seed · nooblyjs-ai-factory, nooblyjs-ai-host · Phase 16c+
   - Asked: 2026-10-20 ("Can you seed the rest of the pages, solution architecture, testing, application architecture please") · Status: fixed

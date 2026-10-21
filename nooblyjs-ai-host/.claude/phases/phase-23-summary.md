@@ -1,6 +1,6 @@
 # Phase 23 — Operate and learn (Operations, part 2): summary
 
-**Status:** built 2026-10-21, waiting for your review (started at your word, with the defaults, after Phase 22 was
+**Status:** done (built and reviewed 2026-10-21) (started at your word, with the defaults, after Phase 22 was
 committed as `ace8bda`). Spec: `.claude/specs/phase-23-operate-and-learn/` (all 8 tasks done). Root `product.md` §3.2,
 §3.7 and §8 are what it builds. The work is in `nooblyjs-ai-operations` (SLOs, incidents, outcome reviews, the
 monitoring adapter), `nooblyjs-ai-host` (on-call alerts in Teams, the outcome review closing the item, DORA in Metrics,

@@ -47,21 +47,21 @@ fix-by date, a fix as a Factory run, risk acceptance with an expiry; the Securit
 2026-10-21)** (`.claude/specs/phase-19-security-by-design/`). **Phase 20 (Quality: each verify of a commit is a test run
 in the Factory's Test section, coverage per item, feature and story in words, test cases marked "criterion changed" when
 Design changes a criterion, defects as lifecycle items `DEF-031-1` linked to the requirement and story they break
-(`src/lifecycle/services/defects.js`); the tester's coverage gaps and defects) is built and waiting for review**
+(`src/lifecycle/services/defects.js`); the tester's coverage gaps and defects) is done (reviewed 2026-10-21)**
 (`.claude/specs/phase-20-quality/`). **Phase 21 (Testing in environments: a preview per pull request from Infrastructure,
 destroyed on merge; the Test section's test runner adapter (mock) runs each environment kind's suites, with Security's
 DAST and image scans; promotion only when that environment's tests pass; the pull request page's preview and evidence in
-one list) is built and waiting for review** (`.claude/specs/phase-21-testing-in-environments/`). **Phase 22 (Release: the
+one list) is done (reviewed 2026-10-21)** (`.claude/specs/phase-21-testing-in-environments/`). **Phase 22 (Release: the
 new hosted app `nooblyjs-ai-operations` at `/operations`; a release per feature with its evidence, notes, rollout and
 rollback; the lifecycle's `deploy` approval by two people with `deploy-production`; the mock deployer through
 Infrastructure, which refuses any other change to Production (I10); the release's Jira fix version and Bitbucket tags
-through the write gate) is built and waiting for review** (`.claude/specs/phase-22-release/`). **Phase 23 (Operate and
+through the write gate) is done (reviewed 2026-10-21)** (`.claude/specs/phase-22-release/`). **Phase 23 (Operate and
 learn: SLOs from quality attributes with error budgets and the mock monitor; alerts to on call in Teams (`oncall`, the
 simulator in development); incidents with the SRE agent's post-incident review written to Knowledge, and their signal on
 the Product board; the outcome review, due 30 days after an item's first release, which closes the item; DORA measures in
-Metrics; the SRE's home) is built and waiting for review** (`.claude/specs/phase-23-operate-and-learn/`). **Phase 24 (Housekeeping: the wiki's AI agents run as
+Metrics; the SRE's home) is done (reviewed 2026-10-21)** (`.claude/specs/phase-23-operate-and-learn/`). **Phase 24 (Housekeeping: the wiki's AI agents run as
 teammate tasks when hosted, Knowledge's `src/shared/ai/agentTasks.js`; Teammates stores through `host.store`; `nodemon` is a
-dev dependency; the mocking audit lists every mock adapter) is built and waiting for review**
+dev dependency; the mocking audit lists every mock adapter) is done (reviewed 2026-10-21)**
 (`.claude/specs/phase-24-housekeeping/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed

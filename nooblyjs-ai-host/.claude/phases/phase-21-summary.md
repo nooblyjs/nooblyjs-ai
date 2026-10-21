@@ -1,6 +1,6 @@
 # Phase 21 — Testing in environments: summary
 
-**Status:** built 2026-10-21, waiting for your review (started at your word, with the defaults, after Phases 19 and 20
+**Status:** done (built and reviewed 2026-10-21) (started at your word, with the defaults, after Phases 19 and 20
 were committed as `4dc4af6`). Spec: `.claude/specs/phase-21-testing-in-environments/`. Root `product.md` §3.6 and
 roadmap I8 are what it builds. The work is in `nooblyjs-ai-infrastructure` (previews from pull requests, results on the
 environment, promotion), the Factory's Test section (the test runner adapter, environment runs), `nooblyjs-ai-security`

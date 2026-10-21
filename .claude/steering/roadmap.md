@@ -106,11 +106,11 @@ inclusion: always
 | 17 | Strategy and the business case | ✅ (reviewed 2026-10-21) |
 | 18 | Requirements elicitation | ✅ (reviewed 2026-10-21) |
 | 19 | Security by design (new app: Security) | ✅ (reviewed 2026-10-21) |
-| 20 | Quality (the Factory's Test section) | ☐ built, waiting for review |
-| 21 | Testing in environments | ☐ built, waiting for review |
-| 22 | Release (new app: Operations, part 1) | ☐ built, waiting for review |
-| 23 | Operate and learn (Operations, part 2) | ☐ built, waiting for review |
-| 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ☐ built, waiting for review |
+| 20 | Quality (the Factory's Test section) | ✅ (reviewed 2026-10-21) |
+| 21 | Testing in environments | ✅ (reviewed 2026-10-21) |
+| 22 | Release (new app: Operations, part 1) | ✅ (reviewed 2026-10-21) |
+| 23 | Operate and learn (Operations, part 2) | ✅ (reviewed 2026-10-21) |
+| 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ✅ (reviewed 2026-10-21) |
 
 Open bugs and changes: BUG-001 to BUG-007 and CHG-001 to CHG-007, all fixed and waiting for your checks (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 

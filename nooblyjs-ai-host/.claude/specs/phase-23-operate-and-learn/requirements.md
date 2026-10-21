@@ -1,6 +1,6 @@
 # Phase 23 — Operate and learn (Operations, part 2): requirements
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-23-summary.md`. Root `product.md`
+> **Status: done (built and reviewed 2026-10-21).** Summary: `.claude/phases/phase-23-summary.md`. Root `product.md`
 > §3.2, §3.7, §8; root `roadmap.md` Phase 23.
 
 > Asked 2026-10-21: "Ok please start phase 23" (Phase 22 committed as `ace8bda`).
