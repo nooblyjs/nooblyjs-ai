@@ -101,7 +101,7 @@ inclusion: always
 | 19 | Security by design (new app: Security) | ✅ (reviewed 2026-10-21) |
 | 20 | Quality (the Factory's Test section) | ☐ built, waiting for review |
 | 21 | Testing in environments | ☐ built, waiting for review |
-| 22 | Release (new app: Operations, part 1) | ☐ |
+| 22 | Release (new app: Operations, part 1) | ☐ built, waiting for review |
 | 23 | Operate and learn (Operations, part 2) | ☐ |
 
 Open bugs and changes: BUG-001 to BUG-007 and CHG-001 to CHG-007, all fixed and waiting for your checks (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
@@ -1441,7 +1441,7 @@ check are in Phase 13 for all of NooblyJS.
       Infrastructure rows on Home · Approvals, Activity and the Platform engineer's home.
 - [ ] I9, a real provisioner (**blocked** on the cloud, the region and the IaC tool): the adapter in
       `src/provisioners/`, generated code as a pull request, sandboxed workers, real cloud cost, secrets as references.
-- [ ] I10: Production changes only through a release with two approvers (who owns releases is open); runbooks and
+- [x] I10 (built in Phase 22, 2026-10-21: Operations owns releases; Infrastructure refuses any other change to Production and checks the release's deploy approval): Production changes only through a release with two approvers (who owns releases is open); runbooks and
       backup of `data/infrastructure/` (with Phase 13).
 
 ---

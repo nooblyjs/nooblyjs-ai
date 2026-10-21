@@ -73,9 +73,10 @@ test('the devtools folder has two ways to the network and no more: a reader that
   }
   const transport = await fs.readFile(path.join(DIR, 'transport.js'), 'utf8');
   assert.match(transport, /fetchFn\(url\.href, \{\s*method: 'GET',/);
-  // The writer's method comes from its list of kinds, and every kind is a POST or a PUT to one shape of path.
+  // The writer's method comes from its list of kinds, and every kind is a POST or a PUT to one shape of path. Phase 22
+  // added a release's fix version and tag: each makes something new, neither merges, deletes or changes a setting.
   const { KINDS } = await import('../../src/services/devtools/writer.js');
-  assert.deepEqual(Object.keys(KINDS).sort(), ['bitbucket.open-pr', 'bitbucket.push-branch', 'bitbucket.update-pr', 'jira.comment', 'jira.create-issue', 'jira.transition']);
+  assert.deepEqual(Object.keys(KINDS).sort(), ['bitbucket.open-pr', 'bitbucket.push-branch', 'bitbucket.tag', 'bitbucket.update-pr', 'jira.comment', 'jira.create-issue', 'jira.fix-version', 'jira.transition']);
   for (const [kind, k] of Object.entries(KINDS)) assert.ok(k.method === null ? kind === 'bitbucket.push-branch' : ['POST', 'PUT'].includes(k.method), kind);
   // The clients' write calls are reached from one place: the gate's performers in index.js.
   for (const name of files.filter((n) => !['index.js', 'jira.js', 'bitbucket.js'].includes(n))) {

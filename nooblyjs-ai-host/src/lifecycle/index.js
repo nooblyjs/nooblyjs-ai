@@ -112,6 +112,8 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       pullRequest: ({ prId } = {}) => engine.pullRequests.pullRequestView(prId),
       /** A story's pull requests, or every pull request the Factory delivered. */
       pullRequests: async ({ storyId = null } = {}) => (storyId ? engine.pullRequests.prsOf(storyId) : (await repos.items.list()).filter((i) => i.type === 'pr')),
+      /** Phase 22: a feature's release is in production: its stories go from Release to Operate ({ itemId, featureId, releaseId }). */
+      featureDeployed: (input) => engine.pullRequests.featureDeployed(input),
       /** An item's features, each with its stories and where it is (Phase 16e). */
       featuresOf: ({ itemId } = {}) => engine.pullRequests.featuresOf(itemId),
       /** Accepting an idea (Phase 17): opens its item in Discover if needed, then the `idea` approval with its readiness. */

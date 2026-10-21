@@ -155,6 +155,15 @@ export function createJira({ site, email, token, writeToken = '', projects = () 
         const r = await write('jira.transition', `/rest/api/3/issue/${id}/transitions`, { transition: { id: String(transitionId) } });
         return r.ok ? { ok: true, result: { key: id, url: browseUrl(id) } } : r;
       },
+      /** Phase 22: a fix version (a release's) in a project NooblyJS is configured for: result { id, name }. */
+      async createVersion({ project, name, description = '', released = true } = {}) {
+        const key = String(project ?? '').toUpperCase();
+        if (!KEY.test(key) || !(await allowed()).includes(key)) return failure('refused', `NooblyJS does not make versions in the Jira project ${String(project).slice(0, 20)}.`);
+        const title = String(name ?? '').trim().slice(0, 255);
+        if (!title) return failure('refused', 'A version needs a name.');
+        const r = await write('jira.fix-version', '/rest/api/3/version', { project: key, name: title, description: String(description).slice(0, 1000), released: released === true });
+        return r.ok ? { ok: true, result: { id: r.body?.id ?? null, name: title } } : r;
+      },
       /** A plain-text comment on an issue. */
       async comment({ key, text } = {}) {
         const id = String(key ?? '').toUpperCase();

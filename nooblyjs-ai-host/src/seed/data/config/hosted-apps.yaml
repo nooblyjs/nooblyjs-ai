@@ -6,6 +6,8 @@ apps:
   - { package: nooblyjs-ai-factory, mountPath: /factory, enabled: true }
   # Security (root roadmap Phase 19): threat models, findings, risk acceptances; it scans every Factory run.
   - { package: nooblyjs-ai-security, mountPath: /security, enabled: true }
+  # Operations (root roadmap Phase 22, part 1): releases and deployments; Production changes only through a release.
+  - { package: nooblyjs-ai-operations, mountPath: /operations, enabled: true }
   - { package: nooblyjs-ai-teammate, mountPath: /teammates, enabled: true }
   - { package: nooblyjs-ai-knowledge, mountPath: /wiki, enabled: true }
   - { package: nooblyjs-ai-infrastructure, mountPath: /infrastructure, enabled: true }

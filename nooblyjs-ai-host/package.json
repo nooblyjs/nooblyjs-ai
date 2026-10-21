@@ -1,7 +1,7 @@
 {
   "name": "nooblyjs-ai-host",
   "version": "0.1.0",
-  "description": "NooblyJS AI, an engineering-lifecycle platform: the host app (idea → spec → architecture → design → build → ship, where AI agents draft and people decide).",
+  "description": "NooblyJS AI, an engineering-lifecycle platform: the host app (idea \u2192 spec \u2192 architecture \u2192 design \u2192 build \u2192 ship, where AI agents draft and people decide).",
   "homepage": "https://github.com/nooblyjs/nooblyjs-ai#readme",
   "bugs": {
     "url": "https://github.com/nooblyjs/nooblyjs-ai/issues"
@@ -57,6 +57,7 @@
     "nooblyjs-ai-factory": "file:../nooblyjs-ai-factory",
     "nooblyjs-ai-infrastructure": "file:../nooblyjs-ai-infrastructure",
     "nooblyjs-ai-knowledge": "file:../nooblyjs-ai-knowledge",
+    "nooblyjs-ai-operations": "file:../nooblyjs-ai-operations",
     "nooblyjs-ai-security": "file:../nooblyjs-ai-security",
     "nooblyjs-ai-teammate": "file:../nooblyjs-ai-teammate",
     "nooblyjs-core": "file:../../nooblyjs-core",

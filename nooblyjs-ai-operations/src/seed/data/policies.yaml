@@ -1,0 +1,16 @@
+# Operations' policies (root product.md §3.7, §9). Everything here is a default taken in Phase 22 [CONFIRM].
+#
+# The rollout every release follows: a pilot, then everyone. The feature-flag tool that would shift the traffic is
+# [PLACEHOLDER]; the mock deployer records the share.
+rollout:
+  strategy: pilot
+  steps:
+    - { percent: 10, label: 10% pilot }
+    - { percent: 100, label: Everyone }
+# A release can't go to production carrying an open finding at or above this severity unless its risk is accepted.
+riskThreshold: high
+# The release agent drafts the release notes (Digital Teammates).
+agent:
+  teammates: [pip-okafor]
+featureFlags:
+  tool: "[PLACEHOLDER]"

@@ -13,7 +13,7 @@ test('a fresh NooblyJS records writes and sends none: an approved handoff is six
   const fresh = await closed.writes();
   assert.equal(fresh.enabled, false);
   assert.deepEqual([fresh.systems.jira.mode, fresh.systems.bitbucket.mode, fresh.systems.jira.sending], ['record', 'record', false]);
-  assert.deepEqual(fresh.kinds.map((k) => k.kind).sort(), ['bitbucket.open-pr', 'bitbucket.push-branch', 'bitbucket.update-pr', 'jira.comment', 'jira.create-issue', 'jira.transition']);
+  assert.deepEqual(fresh.kinds.map((k) => k.kind).sort(), ['bitbucket.open-pr', 'bitbucket.push-branch', 'bitbucket.tag', 'bitbucket.update-pr', 'jira.comment', 'jira.create-issue', 'jira.fix-version', 'jira.transition']);
   await closed.approveHandoff();
   const w = await closed.writes();
   assert.equal(w.outbox.counts.recorded, 6);

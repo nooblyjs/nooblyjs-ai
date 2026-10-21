@@ -25,6 +25,9 @@ const ASKERS = Object.freeze({
   'bitbucket.push-branch': ['factory'],
   'bitbucket.open-pr': ['factory'],
   'bitbucket.update-pr': ['factory'],
+  // Phase 22: Operations, for a release a person has approved.
+  'jira.fix-version': ['operations'],
+  'bitbucket.tag': ['operations'],
 });
 const OUTBOX = ['devtools', 'outbox'];
 const STATES = new Set(['recorded', 'waiting-approval', 'sent', 'failed', 'refused', 'discarded']);

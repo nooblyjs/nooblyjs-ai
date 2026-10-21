@@ -1,0 +1,26 @@
+{
+  "name": "nooblyjs-ai-operations",
+  "version": "0.1.0",
+  "description": "NooblyJS Operations: a NooblyJS hosted app (screens and API at /operations) that owns releases and deployments: one feature per release, its evidence, two approvers, a rollout and a rollback, deployed through Infrastructure by its deployer adapter.",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "test": "node --test --test-timeout=20000 \"test/**/*.test.js\"",
+    "seed": "node --env-file-if-exists=.env server.js --seed"
+  },
+  "dependencies": {
+    "nooblyjs-core": "file:../../nooblyjs-core"
+  },
+  "devDependencies": {
+    "express": "^5.2.1"
+  }
+}

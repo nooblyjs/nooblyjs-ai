@@ -330,6 +330,22 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
     return { released: true, feature: feature.id, stories: siblings.map((st) => st.id) };
   }
 
+  /**
+   * Phase 22: a feature's release was deployed to production (Operations): its stories go from Release to Operate, and
+   * the item follows when its last story has. Nobody decides it here: the release's deploy approval did.
+   */
+  async function featureDeployed({ itemId, featureId, releaseId = null } = {}) {
+    const stories = (await storiesOf(itemId)).filter((st) => (st.feature?.id ?? st.id) === featureId && st.status === 'active');
+    if (!stories.length) throw notFound(`${itemId} has no story of ${featureId}.`);
+    const moved = [];
+    for (const st of stories) if (st.stage === 'release' && await moveStory(st, 'operate', 'release')) moved.push(st.id);
+    if (moved.length) {
+      await emit('feature.deployed', { itemId, featureId, releaseId, stories: moved, system: 'operations', summary: `${featureId} is in Operate: ${releaseId ?? 'its release'} is in production` }, 'system');
+      await followStories(itemId);
+    }
+    return { moved };
+  }
+
   /** An item's features: each with its stories and where it is, in words. */
   async function featuresOf(itemId) {
     const stories = await storiesOf(itemId);
@@ -362,5 +378,5 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
     return { item, approvals: rows, blockers: item.type === 'pr' && item.pr ? await blockers(item) : [], given: await givenOf(item) };
   }
 
-  return { recordPullRequest, afterDecision, canMerge, pullRequestMerged, pullRequestMergedOutside, followPullRequests, featuresOf, prsOf, pullRequestView, blockers };
+  return { recordPullRequest, afterDecision, canMerge, pullRequestMerged, pullRequestMergedOutside, followPullRequests, featuresOf, featureDeployed, prsOf, pullRequestView, blockers };
 }

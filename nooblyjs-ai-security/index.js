@@ -109,6 +109,8 @@ export async function register(app, serverManager, { mountPath = '/security', da
         const all = await findings.list({ itemId });
         return { open: all.filter((f) => f.state === 'open' || f.state === 'fixing'), accepted: all.filter((f) => f.state === 'accepted') };
       },
+      /** Phase 22: the SBOM a release carries ({ itemIds }): per repository, the newest scan's components. */
+      sbomFor: (input) => scans.sbomFor(input),
       /** Phase 21: an environment's DAST or image scan, as one of its suites (the Factory's Test section asks). */
       scanEnvironment: (input) => scans.scanEnvironment(input),
       /** The Software Factory scans a run's commit: each kind is a gate, with the SBOM (scans.js). */

@@ -22,6 +22,7 @@ import { createSummary } from './src/services/summary.js';
 import { createApprovals } from './src/services/approvals.js';
 import { createSweep } from './src/services/sweep.js';
 import { createPreviews } from './src/services/previews.js';
+import { createReleases } from './src/services/releases.js';
 import { withWords } from './src/services/event-words.js';
 import { seed as seedStory } from './src/seed/index.js';
 
@@ -91,13 +92,15 @@ export async function register(app, serverManager, { mountPath = '/infrastructur
   const summary = createSummary({ ...deps, cost, runs, drift, designs, environments });
   // NooblyJS Phase 21 (I8): a preview per pull request the lifecycle records, destroyed when it merges.
   const previews = createPreviews({ ...deps, designs, runs });
+  // NooblyJS Phase 22 (I10): Production changes only through a release (Operations' deployer).
+  const releases = createReleases(deps);
   const offPreviews = [
     host.events.on?.('pr.recorded', (event) => previews.onPrRecorded(event?.payload ?? event).catch((err) => log.warn(`preview: ${err.message}`))),
     host.events.on?.('pr.merged', (event) => previews.onPrMerged(event?.payload ?? event).catch((err) => log.warn(`preview: ${err.message}`))),
   ];
 
   const router = host.express.Router();
-  router.use('/api/v1', createApi({ host, log, seed, designs, environments, runs, drift, policies, cost, summary, about: { name: NAME, version: VERSION, mountPath, provisioner: provisioner.name } }));
+  router.use('/api/v1', createApi({ host, log, seed, designs, environments, runs, drift, policies, cost, summary, releases, about: { name: NAME, version: VERSION, mountPath, provisioner: provisioner.name } }));
   // The browser files (module, pages, CSS). redirect: false, or /infrastructure would 301 to /infrastructure/.
   router.use(host.express.static(PUBLIC_DIR, { index: false, redirect: false }));
   // Every other GET without a file extension is a page: the host's frame answers it, so deep links and refresh
@@ -131,6 +134,12 @@ export async function register(app, serverManager, { mountPath = '/infrastructur
       cloudByItem: (month) => cost.byItem(month),
       /** A month of an item's infrastructure in production, from its design: { usd, perDay, design } or null (Phase 17). */
       monthlyCostFor: (itemId) => cost.monthlyFor(itemId),
+      /** Phase 22: Operations' deployer applies an approved release to a product's Production ({ product, releaseId, approvalId, version, deployed, percent, by }). */
+      deployRelease: (input) => releases.deployRelease(input),
+      /** Phase 22: Production returns to what was there before the release ({ product, releaseId, reason, by }). */
+      rollbackRelease: (input) => releases.rollbackRelease(input),
+      /** Phase 22: what a release of an item would put in production ({ itemId }): its product, Staging's and Production's versions. */
+      releaseCandidate: (input) => releases.candidate(input),
       /** Phase 21: one environment as the Test section needs it to run its suites, or null. */
       environment: (name) => environments.environment(name),
       /** Phase 21: the suites that ran in an environment ({ environment, suites, testRunId }). */

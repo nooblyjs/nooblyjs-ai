@@ -8,7 +8,7 @@ const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 /** Other apps this one talks to. Any may be missing (standalone, or not started), so /about says which. */
 const PARTNERS = ['workflows', 'product', 'factory', 'teammates'];
 
-export function createApi({ host, log, about, seed, designs, environments, runs, drift, policies, cost, summary }) {
+export function createApi({ host, log, about, seed, designs, environments, runs, drift, policies, cost, summary, releases }) {
   const api = host.express.Router();
   api.use(host.auth);
   // NooblyJS audits every write app-wide and its host.audit passes through; the stand-in host records here.
@@ -42,6 +42,9 @@ export function createApi({ host, log, about, seed, designs, environments, runs,
   });
   api.post('/environments', async (req, res) => res.status(201).json(await environments.create(req.body ?? {}, req.person)));
   api.get('/environments/:name', async (req, res) => res.json(await environments.get(req.params.name)));
+  // NooblyJS Phase 22 (I10): nobody applies a version to an environment directly: Production through a release,
+  // the others through promotion. Refused, and audited.
+  api.post('/environments/:name/deploy', async (req) => releases.refuseDirect(req.params.name, req.person));
   api.post('/environments/:name/destroy', async (req, res) => res.json(await environments.destroy(req.params.name, req.body ?? {}, req.person)));
   api.post('/environments/:name/drift-check', host.requireRole('draft'), async (req, res) => res.json(await drift.check(req.params.name, req.person)));
   api.get('/promotion-paths/:product', async (req, res) => res.json(await environments.promotionPath(req.params.product)));

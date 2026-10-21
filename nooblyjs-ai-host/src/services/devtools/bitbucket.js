@@ -146,6 +146,13 @@ export function createBitbucket({ workspace, email, token, writeToken = '', fetc
         if (!Number.isInteger(r.body?.id)) return failure('failed', 'Bitbucket did not say which pull request it made.');
         return { ok: true, result: { id: r.body.id, url: r.body.links?.html?.href ?? `https://bitbucket.org/${workspace}/${slug}/pull-requests/${r.body.id}` } };
       },
+      /** Phase 22: a release's tag on a commit of the main branch: result { name, url }. */
+      async createTag({ slug, name, sha } = {}) {
+        if (!writer) return noWriter();
+        if (!SLUG.test(String(slug)) || !/^[A-Za-z0-9][A-Za-z0-9._\/-]{0,99}$/.test(String(name)) || !/^[0-9a-f]{7,40}$/.test(String(sha))) return failure('refused', 'A tag needs a repository, a name and a commit.');
+        const r = await writer.write('bitbucket.tag', `${repoPath(slug)}/refs/tags`, { name: String(name), target: { hash: String(sha) } });
+        return r.ok ? { ok: true, result: { name: String(name), url: r.body?.links?.html?.href ?? `https://bitbucket.org/${workspace}/${slug}/src/${name}` } } : r;
+      },
       /** The title and description of a pull request NooblyJS opened. */
       async updatePullRequest({ slug, id, title, description = '' } = {}) {
         if (!writer) return noWriter();

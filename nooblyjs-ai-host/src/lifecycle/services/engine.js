@@ -47,6 +47,12 @@ const RETIRED_APPROVALS = {
  * Home · Approvals as on its own screen. They move no stage.
  */
 const APP_TYPES = new Set(['infra-design', 'devtools-write', 'threat-model', 'risk-acceptance']);
+/**
+ * Phase 22: a stage approval another app may also open on its own artefact (`ref.app`): a release's `deploy` approval
+ * (Operations), with the rule's two approvers. Opened by an app it is the app's: it decides it first, and no stage moves.
+ */
+const APP_CAPABLE = new Set([...APP_TYPES, 'deploy']);
+const isAppApproval = (a) => APP_TYPES.has(a.type) || (APP_CAPABLE.has(a.type) && Boolean(a.ref?.app));
 // An app names its artefact by `designId` (Infrastructure) or `id` (Security, Phase 19).
 const refId = (r) => r?.designId ?? r?.id ?? null;
 const sameRef = (a, b) => a && b && a.app === b.app && refId(a) === refId(b) && a.kind === b.kind;
@@ -527,7 +533,7 @@ export function createEngine({ repos, host, log, clock }) {
 
     // An app's approval: the app carries the decision out first (and refuses with its own reason), then it is recorded.
     let carried = null;
-    if (APP_TYPES.has(approval.type)) {
+    if (isAppApproval(approval)) {
       const app = host.service?.(approval.ref?.app);
       if (typeof app?.decideApproval !== 'function') {
         throw conflict('app_unavailable', `${rule.label ?? 'This approval'} is decided by ${approval.ref?.app ?? 'another app'}, which is not running here. Nothing was decided.`);
@@ -569,7 +575,7 @@ export function createEngine({ repos, host, log, clock }) {
     let handoff = null;
     if (outcome === 'approved') {
       // A pull request's Test approval moves nothing: it may merge now, and a person merges it (Phase 16e).
-      const move = approval.type === 'stage' ? approval.to : item.type === 'pr' && item.pr && approval.type === 'test-approval' ? null : MOVES[approval.type];
+      const move = isAppApproval(approval) ? null : approval.type === 'stage' ? approval.to : item.type === 'pr' && item.pr && approval.type === 'test-approval' ? null : MOVES[approval.type];
       // The work goes to the Software Factory with the Engineering sign-off (Phase 16b), never before.
       if (approval.type === 'engineering-signoff') handoff = await createHandoff(item, updated, person);
       if (move === 'complete') await complete(item.id, person, `completed ${item.ref ?? item.id} · ${item.title}`);
@@ -969,7 +975,7 @@ export function createEngine({ repos, host, log, clock }) {
    * people with the rule's permission. An open approval for the same artefact and kind is returned, not doubled.
    */
   async function requestAppApproval({ type, itemId, title, subject = null, ref, link = null, line = null, context = null, requestedBy } = {}) {
-    if (!APP_TYPES.has(type)) throw badRequest(`${type} is not an approval another app may open.`);
+    if (!APP_CAPABLE.has(type)) throw badRequest(`${type} is not an approval another app may open.`);
     if (!ref?.app) throw badRequest('An app approval needs ref.app: the app that carries the decision out.');
     const rule = await ruleOr500(type);
     const item = await itemOr404(itemId);

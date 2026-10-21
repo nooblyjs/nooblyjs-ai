@@ -49,7 +49,7 @@ export function createScans({ repos, host, scanner, policies, findings, now }) {
     const sbom = scanner.sbom(target, p);
     const passed = results.every((r) => r.status === 'passed');
     const at = new Date(now()).toISOString();
-    await repos.scans.append({ id: scanId, at, repo, itemId, runId, sha, findingId, scanner: scanner.name, real: scanner.real, passed, results: results.map(({ kind, status, findings: f }) => ({ kind, status, findings: f })), components: sbom.components.length });
+    await repos.scans.append({ id: scanId, at, repo, itemId, runId, sha, findingId, scanner: scanner.name, real: scanner.real, passed, results: results.map(({ kind, status, findings: f }) => ({ kind, status, findings: f })), components: sbom.components.length, sbom: sbom.components });
     await emit('scan.finished', {
       scanId, itemId, repo, runId, sha, scanner: scanner.name, passed,
       summary: `scanned ${repo}${sha ? ` at ${sha.slice(0, 7)}` : ''} with the ${scanner.name} scanner: ${results.map((r) => `${r.kind} ${r.status}`).join(' · ')}`,
@@ -95,10 +95,21 @@ export function createScans({ repos, host, scanner, policies, findings, now }) {
     };
   }
 
+  /**
+   * Phase 22: the SBOM a release carries: for each repository, the components of the newest scan of a run for one of
+   * these items (a release's stories).
+   */
+  async function sbomFor({ itemIds = [] } = {}) {
+    const wanted = new Set(itemIds);
+    const newest = new Map();
+    for (const s of await repos.scans.list()) if (wanted.has(s.itemId) && s.runId && Array.isArray(s.sbom)) newest.set(s.repo, s);
+    return { format: 'CycloneDX (simplified)', scanner: scanner.name, real: scanner.real, repos: [...newest.values()].map((s) => ({ repo: s.repo, scanId: s.id, sha: s.sha ?? null, components: s.sbom })) };
+  }
+
   /** The newest scans, for the Findings page and a run's evidence. */
   async function recent({ repo, limit = 20 } = {}) {
     return (await repos.scans.list()).filter((s) => !repo || s.repo === repo).slice(-limit).reverse();
   }
 
-  return { scanChange, scanEnvironment, recent };
+  return { scanChange, scanEnvironment, sbomFor, recent };
 }

@@ -57,7 +57,7 @@ Eight projects, over 370 test files, all offline by default. Phases 0–11 of th
 | Testing | Gates per PR from quality attributes; "Testing in environments" screen; e2e results per environment (seeded) | `nooblyjs-ai-factory`, `nooblyjs-ai-infrastructure` | **Thin.** No test strategy, test plan, test cases or test runs as things of their own |
 | Security | Governance enforced in services; secret scan and env scrubbing in the Factory; sandboxes (Linux, macOS); base-image CVE status (typed in, not scanned); a code-reading security review (Phase 13) | spread across | **Thin.** No threat model, no scanning pipeline, no findings, no security testing in environments |
 | Infrastructure | Designs from architecture, environments, provisioning runs, drift, cloud cost, blueprints, policies | `nooblyjs-ai-infrastructure` | Built on a **mock provisioner**; cloud, region and IaC tool undecided |
-| Release | Merge by a person; "production deploy needs two approvers" as a rule | lifecycle engine | **Not built** (Infrastructure I10, owner open) |
+| Release | A release per feature with its evidence, two approvers, a rollout and a rollback; Production only through one | Operations, Infrastructure (I10), the lifecycle engine | **Built** (Phase 22, the mock deployer) |
 | Operate and learn | Drift sweep, cloud cost | `nooblyjs-ai-infrastructure` | **Not built**: no SLOs, monitoring, incidents, or loop back to Discover |
 | Agents | Named teammates with skills, memory, rates, budgets, timesheets; the agent runtime with tools, sandbox, MCP, skills | `nooblyjs-ai-teammate`, `nooblyjs-ai-harness` | Built |
 | Knowledge | Wiki, spaces, sources, cited answers, PII redaction, process models, MCP | `nooblyjs-ai-knowledge` | Built (legacy wiki behind an adapter) |
@@ -304,7 +304,7 @@ Quality, which are sections of the Software Factory (Product since 2026-10-19; Q
 | **Quality** | Factory (Test section: test analysis in Engineering; the Test group) | Test analysis (test cases, automated testing requirements, integration and E2E tests), the human tester's verification and Test approval on each pull request, test runs, coverage, defects, evidence | `nooblyjs-ai-factory/quality` (at `/factory/quality`, decided 2026-10-20) | Built: test analysis (16d), Test approvals (16e), test runs, coverage, cases kept in step and defects (Phase 20); environment runs: previews per pull request and the suites in Test and Staging, on the mock runner (Phase 21) |
 | **Security** | Security | Threat models, scans, findings, risk acceptance, pen tests, compliance evidence | `nooblyjs-ai-security` (at `/security`) | Built (Phase 19; the scanner is the mock until one is approved) |
 | Infrastructure | Infra | Designs, environments, provisioning, drift, cloud cost | `nooblyjs-ai-infrastructure` | Built on a mock |
-| **Operations** | Ops | Releases, deployments, SLOs, incidents, post-incident reviews, outcome reviews | `nooblyjs-ai-operations` (new) `[CONFIRM name]` | Decided; Phases 22–23 |
+| **Operations** | Ops | Releases, deployments, SLOs, incidents, post-incident reviews, outcome reviews | `nooblyjs-ai-operations` (at `/operations`) | Releases and deployments built (Phase 22, the mock deployer); SLOs, incidents and outcome reviews in Phase 23 |
 | Digital Teammates | Teammates | The agents | `nooblyjs-ai-teammate` | Built |
 | Knowledge | Knowledge | The memory every stage reads and writes | `nooblyjs-ai-knowledge` | Built |
 | Platform | Platform | Repos, containers, models, budgets, guardrails, secrets, audit | `nooblyjs-ai-host` | Built (runtime simulated) |

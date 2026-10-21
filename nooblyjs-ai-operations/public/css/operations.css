@@ -1,0 +1,18 @@
+/* Operations' own styles: only what the shared UI kit doesn't cover. Every selector is scoped to the frame's content
+   area for this app ([data-module="operations"]), and only the kit's tokens are used. */
+[data-module="operations"] [hidden] { display: none !important; }
+[data-module="operations"] .ops-muted { color: var(--text-subtle); font-size: var(--text-small); }
+[data-module="operations"] .ops-sub { display: block; font-size: var(--text-eyebrow); color: var(--text-subtle); margin-top: 2px; }
+[data-module="operations"] .ops-meta { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: var(--text-caption); }
+[data-module="operations"] .page-head + .ops-meta { margin-top: -20px; }
+[data-module="operations"] .ops-late { color: var(--danger-700); font-weight: 600; }
+[data-module="operations"] .ops-mock { padding: 8px 12px; border-radius: var(--radius-row); background: var(--warning-100); color: var(--warning-700); font-size: var(--text-small); }
+[data-module="operations"] .ops-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--gap-grid); }
+[data-module="operations"] .ops-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+[data-module="operations"] .ops-form label { display: flex; flex-direction: column; gap: 4px; font-size: var(--text-small); }
+[data-module="operations"] .ops-history { padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+[data-module="operations"] .ops-message { padding: 12px 16px; border-radius: var(--radius-row); font-size: var(--text-small); background: var(--blue-50); color: var(--blue-700); }
+[data-module="operations"] .ops-message:empty { display: none; }
+[data-module="operations"] .ops-message--success { background: var(--success-100); color: var(--success-700); }
+[data-module="operations"] .ops-message--error { background: var(--danger-100); color: var(--danger-700); }
+[data-module="operations"] .ops-notes { white-space: pre-wrap; font-family: inherit; margin: 0; }

@@ -351,7 +351,23 @@ export function createDevtools({ store, settings = {}, fetch, clock = Date, log,
       return { ok: true };
     },
   };
+  // Phase 22: a release's writes are for a release Operations has, whose deploy approval two people gave.
+  const releaseFact = async ({ payload }) => {
+    const release = await Promise.resolve(services?.get?.('operations')?.releaseFor?.(payload?.releaseId)).catch(() => null);
+    if (!release) return no(`There is no release ${String(payload?.releaseId ?? '').slice(0, 30)} in Operations.`);
+    if (!release.approved) return no(`${release.id} has not been approved for production by two people.`);
+    return { ok: true, release };
+  };
+  facts['jira.fix-version'] = async (request) => {
+    const fact = await releaseFact(request);
+    if (!fact.ok) return fact;
+    if (!(await config()).jira.projects.includes(String(request.payload?.project ?? '').toUpperCase())) return no(`NooblyJS does not make versions in the Jira project ${String(request.payload?.project ?? '').slice(0, 20)}.`);
+    return { ok: true };
+  };
+  facts['bitbucket.tag'] = releaseFact;
   const performers = {
+    'jira.fix-version': (p) => jira.writes.createVersion(p),
+    'bitbucket.tag': (p) => bitbucket.writes.createTag(p),
     'jira.create-issue': (p) => jira.writes.createIssue(p),
     'jira.transition': (p) => jira.writes.transition(p),
     'jira.comment': (p) => jira.writes.comment(p),
@@ -410,6 +426,26 @@ export function createDevtools({ store, settings = {}, fetch, clock = Date, log,
       return { ok: r.ok, sent: r.sent === true, recorded: r.state === 'recorded', state: r.state, action: r.sent ? (existing ? 'updated' : 'created') : 'none', id, url, message: r.message ?? null, writeId: r.entry?.id ?? null };
     },
     findPullRequest: async (slug, head) => { const r = await bitbucket.findPullRequest(slug, head); return r.ok ? r.pullRequest : null; },
+  };
+
+  /**
+   * Phase 22: what NooblyJS Operations asks for when a release is approved: its Jira fix version and a tag per
+   * repository, through the gate as Operations. With writes recorded and not sent, they wait in the outbox.
+   */
+  const release = {
+    async record({ releaseId, itemId = null, name, project = null, tags = [] } = {}) {
+      const base = { actor: { type: 'system', id: 'operations' }, itemId, cause: { releaseId } };
+      const out = [];
+      if (project) {
+        const r = await writes.send({ ...base, kind: 'jira.fix-version', key: `release:${releaseId}:fix-version`, target: String(project).toUpperCase(), summary: `create the fix version ${name} in ${String(project).toUpperCase()}`, payload: { releaseId, project, name, description: `NooblyJS release ${releaseId}` } });
+        out.push({ kind: 'jira.fix-version', target: String(project).toUpperCase(), state: r.state, sent: r.sent === true, message: r.message ?? null, writeId: r.entry?.id ?? null });
+      }
+      for (const t of tags) {
+        const r = await writes.send({ ...base, kind: 'bitbucket.tag', key: `release:${releaseId}:tag:${t.slug}`, target: `${bitbucket.workspace ?? settings.bitbucket?.workspace ?? ''}/${t.slug}`, summary: `tag ${t.slug} at ${String(t.sha).slice(0, 7)} as ${t.name}`, payload: { releaseId, slug: t.slug, name: t.name, sha: t.sha } });
+        out.push({ kind: 'bitbucket.tag', target: t.slug, state: r.state, sent: r.sent === true, message: r.message ?? null, writeId: r.entry?.id ?? null });
+      }
+      return out;
+    },
     listPullRequests: async (slug) => { const r = await bitbucket.pullRequests(slug, { state: 'OPEN' }); return r.ok ? r.pullRequests : []; },
   };
 
@@ -510,6 +546,7 @@ export function createDevtools({ store, settings = {}, fetch, clock = Date, log,
     },
     /** For the Software Factory's Bitbucket forge. */
     forge,
+    release,
     /** Forgets every cached answer (after a config change, or "Refresh" on a screen). */
     forget: () => cache.clear(),
     log,

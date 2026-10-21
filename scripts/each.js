@@ -19,6 +19,7 @@ const PROJECTS = [
   'nooblyjs-ai-teammate',
   'nooblyjs-ai-infrastructure',
   'nooblyjs-ai-security',
+  'nooblyjs-ai-operations',
   'nooblyjs-ai-knowledge',
   'nooblyjs-ai-host',
   'nooblyjs-ai-desktop',

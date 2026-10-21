@@ -24,6 +24,9 @@ export const KINDS = Object.freeze({
   'bitbucket.push-branch': Object.freeze({ system: 'bitbucket', label: 'Push a factory branch', method: null, path: null }),
   'bitbucket.open-pr': Object.freeze({ system: 'bitbucket', label: 'Open a pull request', method: 'POST', path: new RegExp(`^/2\\.0/repositories/${SLUG}/${SLUG}/pullrequests$`) }),
   'bitbucket.update-pr': Object.freeze({ system: 'bitbucket', label: 'Update a pull request', method: 'PUT', path: new RegExp(`^/2\\.0/repositories/${SLUG}/${SLUG}/pullrequests/\\d{1,9}$`) }),
+  // Phase 22: a release's Jira fix version and its Bitbucket tag (a new version, a new tag: neither changes anything there).
+  'jira.fix-version': Object.freeze({ system: 'jira', label: 'Create a Jira fix version', method: 'POST', path: new RegExp('^/rest/api/3/version$') }),
+  'bitbucket.tag': Object.freeze({ system: 'bitbucket', label: 'Tag a release', method: 'POST', path: new RegExp(`^/2\\.0/repositories/${SLUG}/${SLUG}/refs/tags$`) }),
 });
 
 export const SYSTEMS = Object.freeze(['jira', 'bitbucket']);
