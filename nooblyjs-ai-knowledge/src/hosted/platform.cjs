@@ -18,10 +18,14 @@
 
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
+const { AsyncLocalStorage } = require('node:async_hooks');
 const StructuredLogger = require('../shared/utils/StructuredLogger');
 const { createLegacyApp } = require('./legacyApp.cjs');
+const agentTasks = require('../shared/ai/agentTasks');
 
 const INSTANCE = 'wiki';
+// The teammate the wiki's agents work as (NooblyJS Phase 24): Ada Quill, the Research Analyst, unless told otherwise.
+const TEAMMATE = process.env.KNOWLEDGE_AGENT_TEAMMATE || 'ada-quill';
 
 /** SEARCH_SYNONYMS ("key=alt1|alt2, …") → equivalence groups, as app.js parses it. */
 function parseSynonyms(raw) {
@@ -89,6 +93,56 @@ function buildServices({ registry, appBaseDir, log }) {
   return { authservice, filing, cache, log, queue, scheduling, workflow, aiservice, measuring, searching, notifying, settings };
 }
 
+/** An agent's name as a work type Teammates accepts ('knowledge.chat-processing'). */
+function workTypeOf(agent) {
+  const slug = String(agent || 'wiki').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30).replace(/-+$/, '');
+  return `knowledge.${slug || 'wiki'}`;
+}
+
+/**
+ * The wiki's AI agents as teammate tasks (NooblyJS Phase 24: mocking audit A6, security audit S-08). Each prompt is
+ * one task run as TEAMMATE through `host.service('teammates').runTask`: Platform checks it first, it is billed to the
+ * teammate's timesheet, attributed to the person whose request it serves (or NooblyJS, for a workflow), and audited.
+ * The task has no tools: what comes back is text, and what the wiki does with it is the wiki's code. Nothing calls the
+ * agent's own provider: without Teammates the prompt is refused.
+ *
+ * With no model configured, Teammates plays the script, which for the wiki is "no answer": the prompt fails as an
+ * unreachable provider does, and the AI panel answers from the sources' own passages (`offline()`).
+ */
+function teammateRunner({ host, log }) {
+  const asking = new AsyncLocalStorage();
+  const teammates = () => host?.service?.('teammates') ?? null;
+  const run = async ({ agent, text, via } = {}) => {
+    const t = teammates();
+    if (typeof t?.runTask !== 'function') {
+      throw Object.assign(new Error("Teammates is not running in NooblyJS: the wiki's AI agents work only as teammate tasks, never straight to a model."), { code: 'teammates_unavailable' });
+    }
+    const person = asking.getStore() ?? null;
+    const result = await t.runTask({
+      slug: TEAMMATE,
+      workType: workTypeOf(agent),
+      system: 'knowledge',
+      caller: person?.id ? { type: 'user', id: person.id, name: person.name ?? person.id } : null,
+      input: { task: text, context: `The wiki's "${agent}" agent${via === 'workflow' ? ', in a workflow step' : ''}. Answer with text only.` },
+      scripted: async () => ({ output: { offline: true } }),
+    });
+    if (result.scripted) {
+      throw Object.assign(new Error(`No model is configured for the wiki's agents in NooblyJS (${TEAMMATE} answers offline), so "${agent}" has no answer.`), { code: 'model_offline' });
+    }
+    log.debug?.(`wiki agent "${agent}" ran as ${result.workId} (${result.modelRoute})`);
+    return { content: typeof result.output === 'string' ? result.output : JSON.stringify(result.output), model: result.modelRoute, costUsd: result.costUsd, workId: result.workId };
+  };
+  /** Whether Teammates answers offline (no model configured): the AI panel then answers from the sources. */
+  run.offline = async () => {
+    const t = teammates();
+    if (typeof t?.runTask !== 'function') return true;
+    return typeof t.provider === 'function' ? (await t.provider()) === 'mock' : false;
+  };
+  /** Middleware: the person signed in to this request is the one the task is for. */
+  run.middleware = (req, res, next) => asking.run(req.person ?? null, next);
+  return run;
+}
+
 /**
  * What the modules use of Socket.IO. NooblyJS has no WebSocket: broadcasts are handed
  * to `onBroadcast`, which the hosted entry forwards to the host's event stream.
@@ -119,6 +173,11 @@ function createIo(onBroadcast) {
 async function mountPlatform({ router, hostApp, registry, appBaseDir, onBroadcast, host = null, mountPath = '/wiki' }) {
   const coreLog = registry.logger(registry.getDefaultProviderType?.('logging') || 'console', { instanceName: INSTANCE });
   const log = new StructuredLogger(coreLog, { serviceName: INSTANCE });
+  // Hosted, the wiki's model clients run their prompts as teammate tasks: the modules get a registry whose
+  // aiservice() hands back such clients (shared/ai/agentTasks.js), and worker threads follow through the bridge.
+  const runner = teammateRunner({ host, log });
+  agentTasks.useTeammates(runner, { appBaseDir });
+  registry = agentTasks.routedRegistry(registry, { appBaseDir });
   const services = buildServices({ registry, appBaseDir, log });
 
   const app = createLegacyApp({ router, hostApp });
@@ -133,6 +192,7 @@ async function mountPlatform({ router, hostApp, registry, appBaseDir, onBroadcas
   // and gives other apps links to the wiki's pages.
   app.set('nooblyHost', host);
   app.set('nooblyMountPath', mountPath);
+  router.use(runner.middleware);
   router.use(app.prepare);
 
   const { initialize } = require('../initialize');
@@ -152,6 +212,7 @@ async function mountPlatform({ router, hostApp, registry, appBaseDir, onBroadcas
     services,
     /** Stops what the modules expose a stop for. The registry and its services are the host's to shut down. */
     async close() {
+      agentTasks.stopTeammates({ appBaseDir });
       for (const name of ['workflowBridgeServer', 'workflowBridge']) {
         try {
           app.get(name)?.stop?.();
@@ -163,4 +224,4 @@ async function mountPlatform({ router, hostApp, registry, appBaseDir, onBroadcas
   };
 }
 
-module.exports = { mountPlatform, buildServices, createIo };
+module.exports = { mountPlatform, buildServices, createIo, teammateRunner, workTypeOf };

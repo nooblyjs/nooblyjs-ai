@@ -16,11 +16,13 @@ let priya;
 let viewer;
 const K = '/wiki/api/v1/knowledge';
 const post = (c, url, json = {}) => c.request(url, { method: 'POST', json });
-const spec = async () => (await lerato.json('/factory/product/api/v1/specs/PRD-031')).body;
+const spec = async () => (await lerato.json('/product/api/v1/specs/PRD-031')).body;
 
 before(async () => {
   env = await startApp({
     hostedApps: [
+      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
       { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
       { package: 'nooblyjs-ai-knowledge', mountPath: '/wiki', enabled: true },
@@ -139,7 +141,7 @@ test('step 4: Enterprise Space → L0 renders three bands from the imported file
   const get = async (p) => (await viewer.json(`${K}/process-model?spaceName=${encodeURIComponent('Enterprise Space')}&path=${encodeURIComponent(p)}`)).body.model;
   const l0 = await get('Business processes/L0 Enterprise Process Model.md');
   assert.deepEqual(l0.bands.map((b) => [b.name, b.processes.length]), [['Enterprise', 1], ['Value chain', 4], ['Support', 3]]);
-  assert.deepEqual(l0.usedIn.map((u) => [u.id, u.href]), [['PRD-031', '/home/lifecycle/PRD-031'], ['ADR-014', '/factory/product/architecture/PRD-031']]);
+  assert.deepEqual(l0.usedIn.map((u) => [u.id, u.href]), [['PRD-031', '/home/lifecycle/PRD-031'], ['ADR-014', '/design/architecture/PRD-031']]);
   assert.ok(l0.usedIn.every((u) => typeof u.title === 'string' && u.title.length > 3), 'NooblyJS knows both by name');
   const supply = l0.bands[1].processes.find((p) => p.name === 'Supply');
   const l1 = await get(supply.path);
@@ -151,13 +153,13 @@ test('step 6: Ada drafts for PRD-031; the draft carries the knowledge documents 
   const knowledge = await env.noobly.hosted.apps.find((a) => a.name === 'wiki').services.contextFor({ itemId: 'PRD-031' });
   assert.ok(knowledge.length >= 1, 'Knowledge has documents for the item, found by its title');
   const before = (await spec()).knowledge.map((k) => k.id);
-  const queued = await post(lerato, '/factory/product/api/v1/specs/PRD-031/drafts', { kind: 'rollout-plan' });
+  const queued = await post(lerato, '/product/api/v1/specs/PRD-031/drafts', { kind: 'rollout-plan' });
   assert.equal(queued.status, 202);
   const queuedBody = await queued.json();
   const draftId = queuedBody.draft?.id ?? queuedBody.id;
   let draft;
   await eventually(async () => {
-    const got = (await lerato.json(`/factory/product/api/v1/drafts/${draftId}`)).body;
+    const got = (await lerato.json(`/product/api/v1/drafts/${draftId}`)).body;
     draft = got.draft ?? got;
     assert.equal(draft.status, 'done');
   }, { ms: 20_000, every: 200 });

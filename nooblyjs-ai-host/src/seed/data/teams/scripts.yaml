@@ -34,7 +34,7 @@ answers:
         - { label: Redis (30 s TTL), value: about 120 ms at p95 }
         - { label: Postgres read replica, value: about 450 ms at p95 }
         - { label: Decision, value: Waiting on Thabo N. }
-      primary: { label: Read ADR-014, href: /factory/design/architecture/PRD-031 }
+      primary: { label: Read ADR-014, href: /design/architecture/PRD-031 }
       sources: [ADR-014]
   - teammate: juno-park
     match: picker|screen|ready

@@ -3,22 +3,19 @@
 // register()'s `nav`, src/services/hosted.js), the signed-in person and the chat. This app
 // draws the content area only. Old dashboard links map one to one: #/run/<id> → /runs/<id>.
 //
-// Since 2026-10-19 the Product section's pages are here too, under /product (sections.js). Its route table is imported
-// at the same relative URL it is served from. Since lifecycle v3 (Phase 16b) its Architecture pages are the Design
-// section's, under /design; the old addresses move on. Engineering, Pull requests and Test show the lifecycle's stories,
+// The Test section's pages are here too, under /quality (sections.js). Product and Design were sections until CHG-009
+// (2026-10-21) and are apps of their own now, at /product and /design: their old addresses here move on (moved-app.js). Engineering, Pull requests and Test show the lifecycle's stories,
 // pull requests and approvals with the seed story's sample (CHG-008) until Phases 16d, 16e and 20.
 import { SECTIONS, sectionRoutes } from './sections.js';
-import { routes as productRoutes } from '../product/js/module.js';
-import { routes as designRoutes } from '../design/js/module.js';
 import { routes as qualityRoutes } from '../quality/js/module.js';
 
-const isArchitecture = (route) => route.nav === 'architecture';
-// The Design section's Architecture pages are the Product section's (drawn in its scope); the rest are Design's own.
-const OWN = {
-  product: productRoutes.filter((r) => !isArchitecture(r)),
-  design: [...productRoutes.filter(isArchitecture).map((r) => ({ ...r, scope: 'product' })), ...designRoutes],
-  quality: qualityRoutes,
-};
+const OWN = { quality: qualityRoutes };
+
+// Product and Design were sections here until CHG-009: an address under /factory/product or /factory/design (a link
+// kept in an approval, a bookmark) lands on the same page in their own app. The frame has no wildcard routes, so each
+// depth is listed.
+const DEPTHS = ['', '/:a', '/:a/:b', '/:a/:b/:c'];
+const movedApp = (from) => DEPTHS.map((depth) => ({ path: `/${from}${depth}`, title: 'Moved', page: () => import('./pages/moved-app.js'), meta: { from } }));
 
 const PAGES = { engineering: () => import('./pages/engineering.js'), testing: () => import('./pages/testing.js') };
 const view = (path, nav, title, module, name) => ({ path, nav, title, page: PAGES[module], meta: { view: name } });
@@ -45,8 +42,7 @@ export const routes = [
   view('/test/runs', 'test-runs', 'Test runs', 'testing', 'runs'),
   view('/test/coverage', 'coverage', 'Coverage', 'testing', 'coverage'),
   view('/test/defects', 'defects', 'Defects', 'testing', 'defects'),
-  // Architecture moved to the Design section (Phase 16b): old links keep working.
-  { path: '/product/architecture', redirect: '/design/architecture' },
-  { path: '/product/architecture/:id', nav: 'design-architecture', title: 'Architecture', page: () => import('./pages/moved.js'), meta: { to: '/design/architecture' } },
+  ...movedApp('product'),
+  ...movedApp('design'),
   ...SECTIONS.flatMap((section) => sectionRoutes(section, OWN[section.key])),
 ];

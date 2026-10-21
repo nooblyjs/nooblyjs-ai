@@ -22,6 +22,8 @@
 
 const path = require('node:path');
 const fsPromises = require('node:fs/promises');
+const { isMainThread } = require('node:worker_threads');
+const { routedRegistry, runner, stopTeammates } = require('../../shared/ai/agentTasks');
 
 // Last context passed to initializeAIInstances — lets reloadAIInstances()
 // rebuild the registry without the caller re-supplying dependencies.
@@ -103,7 +105,12 @@ class AIInstanceRegistry {
 async function initializeAIInstances(context) {
   // Remember the context so reloadAIInstances() can rebuild without it.
   lastContext = context;
-  const { serviceRegistry, app, log, appBaseDir } = context;
+  const { app, log, appBaseDir } = context;
+  // Standalone, a marker left by a hosted run that ended without closing would send workers' prompts to a bridge
+  // nobody answers: the main process clears it.
+  if (isMainThread && !runner()) stopTeammates({ appBaseDir });
+  // Hosted in NooblyJS, every agent's prompts run as teammate tasks (shared/ai/agentTasks.js), here and in a worker.
+  const serviceRegistry = routedRegistry(context.serviceRegistry, { appBaseDir });
 
   const previous = global.aiInstances instanceof AIInstanceRegistry ? global.aiInstances : null;
   const registry = new AIInstanceRegistry();

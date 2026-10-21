@@ -132,6 +132,15 @@ class WorkflowBridgeServer {
         if (!executionId) throw new Error('getExecution requires an executionId');
         return this.bridge.getExecution(executionId);
       },
+      // NooblyJS Phase 24: hosted, a workflow step's prompt runs here as a teammate task (shared/ai/agentTasks.js).
+      // Standalone there is no runner, and a worker never asks: it calls its provider itself.
+      agentPrompt: async (args = {}) => {
+        const run = global.nooblyAgentTasks;
+        if (typeof run !== 'function') throw new Error('The wiki is not hosted in NooblyJS: there is no teammate to run this prompt.');
+        const { agent, text, options } = args;
+        if (typeof text !== 'string' || !text.trim()) throw new Error('agentPrompt requires the prompt text');
+        return run({ agent: String(agent || 'workflow'), text, options: options || {}, via: 'workflow' });
+      },
     };
   }
 

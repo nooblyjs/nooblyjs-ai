@@ -12,9 +12,11 @@ const path = require('node:path');
 
 // In dependency order: the harness before the apps that run agents on it, the hosted apps before the host that links
 // them. nooblyjs-core (with the AI module, nooblyjs-ai-common, in src/aiservice/common) is a separate repo next to the
-// monorepo. The Software Factory carries its Product section (one package since 2026-10-19).
+// monorepo. Product and Design are apps of their own again (CHG-009); the Software Factory carries its Test section.
 const PROJECTS = [
   'nooblyjs-ai-harness',
+  'nooblyjs-ai-product',
+  'nooblyjs-ai-design',
   'nooblyjs-ai-factory',
   'nooblyjs-ai-teammate',
   'nooblyjs-ai-infrastructure',

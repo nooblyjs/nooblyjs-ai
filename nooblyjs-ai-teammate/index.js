@@ -7,6 +7,7 @@
 // (src/routes/index.js: the files in public/, the API under <mountPath>/api/v1, and the host's frame for every other
 // page URL) and describes the app to the host. The UI is a module (public/js/module.js) that the NooblyJS frame loads into
 // its content area; NooblyJS draws the rail and the sidebar from the description below.
+import path from 'node:path';
 import { FsStore } from './src/models/fs-store.js';
 import { createRepos } from './src/models/index.js';
 import { ensureSeeded } from './src/services/seed.js';
@@ -37,6 +38,20 @@ const SHUTDOWN_GRACE_MS = 10000;
 // cached: the cache's contents can be read on the /services/caching/ dashboard.
 const UNCACHED = new Set(['config/webhooks.md', 'config/mcp-servers.md']);
 const cacheable = (segments) => segments[0] !== 'system' && !UNCACHED.has(segments.join('/'));
+
+/**
+ * Where Teammates keeps its data: the host's store (host.store, the shared rule) when it is rooted at this app's
+ * dataDir, with Teammates' document cache attached; otherwise (an older host, a test host) a store of its own there.
+ */
+export function storeFor(host, dataDir, { cache, cacheable: canCache }) {
+  const given = host?.store;
+  if (given instanceof FsStore && given.root === path.resolve(dataDir)) {
+    // The host's store for this app is this app's alone; the cache is Teammates' (core's options, set after the fact).
+    if (cache && !given.cache) Object.assign(given, { cache, cacheable: canCache });
+    return given;
+  }
+  return new FsStore(dataDir, { cache, cacheable: canCache });
+}
 
 /** Sidebar rows; `path` is relative to the mount path, `icon` names a UI kit icon (/ui/js/icons.js). */
 export const NAV = [
@@ -164,7 +179,7 @@ async function build({
     stops.push(core.close);
     log = log ? teeLogger(core.log, log) : core.log;
     const { metrics } = core;
-    const store = new FsStore(dataDir, { cache: core.cache, cacheable });
+    const store = storeFor(host, dataDir, { cache: core.cache, cacheable });
     const repos = createRepos(store);
     // The Team board's time is the host's business time (NooblyJS host.clock) when there is one.
     const boardClock = host.clock?.now ? () => host.clock.now() : clock;

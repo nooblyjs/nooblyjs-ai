@@ -100,7 +100,7 @@ export function createArchitecture({ home, env, host, log }) {
       systems, summary: { systems: systems.length, accepted, text: `${accepted} of ${systems.length} system${systems.length === 1 ? '' : 's'} accepted${systems.some((s) => s.currency.stale) ? ` · ${systems.filter((s) => s.currency.stale).length} stale` : ''}` },
       sample: doc.sampleData === true,
       href: `/home/lifecycle/${encodeURIComponent(storyId)}`,
-      designHref: ctx.item.parentId ? `/factory/design/stories/${encodeURIComponent(ctx.item.parentId)}` : null,
+      designHref: ctx.item.parentId ? `/design/stories/${encodeURIComponent(ctx.item.parentId)}` : null,
     };
   }
 

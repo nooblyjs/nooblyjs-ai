@@ -58,7 +58,7 @@ export function engineeringRoutes({ home, host, architecture }) {
       },
       sample: arch?.sample === true,
       href: lifecycle(item.id),
-      designHref: item.parentId ? `/factory/design/stories/${encodeURIComponent(item.parentId)}` : null,
+      designHref: item.parentId ? `/design/stories/${encodeURIComponent(item.parentId)}` : null,
     };
   }
 

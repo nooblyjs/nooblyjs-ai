@@ -1,6 +1,6 @@
 // NooblyJS's built-in apps (structure.md §2a): Home and Platform, described like hosted apps and loaded into the same
-// frame. Their UI modules are in public/js/modules/. The nav comes from product.md §5. The Product Factory is the
-// Software Factory's Product section (nooblyjs-ai-factory, /factory/product), which owns its screens like Teammates does.
+// frame. Their UI modules are in public/js/modules/. The nav comes from product.md §5. Product (nooblyjs-ai-product,
+// /product) and Design (nooblyjs-ai-design, /design) are hosted apps that own their screens like Teammates does (CHG-009).
 // The dev app (/dev/styleguide) has no rail item and only exists when NOOBLY_DEV_LOGIN=true.
 
 export const HOME = {
@@ -56,7 +56,9 @@ export const DEV = {
 
 /** How the suite shows its child apps before they are installed (product.md §1, roadmap phases). */
 export const SUITE_APPS = {
-  // Product is its section since 2026-10-19 (nooblyjs-ai-factory/product).
+  // Product and Design were sections of the Factory until CHG-009 (2026-10-21): apps of their own, before it on the rail.
+  'nooblyjs-ai-product': { name: 'product', label: 'Product', icon: 'product', phase: 5 },
+  'nooblyjs-ai-design': { name: 'design', label: 'Design', icon: 'pen', phase: '16c' },
   'nooblyjs-ai-factory': { name: 'factory', label: 'Factory', icon: 'factory', phase: 7 },
   'nooblyjs-ai-infrastructure': { name: 'infrastructure', label: 'Infra', title: 'infrastructure', icon: 'cube', phase: '9a' },
   'nooblyjs-ai-teammate': { name: 'teammates', label: 'Teammates', icon: 'team', phase: 6 },

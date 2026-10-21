@@ -13,8 +13,8 @@ let env;
 let stevie;
 let lerato;
 let priya;
-const product = '/factory/product/api/v1';
-const design = '/factory/design/api/v1';
+const product = '/product/api/v1';
+const design = '/design/api/v1';
 const post = (c, url, json = {}) => c.request(url, { method: 'POST', json });
 const put = (c, url, json = {}) => c.request(url, { method: 'PUT', json });
 const say = (c, text) => post(c, `/api/v1/dev/teams/${MEETING}/messages`, { text });
@@ -31,7 +31,7 @@ const NOTES = [
 before(async () => {
   env = await startApp({
     env: { CHAT_MOCK_REPLY_MS: '0' },
-    hostedApps: [{ package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }, { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true }],
+    hostedApps: [{ package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true }, { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true }, { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }, { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true }],
   });
   [stevie, lerato, priya] = [env.client(), env.client(), env.client()];
   for (const [c, id] of [[stevie, 'stevie'], [lerato, 'lerato-m'], [priya, 'priya-s']]) await c.signIn(id);
@@ -76,7 +76,7 @@ test('steps 2 and 3: two accepted, one merged into another, one rejected with a 
   assert.equal(r1.quotes.length, 2, 'it carries the merged one\'s quote too');
   assert.equal((await post(lerato, `${product}/elicitation/PRD-033/candidates/CAN-033-2/accept`)).status, 200);
   // Step 3: an agent (a fixture actor) tries to accept the last one.
-  const services = env.noobly.hosted.apps.find((a) => a.name === 'factory').provides.product;
+  const services = env.noobly.hosted.apps.find((a) => a.name === 'product').services;
   await assert.rejects(services.decideCandidate({ itemId: 'PRD-033', candidateId: 'CAN-033-4', decision: 'accept', actor: { id: 'ada-quill', name: 'Ada Quill', kind: 'agent', accessRole: 'Owner' } }), { code: 'people_only' });
   await eventually(async () => assert.ok((await today(env.store, 'audit')).some((r) => r.action === 'access.refused' && r.actor === 'ada-quill' && /accept a requirement/.test(r.reason))));
   const rejected = await post(lerato, `${product}/elicitation/PRD-033/candidates/CAN-033-4/reject`, { reason: 'Covered by the NFR walk' });
@@ -105,7 +105,7 @@ test('step 4 (the walk): each category answered or not applicable; the two perfo
   assert.deepEqual(qa.filter((q) => q.attribute === 'Performance').map((q) => q.target), ['p95 < 300 ms at 18:00', 'p95 < 1 s']);
   assert.ok(qa.some((q) => q.scenario.endsWith('(REQ-033-03)')));
 });
-const services = () => env.noobly.hosted.apps.find((a) => a.name === 'factory').provides.product;
+const services = () => env.noobly.hosted.apps.find((a) => a.name === 'product').services;
 
 test('step 5: an open question holds the spec approval, naming it; an override with a reason is allowed and audited; Design gets the NFRs', async () => {
   assert.equal((await post(lerato, `${product}/elicitation/PRD-033/questions`, { text: 'Which stores get lockers first?', owner: 'lerato-m' })).status, 201);

@@ -1,18 +1,16 @@
-// The Software Factory's sections in the browser (2026-10-19): the Product pages, which were an app of their own, shown
-// inside the Factory's module. The server side is src/services/sections.js; this table must agree
+// The Software Factory's sections in the browser: the Test section's pages (Phase 16d), shown inside the Factory's
+// module. Product and Design were sections too until CHG-009 (2026-10-21); they are apps of their own now. The server side is src/services/sections.js; this table must agree
 // with its SECTIONS (test/sections.test.js checks it).
 //
 // The frame gives every page a ctx bound to the app (/factory). A section's pages were written for an app of their
 // own, so each gets a ctx bound to the section instead: its API client calls /factory/<section>/api/v1, its links and
 // navigate() stay under /factory/<section>, and it draws inside an element scoped like its own app was
-// (data-module="product"), so its stylesheet applies as it always did. Everything else in ctx is the frame's.
+// (data-module="quality"), so its stylesheet applies as it always did. Everything else in ctx is the frame's.
 //
-// A route may show another section's page (`scope` on the route, Phase 16b): the Design section's Architecture pages
-// are still the Product section's code, so they call its API, build their links under it and draw in its scope, while
-// their routes and navigation are the Design section's (/design). Design's own pages (Phase 16c) are its own.
+// A route may show another section's page (`scope` on the route, Phase 16b): its API, links and scope are that section's,
+// its route and navigation the one it sits in. (Design's Architecture rows used it until CHG-009; the Design app does
+// the same across apps now, ../../../nooblyjs-ai-design/public/js/product-pages.js.)
 export const SECTIONS = [
-  { key: 'product', path: '/product', prefix: 'product' },
-  { key: 'design', path: '/design', prefix: 'design' },
   { key: 'quality', path: '/quality', prefix: 'quality' },
 ];
 

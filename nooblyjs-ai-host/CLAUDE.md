@@ -21,9 +21,9 @@ tech.md §8a). **Phase 16a (nine stages: Verify, Release and Operate replace Shi
 (`.claude/specs/phase-16a-nine-stages/`), and so is **Phase 16b (lifecycle v3: eight stages, Discover · Product · Design ·
 Engineer · Build · Test · Release · Operate; approvals given on someone's behalf; the Factory's five sidebar groups)**
 (`.claude/specs/phase-16b-product-design-build/`; the root roadmap `../.claude/steering/roadmap.md` holds every phase). **Phase 16c (the
-Design section: business requirements, solution architecture, functional analysis and stories, each story a lifecycle
+Design section, now the Design app: business requirements, solution architecture, functional analysis and stories, each story a lifecycle
 item of its own with its own Design handoff) is done (reviewed 2026-10-21)** (`.claude/specs/phase-16c-design-section/`;
-the section is `../nooblyjs-ai-factory/design/`, `host.service('design')`; stories in `src/lifecycle/services/engine.js`). **Phase 16d (Engineering:
+the app is `../nooblyjs-ai-design/` since CHG-009, `host.service('design')`; stories in `src/lifecycle/services/engine.js`). **Phase 16d (Engineering:
 each story's application architecture drawn from the code, its test analysis in the Factory's new Test section, and the
 Engineering sign-off's checks) is done (reviewed 2026-10-21)** (`.claude/specs/phase-16d-engineering/`; the Factory's
 `src/services/engineering/` and `../nooblyjs-ai-factory/quality/`, `host.service('quality')`). **Phase 16e (Build and
@@ -34,7 +34,7 @@ own) is done (reviewed 2026-10-21)** (`.claude/specs/phase-16e-build-and-test/`;
 and the Factory's `src/services/pull-requests/`). **Phase 16f (one shape for checks, and the trace: each app's
 `checksFor` and `trace` services, gathered by `src/services/checks.js` and `src/services/trace.js`; the item page's Checks
 and Trace tabs; `npm run trace:rebuild`) is done (reviewed 2026-10-21)** (`.claude/specs/phase-16f-checks-and-trace/`). **Phase 17
-(Strategy and the business case: portfolio epics, epics and features in the Product section with ideas under features;
+(Strategy and the business case: portfolio epics, epics and features in the Product app with ideas under features;
 a business case on an idea or epic, drafted by an agent with an estimate from the factory's history, and "Business case
 complete" before an idea is accepted; budgets by portfolio and spend by value stream in Metrics; the Business owner's
 home) is done (reviewed 2026-10-21)** (`.claude/specs/phase-17-strategy-business-case/`). **Phase 18 (Requirements
@@ -59,7 +59,10 @@ through the write gate) is built and waiting for review** (`.claude/specs/phase-
 learn: SLOs from quality attributes with error budgets and the mock monitor; alerts to on call in Teams (`oncall`, the
 simulator in development); incidents with the SRE agent's post-incident review written to Knowledge, and their signal on
 the Product board; the outcome review, due 30 days after an item's first release, which closes the item; DORA measures in
-Metrics; the SRE's home) is built and waiting for review** (`.claude/specs/phase-23-operate-and-learn/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
+Metrics; the SRE's home) is built and waiting for review** (`.claude/specs/phase-23-operate-and-learn/`). **Phase 24 (Housekeeping: the wiki's AI agents run as
+teammate tasks when hosted, Knowledge's `src/shared/ai/agentTasks.js`; Teammates stores through `host.store`; `nodemon` is a
+dev dependency; the mocking audit lists every mock adapter) is built and waiting for review**
+(`.claude/specs/phase-24-housekeeping/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed
 2026-10-20)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent
@@ -143,22 +146,23 @@ The projects live side by side in the `nooblyjs-ai` monorepo, with `nooblyjs-cor
 initialises nooblyjs-core's `ServiceRegistry` (the **`serverManager`**) once, then loads each child listed in
 `data/config/hosted-apps.yaml` by calling its `index.js` export `register(app, serverManager, options)`:
 
-- `nooblyjs-ai-factory` → `/factory`, `nooblyjs-ai-teammate` → `/teammates`, `nooblyjs-ai-knowledge` → `/wiki` (it also
+- `nooblyjs-ai-product` → `/product`, `nooblyjs-ai-design` → `/design`, `nooblyjs-ai-factory` → `/factory`, `nooblyjs-ai-teammate` → `/teammates`, `nooblyjs-ai-knowledge` → `/wiki` (it also
   answers to `host.service('knowledge')`).
   Each one serves a UI module (`public/js/module.js`, a route table) and its API under
   `<mountPath>/api/v1`, and returns its rail entry and nav as data from `register()`.
 - `nooblyjs-ai-infrastructure` → `/infrastructure` (designs, environments, provisioning runs, drift, cloud cost).
-- Since 2026-10-19 `nooblyjs-ai-factory` carries a **section**: Product (`/factory/product`, was `nooblyjs-ai-product`).
-  One rail item; the Factory's `provides` keeps `host.service('product')`. Its data is `data/factory/product` (moved
-  from `data/product` on the first start: `src/hosted-apps.js` `foldData`). Infrastructure was a section too from
-  2026-10-19 to 2026-10-20; it is an app of its own again (CHG-007), and `foldData` moves an install's
-  `data/factory/infrastructure` back to `data/infrastructure`.
+- `nooblyjs-ai-product` → `/product` (the Product Factory) and `nooblyjs-ai-design` → `/design` (Design, which also
+  shows Product's Architecture pages), before the Factory on the rail: Product feeds Design, which feeds the Factory.
+  They were sections of the Factory (`/factory/product` from 2026-10-19, `/factory/design` from Phase 16c) until
+  CHG-009 (2026-10-21): `src/hosted-apps.js` `UNFOLDED` + `foldData` move an install's `data/factory/product` and
+  `data/factory/design` back out once and list them above the Factory. The Factory keeps one section, Test
+  (`/factory/quality`, `host.service('quality')`). Infrastructure was a section from 2026-10-19 to 2026-10-20 and is an
+  app of its own again (CHG-007), moved back the same way.
 - **The lifecycle engine is part of `nooblyjs-ai-host` itself** (`src/lifecycle/`: items, stages, approvals, handoffs). It was the
   hosted app `nooblyjs-ai-workflows` until 2026-10-10. `src/noobly.js` mounts it before any hosted app; it still answers at
   `/workflows/api/v1`, keeps its files in `data/workflows/`, and is `host.service('workflows')` to the children.
   Its own tests are in `test/lifecycle/`. The `../nooblyjs-ai-workflows` repo is retired.
-- The Product Factory is the Factory's Product section (its own screens in the Factory's UI module, its API at
-  `/factory/product/api/v1`: artefacts and drafting agents).
+- The Product Factory is the Product app (its own screens, its API at `/product/api/v1`: artefacts and drafting agents).
 - `nooblyjs-core` (with its AI module `src/aiservice/common`, imported as `nooblyjs-ai-common`: model providers, cost) and
   `nooblyjs-ai-harness` (agent runtime) are libraries.
 - `nooblyjs-ai-host` itself owns Home, the Product Factory screens, Platform, onboarding, team chat and the Teams bot endpoint.
@@ -207,7 +211,7 @@ From `tech.md` §10. `npm run test:e2e` uses Playwright with the locally install
 
 ```bash
 npm start                                   # node --env-file-if-exists=.env app.js
-npm run dev                                 # the same with node --watch
+npm run dev                                 # the same, restarting on changes (nodemon, a dev dependency)
 npm run electron                            # NooblyJS in a desktop window (apps/electron/main.js starts it, or opens the one already running)
 npm run test:electron                       # the same, hidden: start, load the first page, quit
 npm run backup                              # a dated, verified copy of data/ in BACKUP_DIR (--list, --verify <name>)

@@ -23,7 +23,7 @@ async function expectNoAxeViolations(page, label) {
 
 test('the board filters by portfolio, then by value stream and product within it', async ({ page }) => {
   await signIn(page, 'lerato-m');
-  await page.goto('/factory/product/board');
+  await page.goto('/product/board');
   const filters = content(page).getByRole('navigation', { name: 'Filter the board' });
   await expect(filters.getByRole('link', { name: /Digital/ })).toContainText('13');
   await expect(filters.getByRole('link', { name: /Buying/ })).toContainText('0');
@@ -42,7 +42,7 @@ test('the board filters by portfolio, then by value stream and product within it
 
 test('labels are typed and added: a portfolio, a product in it, and a new idea filed by pressing them', async ({ page }) => {
   await signIn(page, 'priya-s');
-  await page.goto('/factory/product/board');
+  await page.goto('/product/board');
   await content(page).getByRole('button', { name: 'Portfolios & products' }).click();
   const panel = content(page).getByRole('region', { name: 'Portfolios & products' });
   await expect(panel).toContainText('3 portfolios · 8 products');
@@ -78,7 +78,7 @@ test('labels are typed and added: a portfolio, a product in it, and a new idea f
 
 test('an Approver renames a product and its work follows; a Contributor cannot', async ({ page }) => {
   await signIn(page, 'lerato-m');
-  await page.goto('/factory/product/board');
+  await page.goto('/product/board');
   await content(page).getByRole('button', { name: 'Portfolios & products' }).click();
   const panel = content(page).getByRole('region', { name: 'Portfolios & products' });
   await panel.getByRole('button', { name: /^Search/ }).click();
@@ -86,13 +86,13 @@ test('an Approver renames a product and its work follows; a Contributor cannot',
   await edit.getByLabel('Name').fill('Search & browse');
   await edit.getByRole('button', { name: 'Save' }).click();
   await expect(content(page).getByRole('status')).toContainText('Search & browse was saved.');
-  await page.goto('/factory/product/board?product=Search%20%26%20browse');
+  await page.goto('/product/board?product=Search%20%26%20browse');
   await expect(content(page).locator('.kanban__card')).toHaveCount(2);
 });
 
 test('a Contributor says where a product is built: repositories from Platform and a Jira project, as labels; a new idea starts with them', async ({ page }) => {
   await signIn(page, 'priya-s');
-  await page.goto('/factory/product/board');
+  await page.goto('/product/board');
   await content(page).getByRole('button', { name: 'Portfolios & products' }).click();
   const panel = content(page).getByRole('region', { name: 'Portfolios & products' });
   await panel.getByRole('button', { name: /^Checkout/ }).click();
@@ -110,7 +110,7 @@ test('a Contributor says where a product is built: repositories from Platform an
   await expect(content(page).getByRole('status')).toContainText('Checkout was saved.');
   await expect(panel.getByRole('button', { name: /^Checkout/ })).toContainText('web-storefront · payments-gateway · Jira DTE');
 
-  const res = await page.request.post('/factory/product/api/v1/ideas', {
+  const res = await page.request.post('/product/api/v1/ideas', {
     data: { title: 'Saved cards at checkout', product: 'Checkout' },
     headers: { 'x-csrf-token': (await page.context().cookies()).find((c) => c.name === 'noobly.csrf')?.value ?? '' },
   });
@@ -121,7 +121,7 @@ test('a Contributor says where a product is built: repositories from Platform an
 
 test('the Portfolios page: themes, portfolios and value streams; a document filled in from its template; the templates in Settings', async ({ page }) => {
   await signIn(page, 'lerato-m');
-  await page.goto('/factory/product/portfolios');
+  await page.goto('/product/portfolios');
   const themes = content(page).locator('section.card', { has: page.getByRole('heading', { name: 'Strategic themes' }) });
   await expect(themes).toContainText('Solve the every day');
   await expect(themes).toContainText('Leverage AI');
@@ -141,13 +141,13 @@ test('the Portfolios page: themes, portfolios and value streams; a document fill
   await expect(content(page).getByRole('status')).toContainText('Digital is saved as version 2.');
   await expect(content(page).locator('.lead')).toContainText('1 of 5 sections filled in');
 
-  await page.goto('/factory/product/value-streams/vs_rewards');
+  await page.goto('/product/value-streams/vs_rewards');
   await expect(content(page).locator('.pf-section__title')).toHaveCount(10);
   await page.setViewportSize({ width: 375, height: 800 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await page.setViewportSize({ width: 1280, height: 720 });
 
-  await page.goto('/factory/product/settings');
+  await page.goto('/product/settings');
   await expect(content(page).getByRole('heading', { name: 'Value stream template' })).toBeVisible();
   await expectNoAxeViolations(page, 'Settings');
 });

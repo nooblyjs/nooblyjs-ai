@@ -22,15 +22,15 @@ inclusion: always
 | Standalone | `npm start` still runs the legacy wiki (`app.js`, port 9101). There is no `server.mjs` yet |
 | Storage | Records are JSON files under `data/wiki/` (the legacy format), not Markdown + YAML: a known deviation until the legacy app is retired `[CONFIRM]` |
 | Dependencies | The legacy app's (Express 4 era, Socket.IO, Passport…) stay until it is retired; hosted code must not use them |
-| `agent.action` | `system: 'knowledge'`. The wiki's own AI agents still call their provider directly (not through Teammates), so their spend is not in Platform's Knowledge budget yet |
+| `agent.action` | `system: 'knowledge'`. Hosted, the wiki's own AI agents are teammate tasks (NooblyJS Phase 24): checked by Platform, billed to the teammate and in Platform's Knowledge budget. Standalone they call their provider |
 | `services`, events | `host.service('knowledge')` is in noobly `tech.md` §8b; events in `structure.md` |
 
 ## 2. Platform (NooblyJS Phase 9)
 
 **NooblyJS Phase 9 (Platform).** An import asks `host.service('platform').guardrail('redact-on-ingest')` once: with
 the guardrail off, files are stored as they are and the source record says `redaction: 'off'` (the Sources screen
-says so). With no answer from Platform, or standalone, an import is redacted. The wiki's own AI agents still call
-their provider directly (not through Teammates), so their spend is not in Platform's Knowledge budget yet.
+says so). With no answer from Platform, or standalone, an import is redacted. Since NooblyJS Phase 24 the wiki's own
+AI agents run as teammate tasks when hosted, so Platform checks them and their spend is in its Knowledge budget.
 
 ## 3. What NooblyJS Phase 8 added (2026-10-10)
 
@@ -40,7 +40,7 @@ its kit screens (Ask & search, Collections, Graph, Contributions, Access) and Ma
 target that is **not built**. What exists is in `CLAUDE.md` under "Knowledge on top of the wiki": import with
 redaction, sources, cited answers with no model, answer actions, needs review, the process model, and
 `services` other apps reach as `host.service('knowledge')`. Records are JSON files under `data/wiki/knowledge/`.
-The wiki's AI agents still call their provider directly (not through `nooblyjs-ai-common` or Teammates).
+The wiki's AI agents called their provider directly until NooblyJS Phase 24; hosted, they are now teammate tasks.
 
 ## 4. This repo today, and the plan it was hosted against
 

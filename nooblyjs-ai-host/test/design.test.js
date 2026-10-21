@@ -1,5 +1,5 @@
 // Phase 16c in the real app (root roadmap Phase 16c test script): PRD-031 enters Design with its Product handoff; the
-// Design section (nooblyjs-ai-factory/design, at /factory/design) drafts its business requirements, solution
+// Design app (nooblyjs-ai-design at /design; a section of the Factory until CHG-009) drafts its business requirements, solution
 // architecture, functional analysis and stories as teammate tasks; people accept and shape them; and one story at a
 // time goes to Engineering with its Design handoff, through the lifecycle engine. The steps run in order on one data
 // folder, with the Factory and Teammates hosted: each draft is a hired teammate's task, which plays the section's
@@ -16,15 +16,17 @@ let lerato;
 let thabo;
 let priya;
 let naledi;
-const design = '/factory/design/api/v1';
+const design = '/design/api/v1';
 const post = (c, url, json = {}) => c.request(url, { method: 'POST', json });
 const patch = (c, url, json = {}) => c.request(url, { method: 'PATCH', json });
 const designOf = async (c = priya) => (await c.json(`${design}/items/PRD-031`)).body;
-const services = () => env.noobly.hosted.apps.find((a) => a.name === 'factory').provides.design;
+const services = () => env.noobly.hosted.apps.find((a) => a.name === 'design').services;
 
 before(async () => {
   env = await startApp({
     hostedApps: [
+      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
       { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
     ],
@@ -38,11 +40,11 @@ before(async () => {
 });
 after(async () => { await env?.stop(); });
 
-test('the Factory\'s Design group has the five rows of Design, after Architecture; Design starts with the Product handoff', async () => {
+test('Design is an app on the rail with its five rows, after Architecture; Design starts with the Product handoff', async () => {
   const { apps } = (await stevie.json('/api/v1/shell')).body;
-  const factory = apps.find((a) => a.name === 'factory');
-  assert.deepEqual(factory.nav.filter((n) => n.group === 'Design').map((n) => n.label), ['Architecture', 'Business requirements', 'Solution architecture', 'Functional analysis', 'Stories', 'Handoff to the Factory']);
-  for (const page of ['/factory/design/requirements', '/factory/design/stories/PRD-031', '/factory/design/js/module.js', '/factory/design/css/design.css']) {
+  const app = apps.find((a) => a.name === 'design');
+  assert.deepEqual(app.nav.map((n) => n.label), ['Architecture', 'Business requirements', 'Solution architecture', 'Functional analysis', 'Stories', 'Handoff to the Factory']);
+  for (const page of ['/design/requirements', '/design/stories/PRD-031', '/design/js/module.js', '/design/css/design.css']) {
     assert.equal((await stevie.get(page)).status, 200, page);
   }
   // PRD-031 is still in Product: nothing in Design can be written for it yet.
@@ -63,7 +65,7 @@ test('step 1: PRD-031 enters Design; the analyst agent drafts its business requi
     const events = await today(env.store, 'events');
     assert.ok(events.some((e) => e.type === 'teammate.task_finished' && e.payload.workType === 'requirements-drafting' && e.payload.itemId === 'PRD-031'), 'a teammate task, on her timesheet');
   });
-  const spec = (await stevie.json('/factory/product/api/v1/specs/PRD-031')).body;
+  const spec = (await stevie.json('/product/api/v1/specs/PRD-031')).body;
   const specText = JSON.stringify(spec);
   for (const r of drafted.requirements) assert.ok(specText.includes(JSON.stringify(r.source.quote).slice(1, -1)), `${r.id} quotes the spec: ${r.source.quote}`);
   for (const r of drafted.requirements) assert.equal((await post(lerato, `${design}/items/PRD-031/requirements/${r.id}/accept`)).status, 200, r.id);
@@ -145,16 +147,16 @@ test('step 5: Thabo hands off STORY-031-1 alone: it is in Engineer; PRD-031 is s
   // Nothing is built before the Engineering sign-off.
   assert.deepEqual((await stevie.json('/api/v1/home/items/STORY-031-1/runs')).body.runs, []);
   // The Product section's handoff page sends to Design's instead of offering its own Send.
-  const preview = (await stevie.json('/factory/product/api/v1/ui/PRD-031/handoff-preview')).body;
-  assert.deepEqual(preview.perStory, { text: 'PRD-031 goes on story by story: hand each of its 3 stories to Engineering in Design.', href: '/factory/design/handoff/PRD-031' });
+  const preview = (await stevie.json('/product/api/v1/ui/PRD-031/handoff-preview')).body;
+  assert.deepEqual(preview.perStory, { text: 'PRD-031 goes on story by story: hand each of its 3 stories to Engineering in Design.', href: '/design/handoff/PRD-031' });
   await eventually(async () => {
     const events = await today(env.store, 'events');
     assert.ok(events.some((e) => e.type === 'design.story_handed_off' && e.payload.storyId === 'STORY-031-1'));
   });
 });
 
-test('the design is a readable file in the Factory\'s folder, and the lists say each part in words', async () => {
-  const file = await fs.readFile(path.join(env.dataDir, 'factory', 'design', 'items', 'PRD-031', 'design.md'), 'utf8');
+test('the design is a readable file in the Design app\'s folder, and the lists say each part in words', async () => {
+  const file = await fs.readFile(path.join(env.dataDir, 'design', 'items', 'PRD-031', 'design.md'), 'utf8');
   assert.match(file, /^## Business requirements$/m);
   assert.match(file, /STORY-031-1 \(FEAT-031-1\)/);
   const { items } = (await naledi.json(`${design}/items`)).body;
@@ -174,7 +176,7 @@ test('homes: the Solution Architect sees the stories still to hand off; the Func
   assert.deepEqual(sa.tiles.map((t) => [t.key, t.value]), [['in-design', 4], ['decisions', 1], ['ready', 2], ['handed-off', 2]]);
   const handoffs = sa.panels.lists.find((l) => l.key === 'handoffs');
   assert.deepEqual(handoffs.rows.map((r) => [r.id, r.late]), [['STORY-027-2', true], ['STORY-027-3', true], ['STORY-031-2', false], ['STORY-031-4', false]]);
-  assert.equal(handoffs.rows[2].action.href, '/factory/design/handoff/PRD-031');
+  assert.equal(handoffs.rows[2].action.href, '/design/handoff/PRD-031');
 
   await role('priya-s', 'functional-analyst');
   await post(priya, `${design}/items/PRD-031/interfaces`, { name: 'Planner → Slot API', kind: 'api', to: 'Slot API' });

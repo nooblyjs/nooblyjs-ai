@@ -15,7 +15,7 @@ let lerato;
 let thabo;
 let priya;
 let naledi;
-const design = '/factory/design/api/v1';
+const design = '/design/api/v1';
 const factory = '/factory/api/v1';
 const quality = '/factory/quality/api/v1';
 const infra = '/infrastructure/api/v1';
@@ -34,6 +34,8 @@ before(async () => {
   env = await startApp({
     env: { CHAT_MOCK_REPLY_MS: '0' },
     hostedApps: [
+      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
       { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
       { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true },

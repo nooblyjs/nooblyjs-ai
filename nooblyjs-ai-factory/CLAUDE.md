@@ -2,16 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Since 2026-10-19 this package is the whole Software Factory app in NooblyJS**, at `/factory`, with four parts: the
-**Product section** (`product/`, pages in `public/product/`: signals → ideas → specs → architecture → UX → UI →
-handoff; it was `nooblyjs-ai-product`), the **Design section** (`design/`, pages in `public/design/`, Phase 16c:
-business requirements, solution architecture, functional analysis and the stories, each handed to Engineering on its
-own; the Product section's Architecture pages show under it), the **Test section** (`quality/`, pages in
-`public/quality/`, Phase 16d: test analysis, its row in the Engineering group) and the **line** (everything below:
-issues in, verified PRs out). Each section keeps its own code, tests and docs, with its own `CLAUDE.md`; how they sit in the Factory is
-`src/services/sections.js` and `public/js/sections.js` (below, "Sections"). The factory is Product, Design, Build and Test:
-Quality is the **Test** section (decided 2026-10-20), started in Phase 16d and filled in with 16e and Phase 20. Infrastructure was
-a section here from 2026-10-19 to 2026-10-20 and is the hosted app `../nooblyjs-ai-infrastructure` again (CHG-007).
+**This package is the Software Factory app in NooblyJS**, at `/factory`: **Engineering** (application architecture from
+the code, the sign-off), the **line** (everything below: issues in, verified PRs out) and the **Test section**
+(`quality/`, pages in `public/quality/`, Phase 16d: test analysis, test runs, coverage, defects). The Test section keeps
+its own code, tests and docs, with its own `CLAUDE.md`; how it sits in the Factory is `src/services/sections.js` and
+`public/js/sections.js` (below, "Sections"). Quality is the **Test** section (decided 2026-10-20), started in Phase 16d
+and filled in with 16e and Phase 20.
+
+**Product and Design are apps of their own** (CHG-009, 2026-10-21): `../nooblyjs-ai-product` at `/product` and
+`../nooblyjs-ai-design` at `/design`, before the Factory on the rail. Product feeds Design, which feeds the Factory
+through the lifecycle's handoffs; the Factory reaches them only as `host.service('product')` and `host.service('design')`.
+They were sections here (`product/`, `design/`, `/factory/product`, `/factory/design`) from 2026-10-19 (CHG-005) and
+Phase 16c; old addresses under `/factory/product` and `/factory/design` land on the same page in their app
+(`public/js/pages/moved-app.js`). Infrastructure was a section from 2026-10-19 to 2026-10-20 and is the hosted app
+`../nooblyjs-ai-infrastructure` again (CHG-007).
 
 `factory` is an agentic software factory built on top of the `noobly` harness (`../nooblyjs-ai-harness`, linked as a `file:` dependency, so it must be checked out next to this repo). Shared AI building blocks (cost, tokens, frontmatter, SSE) come from the AI module `nooblyjs-ai-common`, which lives inside `nooblyjs-core` (`../../nooblyjs-core/src/aiservice/common`) and is linked the same way. Issues go in; verified PRs come out. It's a learning project built one concept per phase (F00–F25). Each phase has a plain-language doc in `.claude/docs/` explaining what it adds and why. `.claude/docs/reference.md` lists every command, config key, repo file, env var, station, status, event and endpoint. The plan lives in `.claude/steering/` (PRD, Architecture, Roadmap). Architecture §20 and PRD §16 describe what was actually built.
 
@@ -29,7 +33,7 @@ pages, signs people in, stores data, emits events or calls models, read
 
 ```bash
 npm install                                   # links ../nooblyjs-ai-harness and nooblyjs-ai-common (../../nooblyjs-core/src/aiservice/common)
-npm test                                      # all tests: the line's, then the sections' (product/test, design/test, quality/test), offline
+npm test                                      # all tests: the line's, then the Test section's (quality/test), offline
 node --test test/services/line/line.test.js   # one test file
 node --test --test-name-pattern="<regex>" test/services/line/line.test.js   # one test
 npm run check:examples                        # run every documented example (examples/examples.txt) against a fresh demo repo
@@ -65,33 +69,31 @@ One known flaky test: F05's multi-process database test fails about one full run
   coverage per item and defects (lifecycle items), then CHG-008's sample; `POST /api/test/runs/:id/defects` and
   `/api/test/defects/:id/decision` (`draft`) raise and decide defects. `examples/noobly/hold-a-slot-for-15-minutes-whi.json`
   is STORY-031-2's scripted agent, whose own test for TC-031-2-1 fails (the failing run of the Phase 20 script).
-- **Strategy and the business case (NooblyJS Phase 17)** are the Product section's: `product/src/services/hierarchy.js` (portfolio epics `PEPIC-001`, epics `EPIC-001`, features `FEAT-001` in `catalogue.yaml`, each with a document from its template), an idea's `feature` and the board's `epic`/`feature` filters, `business-cases.js` and `estimate.js` (a case per idea or epic in `business-cases/`, drafted by Ada as a teammate task with an estimate from similar items: agent spend from NooblyJS's Metrics, cloud from Infrastructure, people's days from the lifecycle), and `POST /ideas/:id/accept` (the lifecycle's `acceptIdea`, gated by "Business case complete"). Pages: `public/product/js/pages/business-case.js`, the Portfolios page's work, the hierarchy's documents.
-- **Requirements elicitation (NooblyJS Phase 18)** is the Product section's: `product/src/services/elicitation.js` (one file per spec in `elicitation/`: stakeholders, sessions `SES-033-1`, candidates `CAN-033-1` drafted by Ada as a teammate task, each quoting a sentence of the notes, requirements `REQ-033-01` accepted, merged or rejected by a person with `accept-requirement`, the NFR walk over the Design section's catalogue, questions `Q-033-1`), `routes/elicitation.js`, and the spec's `requirements`. Accepted NFRs with a target become quality attributes; an open question is the spec's `questions-answered` readiness fact; Teams meeting notes posted to a spec (`teams.meeting_notes_posted`) become a session. Page: `public/product/js/pages/elicitation.js`.
-- **Checks and the trace (NooblyJS Phase 16f)**: the Factory's `checksFor` and `trace` services (`src/services/evidence/checks.js`: each run's gates, the item's quality attributes against them, the required tests; each run → its work item), the Product section's (`product/src/services/checks-trace.js`: the spec's readiness, the standards check; goals, ADRs, quality attributes), the Design section's `trace` (`design/src/services/trace.js`: requirements → goals, features, stories, criteria `AC-031-1-1`, interfaces) and the Test section's (`analysis.trace`: test cases → what they verify), in NooblyJS's one shape. `FACTORY_SCHEDULE=off` keeps the hosted scheduler from working the queue (`npm run trace:rebuild` in NooblyJS uses it).
+- **Strategy and the business case (NooblyJS Phase 17)** are the Product app's (`../nooblyjs-ai-product` since CHG-009): `src/services/hierarchy.js` (portfolio epics `PEPIC-001`, epics `EPIC-001`, features `FEAT-001` in `catalogue.yaml`, each with a document from its template), an idea's `feature` and the board's `epic`/`feature` filters, `business-cases.js` and `estimate.js` (a case per idea or epic in `business-cases/`, drafted by Ada as a teammate task with an estimate from similar items: agent spend from NooblyJS's Metrics, cloud from Infrastructure, people's days from the lifecycle), and `POST /ideas/:id/accept` (the lifecycle's `acceptIdea`, gated by "Business case complete"). Pages: `public/js/pages/business-case.js` there, the Portfolios page's work, the hierarchy's documents.
+- **Requirements elicitation (NooblyJS Phase 18)** is the Product app's (`../nooblyjs-ai-product`): `src/services/elicitation.js` (one file per spec in `elicitation/`: stakeholders, sessions `SES-033-1`, candidates `CAN-033-1` drafted by Ada as a teammate task, each quoting a sentence of the notes, requirements `REQ-033-01` accepted, merged or rejected by a person with `accept-requirement`, the NFR walk over the Design section's catalogue, questions `Q-033-1`), `routes/elicitation.js`, and the spec's `requirements`. Accepted NFRs with a target become quality attributes; an open question is the spec's `questions-answered` readiness fact; Teams meeting notes posted to a spec (`teams.meeting_notes_posted`) become a session. Page: `public/js/pages/elicitation.js` there.
+- **Checks and the trace (NooblyJS Phase 16f)**: the Factory's `checksFor` and `trace` services (`src/services/evidence/checks.js`: each run's gates, the item's quality attributes against them, the required tests; each run → its work item), the Product app's (`../nooblyjs-ai-product/src/services/checks-trace.js`: the spec's readiness, the standards check; goals, ADRs, quality attributes), the Design app's `trace` (`../nooblyjs-ai-design/src/services/trace.js`: requirements → goals, features, stories, criteria `AC-031-1-1`, interfaces) and the Test section's (`analysis.trace`: test cases → what they verify), in NooblyJS's one shape. `FACTORY_SCHEDULE=off` keeps the hosted scheduler from working the queue (`npm run trace:rebuild` in NooblyJS uses it).
 - `src/routes/cli.js` maps command names to `src/controllers/cli/*.js`. `src/services/forge/` is the PR target: a local forge under `$FACTORY_HOME/forge/` or GitHub. The HTTP side is split the same way: route tables in `src/routes/` (`api.js`, `workers.js`, `webhooks.js`, and `http.js`, the router), handlers in `src/controllers/`, token, body and static-file handling in `src/middleware/`. SSE is `src/services/sse.js`, and the dashboard page is `public/dashboard/`.
 
-### Sections (2026-10-19)
+### Sections
 
 - **Server.** `register()` (`src/services/hosted.js`) first calls `mountSections()` (`src/services/sections.js`), which
-  calls each section's own `register()` (`product/index.js`) at `/factory/<section>` (`/factory/product`), with the
-  Factory's host and a store of its own (`data/factory/<section>/`). Sections mount
-  **before** the Factory's router, whose page fallback would otherwise answer their URLs. A new section folder is
-  seeded at once. `FACTORY_SECTIONS` (comma-separated keys) leaves a section out; `register({ sections: [] })` mounts
-  none (tests of the line alone).
-- **What NooblyJS sees.** One app: the sidebar is the Product rows (keys `product-…`), then the Factory's own (group
-  Build); the status card has a line per section and their badges under prefixed keys; the sections' stylesheets load
-  with `css/factory.css`; and `provides: { product }` keeps `host.service('product')` working for every other app.
-- **Browser.** `public/js/module.js` adds each section's route table (imported from `../product/js/module.js`, the URL it
+  calls each section's own `register()` (`quality/index.js`) at `/factory/<section>` (`/factory/quality`), with the
+  Factory's host and a store of its own (`data/factory/<section>/`). Sections mount **before** the Factory's router,
+  whose page fallback would otherwise answer their URLs. A new section folder is seeded at once. `FACTORY_SECTIONS`
+  (comma-separated keys) leaves a section out; `register({ sections: [] })` mounts none (tests of the line alone).
+- **What NooblyJS sees.** One app: the sidebar is Engineering · Build · Test, a section's rows going `within` the
+  Factory's groups (Test analysis in Engineering); the status card has a line per section and their badges under
+  prefixed keys; the sections' stylesheets load with `css/factory.css`; and `provides: { quality }` gives other apps
+  `host.service('quality')`.
+- **Browser.** `public/js/module.js` adds each section's route table (imported from `../quality/js/module.js`, the URL it
   is served at) through `public/js/sections.js`, which moves the routes under the section's path, prefixes their nav
   keys, and gives each page a `ctx` bound to the section (`ctx.api` at `/factory/<section>/api/v1`, links and
   `navigate()` under `/factory/<section>`). The page draws inside `<div data-module="<section>">`, so the section's
   stylesheet, scoped as it always was, still applies. `test/sections.test.js` checks the server and browser tables agree.
-- **A section's own rules** (its permissions, its approvals, its events and their `system: 'product'`) did not change.
-  Its tests mount it on its own, at `/product`, on its own fixture host.
 
 ### Layout
 
-`src/` holds only `config/ controllers/ middleware/ models/ roles/ routes/ services/ utils/`, the same folders as `nooblyjs-ai-teammate`. The sections are not in `src/`: each keeps its own layout in `product/` (`src/`, `test/`, `docs/`, `.claude/steering/`), and its browser files in `public/product/`. `test/` mirrors it (`test/services/line/fanout.test.js` tests `src/services/line/`). `test/structure.test.js` fails if a new top-level folder appears in either.
+`src/` holds only `config/ controllers/ middleware/ models/ roles/ routes/ services/ utils/`, the same folders as `nooblyjs-ai-teammate`. The Test section is not in `src/`: it keeps its own layout in `quality/` (`index.js`, `src/`, `test/`), and its browser files in `public/quality/`. `test/` mirrors it (`test/services/line/fanout.test.js` tests `src/services/line/`). `test/structure.test.js` fails if a new top-level folder appears in either.
 
 | Folder | What goes there |
 | --- | --- |
@@ -109,7 +111,7 @@ The library's exports are in the root `index.js` (`"main"`).
 ## Conventions
 
 - Node ≥ 24, ES modules, `// @ts-check` + JSDoc types.
-- **Core code uses Node built-ins only.** In `src/`, the harness is the only dependency (`sections.js` also uses `nooblyjs-core`'s `FsStore`, which the sections brought with `js-yaml`). Adding a new dependency requires a line in Architecture §17.
+- **Core code uses Node built-ins only.** In `src/`, the harness is the only dependency (`sections.js` also uses `nooblyjs-core`'s `FsStore`). Adding a new dependency requires a line in Architecture §17.
 - **Import the harness only through `src/services/harness.js`**, and never copy harness code. Deep imports of harness internals are listed there.
 - Each file holds one concept and opens with a comment naming the phase that added it and explaining the idea in plain words. Keep modules under ~300 lines.
 - Anything that depends on time or randomness takes a `clock` (`src/utils/clock.js`) so tests never wait.

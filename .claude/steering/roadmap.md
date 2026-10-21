@@ -25,11 +25,18 @@ inclusion: always
 > released on its own once all its stories have passed Test.
 > Phases 16b–16e build that; checks and the trace move to 16f.
 >
+> **2026-10-21 (CHG-009):** **Product and Design are hosted apps of their own**, on the rail before the Factory:
+> `nooblyjs-ai-product` at `/product` (data `data/product`) and `nooblyjs-ai-design` at `/design` (data `data/design`).
+> Product is a product of its own that feeds Design, which feeds the Factory. The Software Factory is Engineering, Build
+> and its Test section. Design's Architecture rows are still Product's pages and API, drawn by Design. Where a phase
+> below says `/factory/product`, `/factory/design`, the Product section or the Design section, read the app; old
+> addresses move on to the app. `host.service('product')` and `host.service('design')` did not change.
+>
 > **2026-10-20 (CHG-007):** Infrastructure is the hosted app `nooblyjs-ai-infrastructure` at `/infrastructure` again, with
 > its data in `data/infrastructure`: the factory is Product, Design, Build and Test, and provisioning infrastructure is
 > something different. It was a section of the Software Factory for a day (`/factory/infrastructure`, CHG-005).
 >
-> **2026-10-19:** the Product Factory (`nooblyjs-ai-product`, at `/product`) is a **section of the Software Factory** now:
+> **2026-10-19 (until CHG-009):** the Product Factory (`nooblyjs-ai-product`, at `/product`) is a **section of the Software Factory** now:
 > one package (`nooblyjs-ai-factory/product`), one rail item (Factory), at `/factory/product`, with its data in
 > `data/factory/product`. Where a phase below names that project or its paths, read the section.
 > `host.service('product')` did not change.
@@ -103,6 +110,7 @@ inclusion: always
 | 21 | Testing in environments | ☐ built, waiting for review |
 | 22 | Release (new app: Operations, part 1) | ☐ built, waiting for review |
 | 23 | Operate and learn (Operations, part 2) | ☐ built, waiting for review |
+| 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ☐ built, waiting for review |
 
 Open bugs and changes: BUG-001 to BUG-007 and CHG-001 to CHG-007, all fixed and waiting for your checks (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 
@@ -1403,6 +1411,37 @@ ends with an outcome review that feeds Discover.
 
 ---
 
+## Phase 24 — Housekeeping
+
+**Goal:** close the housekeeping found in the review of Phases 16–23: every agent action is a teammate task, every
+hosted app stores through `host.store`, and the mocking audit lists every mock adapter.
+**Repos:** `nooblyjs-ai-knowledge`, `nooblyjs-ai-teammate`, `nooblyjs-ai-host`.
+
+**Before you start**
+- Which teammate the wiki's agents work as (default Ada Quill, `KNOWLEDGE_AGENT_TEAMMATE`).
+
+**Build**
+- **The wiki's AI agents as teammate tasks** (mocking audit A6, security audit S-08): hosted, every prompt the wiki
+  sends (AI panel, Prompts, document and folder workflows, continuous exploration) runs through
+  `teammates.runTask`; the agent's own provider is never called; a red-team case for a page carrying instructions.
+- **Teammates on `host.store`**; its own FsStore copy goes.
+- **`nodemon`** to the host's dev dependencies.
+- **The mocking audit** gains a line per mock adapter of Phases 19–23 (scanner, test runner, deployer, monitor, on call).
+
+**How you test it**
+1. In the wiki's Agents screen add "Chat Processing" pointing at a provider of its own. Test a prompt on the Prompts
+   screen: it runs as Ada Quill's task (Teammates · Work timeline; the audit log has `agent.knowledge.chat-processing`
+   for you), and nothing reaches the agent's provider. With no model configured it says so.
+2. Ask the AI panel "How is slot capacity calculated?": with no model it answers from the sources, as before.
+3. Teammates' files are where they were (`data/teammates/`), written through the host's store.
+4. `npm install --omit=dev` in the host leaves `nodemon` out; `npm run dev` still restarts on changes.
+5. The mocking audit has A12–A16 and A6 done.
+
+**Done when:** steps 1–5 pass.
+**Guide points:** Which teammate should the wiki's agents work as?
+
+---
+
 ---
 
 ## Hosted apps: open work
@@ -1454,4 +1493,5 @@ check are in Phase 13 for all of NooblyJS.
 - **Pilot the whole loop** with one squad on one product, idea to outcome review, and measure it against today's
   idea → merge baseline.
 - **Housekeeping found in this review:** Knowledge's agents onto teammate tasks (A6); Teammates onto `host.store`;
-  `nodemon` to dev dependencies in the host; README and shared rules point at this steering (done 2026-10-19).
+  `nodemon` to dev dependencies in the host (all built in Phase 24, 2026-10-21); README and shared rules point at this
+  steering (done 2026-10-19).

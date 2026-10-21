@@ -22,8 +22,10 @@ const arg = (name, fallback) => { const i = process.argv.indexOf(`--${name}`); r
 const TIMES = Math.max(Number(arg('times', 10)) || 10, 1);
 const TARGET_MS = Math.max(Number(arg('target', 1000)) || 1000, 1);
 const KEEP = process.argv.includes('--keep');
-// The Software Factory brings its Product section (/factory/product).
+// The Software Factory brings its Product section (/product).
 const HOSTED = [
+  { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+  { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
   { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
   { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
   { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true },
@@ -38,14 +40,14 @@ const PAGES = [
   ['Home · Activity', '/api/v1/activity'],
   ['Home · Metrics', '/api/v1/home/metrics'],
   ['An item', '/workflows/api/v1/items/PRD-028'],
-  ['Product · Board', '/factory/product/api/v1/board'],
-  ['Product · Ideas', '/factory/product/api/v1/ideas'],
+  ['Product · Board', '/product/api/v1/board'],
+  ['Product · Ideas', '/product/api/v1/ideas'],
   ['Platform · Audit log', '/api/v1/platform/audit'],
   ['Platform · Settings', '/api/v1/platform/settings'],
   ['Teammates', '/teammates/api/v1/teammates'],
   ['Infrastructure · Environments', '/infrastructure/api/v1/environments'],
 ];
-const ENTITY_DIRS = ['workflows/items', 'workflows/approvals', 'factory/product/specs', 'factory/product/ideas', 'factory/product/signals'];
+const ENTITY_DIRS = ['workflows/items', 'workflows/approvals', 'product/specs', 'product/ideas', 'product/signals'];
 const STREAM_DIRS = ['events', 'audit'];
 
 const config = (dataDir) => loadConfig({ DATA_DIR: dataDir, NODE_ENV: 'test', NOOBLY_DEV_LOGIN: 'true', LOG_LEVEL: 'error', PORT: '0', AI_PROVIDER: 'mock' });

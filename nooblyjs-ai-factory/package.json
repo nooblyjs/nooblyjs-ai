@@ -1,7 +1,7 @@
 {
   "name": "nooblyjs-ai-factory",
   "version": "0.1.0",
-  "description": "The Software Factory: product (signal → spec → architecture → design → handoff), build (issues in, verified PRs out, on the noobly harness), one NooblyJS app at /factory",
+  "description": "The Software Factory: engineering, build (issues in, verified PRs out, on the noobly harness) and test, one NooblyJS app at /factory",
   "type": "module",
   "bin": {
     "factory": "bin/factory.js"
@@ -16,8 +16,8 @@
   "scripts": {
     "start": "node bin/factory.js",
     "run": "npm start",
-    "test": "node --test \"test/**/*.test.js\" \"product/test/**/*.test.js\" \"design/test/**/*.test.js\" \"quality/test/**/*.test.js\"",
-    "coverage": "node --test --experimental-test-coverage \"test/**/*.test.js\" \"product/test/**/*.test.js\"",
+    "test": "node --test \"test/**/*.test.js\" \"quality/test/**/*.test.js\"",
+    "coverage": "node --test --experimental-test-coverage \"test/**/*.test.js\" \"quality/test/**/*.test.js\"",
     "build": "node -e \"console.log('No build step: plain JavaScript')\"",
     "clean": "node -e \"for (const d of ['node_modules','coverage','dist']) require('fs').rmSync(d, { recursive: true, force: true })\"",
     "check:examples": "scripts/check-examples.sh"

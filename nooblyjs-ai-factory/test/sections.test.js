@@ -1,7 +1,7 @@
-// The Software Factory's sections (2026-10-19): Product, which was a hosted app of its own, is mounted by the Factory's
-// register() under its path, with its data inside its folder, its pages in its UI module and its services under the
-// name other apps ask for. The section's own behaviour is tested in product/test; this is how it sits in the Factory.
-// Infrastructure was a section until 2026-10-20 (CHG-007) and is the hosted app nooblyjs-ai-infrastructure again.
+// The Software Factory's sections: the Test section (quality/) is mounted by the Factory's register() under its path,
+// with its data inside its folder, its pages in its UI module and its services under the name other apps ask for. Its
+// own behaviour is tested in quality/test; this is how it sits in the Factory. Infrastructure (CHG-007), Product and
+// Design (CHG-009) were sections and are hosted apps of their own.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,7 +23,7 @@ async function startApp({ sections, host: change = (h) => h } = {}) {
   const stand = createHost();
   const app = express();
   app.use(express.json());
-  const hosted = await register(app, createTestServerManager(), { mountPath: '/factory', dataDir, host: change(stand.host), pollMs: 0, schedule: false, sections, sectionOptions: { product: { draftStepMs: 0 } } });
+  const hosted = await register(app, createTestServerManager(), { mountPath: '/factory', dataDir, host: change(stand.host), pollMs: 0, schedule: false, sections });
   app.use((req, res) => res.status(404).type('text').send(FALLBACK));
   const server = await new Promise((resolve) => {
     const s = app.listen(0, '127.0.0.1', () => resolve(s));
@@ -50,17 +50,19 @@ async function startApp({ sections, host: change = (h) => h } = {}) {
 test('the server and the browser name the same sections, at the same paths, with the same prefixes and scope', () => {
   const pick = ({ key, path: p, prefix, scope }) => ({ key, path: p, prefix, ...(scope ? { scope } : {}) });
   assert.deepEqual(SECTIONS.map(pick), BROWSER_SECTIONS.map(pick));
+  assert.deepEqual(SECTIONS.map((s) => s.key), ['quality']);
 });
 
 test('FACTORY_SECTIONS chooses the sections; unset means all, and a name that is not a section is refused', () => {
   assert.equal(sectionsFromEnv(undefined), undefined);
   assert.equal(sectionsFromEnv('*'), undefined);
-  assert.deepEqual(sectionsFromEnv('product'), ['product']);
-  assert.deepEqual(sectionsFromEnv(' product '), ['product']);
+  assert.deepEqual(sectionsFromEnv('quality'), ['quality']);
+  assert.deepEqual(sectionsFromEnv(' quality '), ['quality']);
   assert.deepEqual(sectionsFromEnv(''), []);
-  assert.throws(() => sectionsFromEnv('product,prodcut'), /FACTORY_SECTIONS names prodcut, which is not a section/);
-  // Infrastructure is a hosted app of its own again (CHG-007), not a section.
-  assert.throws(() => sectionsFromEnv('product,infrastructure'), /FACTORY_SECTIONS names infrastructure, which is not a section \(product, design, quality\)/);
+  assert.throws(() => sectionsFromEnv('quality,qaulity'), /FACTORY_SECTIONS names qaulity, which is not a section/);
+  // Infrastructure (CHG-007), Product and Design (CHG-009) are hosted apps of their own, not sections.
+  assert.throws(() => sectionsFromEnv('quality,product'), /FACTORY_SECTIONS names product, which is not a section \(quality\)/);
+  assert.throws(() => sectionsFromEnv('design,infrastructure'), /FACTORY_SECTIONS names design, infrastructure, which is not a section/);
 });
 
 test('every section row in the sidebar has its page in the Factory\'s route table', async () => {
@@ -71,7 +73,8 @@ test('every section row in the sidebar has its page in the Factory\'s route tabl
     }
   }
   assert.equal(routes.some((r) => r.path.startsWith('/infrastructure')), false, 'Infrastructure is not in the Factory');
-  assert.ok(routes.some((r) => r.path === '/product/specs/:id' && r.nav === 'product-specs'));
+  assert.ok(routes.some((r) => r.path === '/quality/test-analysis/:id' && r.nav === 'quality-test-analysis'));
+  assert.equal(routes.some((r) => (r.path.startsWith('/product') || r.path.startsWith('/design')) && r.nav), false, 'no Product or Design page in the Factory');
   // No path is claimed twice.
   assert.equal(new Set(routes.map((r) => r.path)).size, routes.length);
 });
@@ -80,22 +83,22 @@ test('mounted at /factory: the section answers under its path, keeps its data in
   const t = await startApp();
   try {
     // The APIs, signed in only.
-    const specs = await t.get('/factory/product/api/v1/specs', { as: 'naledi-k' });
-    assert.equal(specs.status, 200);
-    assert.ok(Array.isArray(specs.json.specs) && specs.json.specs.length, 'the seed story\'s specs');
-    assert.equal((await t.get('/factory/product/api/v1/specs')).status, 401);
+    const stories = await t.get('/factory/quality/api/v1/stories', { as: 'naledi-k' });
+    assert.equal(stories.status, 200);
+    assert.ok(Array.isArray(stories.json.stories));
+    assert.equal((await t.get('/factory/quality/api/v1/stories')).status, 401);
     // The Factory's own API is where it was.
     assert.equal((await t.get('/factory/api/v1/status', { as: 'naledi-k' })).status, 200);
-    // Pages get the frame; the sections' modules are served at the URL the Factory's module imports them from.
-    assert.equal((await t.get('/factory/product/specs/PRD-031', { as: 'naledi-k' })).text, FRAME);
-    for (const file of ['/factory/product/js/module.js', '/factory/product/css/product.css']) {
+    // Pages get the frame; the section's module is served at the URL the Factory's module imports it from.
+    assert.equal((await t.get('/factory/quality/test-analysis', { as: 'naledi-k' })).text, FRAME);
+    for (const file of ['/factory/quality/js/module.js', '/factory/quality/css/quality.css']) {
       assert.equal((await t.get(file)).status, 200, file);
     }
-    // The old paths are not the Factory's.
-    assert.equal((await t.get('/product/api/v1/specs', { as: 'naledi-k' })).text, FALLBACK);
-    // The section writes inside the Factory's folder, in its own; nothing is written for Infrastructure.
-    assert.ok(fs.existsSync(path.join(t.dataDir, 'product', 'seed.yaml')), 'product was seeded in its folder');
-    assert.equal(fs.existsSync(path.join(t.dataDir, 'infrastructure')), false);
+    // Product and Design are not the Factory's: their old API paths are its page fallback, not an API.
+    assert.equal((await t.get('/factory/product/api/v1/specs', { as: 'naledi-k' })).text, FRAME);
+    // The section writes inside the Factory's folder, in its own; nothing is written for the apps that left.
+    assert.ok(fs.existsSync(path.join(t.dataDir, 'quality', 'seed.yaml')), 'quality was seeded in its folder');
+    for (const gone of ['infrastructure', 'product', 'design']) assert.equal(fs.existsSync(path.join(t.dataDir, gone)), false, gone);
   } finally {
     await t.close();
   }
@@ -104,33 +107,31 @@ test('mounted at /factory: the section answers under its path, keeps its data in
 test('other apps still reach the section by the name they always used', async () => {
   const t = await startApp();
   try {
-    assert.deepEqual(Object.keys(t.hosted.provides), ['product', 'design', 'quality']);
+    assert.deepEqual(Object.keys(t.hosted.provides), ['quality']);
     for (const fn of ['readinessFacts', 'casesFor', 'summaryFor', 'stories']) assert.equal(typeof t.hosted.provides.quality[fn], 'function', `quality.${fn}`);
-    for (const fn of ['readinessFacts', 'designFor', 'items']) assert.equal(typeof t.hosted.provides.design[fn], 'function', `design.${fn}`);
-    for (const fn of ['artefactsFor', 'readinessFacts', 'adrFor', 'gatesFor', 'waitingFor']) assert.equal(typeof t.hosted.provides.product[fn], 'function', `product.${fn}`);
-    // The links they hand out are under the Factory.
-    const rows = await t.hosted.provides.product.artefactsFor('PRD-031');
-    assert.equal(rows.link, '/factory/product/specs/PRD-031');
-    const adr = await t.hosted.provides.product.adrFor('ADR-014');
-    assert.match(adr.href, /^\/factory\/product\/architecture\//);
   } finally {
     await t.close();
   }
 });
 
-test('without sections the Factory is the line alone; a section that cannot start stops the Factory starting', async () => {
-  const t = await startApp({ sections: [] });
+test('the sidebar is Engineering, Build and Test; without sections the Factory is the line alone; a section that cannot start stops the Factory starting', async () => {
+  const t = await startApp();
   try {
-    // The Factory's own groups stay (lifecycle v3): Engineering, Build and Test.
     assert.deepEqual([...new Set(t.hosted.nav.map((n) => n.group))], ['Engineering', 'Build', 'Test']);
     assert.deepEqual(t.hosted.groups.map((g) => g.name), ['Engineering', 'Build', 'Test']);
-    assert.deepEqual(t.hosted.provides, {});
-    assert.equal((await t.get('/factory/product/api/v1/specs', { as: 'naledi-k' })).text, FRAME, 'nothing mounted there: the Factory\'s page fallback answers');
   } finally {
     await t.close();
   }
-  // The Product section needs host.people; without it nothing of the Factory is left mounted.
-  await assert.rejects(startApp({ host: (h) => ({ ...h, people: undefined }) }), /The Product section needs host\.people/);
+  const none = await startApp({ sections: [] });
+  try {
+    assert.deepEqual([...new Set(none.hosted.nav.map((n) => n.group))], ['Engineering', 'Build', 'Test']);
+    assert.deepEqual(none.hosted.provides, {});
+    assert.equal((await none.get('/factory/quality/api/v1/stories', { as: 'naledi-k' })).text, FRAME, 'nothing mounted there: the Factory\'s page fallback answers');
+  } finally {
+    await none.close();
+  }
+  // The Test section needs host.people; without it nothing of the Factory is left mounted.
+  await assert.rejects(startApp({ host: (h) => ({ ...h, people: undefined }) }), /The Test section needs host\.people/);
 });
 
 test('in the browser, a section\'s page draws in its own scope, with a ctx bound to the section', async () => {
@@ -141,14 +142,14 @@ test('in the browser, a section\'s page draws in its own scope, with a ctx bound
   const doc = { createElement: element };
   const seen = {};
   const page = { render: (root, args) => Object.assign(seen, { root, args }), destroy: () => { seen.destroyed = true; } };
-  const product = BROWSER_SECTIONS.find((s) => s.key === 'product');
-  const [overview, specs, redirect] = sectionRoutes(product, [
-    { path: '/', nav: 'overview', title: 'Product Factory', page: async () => page },
-    { path: '/specs/:id', nav: 'specs', title: 'Spec', page: async () => page },
-    { path: '/old', redirect: '/specs' },
+  const quality = BROWSER_SECTIONS.find((s) => s.key === 'quality');
+  const [list, story, redirect] = sectionRoutes(quality, [
+    { path: '/test-analysis', nav: 'test-analysis', title: 'Test analysis', page: async () => page },
+    { path: '/test-analysis/:id', nav: 'test-analysis', title: 'Test analysis', page: async () => page },
+    { path: '/', redirect: '/test-analysis' },
   ], { api: async () => createApi, doc: () => doc });
-  assert.deepEqual([overview.path, overview.nav, specs.path, specs.nav], ['/product', 'product-overview', '/product/specs/:id', 'product-specs']);
-  assert.deepEqual(redirect, { path: '/product/old', redirect: '/product/specs' });
+  assert.deepEqual([list.path, list.nav, story.path, story.nav], ['/quality/test-analysis', 'quality-test-analysis', '/quality/test-analysis/:id', 'quality-test-analysis']);
+  assert.deepEqual(redirect, { path: '/quality', redirect: '/quality/test-analysis' });
 
   const navigated = [];
   const signal = new AbortController().signal;
@@ -157,70 +158,40 @@ test('in the browser, a section\'s page draws in its own scope, with a ctx bound
     navigate: (path, options) => navigated.push([path, options]),
   };
   const view = element();
-  const wrapped = await specs.page();
-  await wrapped.render(view, { params: { id: 'PRD-031' }, ctx: frameCtx });
-  // Drawn inside an element scoped as the section's app was, so its stylesheet applies.
+  const wrapped = await story.page();
+  await wrapped.render(view, { params: { id: 'STORY-031-1' }, ctx: frameCtx });
+  // Drawn inside an element scoped as the section's own, so its stylesheet applies.
   assert.equal(view.children.length, 1);
   assert.equal(seen.root, view.children[0]);
-  assert.equal(seen.root.dataset.module, 'product');
+  assert.equal(seen.root.dataset.module, 'quality');
   // Its ctx: the API, links and navigation under the section; the rest is the frame's.
   const { ctx } = seen.args;
-  assert.equal(ctx.api.base, '/factory/product/api/v1');
-  assert.deepEqual(ctx.app, { name: 'factory', label: 'Factory', mountPath: '/factory/product', section: 'product' });
+  assert.equal(ctx.api.base, '/factory/quality/api/v1');
+  assert.deepEqual(ctx.app, { name: 'factory', label: 'Factory', mountPath: '/factory/quality', section: 'quality' });
   assert.equal(ctx.signal, signal);
   assert.equal(ctx.can('read'), true);
-  assert.deepEqual(seen.args.params, { id: 'PRD-031' });
-  ctx.navigate('/specs/PRD-032');
+  assert.deepEqual(seen.args.params, { id: 'STORY-031-1' });
+  ctx.navigate('/test-analysis/STORY-031-2');
   ctx.navigate('/', { replace: true });
   ctx.navigate('/teammates/hire', { absolute: true });
-  assert.deepEqual(navigated, [['/product/specs/PRD-032', { replace: false }], ['/product', { replace: true }], ['/teammates/hire', { replace: false }]]);
+  assert.deepEqual(navigated, [['/quality/test-analysis/STORY-031-2', { replace: false }], ['/quality', { replace: true }], ['/teammates/hire', { replace: false }]]);
   wrapped.destroy();
   assert.equal(seen.destroyed, true);
 });
 
-test('lifecycle v3: Architecture is the Design section\'s, and its old addresses move on', async () => {
+test('CHG-009: an old /factory/product or /factory/design address lands on the same page in its own app', async () => {
   const { routes } = await import('../public/js/module.js');
-  assert.ok(routes.some((r) => r.path === '/design/architecture/:id' && r.nav === 'design-architecture' && typeof r.page === 'function'));
-  assert.equal(routes.some((r) => r.path === '/product/architecture/:id' && r.nav === 'product-architecture'), false, 'no longer a Product page');
-  assert.deepEqual(routes.find((r) => r.path === '/product/architecture'), { path: '/product/architecture', redirect: '/design/architecture' });
-  const moved = routes.find((r) => r.path === '/product/architecture/:id');
-  assert.equal(moved.meta.to, '/design/architecture');
-  const navigated = [];
+  for (const from of ['product', 'design']) {
+    for (const p of [`/${from}`, `/${from}/:a`, `/${from}/:a/:b`, `/${from}/:a/:b/:c`]) assert.ok(routes.some((r) => r.path === p && r.meta?.from === from), p);
+  }
+  const moved = routes.find((r) => r.path === '/product/:a/:b');
   const page = await moved.page();
-  page.render({}, { params: { id: 'PRD-031' }, ctx: { navigate: (to, options) => navigated.push([to, options]) }, route: moved });
-  assert.deepEqual(navigated, [['/design/architecture/PRD-031', { replace: true }]]);
-});
-
-test('in the browser, the Design section\'s own pages (Phase 16c) draw in its own scope and call its own API', async () => {
-  const kitApi = pathToFileURL(createRequire(import.meta.url).resolve('nooblyjs-core/public/ui/js/api.js')).href;
-  const { createApi } = await import(kitApi);
-  const element = () => ({ dataset: {}, className: '', children: [], append(child) { this.children.push(child); } });
-  const seen = {};
-  const design = BROWSER_SECTIONS.find((s) => s.key === 'design');
-  const [route] = sectionRoutes(design, [{ path: '/stories/:id', nav: 'stories', title: 'Stories', page: async () => ({ render: (root, args) => Object.assign(seen, { root, args }) }) }], { api: async () => createApi, doc: () => ({ createElement: element }) });
-  assert.deepEqual([route.path, route.nav], ['/design/stories/:id', 'design-stories']);
-  await (await route.page()).render(element(), { params: { id: 'PRD-031' }, ctx: { app: { name: 'factory', mountPath: '/factory' }, signal: new AbortController().signal, navigate: () => {} } });
-  assert.equal(seen.root.dataset.module, 'design');
-  assert.equal(seen.args.ctx.api.base, '/factory/design/api/v1');
-  const { routes } = await import('../public/js/module.js');
-  assert.equal(routes.find((r) => r.path === '/design/architecture/:id')?.nav, 'design-architecture', 'Architecture is still under Design');
-});
-
-test('in the browser, the Design section\'s Architecture pages are the Product section\'s: its API, links and scope, under /design', async () => {
-  const kitApi = pathToFileURL(createRequire(import.meta.url).resolve('nooblyjs-core/public/ui/js/api.js')).href;
-  const { createApi } = await import(kitApi);
-  const element = () => ({ dataset: {}, className: '', children: [], append(child) { this.children.push(child); } });
-  const seen = {};
-  const design = BROWSER_SECTIONS.find((s) => s.key === 'design');
-  const [route] = sectionRoutes(design, [{ path: '/architecture/:id', nav: 'architecture', title: 'Architecture', scope: 'product', page: async () => ({ render: (root, args) => Object.assign(seen, { root, args }) }) }], { api: async () => createApi, doc: () => ({ createElement: element }) });
-  assert.deepEqual([route.path, route.nav], ['/design/architecture/:id', 'design-architecture']);
   const navigated = [];
-  const view = element();
-  await (await route.page()).render(view, { params: { id: 'PRD-031' }, ctx: { app: { name: 'factory', mountPath: '/factory' }, signal: new AbortController().signal, navigate: (p, o) => navigated.push([p, o]) } });
-  assert.equal(seen.root.dataset.module, 'product', 'the Product section\'s stylesheet applies');
-  assert.equal(seen.args.ctx.api.base, '/factory/product/api/v1');
-  assert.equal(seen.args.ctx.app.mountPath, '/factory/product', 'links to specs stay the Product section\'s');
-  assert.equal(seen.args.ctx.app.section, 'design');
-  seen.args.ctx.navigate('/architecture/PRD-032');
-  assert.deepEqual(navigated, [['/design/architecture/PRD-032', { replace: false }]]);
+  globalThis.window = { location: { pathname: '/factory/product/specs/PRD-031', search: '?tab=goals', hash: '' } };
+  try {
+    page.render({}, { ctx: { app: { mountPath: '/factory' }, navigate: (to, options) => navigated.push([to, options]) }, route: moved });
+  } finally {
+    delete globalThis.window;
+  }
+  assert.deepEqual(navigated, [['/product/specs/PRD-031?tab=goals', { absolute: true, replace: true }]]);
 });

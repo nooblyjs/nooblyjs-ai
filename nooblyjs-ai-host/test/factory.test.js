@@ -13,7 +13,7 @@ const { unscopedSelectors } = require('nooblyjs-core/src/shell/css-scope.js');
 
 let env;
 before(async () => {
-  env = await startApp({ hostedApps: [{ package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }] });
+  env = await startApp({ hostedApps: [{ package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true }, { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true }, { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }] });
 });
 after(async () => { await env?.stop(); });
 
@@ -24,12 +24,12 @@ test('the shell lists Factory as ready, with its UI module, kit icons and nav', 
   assert.equal(app.state, 'ready');
   assert.equal(app.rail, true);
   assert.equal(app.label, 'Factory');
-  // The Product, Design and Test sections' styles load with the Factory (CHG-005, Phases 16c and 16d), and the sidebar
-  // follows the work (Phase 16b).
-  assert.deepEqual(app.ui, { entry: 'js/module.js', styles: ['css/factory.css', 'product/css/product.css', 'design/css/design.css', 'quality/css/quality.css'] });
+  // The Test section's styles load with the Factory (Phase 16d), and the sidebar follows the work (Phase 16b). Product
+  // and Design are apps of their own (CHG-009).
+  assert.deepEqual(app.ui, { entry: 'js/module.js', styles: ['css/factory.css', 'quality/css/quality.css'] });
   // Phase 16d: the Test section's Test analysis sits in the Engineering group.
   assert.deepEqual(app.nav.filter((n) => n.group === 'Engineering').map((n) => n.key), ['app-architecture', 'quality-test-analysis', 'engineering-signoff']);
-  assert.deepEqual([...new Set(app.nav.map((n) => n.group))], ['Product', 'Design', 'Engineering', 'Build', 'Test']);
+  assert.deepEqual([...new Set(app.nav.map((n) => n.group))], ['Engineering', 'Build', 'Test']);
   assert.deepEqual(app.nav.filter((n) => n.group === 'Build').map((n) => [n.key, n.path]), [
     ['line', '/line'], ['runs', '/runs'], ['pull-requests', '/pull-requests'], ['inbox', '/inbox'], ['campaigns', '/campaigns'], ['metrics', '/metrics'],
   ]);

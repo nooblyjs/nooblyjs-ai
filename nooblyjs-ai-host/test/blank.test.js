@@ -36,6 +36,8 @@ before(async () => {
   assert.match(out, /system files, no sample content/);
   assert.match(out, /First Owner: Stevie B <stevie@example\.com>/);
   await new FsStore(dataDir).writeYaml(['config', 'hosted-apps.yaml'], { apps: [
+    { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+    { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
     { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
     { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true },
     { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
@@ -74,8 +76,8 @@ test('every main page answers, with nothing in it', async () => {
   const empty = {
     '/workflows/api/v1/items': (b) => (b.items ?? b.rows ?? []).length,
     '/workflows/api/v1/approvals': (b) => (b.rows ?? b.approvals ?? []).length,
-    '/factory/product/api/v1/ideas': (b) => (b.ideas ?? b.rows ?? []).length,
-    '/factory/product/api/v1/specs': (b) => (b.specs ?? b.rows ?? []).length,
+    '/product/api/v1/ideas': (b) => (b.ideas ?? b.rows ?? []).length,
+    '/product/api/v1/specs': (b) => (b.specs ?? b.rows ?? []).length,
     '/teammates/api/v1/teammates': (b) => b.teammates.length,
     '/factory/api/v1/runs': (b) => (b.runs ?? b).length,
     '/infrastructure/api/v1/designs': (b) => (b.designs ?? b.rows ?? []).length,
@@ -87,7 +89,7 @@ test('every main page answers, with nothing in it', async () => {
     assert.equal(status, 200, url);
     assert.equal(count(body), 0, `${url} is not empty`);
   }
-  for (const url of ['/api/v1/shell', '/api/v1/home/overview', '/api/v1/home/for-you', '/api/v1/activity', '/api/v1/home/metrics', '/api/v1/home/teams', '/api/v1/platform/containers', '/api/v1/platform/repositories', '/factory/product/api/v1/board', '/factory/product/api/v1/catalogue', '/factory/api/v1/status']) {
+  for (const url of ['/api/v1/shell', '/api/v1/home/overview', '/api/v1/home/for-you', '/api/v1/activity', '/api/v1/home/metrics', '/api/v1/home/teams', '/api/v1/platform/containers', '/api/v1/platform/repositories', '/product/api/v1/board', '/product/api/v1/catalogue', '/factory/api/v1/status']) {
     const res = await stevie.request(url);
     const text = await res.text();
     assert.equal(res.status, 200, url);
@@ -111,13 +113,14 @@ test('nothing on disk is sample content, and each app wrote only its system file
   }
   const top = (dir) => files.filter((f) => f.startsWith(`${dir}/`)).map((f) => f.slice(dir.length + 1).split('/')[0]);
   assert.deepEqual([...new Set(top('workflows'))].sort(), ['approval-rules.yaml', 'readiness.yaml', 'seed.yaml']);
-  // The Software Factory's Product section keeps its files in its folder (2026-10-19): system files only.
-  assert.deepEqual([...new Set(top('factory/product'))].sort(), ['accessibility.yaml', 'budget.yaml', 'catalogue.yaml', 'seed.yaml', 'standards.yaml', 'templates']);
+  // Product and Design are apps of their own (CHG-009), each in its own folder: system files only.
+  assert.deepEqual([...new Set(top('product'))].sort(), ['accessibility.yaml', 'budget.yaml', 'catalogue.yaml', 'seed.yaml', 'standards.yaml', 'templates']);
+  assert.ok(top('design').includes('nfr-catalogue.yaml') && !top('design').includes('items'), 'Design wrote its catalogue, and no design');
   // Infrastructure is an app of its own (CHG-007), in its own folder: system files only.
   assert.ok(top('infrastructure').includes('seed.yaml'), 'Infrastructure wrote its system files');
   assert.ok(!top('infrastructure').some((n) => ['designs', 'environments', 'runs', 'drift', 'cost'].includes(n)));
   const folders = new Set(files.map((f) => f.split('/')[0]));
-  assert.ok(folders.has('factory') && !folders.has('product') && !top('factory').includes('infrastructure'), 'nothing in the old folders');
+  assert.ok(folders.has('factory') && !['infrastructure', 'product', 'design'].some((n) => top('factory').includes(n)), 'nothing in the old folders');
   assert.ok(!top('teammates').includes('teammates') || !(await filesOf(path.join(dataDir, 'teammates', 'teammates'))).length, 'nobody is hired');
   assert.ok(top('teammates').includes('skills'), 'the skills library is there');
   assert.ok(!top('factory').includes('repos'), 'no demo repository');

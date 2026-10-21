@@ -19,6 +19,8 @@ before(async () => {
   process.env.INFRA_MOCK_STEP_MS = '40';
   env = await startApp({
     hostedApps: [
+      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
       { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true },
     ],

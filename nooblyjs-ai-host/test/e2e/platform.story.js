@@ -92,7 +92,7 @@ test('step 2: the Product Factory budget lowered below this month\'s spend pause
   await stevie.goto('/home/activity');
   await expect(content(stevie)).toContainText('Product Factory reached its $400 budget ($412 spent): its agents are paused');
 
-  const refused = await api(lerato, '/factory/product/api/v1/specs/PRD-031/drafts', { method: 'POST', body: { kind: 'rollout-plan' } });
+  const refused = await api(lerato, '/product/api/v1/specs/PRD-031/drafts', { method: 'POST', body: { kind: 'rollout-plan' } });
   expect(refused.status).toBe(402);
   expect(refused.body.error.message).toBe('Agents are paused: Product Factory has reached its $400 budget ($412 spent this month). An Owner can raise it in Platform · Settings · Budgets.');
 
@@ -143,7 +143,7 @@ test('step 4: the "Specs, architecture, review" route changed to Sonnet; the nex
   await content(stevie).getByRole('button', { name: 'Save changes' }).click();
   await expect(content(stevie).getByRole('status').first()).toContainText('"Specs, architecture, review" now uses Claude Sonnet 5.5 on AWS Bedrock');
 
-  const asked = await api(lerato, '/factory/product/api/v1/specs/PRD-031/drafts', { method: 'POST', body: { kind: 'rollout-plan' } });
+  const asked = await api(lerato, '/product/api/v1/specs/PRD-031/drafts', { method: 'POST', body: { kind: 'rollout-plan' } });
   expect(asked.status).toBe(202);
   await expect.poll(async () => {
     const { body } = await api(stevie, '/api/v1/platform/audit?action=agent.spec-drafting');

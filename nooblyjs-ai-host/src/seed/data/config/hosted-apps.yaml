@@ -1,8 +1,10 @@
 # The child apps NooblyJS hosts (structure.md §2a). Each entry: package (or path, development only), mountPath,
-# enabled. An app that is listed but not enabled shows as "not installed". The Software Factory has Product as a
-# section since 2026-10-19 (/factory/product): it is not an app to list. Infrastructure was a section too until
-# 2026-10-20 (CHG-007); it is an app of its own again.
+# enabled. An app that is listed but not enabled shows as "not installed". The rail shows them in this order.
+# Product and Design were sections of the Software Factory until CHG-009 (2026-10-21), Infrastructure until CHG-007:
+# each is an app of its own. Product feeds Design, which feeds the Factory.
 apps:
+  - { package: nooblyjs-ai-product, mountPath: /product, enabled: true }
+  - { package: nooblyjs-ai-design, mountPath: /design, enabled: true }
   - { package: nooblyjs-ai-factory, mountPath: /factory, enabled: true }
   # Security (root roadmap Phase 19): threat models, findings, risk acceptances; it scans every Factory run.
   - { package: nooblyjs-ai-security, mountPath: /security, enabled: true }

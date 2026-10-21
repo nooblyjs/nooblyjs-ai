@@ -68,6 +68,15 @@ schedules do not mix with NooblyJS's) and hands `src/initialize.js` a facade ins
   (`app.js` still exits, in its own `start().catch`).
 - `close()` stops the workflow bridge only. The file watcher and the modules' `setInterval`s have no stop.
 - The modules still use `global.*` (`eventBus`, `io`, `treeCache`, …), now inside the NooblyJS process.
+- **The wiki's AI agents are teammate tasks** (NooblyJS Phase 24, `src/shared/ai/agentTasks.js`). The modules get a
+  registry whose `aiservice()` hands back a client that runs each prompt as one task of `KNOWLEDGE_AGENT_TEAMMATE`
+  (default `ada-quill`) through `host.service('teammates').runTask` (`system: 'knowledge'`, `workType:
+  'knowledge.<agent>'`, the signed-in person as caller): Platform checks it, Teammates bills and audits it, and the
+  agent's own provider is never built or called. A workflow step in a worker thread asks the main process through the
+  workflow bridge (`agentPrompt`; the main process leaves `workflow/.bridge/agent-tasks.json` while hosted). Without
+  Teammates a prompt is refused; with no model configured there, the AI panel answers from the sources as without an
+  agent, and other prompts fail with "no model". Standalone nothing changes. Tests: `test/agent-tasks.test.mjs`, and
+  `../nooblyjs-ai-host/test/knowledge-agents.test.js` in the real app.
 
 **Browser: the standalone UI is GENERATED into the frame's shape — never edit `public/app`, `public/vendor`,
 `public/css/wiki-app.css` or `public/css/wiki-ds.css`.** `npm run port:ui` (`scripts/port-wiki-ui.mjs`) reads

@@ -121,7 +121,7 @@ export function createViews({ repos, host, engine }) {
       cells, now: label, late: w.late, waitingDays: w.longestDays, age: `${ageDays} d`, ageDays,
       mine: item.owner === personId || w.open.some((a) => waitingOn(a, personId)),
       href: `/home/lifecycle/${encodeURIComponent(item.id)}`,
-      specHref: item.system === 'product' && item.type === 'spec' && item.inProduct !== false ? `/factory/product/specs/${encodeURIComponent(item.id)}` : null,
+      specHref: item.system === 'product' && item.type === 'spec' && item.inProduct !== false ? `/product/specs/${encodeURIComponent(item.id)}` : null,
       // A pull request the Software Factory delivered has its own page there (Phase 16e).
       prHref: item.type === 'pr' && item.pr ? `/factory/pull-requests/${encodeURIComponent(item.id)}` : null,
     };
@@ -281,7 +281,7 @@ export function createViews({ repos, host, engine }) {
         ...(found.type === 'story' ? {
           feature: found.feature ?? null,
           parent: parent ? { id: parent.id, ref: parent.ref ?? parent.id, title: parent.title, href: `/home/lifecycle/${encodeURIComponent(parent.id)}` } : null,
-          designHref: parent ? `/factory/design/stories/${encodeURIComponent(parent.id)}` : null,
+          designHref: parent ? `/design/stories/${encodeURIComponent(parent.id)}` : null,
           ...(found.passedTestAt ? { passedTest: { at: found.passedTestAt, notBuiltHere: found.notBuiltHere ?? [] } } : {}),
         } : {}),
         ...(found.mergedEarly ? { mergedEarly: found.mergedEarly } : {}),
@@ -430,7 +430,7 @@ export function createViews({ repos, host, engine }) {
         workItems: a.workItems?.length ?? null,
         links: {
           artefact: a.link ?? (item?.system === 'product' && item.inProduct !== false
-            ? (a.type === 'adr' ? `/factory/design/architecture/${encodeURIComponent(a.itemId)}` : `/factory/product/specs/${encodeURIComponent(a.itemId)}`)
+            ? (a.type === 'adr' ? `/design/architecture/${encodeURIComponent(a.itemId)}` : `/product/specs/${encodeURIComponent(a.itemId)}`)
             : null),
           artefactLabel: a.type === 'infra-design' ? `Open ${a.subject ?? 'the design'}` : a.type === 'adr' ? `Read ${a.subject ?? 'the decision'}` : 'Read the full spec',
           item: `/home/lifecycle/${encodeURIComponent(a.itemId)}`,

@@ -1,7 +1,7 @@
 {
   "name": "nooblyjs-ai",
   "version": "1.0.0",
-  "description": "NooblyJS AI: the host and its hosted apps (the Software Factory with its Product section, Infrastructure, Teammates, Knowledge), the agent harness, the AI module and the desktop app, in one repository",
+  "description": "NooblyJS AI: the host and its hosted apps (Product, Design, the Software Factory, Infrastructure, Security, Operations, Teammates, Knowledge), the agent harness, the AI module and the desktop app, in one repository",
   "homepage": "https://github.com/nooblyjs/nooblyjs-ai#readme",
   "bugs": {
     "url": "https://github.com/nooblyjs/nooblyjs-ai/issues"

@@ -28,7 +28,7 @@ test('steps 1 to 3: Lerato asks @Ada for a rollout plan; Thabo sees it live; App
   await expect(chat(thabo).getByRole('heading', { name: 'Team chat' })).toBeVisible();
   await expect(chat(thabo)).toContainText('No messages yet');
 
-  await lerato.goto('/factory/product/specs/PRD-029');
+  await lerato.goto('/product/specs/PRD-029');
   await expect(chat(lerato).getByRole('heading', { name: 'Team chat' })).toBeVisible();
   await expect(chat(lerato)).toContainText('PRD-029 · Checkout accessibility');
   await expectNoAxeViolations(lerato, 'Spec with an empty thread');
@@ -81,7 +81,7 @@ test('the panel stays open, with what is typed, when the next page is about the 
 test('steps 4 and 5: Rhea answers with a comparison card and asks for access; Priya can\'t answer the card, Stevie can', async ({ browser }) => {
   const lerato = await (await browser.newContext()).newPage();
   await signIn(lerato, 'lerato-m');
-  await lerato.goto('/factory/product/architecture/PRD-029');
+  await lerato.goto('/product/architecture/PRD-029');
   const box = chat(lerato).getByRole('textbox', { name: /Message PRD-029/ });
   await box.fill('@Rhea can we hit 300 ms without Redis?');
   await chat(lerato).getByRole('button', { name: 'Send' }).click();

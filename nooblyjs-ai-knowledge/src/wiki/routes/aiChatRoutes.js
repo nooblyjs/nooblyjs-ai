@@ -10,6 +10,7 @@
 'use strict';
 
 const { resolveExpert } = require('../../shared/ai/expertResolver');
+const { answersOffline } = require('../../shared/ai/agentTasks');
 const { summarizeFromSearch } = require('../components/searchSummarizer');
 const { extractSearchTerms } = require('../components/queryExtractor');
 const { answerOverDocument } = require('../components/documentChatProcessor');
@@ -246,7 +247,9 @@ module.exports = (options, eventEmitter, services) => {
         });
       }
 
-      const client = getAIClient(logger);
+      // Hosted with no model configured in Teammates, an agent would only answer "no model": answer as without one.
+      let client = getAIClient(logger);
+      if (client && await answersOffline()) client = null;
       if (!client && knowledge) {
         // NooblyJS Phase 8: with no AI agent configured the answer is the top sources' own
         // passages, cited by number like a model's answer, and it says that no model

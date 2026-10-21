@@ -114,7 +114,7 @@ export function createAnalysis({ host, log }) {
       summary: s,
       draftedBy: doc?.draftedBy ?? null, draftedAt: doc?.draftedAt ?? null,
       href: `/home/lifecycle/${encodeURIComponent(storyId)}`,
-      designHref: ctx.item.parentId ? `/factory/design/stories/${encodeURIComponent(ctx.item.parentId)}` : null,
+      designHref: ctx.item.parentId ? `/design/stories/${encodeURIComponent(ctx.item.parentId)}` : null,
     };
   }
 

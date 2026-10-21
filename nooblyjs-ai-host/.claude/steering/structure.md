@@ -20,9 +20,9 @@ nooblyjs-core/                 shared services + FsStore + event bus + UI kit an
 nooblyjs-ai/                   the monorepo
   nooblyjs-ai-host/            the NooblyJS app: shell, Home, Product Factory screens, Platform, chat, Teams bot
   nooblyjs-ai-harness/         agent runtime                                   (library + CLI)
+  nooblyjs-ai-product/          Product: screens, artefacts + drafting, at /product   (module; a Factory section 2026-10-19 to CHG-009)
+  nooblyjs-ai-design/           Design: requirements, solution, functional analysis, stories, at /design (Phase 16c; a Factory section to CHG-009)
   nooblyjs-ai-factory/         Software Factory: one app at /factory           (module + workers + CLI)
-    product/                   its Product section: screens, artefacts + drafting (was nooblyjs-ai-product)
-    design/                    its Design section: requirements, solution, functional analysis, stories (Phase 16c)
     quality/                   its Test section: test analysis (Phase 16d); runs, coverage, defects later (Phase 20).
                                The Test approvals are the Factory's own pages (src/services/pull-requests/, Phase 16e)
   nooblyjs-ai-infrastructure/  Infrastructure: designs, environments, runs, drift, cost   (module + standalone server)
@@ -184,7 +184,9 @@ stays in place. Why: `.claude/adr/ADR-001-host-owned-shell.md`.
 
 | Child project | Mount path | Has a UI module (`public/js/module.js`) | API base |
 | --- | --- | --- | --- |
-| `nooblyjs-ai-factory` (with its Product section since 2026-10-19, its Design section since Phase 16c and its Test section since 16d; provides `product`, `design` and `quality`) | `/factory`; the sections at `/factory/product`, `/factory/design` and `/factory/quality` | yes (one module: the sections' routes are in it) | `/factory/api/v1/…`, `/factory/product/api/v1/…`, `/factory/design/api/v1/…`, `/factory/quality/api/v1/…` |
+| `nooblyjs-ai-product` (the Product Factory; provides its services as `product`, its name) | `/product` | yes | `/product/api/v1/…` |
+| `nooblyjs-ai-design` (provides `design`; shows Product's Architecture pages) | `/design` | yes | `/design/api/v1/…` |
+| `nooblyjs-ai-factory` (with its Test section since 16d; provides `quality`) | `/factory`; the section at `/factory/quality` | yes (one module: the section's routes are in it) | `/factory/api/v1/…`, `/factory/quality/api/v1/…` |
 | `nooblyjs-ai-infrastructure` | `/infrastructure` | yes | `/infrastructure/api/v1/…` |
 | `nooblyjs-ai-teammate` | `/teammates` | yes | `/teammates/api/v1/…` |
 | `nooblyjs-ai-knowledge` (the Wiki Platform; provides `knowledge`) | `/wiki` | yes | `/wiki/api/v1/…` |
@@ -192,14 +194,16 @@ stays in place. Why: `.claude/adr/ADR-001-host-owned-shell.md`.
 | `nooblyjs-core`, `nooblyjs-ai-common`, `nooblyjs-ai-harness` | — | libraries, not hosted | — |
 
 The Software Factory owns everything under `/factory`, its section included: its page URLs
-(`/factory/product/specs/PRD-031`) answer with the frame and the Factory's UI module draws them. Until 2026-10-19 the
-Product Factory was the hosted app `nooblyjs-ai-product` at `/product`; an older `hosted-apps.yaml` that still lists it
-has that entry skipped, and its data folder moves to `data/factory/product` on the first start (`src/hosted-apps.js`
-`FOLDED`, `foldData`). Infrastructure was a section of the Factory from 2026-10-19 to 2026-10-20 and is the hosted app
-`nooblyjs-ai-infrastructure` at `/infrastructure` again (CHG-007): an install that had the section gets its data moved
-back from `data/factory/infrastructure` to `data/infrastructure`, and its entry added to `hosted-apps.yaml` if it was
-missing (`UNFOLDED`, `foldData`). An app's `provides` may be a list (other names for its services, like the wiki's
-`knowledge`) or an object (names with services of their own, like the Factory's `product`). API-only apps have no rail item,
+(`/factory/quality/test-analysis`) answer with the frame and the Factory's UI module draws them. Product and Design are
+apps of their own (CHG-009, 2026-10-21), listed before the Factory in `hosted-apps.yaml` so the rail reads Product,
+Design, Factory. Product was the hosted app `nooblyjs-ai-product` at `/product` until 2026-10-19, then the Factory's
+Product section (`/factory/product`, CHG-005); Design was a Factory section from Phase 16c. On the first start after
+CHG-009, an install's `data/factory/product` and `data/factory/design` move back to `data/product` and `data/design`,
+and their entries go into `hosted-apps.yaml` above the Factory's (`src/hosted-apps.js` `UNFOLDED`, `foldData`); an old
+`/factory/product/…` or `/factory/design/…` address lands on the same page in the app (the Factory's
+`public/js/pages/moved-app.js`). Infrastructure was a section of the Factory from 2026-10-19 to 2026-10-20 and is the
+hosted app `nooblyjs-ai-infrastructure` at `/infrastructure` again (CHG-007), moved back the same way. An app's `provides` may be a list (other names for its services, like the wiki's
+`knowledge`) or an object (names with services of their own, like the Factory's `quality`). API-only apps have no rail item,
 and their router calls `next()` for anything that isn't theirs.
 
 **This section is the only copy of the contract** (§1a). A child repo's `tech.md` gives only its own values and
@@ -642,14 +646,14 @@ data/
     scripts/<work-item-title>.json           scripted agents for the seed story (used when no model is configured)
     intake/<handoff-id>/<work-item-id>.md    each work item as an issue file
     forge/ · artifacts/ · workspaces/        PR files with their evidence, run artefacts, git worktrees
-    product/              the Product section (was data/product/ until 2026-10-19)
+  product/                (owned by nooblyjs-ai-product; data/factory/product from 2026-10-19 to CHG-009)
       signals/<id>.md · ideas/<OPP-ID>.md · specs/<PRD-ID>.md · roadmap.yaml
       architecture/<PRD-ID>/  diagram.md · adrs/ADR-014.md · quality-attributes.md
       ux/<PRD-ID>/            journey.md · flows/<flow>.md · research/<study>.md
       ui/<PRD-ID>/            screens/<screen>.md · handoff.md
       business-cases/<id>.md  an idea's or epic's business case (Phase 17)
       elicitation/<PRD-ID>.md stakeholders, sessions, candidates, requirements, the NFR walk, questions (Phase 18)
-    design/               the Design section (Phase 16c)
+  design/                 (owned by nooblyjs-ai-design; data/factory/design from Phase 16c to CHG-009)
       nfr-catalogue.yaml · items/<itemId>/design.md (requirements, systems, NFRs, features, interfaces, technical, stories)
     quality/              the Test section (Phase 16d)
       test-policy.yaml · test-analysis/<storyId>.md (the cases: given/when/then, level, automated, systems, status)

@@ -88,8 +88,8 @@ the monorepo root's `.claude/steering/product.md` §3):
 ```
 
 Requirements, UX and UI are one **Product** stage, worked on together. **Design** writes the business requirements, the
-solution architecture, the functional analysis and the **stories** that build each feature (the Factory's Design section,
-at `/factory/design`, §5.3a); from there an item goes on **story by story** (Phase 16c); **Engineer** the application
+solution architecture, the functional analysis and the **stories** that build each feature (the Design app,
+at `/design`, §5.3a); from there an item goes on **story by story** (Phase 16c); **Engineer** the application
 architecture and test analysis, signed off before anything is built; in **Build** the AI builds and tests and an
 engineer gives the Build approval; in **Test** a person verifies the pull request and gives the Test approval. Items that
 were in a stage from before moved once, on record (`lifecycle.stages_migrated` in the audit log): Specify, UX and UI to
@@ -265,7 +265,7 @@ Nav: For you, Overview, Lifecycle, Approvals (badge), Activity, Metrics, Teams &
 Nav: Overview · *Strategy*: Portfolios · *Stages*: Product, Specs, Architecture, UX Design, UI Design · *Flow*:
 Reviews (badge), Handoffs · *Setup*: Settings. Status card: agents on duty, monthly spend against budget.
 
-Where work sits (2026-10-12; the detail is the Product section's `product.md` §4, `nooblyjs-ai-factory/product/.claude/steering/`): **strategic themes** ("Solve the
+Where work sits (2026-10-12; the detail is the Product app's `product.md` §4, `nooblyjs-ai-product/.claude/steering/`): **strategic themes** ("Solve the
 every day", "Leverage AI") sit above **portfolios** (Digital, Buying, Banking), and a portfolio works towards any
 number of them. A portfolio has none or many **value streams** (Digital Commerce, Media and Advertising, Rewards,
 Data Monetisation). Each portfolio and value stream has a Markdown document made from a template that an Approver
@@ -311,9 +311,9 @@ portfolios and value streams, and opens each document.
 
 > The Product Factory numbers its own stages 1–4 (Product, Architecture, UX, UI). In lifecycle v3 (Phase 16b) its
 > Product, UX and UI are the Product stage (with Discover before it), and its Architecture the Design stage, whose
-> pages the Factory shows in its Design section (`/factory/design/architecture`).
+> pages the Design app shows (`/design/architecture`, CHG-009).
 
-### 5.3b Elicitation (the Product section, `/factory/product/elicitation/:id`, Phase 18)
+### 5.3b Elicitation (the Product app, `/product/elicitation/:id`, Phase 18)
 
 Opened from the spec's **Requirements** card. Root `product.md` §3.4 says what it is for.
 
@@ -325,16 +325,16 @@ Opened from the spec's **Requirements** card. Root `product.md` §3.4 says what 
   quotes and who accepted it), merges it into another (the requirement carries both quotes) or rejects it with a reason;
   an agent is refused and audited. Acceptance criteria (`AC-033-01-1`) hang off a requirement. The spec shows its
   requirements.
-- **Non-functional requirements**: the Design section's NFR catalogue walked category by category, each with its
+- **Non-functional requirements**: the Design app's NFR catalogue walked category by category, each with its
   prompt: answers with targets, or not applicable with a reason. A person who may accept requirements states accepted
   NFRs; anyone else's answers are candidates. An accepted NFR with a target becomes a row of the item's quality
   attributes ("… (REQ-033-03)"), which Design's solution draft turns into its NFRs.
 - **Questions and assumptions** (`Q-033-1`) with an owner: an open one fails the spec's readiness (§4) until it is
   answered or a person overrides with a reason.
 
-### 5.3a Design (the Factory's Design section, `/factory/design`, Phase 16c)
+### 5.3a Design (the Design app, `/design`, Phase 16c; a section of the Factory until CHG-009)
 
-The sidebar's Design group: **Architecture** (the Product section's pages, §5.3), **Business requirements**,
+Design's sidebar: **Architecture** (the Product app's pages, §5.3), **Business requirements**,
 **Solution architecture**, **Functional analysis**, **Stories**, **Handoff to the Factory**. Each row lists the items in
 Design with that part said in words ("6 business requirements · 4 accepted", "1 of 3 stories handed off") and opens the
 item's page for it, with tabs for the five parts. Root `product.md` §3.2a says what Design is for.
@@ -484,7 +484,7 @@ On Containers, the status card also carries **Stop all containers**.
       indexing, triage and clean-up → Haiku. Each route carries its provider (Bedrock / Vertex / Azure).
     - **Budgets**: the month's total across systems ("$2,690 of $11,600"), then monthly per
       system (a daily cap for Software Factory), and **Pause all agents when a budget is reached**. **Budgets by
-      portfolio** (Phase 17): a monthly budget per portfolio of the Product section, against this month's agent and
+      portfolio** (Phase 17): a monthly budget per portfolio of the Product app, against this month's agent and
       cloud spend in its value streams; it pauses nothing.
     - **Guardrails** (on/off, scope note, and a **Policy history** link): agents open PRs and
       people merge (per-repo override in Repositories); human approval for production deploys
@@ -800,16 +800,16 @@ through events and APIs. Don't copy code from another slice.
 | **`nooblyjs-core`** | Shared backend services: auth, logging, caching, queueing, data, notifying, scheduling, measuring, searching, workflow | Event bus for lifecycle events, **AuditEvent** store, notifications to Teams/Outlook, metrics aggregation, service dashboards |
 | **`nooblyjs-ai-common`** | Shared AI building blocks: provider adapters, model catalogue, tokens, **cost**, retry, SSE | The **model gateway** behind Model routing: work type → model → fallback → provider (Bedrock / Vertex / Azure); cost per call tagged with item, teammate and system |
 | **`nooblyjs-ai-harness`** | The agent runtime: agent loop, tools, permissions, sandboxing, hooks, MCP, skills, memory | What every agent runs in: factory stations, teammate tasks, Product Factory drafting agents. Enforces guardrails, no outbound internet, staging-only secrets |
-| **`nooblyjs-ai-factory`** · Product section (`product/`, `/factory/product`; it was `nooblyjs-ai-product` until 2026-10-19) | The **Product Factory** (with its own screens): signals, ideas, specs, architecture artefacts (diagram as code, ADRs, standards check, quality attributes), UX and UI artefacts, the roadmap, and the per-stage **drafting agents** | Owns the Product board, Spec, Architecture, UX Design and UI Design screens (a UI module in the frame), the handoff preview, and "ask the agent to draft" |
-| **`nooblyjs-ai-factory`** · Design section (`design/`, `/factory/design`; Phase 16c) | **Design**: business requirements, solution architecture, functional analysis and stories (§5.3a), and Design's readiness checks | Owns the five Design screens; keeps each story a lifecycle item through `host.service('workflows')` (`syncStories`, `handoffStory`); answers `host.service('design')` |
+| **`nooblyjs-ai-product`** (`/product`; a section of the Software Factory from 2026-10-19 to CHG-009) | The **Product Factory** (with its own screens): signals, ideas, specs, architecture artefacts (diagram as code, ADRs, standards check, quality attributes), UX and UI artefacts, the roadmap, and the per-stage **drafting agents** | Owns the Product board, Spec, Architecture, UX Design and UI Design screens (a UI module in the frame), the handoff preview, and "ask the agent to draft" |
+| **`nooblyjs-ai-design`** (`/design`; Phase 16c, a section of the Software Factory until CHG-009) | **Design**: business requirements, solution architecture, functional analysis and stories (§5.3a), and Design's readiness checks | Owns the five Design screens; keeps each story a lifecycle item through `host.service('workflows')` (`syncStories`, `handoffStory`); answers `host.service('design')` |
 | **`nooblyjs-ai-infrastructure`** (`/infrastructure`; a section of the Software Factory from 2026-10-19 to 2026-10-20) | **Infrastructure**: designs, environments, provisioning runs, drift, cloud cost | Environments, Design, Designs, Provisioning runs (and a run's page), Environment, Testing in environments, Blueprints, Cost, Policies. Asks the lifecycle engine for design approvals and Platform for the cloud budget; tells Platform its environments and previews |
-| **`nooblyjs-ai-factory`** · the line | **Software Factory**: queue, scheduler, line of stations, gates, PR delivery; one app at `/factory` that also mounts the Product section above and answers `host.service('product')` for it | Line, Runs, Inbox, Campaigns, **Metrics**. Accepts handoff work items; applies quality attributes as gates; reports runs, PRs and gate results back to the Item |
+| **`nooblyjs-ai-factory`** · the line | **Software Factory**: queue, scheduler, line of stations, gates, PR delivery; one app at `/factory` with its Test section (`/factory/quality`, `host.service('quality')`) | Line, Runs, Inbox, Campaigns, **Metrics**. Accepts handoff work items; applies quality attributes as gates; reports runs, PRs and gate results back to the Item |
 | **`nooblyjs-ai-teammate`** | **Digital Teammates**: hire, configure, budget and bill named agents | **Team roster**, Profiles, Work timeline, Billing & timesheets, Hire, Team memory. The source of agents across NooblyJS, including agents answering in chat and Teams meetings; every agent action bills to a timesheet and to the right team |
 | **`nooblyjs-ai-knowledge`** | **Knowledge Repository** (new): spaces, collections, source connectors, ingest with PII redaction, embeddings, cited answers, freshness, process models | **Ask & search**, **Spaces / process model** (L0 → L1 → L2), Sources, Needs review, Graph, backlinks into Items. Context provider for every agent |
-| **`nooblyjs-ai-host`** (`src/lifecycle/`) | The **lifecycle engine**, part of NooblyJS itself since 2026-10-10 (it was the hosted app `nooblyjs-ai-workflows`): Items, stages, readiness checks, approvals with target times and escalation, handoffs, send-back, and stage orchestration (which tells the Product section when an item enters a stage) | Backs Lifecycle, Approvals, the stage and approval parts of every Product Factory screen, and the UI → Factory handoff (generating Jira work items) |
+| **`nooblyjs-ai-host`** (`src/lifecycle/`) | The **lifecycle engine**, part of NooblyJS itself since 2026-10-10 (it was the hosted app `nooblyjs-ai-workflows`): Items, stages, readiness checks, approvals with target times and escalation, handoffs, send-back, and stage orchestration (which tells the Product app when an item enters a stage) | Backs Lifecycle, Approvals, the stage and approval parts of every Product Factory screen, and the UI → Factory handoff (generating Jira work items) |
 
 > The `nooblyjs-ai-knowledge` responsibilities above are proposed. The lifecycle engine (Phase 2) and
-> the Product section are built as described.
+> the Product app are built as described.
 
 ## 11. Known conflicts between the mockups and existing code
 

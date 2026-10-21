@@ -33,10 +33,10 @@ nooblyjs-ai-factory/
                             For hosting: hosted.js (register, status card, the services other apps call §4; the
                             PRD-031 seed §5 is still to add) and to-express.js (route table → Express router)
     utils/                  clock · ids · paths · log · glob · frontmatter
-  product/                  the Product section (was nooblyjs-ai-product): index.js (its register(), called by
-                            src/services/sections.js) · src/ · test/ · docs/ · .claude/steering/ · CLAUDE.md
+  quality/                  the Test section: index.js (its register(), called by src/services/sections.js) ·
+                            src/ · test/ · CLAUDE.md. Product and Design were sections here until CHG-009
   public/                   static files only, served under /factory (no index.html)
-    product/                the section's pages and CSS, served by the section at /factory/<section>/
+    quality/                the section's pages and CSS, served by the section at /factory/<section>/
                             (js/module.js, js/pages/, css/<section>.css, scoped [data-module="<section>"])
     css/factory.css         only what the kit doesn't cover; every selector starts with [data-module="factory"]
     js/
@@ -58,9 +58,10 @@ replace them.
 
 ## 2. What the shell shows
 
-> Since 2026-10-19 the sidebar is the Product section's rows (keys `product-…`, group Product), then the rows below
-> (group Build); `ui.styles` adds `product/css/product.css`; the status card adds a line per section and their badges
-> (`product-reviews`); and the description carries `provides`. `test/register.test.js` has the full list.
+> The sidebar is Engineering (with the Test section's Test analysis), then the rows below (group Build), then Test;
+> `ui.styles` adds `quality/css/quality.css`; the status card adds a line per section; and the description carries
+> `provides: { quality }`. `test/register.test.js` has the full list. Product's and Design's rows were here until
+> CHG-009; they are apps of their own.
 > (Infrastructure's rows, group Infrastructure, were last from 2026-10-19 to 2026-10-20; it is an app of its own again.)
 
 ```js

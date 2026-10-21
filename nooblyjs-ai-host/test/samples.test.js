@@ -9,14 +9,14 @@ import { startApp } from './helpers.js';
 let env;
 let thabo;
 before(async () => {
-  env = await startApp({ hostedApps: [{ package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }] });
+  env = await startApp({ hostedApps: [{ package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true }, { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true }, { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }] });
   thabo = env.client();
   await thabo.signIn('thabo-n');
 });
 after(async () => { await env?.stop(); });
 
 test('Design: PRD-027 has every part, its stories are items, and the handoff checks name what holds the other two', async () => {
-  const d = (await thabo.json('/factory/design/api/v1/items/PRD-027')).body;
+  const d = (await thabo.json('/design/api/v1/items/PRD-027')).body;
   assert.deepEqual(d.parts, {
     requirements: '6 business requirements · 5 accepted',
     solution: '4 impacted systems · 7 NFRs · 3 features',
@@ -29,7 +29,7 @@ test('Design: PRD-027 has every part, its stories are items, and the handoff che
   assert.match(d.readiness.checks.find((c) => c.key === 'decisions-decided').text, /ADR-015 is still proposed/);
   assert.deepEqual(d.features.map((f) => f.dependsOn), [[], ['FEAT-027-1'], ['FEAT-027-2']]);
   // The spec it quotes, and its times moved to the seed's "now".
-  const spec = JSON.stringify((await thabo.json('/factory/product/api/v1/specs/PRD-027')).body);
+  const spec = JSON.stringify((await thabo.json('/product/api/v1/specs/PRD-027')).body);
   for (const r of d.requirements) assert.ok(spec.includes(JSON.stringify(r.source.quote).slice(1, -1)), r.id);
   assert.ok(new Date(d.drafts.at(-1).at) < new Date(env.noobly.clock.now()) && new Date(d.drafts.at(-1).at) > new Date(env.noobly.clock.now() - 3 * 86_400_000), 'drafted in the last few days');
   const story = (await thabo.json('/workflows/api/v1/items/STORY-027-1')).body;
@@ -66,7 +66,7 @@ test('Pull requests and Test: approvals from the lifecycle, runs, coverage and d
 
 test('every page of the Design, Engineering, Build and Test groups answers', async () => {
   for (const page of [
-    '/factory/design/solution', '/factory/design/solution/PRD-027', '/factory/design/stories/PRD-027',
+    '/design/solution', '/design/solution/PRD-027', '/design/stories/PRD-027',
     '/factory/engineering/architecture', '/factory/engineering/architecture/STORY-027-1', '/factory/engineering/test-analysis/STORY-027-1',
     '/factory/engineering/sign-off', '/factory/quality/test-analysis', '/factory/quality/test-analysis/STORY-027-1', '/factory/pull-requests', '/factory/test/approvals', '/factory/test/runs', '/factory/test/coverage',
     '/factory/test/defects', '/factory/js/pages/engineering.js', '/factory/js/pages/testing.js',

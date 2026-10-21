@@ -105,30 +105,45 @@ test('the app seeded its own folder on first start and its services are reachabl
   assert.equal((await c.json('/hello/api/v1/section-greeting')).body.text, 'A wave for Stevie');
 });
 
-test('apps that are part of another now: their data moves once to where that app keeps it, and never over data that is there', async () => {
+test('apps that are part of another now: only nooblyjs-ai-workflows; a data/product folder is the Product app\'s own again (CHG-009)', async () => {
   const quiet = { info: () => {}, warn: () => {} };
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'noobly-fold-'));
   try {
     await fs.mkdir(path.join(dir, 'product', 'specs'), { recursive: true });
     await fs.writeFile(path.join(dir, 'product', 'specs', 'PRD-031.md'), '---\nid: PRD-031\n---\n');
     await fs.mkdir(path.join(dir, 'factory'), { recursive: true });
-    const moved = await foldData(dir, quiet);
-    assert.deepEqual(moved.map((m) => m.name), ['nooblyjs-ai-product']);
-    assert.equal(await fs.readFile(path.join(dir, 'factory', 'product', 'specs', 'PRD-031.md'), 'utf8'), '---\nid: PRD-031\n---\n');
-    await assert.rejects(fs.stat(path.join(dir, 'product')), 'the old folder is gone');
-    // A second start finds nothing to move.
-    assert.deepEqual(await foldData(dir, quiet), []);
-    // Both there: nothing is moved, and the log says so.
-    await fs.mkdir(path.join(dir, 'product'));
-    await fs.writeFile(path.join(dir, 'product', 'stray.md'), 'x');
-    const warned = [];
-    assert.deepEqual(await foldData(dir, { info: () => {}, warn: (m) => warned.push(m) }), []);
-    assert.match(warned.join('\n'), /both .*product and .*factory\/product exist; nothing was moved/);
-    assert.ok(await fs.stat(path.join(dir, 'product', 'stray.md')));
+    assert.deepEqual(await foldData(dir, quiet), [], 'nothing moves into the Factory');
+    assert.equal(await fs.readFile(path.join(dir, 'product', 'specs', 'PRD-031.md'), 'utf8'), '---\nid: PRD-031\n---\n');
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }
-  assert.deepEqual(Object.keys(FOLDED).sort(), ['nooblyjs-ai-product', 'nooblyjs-ai-workflows']);
+  assert.deepEqual(Object.keys(FOLDED), ['nooblyjs-ai-workflows']);
+});
+
+test('Product and Design are apps of their own again (CHG-009): their data moves out of the Factory once, listed before it', async () => {
+  const quiet = { info: () => {}, warn: () => {} };
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'noobly-unfold-'));
+  const listing = path.join(dir, 'config', 'hosted-apps.yaml');
+  try {
+    // An install seeded while both were sections of the Software Factory: their data there, no entries for them.
+    await fs.mkdir(path.join(dir, 'factory', 'product', 'specs'), { recursive: true });
+    await fs.writeFile(path.join(dir, 'factory', 'product', 'specs', 'PRD-031.md'), '---\nid: PRD-031\n---\n');
+    await fs.mkdir(path.join(dir, 'factory', 'design', 'items'), { recursive: true });
+    await fs.writeFile(path.join(dir, 'factory', 'design', 'nfr-catalogue.yaml'), 'categories: []\n');
+    await fs.mkdir(path.join(dir, 'config'));
+    await fs.writeFile(listing, '# Our apps.\napps:\n  # The line.\n  - { package: nooblyjs-ai-factory, mountPath: /factory, enabled: true }\n  - { package: nooblyjs-ai-teammate, mountPath: /teammates, enabled: true }\n');
+    const moved = await foldData(dir, quiet);
+    assert.deepEqual(moved.map((m) => m.name), ['nooblyjs-ai-product', 'nooblyjs-ai-design']);
+    assert.equal(await fs.readFile(path.join(dir, 'product', 'specs', 'PRD-031.md'), 'utf8'), '---\nid: PRD-031\n---\n');
+    assert.equal(await fs.readFile(path.join(dir, 'design', 'nfr-catalogue.yaml'), 'utf8'), 'categories: []\n');
+    for (const gone of ['product', 'design']) await assert.rejects(fs.stat(path.join(dir, 'factory', gone)), `factory/${gone} is gone`);
+    // Their entries go above the Factory's, in the order work moves in; the rest, comments too, stays as it was.
+    assert.equal(await fs.readFile(listing, 'utf8'), '# Our apps.\napps:\n  # The line.\n  - { package: nooblyjs-ai-product, mountPath: /product, enabled: true }\n  - { package: nooblyjs-ai-design, mountPath: /design, enabled: true }\n  - { package: nooblyjs-ai-factory, mountPath: /factory, enabled: true }\n  - { package: nooblyjs-ai-teammate, mountPath: /teammates, enabled: true }\n');
+    // A second start finds nothing to move and adds nothing.
+    assert.deepEqual(await foldData(dir, quiet), []);
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
 });
 
 test('an app that is its own again (Infrastructure, CHG-007): its data moves back out once, and an install that had it lists it again', async () => {
@@ -172,7 +187,7 @@ test('an app that is its own again (Infrastructure, CHG-007): its data moves bac
   } finally {
     await fs.rm(kept, { recursive: true, force: true });
   }
-  assert.deepEqual(Object.keys(UNFOLDED), ['nooblyjs-ai-infrastructure']);
+  assert.deepEqual(Object.keys(UNFOLDED), ['nooblyjs-ai-infrastructure', 'nooblyjs-ai-product', 'nooblyjs-ai-design']);
 });
 
 test('/api/v1/shell/status returns each ready app\'s status', async () => {

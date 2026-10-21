@@ -52,12 +52,13 @@
     "express-session": "^1.19.0",
     "helmet": "^8.3.0",
     "js-yaml": "^4.3.2",
-    "nodemon": "^3.1.14",
     "nooblyjs-ai-common": "file:../../nooblyjs-core/src/aiservice/common",
+    "nooblyjs-ai-design": "file:../nooblyjs-ai-design",
     "nooblyjs-ai-factory": "file:../nooblyjs-ai-factory",
     "nooblyjs-ai-infrastructure": "file:../nooblyjs-ai-infrastructure",
     "nooblyjs-ai-knowledge": "file:../nooblyjs-ai-knowledge",
     "nooblyjs-ai-operations": "file:../nooblyjs-ai-operations",
+    "nooblyjs-ai-product": "file:../nooblyjs-ai-product",
     "nooblyjs-ai-security": "file:../nooblyjs-ai-security",
     "nooblyjs-ai-teammate": "file:../nooblyjs-ai-teammate",
     "nooblyjs-core": "file:../../nooblyjs-core",
@@ -66,6 +67,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "1.63.0",
-    "electron": "^44.7.0"
+    "electron": "^44.7.0",
+    "nodemon": "^3.1.14"
   }
 }

@@ -1,0 +1,24 @@
+{
+  "name": "nooblyjs-ai-design",
+  "version": "0.1.0",
+  "description": "NooblyJS Design: a NooblyJS hosted app (screens and API at /design) for business requirements, solution architecture, functional analysis and the stories, each handed to Engineering on its own.",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "test": "node --test --test-timeout=20000 \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "nooblyjs-core": "file:../../nooblyjs-core"
+  },
+  "devDependencies": {
+    "express": "^5.2.1"
+  }
+}

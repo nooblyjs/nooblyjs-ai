@@ -253,6 +253,34 @@ know; "steps" can be one line.
     `CLAUDE.md`, `.claude/audits/mocking-audit.md`; the Factory's `CLAUDE.md` and `.claude/steering/{product,structure,tech,
     Architecture}.md`; `nooblyjs-ai-infrastructure/CLAUDE.md`.
 
+- [ ] CHG-009 — Product and Design are hosted apps of their own, on the rail before the Factory · Rail, Product, Design, Factory · nooblyjs-ai-product, nooblyjs-ai-design, nooblyjs-ai-factory, nooblyjs-ai-host, monorepo root · Phase 16a+
+  - Asked: 2026-10-21 ("move the Product capability out of Factory, like we did with infrastructure as it is a standalone
+    product that feeds into Design … make them specific sections in the greater primary left navigation") · Status: fixed
+  - What and why: the Factory's Product section (`nooblyjs-ai-factory/product`, `public/product`) is `nooblyjs-ai-product`
+    again and its Design section (`design/`, `public/design`) is `nooblyjs-ai-design` (`git mv`, history kept), each with
+    its own `package.json`, tests and `CLAUDE.md`, hosted at `/product` (rail label Product) and `/design` (Design). The
+    seeded `hosted-apps.yaml` lists them before the Factory, so the rail reads Home · Product · Design · Factory · …. The
+    Factory keeps Engineering, Build and its Test section (`SECTIONS` is `quality` only, server and browser; `provides` is
+    `{ quality }`). Design's Architecture rows stay Product's code, API and pages: Design's module draws them in
+    Product's scope (`nooblyjs-ai-design/public/js/product-pages.js`, Product's stylesheet among Design's styles), and
+    Product's own `/architecture` addresses move on to `/design/architecture`. The host lists both (`SUITE_APPS`, its
+    `package.json`), no longer folds Product into the Factory (`FOLDED`), and moves an install's `data/factory/product`
+    and `data/factory/design` back to `data/product` and `data/design` once (`UNFOLDED`, `foldData`), adding their
+    entries above the Factory's in `hosted-apps.yaml`. An old `/factory/product/…` or `/factory/design/…` address lands
+    on the same page in the app (the Factory's `public/js/pages/moved-app.js`). Every link the host and the apps hand
+    out is `/product/…` or `/design/…`; Home's Product Factory card reads the Product app's status. The monorepo's
+    `scripts/each.js` and the steering sync have both apps.
+  - Check: host 417 of 417 (new: the CHG-009 unfold test, the rail and Design-shows-Architecture tests; the tests that
+    hosted the Factory host Product and Design with it). Product 164 of 164, Design 19 of 19 (new: Architecture drawn
+    across apps), Factory 410 of 414 (4 skipped; new: old addresses move on), Knowledge 41, Teammates 143, Security 21,
+    Operations 20, Infrastructure 52, all passing. The e2e specs' URLs were updated but not run.
+  - Notes: the history notes in `.claude/phases`, `.claude/learning/`, the done phase specs and the dated audits still
+    describe it as it was. Product's older steering (`nooblyjs-ai-product/.claude/steering/`) says it is an app of its
+    own again at the top. Not checked in a browser.
+  - Steering: root `product.md` §2, §3.2a, §4, `stack.md` §2–§3, `design.md`, `roadmap.md` (note at the top), `README.md`;
+    host `product.md` §5, §5.3a, §5.3b, §10, `structure.md` §1, §2a, §4, `tech.md` §1, §8, §8b, `CLAUDE.md`; the
+    Factory's `CLAUDE.md` and `.claude/steering/{product,structure,tech,Architecture}.md`; both apps' `CLAUDE.md`.
+
 ## Closed
 
 _Verified, won't fix, duplicates and changes moved to a phase, newest first._

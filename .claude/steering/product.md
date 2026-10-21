@@ -47,11 +47,11 @@ Eight projects, over 370 test files, all offline by default. Phases 0–11 of th
 
 | Part of the SDLC | What exists | Project | Maturity |
 | --- | --- | --- | --- |
-| Business and strategy | Strategic themes, portfolios, value streams and their documents from templates; products as labels | `nooblyjs-ai-factory/product` | Partly built: portfolio epics, epics, features and requirements are **not** built |
-| Discover | Signals clustered into themes, ideas scored with RICE, the Product board, the quarter roadmap | `nooblyjs-ai-factory/product` | Built (signals are seeded; no live connector) |
-| Requirements | Spec: problem, goals (measure / today / target), user stories, Given/When/Then criteria, out of scope, readiness checks, reviewers, versions | `nooblyjs-ai-factory/product`, lifecycle engine | Built. **Elicitation since Phase 18** (§3.4): stakeholders, sessions, candidates quoting their source, requirements `REQ-033-01`, the NFR walk, questions |
-| Architecture | Container view as code, ADRs, standards check, quality attributes that become gates | `nooblyjs-ai-factory/product` | Built |
-| UX and UI design | Journeys, flows, research, screens, design-system reuse, accessibility checks, handoff preview | `nooblyjs-ai-factory/product` | Built |
+| Business and strategy | Strategic themes, portfolios, value streams and their documents from templates; products as labels | `nooblyjs-ai-product` | Partly built: portfolio epics, epics, features and requirements are **not** built |
+| Discover | Signals clustered into themes, ideas scored with RICE, the Product board, the quarter roadmap | `nooblyjs-ai-product` | Built (signals are seeded; no live connector) |
+| Requirements | Spec: problem, goals (measure / today / target), user stories, Given/When/Then criteria, out of scope, readiness checks, reviewers, versions | `nooblyjs-ai-product`, lifecycle engine | Built. **Elicitation since Phase 18** (§3.4): stakeholders, sessions, candidates quoting their source, requirements `REQ-033-01`, the NFR walk, questions |
+| Architecture | Container view as code, ADRs, standards check, quality attributes that become gates | `nooblyjs-ai-product` | Built |
+| UX and UI design | Journeys, flows, research, screens, design-system reuse, accessibility checks, handoff preview | `nooblyjs-ai-product` | Built |
 | Lifecycle and approvals | Items, 7 stages, readiness, approvals with target times and escalation, send-back, handoffs, Activity, audit | `nooblyjs-ai-host` (`src/lifecycle/`) | Built |
 | Build | Line of stations (triage → spec → approve → build → verify → review → repair → deliver), gates, PR evidence, "a run is asking you", campaigns, bench, hash-chained audit export, secret scan, agent-environment scrubbing | `nooblyjs-ai-factory` | Built; runs on a local demo repository; PRs on real repositories wait for Phase 13's review |
 | Testing | Gates per PR from quality attributes; "Testing in environments" screen; e2e results per environment (seeded) | `nooblyjs-ai-factory`, `nooblyjs-ai-infrastructure` | **Thin.** No test strategy, test plan, test cases or test runs as things of their own |
@@ -148,7 +148,7 @@ call a hired teammate to draft.
 - **Tests run in environments too**, not only on a branch: the tester verifies against a preview environment, and the
   environment-level suites (§3.6) run there.
 
-### 3.2a Design (stage 3, the Factory's Design section)
+### 3.2a Design (stage 3, the Design app)
 
 Done by Business Analysts, Solution Architects and Functional Analysts, from the Product handoff (spec, UX and UI).
 
@@ -161,8 +161,8 @@ Done by Business Analysts, Solution Architects and Functional Analysts, from the
      their owners. Drawn from Platform's repositories and the Knowledge repository.
    - **NFRs**: performance, availability, security, privacy, accessibility, cost and operability targets, from the
      NFR catalogue (§3.4); they become quality attributes and, later, SLOs.
-   - The container view, ADRs and standards check (built today, in the Product section's Architecture pages, which
-     move here), the **threat model** (§3.5) and the infrastructure design (in the Infrastructure app).
+   - The container view, ADRs and standards check (built today: the Product app's Architecture pages, shown in the
+     Design app since Phase 16b), the **threat model** (§3.5) and the infrastructure design (in the Infrastructure app).
 3. **Functional analysis.** Per impacted system:
    - **Interface requirements**: the APIs, events and files between systems: who calls whom, with what, and what
      comes back (contract-first, so each side can be built and tested on its own).
@@ -212,7 +212,7 @@ Done per story by Application Architects and test analysts, inside the Software 
 Already built: strategic themes, portfolios, value streams, products, and their template documents. To add:
 
 1. **The work hierarchy**: portfolio epic → epic → feature → requirement, under a portfolio (and optionally a value
-   stream). How these map to ideas and specs, and to Jira, is open (`nooblyjs-ai-factory/product` product.md §8). Proposed:
+   stream). How these map to ideas and specs, and to Jira, is open (`nooblyjs-ai-product` product.md §8). Proposed:
    an **idea belongs to a feature**, and a spec's requirements are the feature's requirements `[CONFIRM]`.
 2. **Business case** on an idea or epic: the value hypothesis, who benefits, the measure that will show it, a cost
    estimate (agent cost, cloud cost and people's time, from the factory's own history) and a time horizon.
@@ -291,15 +291,15 @@ person's decision with a reason and an expiry**, never an agent's.
 ## 4. Systems
 
 The factory is the existing systems plus three new ones (decided 2026-10-19), built in the order Security,
-Quality, Operations. Every system is a hosted app in the one frame (`design.md` §2), except the Product Factory and
-Quality, which are sections of the Software Factory (Product since 2026-10-19; Quality, its **Test** section, decided
-2026-10-20).
+Quality, Operations. Every system is a hosted app in the one frame (`design.md` §2), except Quality, which is the
+Software Factory's **Test** section (decided 2026-10-20). Product and Design were sections of the Factory too and are
+apps of their own since CHG-009 (2026-10-21), before it on the rail: Product feeds Design, which feeds the Factory.
 
 | System | Rail | Covers | Project | Status |
 | --- | --- | --- | --- | --- |
 | Home | Home | For you, Overview, Lifecycle, Approvals, Activity, Metrics, Teams & roles | `nooblyjs-ai-host` | Built |
-| Product Factory | Factory (Product section) | Strategy, Discover, Product (spec with elicitation, UX, UI) | `nooblyjs-ai-factory/product` | Built; strategy and elicitation to extend |
-| **Design** | Factory (Design section) | Business requirements, solution architecture (feature landscape, impacted systems, NFRs; today's Architecture pages), functional analysis (interface and technical requirements), feature generation (the stories), the Design handoff | `nooblyjs-ai-factory/design` (at `/factory/design`) | Built (Phase 16c, waiting for review): stories go to Engineering one at a time |
+| Product Factory | Product | Strategy, Discover, Product (spec with elicitation, UX, UI) | `nooblyjs-ai-product` (at `/product`; a Factory section 2026-10-19 to CHG-009) | Built; strategy and elicitation to extend |
+| **Design** | Design | Business requirements, solution architecture (feature landscape, impacted systems, NFRs; today's Architecture pages), functional analysis (interface and technical requirements), feature generation (the stories), the Design handoff | `nooblyjs-ai-design` (at `/design`; a Factory section until CHG-009) | Built (Phase 16c, waiting for review): stories go to Engineering one at a time |
 | Software Factory | Factory (Engineering, Build) | Engineer: system / application architecture from the code; Build: the line (the AI builds and tests), runs, pull requests and the engineer's Build approval | `nooblyjs-ai-factory` | Build built; Engineering built (Phase 16d, waiting for review) |
 | **Quality** | Factory (Test section: test analysis in Engineering; the Test group) | Test analysis (test cases, automated testing requirements, integration and E2E tests), the human tester's verification and Test approval on each pull request, test runs, coverage, defects, evidence | `nooblyjs-ai-factory/quality` (at `/factory/quality`, decided 2026-10-20) | Built: test analysis (16d), Test approvals (16e), test runs, coverage, cases kept in step and defects (Phase 20); environment runs: previews per pull request and the suites in Test and Staging, on the mock runner (Phase 21) |
 | **Security** | Security | Threat models, scans, findings, risk acceptance, pen tests, compliance evidence | `nooblyjs-ai-security` (at `/security`) | Built (Phase 19; the scanner is the mock until one is approved) |
@@ -473,7 +473,7 @@ system, agent vs people share) stay. Added, all computed from events:
 2. The names and paths of the apps `nooblyjs-ai-security` and `nooblyjs-ai-operations` and their mount paths `[CONFIRM]`.
    (The Test section's was taken on 2026-10-20, Phase 16d: `nooblyjs-ai-factory/quality`, at `/factory/quality`.)
 3. The work hierarchy above the feature (portfolio epic, epic) against ideas, specs and Jira
-   (`nooblyjs-ai-factory/product` §8). Feature → stories is decided: many stories per feature, one feature per story.
+   (`nooblyjs-ai-product` §8). Feature → stories is decided: many stories per feature, one feature per story.
    **Taken as a default in Phase 17 (2026-10-21), to confirm:** portfolio epics, epics and features live in the Product
    section's catalogue; an idea belongs to a feature and its spec follows it; Design's per-item features are linked to a
    hierarchy feature later (Phase 18); Jira keeps only the stories `[CONFIRM]`.

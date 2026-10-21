@@ -1,0 +1,24 @@
+{
+  "name": "nooblyjs-ai-product",
+  "version": "0.1.0",
+  "description": "NooblyJS Product: a NooblyJS hosted app (screens and API at /product) for strategy and the product stages: signals, ideas and business cases, specs with their elicitation, architecture, UX and UI, reviews and the handoff that feeds Design.",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "test": "node --test --test-timeout=20000 \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "nooblyjs-core": "file:../../nooblyjs-core"
+  },
+  "devDependencies": {
+    "express": "^5.2.1"
+  }
+}

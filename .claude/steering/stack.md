@@ -41,8 +41,10 @@ inclusion: always
     ├── .claude/steering/       this file, product.md, design.md, roadmap.md (the whole factory)
     ├── scripts/each.js         runs install / test / coverage / build / clean in every project, in order
     ├── nooblyjs-ai-host/       the host: frame, Home, lifecycle engine, Platform, chat, Teams, devtools, apps/{electron,edge,msteams}
+    ├── nooblyjs-ai-product/    Product                    (/product; a Factory section 2026-10-19 to CHG-009)
+    ├── nooblyjs-ai-design/     Design                     (/design; a Factory section from Phase 16c to CHG-009)
     ├── nooblyjs-ai-factory/    Software Factory           (/factory, and the `factory` CLI), one package with:
-    │   └── product/            its Product section        (/factory/product; was nooblyjs-ai-product)
+    │   └── quality/            its Test section           (/factory/quality)
     ├── nooblyjs-ai-infrastructure/  Infrastructure        (/infrastructure, or standalone; a Factory section 2026-10-19–20)
     ├── nooblyjs-ai-teammate/   Digital Teammates          (/teammates, or standalone)
     ├── nooblyjs-ai-knowledge/  Knowledge (the wiki)       (/wiki)
@@ -63,10 +65,12 @@ Factory (`nooblyjs-ai-factory/<section>/`, its pages in `public/<section>/`, add
 
 | Project | Modules | Runtime dependencies | Tests | Notes |
 | --- | --- | --- | --- | --- |
-| `nooblyjs-ai-host` | ESM | express, js-yaml, helmet, compression, express-rate-limit, express-session, passport, nooblyjs-core, AI module, the hosted apps | 47 files + Playwright e2e | `nodemon` sits in runtime dependencies; it belongs in dev dependencies |
-| `nooblyjs-ai-factory` | ESM | harness, AI module; `nooblyjs-core` and `js-yaml` for its section | 108 for the line, 19 for the Product section | Needs Node 24; event log is daily YAML streams. Since 2026-10-19 one package with the Product section (`product/`, with its own `src/`, `test/` and docs; its pages in `public/product/`); no standalone server for the section |
+| `nooblyjs-ai-host` | ESM | express, js-yaml, helmet, compression, express-rate-limit, express-session, passport, nooblyjs-core, AI module, the hosted apps | 47 files + Playwright e2e | `nodemon` is a dev dependency (Phase 24) |
+| `nooblyjs-ai-product` | ESM | nooblyjs-core (express a dev dependency) | 19 | A hosted app at `/product`, no standalone server. A Factory section from 2026-10-19 to CHG-009; its Architecture pages show in Design |
+| `nooblyjs-ai-design` | ESM | nooblyjs-core (express a dev dependency) | 3 | A hosted app at `/design`, no standalone server. A Factory section from Phase 16c to CHG-009 |
+| `nooblyjs-ai-factory` | ESM | harness, AI module; `nooblyjs-core` for its section | 108 for the line, and the Test section's | Needs Node 24; event log is daily YAML streams. One package with the Test section (`quality/`, its pages in `public/quality/`); no standalone server for the section |
 | `nooblyjs-ai-infrastructure` | ESM | nooblyjs-core (express a dev dependency) | 7 | A hosted app with a standalone `server.js` (:11008); mock provisioner only. Part of the Factory from 2026-10-19 to 2026-10-20 (CHG-005, CHG-007) |
-| `nooblyjs-ai-teammate` | ESM | express, js-yaml, nooblyjs-core, AI module | 43 | Keeps its own FsStore copy, not `host.store` |
+| `nooblyjs-ai-teammate` | ESM | express, js-yaml, nooblyjs-core, AI module | 43 | Stores through `host.store` when hosted (Phase 24) |
 | `nooblyjs-ai-harness` | ESM, `.jsx` via `tsx` | Ink, React, marked, tsx, AI module | 44 | React is for the **terminal** UI only; no browser code |
 | `nooblyjs-ai-knowledge` | **CommonJS** | ~35, including Socket.IO, multer, document converters, `@anthropic-ai/sdk`, `openai`, `@anthropic-ai/claude-agent-sdk` | 96 (Jest and `node:test`) | Express 4 behind an Express 5 adapter; generated browser UI |
 | `nooblyjs-ai-desktop` | CommonJS | express, ejs, bootstrap, marked, dompurify, dotenv, nooblyjs-core, AI module | 13 | Standalone, single user, any provider by design |

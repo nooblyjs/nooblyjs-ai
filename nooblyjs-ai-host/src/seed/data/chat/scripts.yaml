@@ -23,8 +23,8 @@ replies:
         apply: { label: Apply to spec, section: rolloutPlan }
     citations:
       - { n: 1, title: Slot capacity model, source: Knowledge · runbook, href: /wiki }
-      - { n: 2, title: ADR-013 · Event-driven slot release, source: Decision, href: /factory/design/architecture/PRD-031 }
-      - { n: 3, title: September support themes, source: Customer insight · 412 tickets, href: /factory/product/specs/PRD-031 }
+      - { n: 2, title: ADR-013 · Event-driven slot release, source: Decision, href: /design/architecture/PRD-031 }
+      - { n: 3, title: September support themes, source: Customer insight · 412 tickets, href: /product/specs/PRD-031 }
   - agent: ada-quill
     scope: item
     match: block|status|stand|waiting
@@ -52,7 +52,7 @@ replies:
           - { label: Staleness, values: [Up to 30 s; holds still check Postgres, Replication lag only] }
           - { label: "Cost a month", values: ["[PLACEHOLDER: Redis cost]", "[PLACEHOLDER: replica cost]"] }
     citations:
-      - { n: 1, title: ADR-014 · Cache slot availability in Redis, source: Decision, href: /factory/design/architecture/PRD-031 }
+      - { n: 1, title: ADR-014 · Cache slot availability in Redis, source: Decision, href: /design/architecture/PRD-031 }
     then:
       - text: To check the capacity numbers against the planner I need read access to delivery-planner. A person decides.
         costUsd: 0

@@ -80,7 +80,7 @@ Release and Operate; version 3 (decided 2026-10-20, Phases 16b–16e, `product.m
   Quality (from the Factory's Test section), Security and Operations ask for decisions. Deciding on Home · Approvals or
   on the app's own screen is the same decision.
 - **Stage orchestration** tells the owning system when an item enters its stage (as it tells Product today):
-  `design` → the Design section; `engineer` → the Factory (application architecture) and Test (test analysis);
+  `design` → the Design app; `engineer` → the Factory (application architecture) and Test (test analysis);
   `test` → Quality (the tester's queue) and Security; `release` and `operate` → Operations.
 - **Readiness for the new stages** comes from checks (§5): a pull request can't be given its Test approval until the
   Test stage's checks pass (the required automated tests present and passing), unless a person overrides with a

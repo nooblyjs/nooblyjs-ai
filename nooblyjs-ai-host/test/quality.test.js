@@ -13,7 +13,7 @@ let stevie;
 let thabo;
 let priya;
 let naledi;
-const design = '/factory/design/api/v1';
+const design = '/design/api/v1';
 const factory = '/factory/api/v1';
 const quality = '/factory/quality/api/v1';
 const lifecycle = '/workflows/api/v1';
@@ -34,7 +34,7 @@ function find(node, id, path = []) {
 }
 
 before(async () => {
-  env = await startApp({ env: { CHAT_MOCK_REPLY_MS: '0' }, hostedApps: [{ package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }, { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true }] });
+  env = await startApp({ env: { CHAT_MOCK_REPLY_MS: '0' }, hostedApps: [{ package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true }, { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true }, { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }, { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true }] });
   [stevie, thabo, priya, naledi] = [env.client(), env.client(), env.client(), env.client()];
   for (const [c, id] of [[stevie, 'stevie'], [thabo, 'thabo-n'], [priya, 'priya-s'], [naledi, 'naledi-k']]) await c.signIn(id);
   // The 16c script, in short: PRD-031 into Design, its design drafted, ADR-014 accepted, its three stories handed off.

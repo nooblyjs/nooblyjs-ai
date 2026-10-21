@@ -15,7 +15,7 @@ let lerato;
 let thabo;
 let priya;
 let naledi;
-const design = '/factory/design/api/v1';
+const design = '/design/api/v1';
 const factory = '/factory/api/v1';
 const quality = '/factory/quality/api/v1';
 const security = '/security/api/v1';
@@ -31,6 +31,8 @@ before(async () => {
   env = await startApp({
     env: { CHAT_MOCK_REPLY_MS: '0' },
     hostedApps: [
+      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
       { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
       { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true },
@@ -109,7 +111,7 @@ test('steps 2 and 3: an incident; the Product board has its signal linked to Slo
   const inc = await declared.json();
   assert.deepEqual([inc.id, inc.releaseId, inc.release, inc.status], ['INC-001', 'REL-001', 'REL-001 · Slots 1.0', 'open']);
   // Step 3: the signal from production on the Product board.
-  const { signals } = (await priya.json('/factory/product/api/v1/signals')).body;
+  const { signals } = (await priya.json('/product/api/v1/signals')).body;
   const signal = signals.find((x) => x.title === 'Slot list timeouts at peak');
   assert.ok(signal, JSON.stringify(signals.map((x) => x.title)));
   assert.deepEqual([signal.release, signal.itemId, signal.sourceLabel], ['REL-001 · Slots 1.0', 'PRD-031', 'Production']);

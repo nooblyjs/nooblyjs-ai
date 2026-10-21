@@ -193,6 +193,9 @@ enforced server-side: agents are capped at Contributor, cannot approve or merge,
 key, a repository file asking for a token, a CI-config edit). The gap is the wiki's own AI agents, which call their
 provider directly, outside Platform's checks, budgets and audit (mocking audit A6). **Fix:** route them through
 Teammates like every other agent action; add a red-team case for a wiki page that carries instructions.
+**Done in Phase 24 (2026-10-21):** hosted, the wiki's agents are teammate tasks (mocking audit A6), and
+`nooblyjs-ai-knowledge/test/agent-tasks.test.mjs` has the red-team case: a page telling agents to approve and merge
+gets text back, attributed to the person asking, and nothing is decided.
 
 ### S-09 — A Viewer controls server-side AI calls and tokens in the wiki
 

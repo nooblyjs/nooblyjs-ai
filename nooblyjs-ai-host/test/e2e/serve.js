@@ -12,7 +12,7 @@ import { pinClock } from '../helpers.js';
 const require = createRequire(import.meta.url);
 const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
 
-// The Software Factory is always hosted: the Product Factory is its Product section (/factory/product) since 2026-10-19.
+// The Software Factory is always hosted: the Product Factory is its Product section (/product) since 2026-10-19.
 // Infrastructure only for its story (E2E_INFRA): hosted, it adds two approvals to Stevie's list, and the Home specs
 // count the Phase 2 story's four. The wiki only with E2E_WIKI.
 // No e2e run calls a model: with the mock, agents answer from their scripts (tech.md §11).
@@ -24,6 +24,8 @@ const store = new FsStore(dataDir);
 await seedFiles(store, { now: await pinClock(store) });
 await store.writeYaml(['config', 'hosted-apps.yaml'], {
   apps: [
+    { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+    { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
     { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
     { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: process.env.E2E_INFRA === 'true' },
     { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },

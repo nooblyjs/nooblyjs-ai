@@ -21,6 +21,8 @@ before(async () => {
     hostedApps: [
       { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
       { package: 'nooblyjs-ai-knowledge', mountPath: '/wiki', enabled: true },
+      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
     ],
   });
@@ -51,7 +53,7 @@ test('step 2: the Product Factory budget below this month\'s spend pauses its ag
   assert.deepEqual((await saved.json()).reached, [{ budget: 'product', text: 'Product Factory has reached its $400 budget' }]);
   const { body } = await lerato.json('/api/v1/activity?filter=platform');
   assert.ok(body.rows.some((r) => r.type === 'budget.reached' && /Product Factory reached its \$400 budget \(\$412 spent\): its agents are paused/.test(r.action)));
-  const refused = await post(lerato, '/factory/product/api/v1/specs/PRD-031/drafts', { kind: 'rollout-plan' });
+  const refused = await post(lerato, '/product/api/v1/specs/PRD-031/drafts', { kind: 'rollout-plan' });
   assert.equal(refused.status, 402);
   assert.equal((await refused.json()).error.message, 'Agents are paused: Product Factory has reached its $400 budget ($412 spent this month). An Owner can raise it in Platform · Settings · Budgets.');
   // Other systems keep working, and raising it again lets drafting go on, with no restart.
@@ -84,7 +86,7 @@ test('step 3: "Redact personal data on ingest" off needs an Owner and a reason; 
 test('step 4: the "Specs, architecture, review" route changed to Sonnet; the next drafting call uses it (its modelRoute)', async () => {
   const saved = await patch(stevie, '/api/v1/platform/settings/routes/specs-architecture-review', { model: 'claude-sonnet-5-5', fallback: 'claude-haiku-4-5' });
   assert.equal((await saved.json()).route.modelLabel, 'Claude Sonnet 5.5');
-  assert.equal((await post(lerato, '/factory/product/api/v1/specs/PRD-031/drafts', { kind: 'rollout-plan' })).status, 202);
+  assert.equal((await post(lerato, '/product/api/v1/specs/PRD-031/drafts', { kind: 'rollout-plan' })).status, 202);
   await eventually(async () => {
     const finished = (await today(env.store, 'events')).filter((e) => e.type === 'teammate.task_finished' && e.payload.workType === 'spec-drafting');
     assert.equal(finished.at(-1)?.payload.modelRoute, 'mock/claude-sonnet-5-5');

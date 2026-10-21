@@ -6,7 +6,9 @@ ship, where AI agents draft and people decide), the agent harness it runs on, an
 | Project | What it is |
 | --- | --- |
 | [`nooblyjs-ai-host`](nooblyjs-ai-host) | The host: one process and one frame for every app. Home, the lifecycle engine, onboarding and people, team chat, Platform and governance, Metrics, Microsoft Entra and Teams, Jira and Bitbucket (integrations off until configured) |
-| [`nooblyjs-ai-factory`](nooblyjs-ai-factory) | The Software Factory, one app at `/factory` with two parts: the **Product section** ([`product/`](nooblyjs-ai-factory/product): signals, ideas, specs, architecture, UX and UI, drafting agents; at `/factory/product`) and the **line** (issues in, verified PRs out; also the `factory` CLI) |
+| [`nooblyjs-ai-product`](nooblyjs-ai-product) | Product: strategy and business cases, signals, ideas, specs with their elicitation, architecture, UX and UI, drafting agents, and the handoff that feeds Design (hosted at `/product`) |
+| [`nooblyjs-ai-design`](nooblyjs-ai-design) | Design: business requirements, solution architecture, functional analysis and the stories, each handed to Engineering on its own; it shows Product's Architecture pages (hosted at `/design`) |
+| [`nooblyjs-ai-factory`](nooblyjs-ai-factory) | The Software Factory at `/factory`: Engineering, the **line** (issues in, verified PRs out; also the `factory` CLI) and its **Test section** ([`quality/`](nooblyjs-ai-factory/quality)) |
 | [`nooblyjs-ai-infrastructure`](nooblyjs-ai-infrastructure) | Infrastructure: designs, environments, provisioning runs, drift, cloud cost, on a mock provisioner (hosted at `/infrastructure`, or standalone) |
 | [`nooblyjs-ai-teammate`](nooblyjs-ai-teammate) | Digital Teammates: hire, configure, budget and bill named AI agents (hosted at `/teammates`, or standalone) |
 | [`nooblyjs-ai-knowledge`](nooblyjs-ai-knowledge) | The knowledge repository: wiki, datasources, AI answers with citations, MCP (hosted at `/wiki`) |

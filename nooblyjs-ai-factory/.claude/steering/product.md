@@ -4,15 +4,12 @@ inclusion: always
 
 # Software Factory: what NooblyJS needs from this repo
 
-> **Since 2026-10-19 the Software Factory is one app with two parts**, in the order work moves through it: the
-> **Product section** (`product/`; what NooblyJS needs from it is `product/.claude/steering/product.md`) and the
-> **line** (this file). One rail item, **Factory**; one sidebar, grouped **Product · Design · Engineering · Build ·
-> Test** (lifecycle v3, Phase 16b; the **Design section**, `design/`, came with Phase 16c: business requirements,
-> solution architecture, functional analysis and stories, with the Product section's Architecture pages under it;
-> Engineering and Test say which phase brings their pages); one status card with a
-> line per section. The Product Factory keeps its screens, rules and services, at `/factory/product`. The factory is
-> Product, Design, Build and Test: Quality is to be its **Test** section (decided 2026-10-20, Phase 20), not an app of
-> its own. Infrastructure, a section here from 2026-10-19 to 2026-10-20, is the hosted app `nooblyjs-ai-infrastructure`
+> **The Software Factory is one app**, `/factory`: the **line** (this file), Engineering, and its **Test section**
+> (`quality/`, Phase 16d; Quality is the Test section, decided 2026-10-20). One rail item, **Factory**; one sidebar,
+> grouped **Engineering · Build · Test** (lifecycle v3, Phase 16b); one status card with a line per section. **Product**
+> and **Design** come before it on the rail as apps of their own (CHG-009, 2026-10-21: `nooblyjs-ai-product` at
+> `/product`, `nooblyjs-ai-design` at `/design`); they were its sections from 2026-10-19 (Product) and Phase 16c
+> (Design). Infrastructure, a section here from 2026-10-19 to 2026-10-20, is the hosted app `nooblyjs-ai-infrastructure`
 > at `/infrastructure` again (CHG-007).
 
 > Extracted from the NooblyJS product definition (`../nooblyjs-ai-host/.claude/steering/product.md`, the source

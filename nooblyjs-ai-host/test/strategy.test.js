@@ -11,13 +11,13 @@ let env;
 let stevie;
 let lerato;
 let priya;
-const product = '/factory/product/api/v1';
+const product = '/product/api/v1';
 const post = (c, url, json = {}) => c.request(url, { method: 'POST', json });
 const put = (c, url, json = {}) => c.request(url, { method: 'PUT', json });
 let ideaId;
 
 before(async () => {
-  env = await startApp({ hostedApps: [{ package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }, { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true }] });
+  env = await startApp({ hostedApps: [{ package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true }, { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true }, { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true }, { package: 'nooblyjs-ai-infrastructure', mountPath: '/infrastructure', enabled: true }] });
   [stevie, lerato, priya] = [env.client(), env.client(), env.client()];
   for (const [c, id] of [[stevie, 'stevie'], [lerato, 'lerato-m'], [priya, 'priya-s']]) await c.signIn(id);
 });
@@ -77,7 +77,7 @@ test('step 2: the idea can\'t be accepted until its business case is complete; t
   assert.deepEqual(c.missing, ['the measure (what, today and target)']);
   assert.equal((await post(lerato, `${product}/ideas/${ideaId}/accept`, {})).status, 422);
   // An agent can't save one.
-  const services = env.noobly.hosted.apps.find((a) => a.name === 'factory').provides.product;
+  const services = env.noobly.hosted.apps.find((a) => a.name === 'product').services;
   assert.ok(services.businessCases);
   const saved = await put(lerato, `${product}/business-cases/${ideaId}`, { measure: { target: '25% of same-day orders' } });
   assert.equal(saved.status, 200);

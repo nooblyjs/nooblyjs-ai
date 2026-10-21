@@ -74,7 +74,7 @@ test('the Design section\'s stories become items in Design, linked to their item
   assert.deepEqual(done, { created: ['STORY-031-1', 'STORY-031-2', 'STORY-031-3'], updated: [], withdrawn: [] });
   const story = (await env.view('STORY-031-2')).item;
   assert.deepEqual([story.type, story.stage, story.parent.id, story.feature.id, story.system], ['story', 'design', 'PRD-031', 'FEAT-031-2', 'factory']);
-  assert.equal(story.designHref, '/factory/design/stories/PRD-031');
+  assert.equal(story.designHref, '/design/stories/PRD-031');
   const parent = (await env.view('PRD-031')).item;
   assert.equal(parent.stories.text, '0 of 3 stories handed off');
   assert.equal(env.stand.eventLog.filter((e) => e.type === 'item.created' && e.payload.parentId === 'PRD-031').length, 3);

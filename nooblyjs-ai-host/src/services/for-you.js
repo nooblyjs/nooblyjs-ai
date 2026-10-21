@@ -145,7 +145,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     return {
       summary: `${need}${waits}.`,
       filters: { what: 'My items' },
-      action: { label: 'New idea', href: '/factory/product/board', icon: 'plus' },
+      action: { label: 'New idea', href: '/product/board', icon: 'plus' },
       tiles: [
         { key: 'specs', label: 'Specs waiting on you', value: specs.length, note: specs.length ? `Oldest ${specs.map((a) => a.age)[0]}` : 'Nothing waiting', tone: specs.length ? 'warning' : null },
         { key: 'items', label: 'Your items in flight', value: work.length, note: `across ${stages} ${plural(stages, 'stage')}` },
@@ -161,7 +161,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
           title: agentItem ? `${role.teammate.name} is working for you` : `${role.teammate.name} is available`,
           text: agentItem ? `${agentItem.work.task ?? `Drafting ${agentItem.ref}`} · ${Math.round(agentItem.work.progress * 100)}%` : 'No draft in progress on your items',
           progress: agentItem?.work.progress ?? null,
-          action: { label: `Give ${firstName(role.teammate.name)} a new brief`, href: '/factory/product/specs' },
+          action: { label: `Give ${firstName(role.teammate.name)} a new brief`, href: '/product/specs' },
         } : listed?.agent ? { id: null, name: null, title: nobody, text: 'Hire one in Teammates to draft for you.', progress: null, action: { label: 'Hire a teammate', href: '/teammates/hire' } } : null,
       },
     };
@@ -180,8 +180,8 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const arriving = active.filter((i) => i.stage === 'product' && snapshot.approvals.some((a) => a.itemId === i.id && a.type === 'spec'));
     const queue = [
       ...inArch.map((i) => (typeof i.work?.progress === 'number'
-        ? { id: i.id, title: `${i.title} · ${i.ref}`, text: `${i.work.text}${i.work.task ? ` · ${i.work.task}` : ''} · ${Math.round(i.work.progress * 100)}%`, action: { label: 'Watch', href: `/factory/design/architecture/${encodeURIComponent(i.id)}` } }
-        : { id: i.id, title: `${i.title} · ${i.ref}`, late: i.late, text: i.waitingSince ? `Waiting ${Math.floor((new Date(at) - new Date(i.waitingSince)) / DAY)} days · no draft requested yet` : `In Design for ${i.waitingDays || 0} d`, action: { label: role.teammate ? `Ask ${firstName(role.teammate.name)} to draft` : 'Ask a teammate to draft', href: `/factory/design/architecture/${encodeURIComponent(i.id)}` } })),
+        ? { id: i.id, title: `${i.title} · ${i.ref}`, text: `${i.work.text}${i.work.task ? ` · ${i.work.task}` : ''} · ${Math.round(i.work.progress * 100)}%`, action: { label: 'Watch', href: `/design/architecture/${encodeURIComponent(i.id)}` } }
+        : { id: i.id, title: `${i.title} · ${i.ref}`, late: i.late, text: i.waitingSince ? `Waiting ${Math.floor((new Date(at) - new Date(i.waitingSince)) / DAY)} days · no draft requested yet` : `In Design for ${i.waitingDays || 0} d`, action: { label: role.teammate ? `Ask ${firstName(role.teammate.name)} to draft` : 'Ask a teammate to draft', href: `/design/architecture/${encodeURIComponent(i.id)}` } })),
       ...arriving.map((i) => {
         const a = snapshot.approvals.find((x) => x.itemId === i.id && x.type === 'spec');
         return { id: i.id, title: `${i.title} · ${i.ref}`, text: `Arrives when ${a.waitingOnNames.join(' and ')} ${plural(a.waitingOnNames.length, 'approves', 'approve')} the spec${a.due?.text === 'due today' ? ' · expected today' : ''}`, action: { label: 'Preview spec', href: i.specHref ?? i.href } };
@@ -191,7 +191,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     return {
       summary: `${yours.length ? `${words(yours.length)} ${plural(yours.length, 'decision needs', 'decisions need')} your sign-off.` : 'No decisions are waiting on you.'}${slowest?.key === 'design' ? ` Design is the slowest stage (median ${slowest.medianDays} d).` : ''}`,
       filters: { what: 'Architecture work' },
-      action: { label: 'Open Architecture', href: '/factory/design/architecture' },
+      action: { label: 'Open Architecture', href: '/design/architecture' },
       tiles: [
         { key: 'decisions', label: 'Decisions awaiting you', value: yours.length, note: past ? `${past} past ${plural(past, 'its', 'their')} target` : yours.length ? 'All within target' : 'Nothing waiting', tone: past ? 'warning' : null },
         { key: 'in-architecture', label: 'In Design', value: inArch.length, note: stage?.medianDays === null || !stage ? 'no moves in 30 days' : `median ${stage.medianDays} d · target 1 d` },
@@ -202,7 +202,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         decisions: decisions.map((a) => ({
           id: a.id, eyebrow: `${a.subject ?? 'ADR'} · ${a.itemRef}`, age: `${a.age}${a.due ? ` · ${a.due.text}` : ''}`, overdue: a.overdue,
           title: a.shortTitle, summary: a.summary, context: a.context, canDecide: a.canDecide, waitingOn: a.waitingOnNames,
-          discussHref: `/factory/design/architecture/${encodeURIComponent(a.itemId)}`, approvalHref: a.href,
+          discussHref: `/design/architecture/${encodeURIComponent(a.itemId)}`, approvalHref: a.href,
         })),
         queue,
         standards: { unavailable: later(7, 'Standards are checked on every pull request once the Software Factory joins NooblyJS.') },
@@ -214,7 +214,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
   // ---------------------------------------------------------------------------- Design (Phase 16c)
 
   const DESIGN_OFF = 'The Factory\'s Design section is not running here, so there is no design to show.';
-  const designHref = (part, itemId) => `/factory/design/${part}/${encodeURIComponent(itemId)}`;
+  const designHref = (part, itemId) => `/design/${part}/${encodeURIComponent(itemId)}`;
 
   /** Solution Architect: items in Design, decisions awaiting them, and stories ready for their Design handoff. */
   function solutionArchitect({ mine, design, base }) {
@@ -226,7 +226,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
       summary: design === null ? DESIGN_OFF
         : `${words(design.length)} ${plural(design.length, 'item is', 'items are')} in Design. ${ready.length ? `${words(ready.length)} ${plural(ready.length, 'story is', 'stories are')} ready for your Design handoff.` : 'No story is ready for a Design handoff yet.'}`,
       filters: { what: 'Items in Design' },
-      action: { label: 'Open Design', href: '/factory/design/solution' },
+      action: { label: 'Open Design', href: '/design/solution' },
       tiles: [
         { key: 'in-design', label: 'Items in Design', value: design?.length ?? null, note: design === null ? 'Design is not running here' : null },
         { key: 'decisions', label: 'Decisions awaiting you', value: yours.length, note: yours.length ? null : 'Nothing waiting' },
@@ -236,12 +236,12 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
       panels: {
         lists: [
           {
-            key: 'items', title: 'Items in Design', link: { label: 'Solution architecture', href: '/factory/design/solution' },
+            key: 'items', title: 'Items in Design', link: { label: 'Solution architecture', href: '/design/solution' },
             empty: design === null ? DESIGN_OFF : `Nothing is in Design${base.scope === 'all' ? '' : ' for your teams'}.`,
             rows: (design ?? []).map((d) => ({ id: d.itemId, title: `${d.ref} · ${d.title}`, text: `${d.parts.solution} · ${d.parts.handoff}`, action: { label: 'Open', href: designHref('solution', d.itemId) } })),
           },
           {
-            key: 'handoffs', title: 'Stories to hand to Engineering', link: { label: 'Handoff to the Factory', href: '/factory/design/handoff' },
+            key: 'handoffs', title: 'Stories to hand to Engineering', link: { label: 'Handoff to the Factory', href: '/design/handoff' },
             empty: 'No story is waiting for its Design handoff.',
             rows: open.map(({ d, s }) => {
               const ok = d.readiness.total && d.readiness.passed === d.readiness.total;
@@ -264,7 +264,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
       summary: design === null ? DESIGN_OFF
         : oneSided.length ? `${words(oneSided.length)} ${plural(oneSided.length, 'interface has', 'interfaces have')} a side missing, which holds the Design handoff.` : 'Every interface has both sides named.',
       filters: { what: 'Items in Design' },
-      action: { label: 'Open the functional analysis', href: '/factory/design/functional' },
+      action: { label: 'Open the functional analysis', href: '/design/functional' },
       tiles: [
         { key: 'one-sided', label: 'Interfaces with a side missing', value: oneSided.length, note: oneSided.length ? 'They hold the Design handoff' : 'All have both sides', tone: oneSided.length ? 'warning' : null },
         { key: 'unfinished', label: 'Stories to finish', value: unfinished.length, note: 'No criteria, or no business requirement' },
@@ -273,18 +273,18 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
       panels: {
         lists: [
           {
-            key: 'interfaces', title: 'Interfaces with one side missing', link: { label: 'Functional analysis', href: '/factory/design/functional' },
+            key: 'interfaces', title: 'Interfaces with one side missing', link: { label: 'Functional analysis', href: '/design/functional' },
             empty: design === null ? DESIGN_OFF : 'Every interface has both sides named.',
             rows: oneSided.map(({ d, i }) => ({ id: i.id, title: `${d.ref} · ${i.id} ${i.name}`, text: i.sidesText, late: true, action: { label: 'Name the side', href: designHref('functional', d.itemId) } })),
           },
           {
-            key: 'stories', title: 'Stories to finish', link: { label: 'Stories', href: '/factory/design/stories' },
+            key: 'stories', title: 'Stories to finish', link: { label: 'Stories', href: '/design/stories' },
             empty: 'Every story in Design has its criteria and a business requirement.',
             rows: unfinished.map(({ d, s }) => ({ id: s.id, title: `${s.id} · ${s.title}`, text: `${d.ref} · ${!s.criteria?.length ? 'no acceptance criteria' : 'no business requirement'}`, action: { label: 'Finish', href: designHref('stories', d.itemId) } })),
           },
         ],
         side: [
-          { key: 'items', title: 'Items in Design', link: { label: 'Design', href: '/factory/design/requirements' }, empty: design === null ? DESIGN_OFF : `Nothing is in Design${base.scope === 'all' ? '' : ' for your teams'}.`, rows: (design ?? []).map((d) => ({ id: d.itemId, title: `${d.ref} · ${d.title}`, text: d.parts.functional, action: { label: 'Open', href: designHref('functional', d.itemId) } })) },
+          { key: 'items', title: 'Items in Design', link: { label: 'Design', href: '/design/requirements' }, empty: design === null ? DESIGN_OFF : `Nothing is in Design${base.scope === 'all' ? '' : ' for your teams'}.`, rows: (design ?? []).map((d) => ({ id: d.itemId, title: `${d.ref} · ${d.title}`, text: d.parts.functional, action: { label: 'Open', href: designHref('functional', d.itemId) } })) },
         ],
       },
     };
@@ -403,13 +403,13 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const noSession = live.filter((e) => !e.sessions);
     const questions = list.filter((e) => e.openQuestions > 0);
     const walks = live.filter((e) => e.sessions && e.walked < e.categories);
-    const href = (id) => `/factory/product/elicitation/${encodeURIComponent(id)}`;
+    const href = (id) => `/product/elicitation/${encodeURIComponent(id)}`;
     const off = 'The Product section is not running here, so there is no elicitation to show.';
     const n = toDecide.reduce((s, e) => s + e.proposed, 0);
     return {
       summary: elicitation === null ? off : n ? `${words(n)} candidate ${plural(n, 'requirement waits', 'requirements wait')} for your decision.` : 'No candidate requirement waits for a decision.',
       filters: { what: 'Specs' },
-      action: { label: 'Open the Product board', href: '/factory/product/board' },
+      action: { label: 'Open the Product board', href: '/product/board' },
       tiles: [
         { key: 'candidates', label: 'Candidates to decide', value: elicitation === null ? null : n, note: n ? 'Accept, merge or reject' : 'Nothing waiting' },
         { key: 'no-session', label: 'Specs with no session', value: noSession.length, note: noSession.length ? 'Run an interview or a workshop' : 'Every spec has one' },
@@ -504,12 +504,12 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const portfolios = spend?.portfolios ?? [];
     const over = portfolios.filter((p) => p.budgetUsd && p.totalUsd > p.budgetUsd);
     const money = (n) => `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
-    const caseHref = (c) => `/factory/product/business-cases/${encodeURIComponent(c.ownerId)}`;
+    const caseHref = (c) => `/product/business-cases/${encodeURIComponent(c.ownerId)}`;
     return {
       summary: cases === null ? 'The Product section is not running here, so there are no business cases to show.'
         : `${words(open.length)} ${plural(open.length, 'business case needs', 'business cases need')} you${over.length ? `, and ${words(over.length)} ${plural(over.length, 'portfolio is', 'portfolios are')} over budget` : ''}.`,
       filters: { what: 'Portfolios' },
-      action: { label: 'Open the Product board', href: '/factory/product' },
+      action: { label: 'Open the Product board', href: '/product' },
       tiles: [
         { key: 'cases', label: 'Business cases waiting', value: cases ? open.length : null, note: cases === null ? 'The Product section is not running here' : open.length ? 'Not complete yet' : 'All complete' },
         { key: 'accept', label: 'Ideas ready to accept', value: ready.length + acceptance.length, note: 'Their business case is complete' },
@@ -519,7 +519,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
       panels: {
         lists: [
           {
-            key: 'cases', title: 'Business cases waiting', link: { label: 'Product board', href: '/factory/product' },
+            key: 'cases', title: 'Business cases waiting', link: { label: 'Product board', href: '/product' },
             empty: cases === null ? 'The Product section is not running here.' : 'Every business case is complete.',
             rows: open.map((c) => ({ id: c.ownerId, title: `${c.ownerId} · ${c.title}`, text: c.text, late: !c.exists, action: { label: c.exists ? 'Finish' : 'Draft', href: caseHref(c) } })),
           },

@@ -26,6 +26,8 @@ before(async () => {
   env = await startApp({
     env: { NODE_ENV: 'development' },
     hostedApps: [
+      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
     ],
   });

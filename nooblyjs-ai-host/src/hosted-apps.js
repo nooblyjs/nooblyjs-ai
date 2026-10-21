@@ -20,20 +20,23 @@ const RESERVED = new Set(['/api', '/services', '/ui', '/login', '/logout', '/hea
 /**
  * Apps that are part of another now. An older hosted-apps.yaml may still list them: the entry is skipped, and the data
  * folder they had moves into the app that took them in, once (foldData). nooblyjs-ai-workflows became part of NooblyJS
- * itself (src/lifecycle/) on 2026-10-10; Product became a section of the Software Factory on 2026-10-19.
+ * itself (src/lifecycle/) on 2026-10-10. (Product was folded into the Software Factory from 2026-10-19 until CHG-009.)
  */
 export const FOLDED = {
   'nooblyjs-ai-workflows': { into: 'NooblyJS (src/lifecycle/)' },
-  'nooblyjs-ai-product': { into: 'nooblyjs-ai-factory (its Product section, /factory/product)', from: ['product'], to: ['factory', 'product'] },
 };
 
 /**
  * Apps that were part of another for a while and are apps of their own again. Their data moves back out, once
- * (foldData), and an install that had them gets their entry in hosted-apps.yaml back. Infrastructure was a section of
- * the Software Factory from 2026-10-19 to 2026-10-20 (CHG-007): provisioning is not part of the factory.
+ * (foldData), and an install that had them gets their entry in hosted-apps.yaml back (`before`: above that app's entry,
+ * so the rail keeps the order work moves in). Infrastructure was a section of the Software Factory from 2026-10-19 to
+ * 2026-10-20 (CHG-007): provisioning is not part of the factory. Product (from 2026-10-19) and Design (from Phase 16c)
+ * were sections until CHG-009 (2026-10-21): Product feeds Design, which feeds the Factory.
  */
 export const UNFOLDED = {
   'nooblyjs-ai-infrastructure': { was: 'a section of the Software Factory', from: ['factory', 'infrastructure'], to: ['infrastructure'], mountPath: '/infrastructure' },
+  'nooblyjs-ai-product': { was: 'a section of the Software Factory', from: ['factory', 'product'], to: ['product'], mountPath: '/product', before: 'nooblyjs-ai-factory' },
+  'nooblyjs-ai-design': { was: 'a section of the Software Factory', from: ['factory', 'design'], to: ['design'], mountPath: '/design', before: 'nooblyjs-ai-factory' },
 };
 
 const has = async (dir) => Boolean(await fs.stat(dir).catch(() => null));
@@ -55,22 +58,31 @@ async function moveData(name, from, to, log) {
 }
 
 /**
- * Adds an app's entry to hosted-apps.yaml when it isn't listed, as a line at the end so the comments people wrote stay.
- * An install seeded while the app was part of another has no entry for it.
+ * Adds an app's entry to hosted-apps.yaml when it isn't listed, as a line of its own so the comments people wrote stay:
+ * above the line that lists `before` when there is one, else at the end. An install seeded while the app was part of
+ * another has no entry for it.
  */
-async function listApp(dataDir, name, mountPath, log) {
+async function listApp(dataDir, name, mountPath, log, before = null) {
   const file = path.join(dataDir, 'config', 'hosted-apps.yaml');
   const text = await fs.readFile(file, 'utf8').catch(() => null);
   if (text === null) return;
   const listed = yaml.load(text)?.apps;
   if (!Array.isArray(listed) || listed.some((a) => a?.package === name || a?.mountPath === mountPath)) return;
-  await fs.writeFile(file, `${text.replace(/\n*$/, '\n')}  - { package: ${name}, mountPath: ${mountPath}, enabled: true }\n`);
+  const entry = `{ package: ${name}, mountPath: ${mountPath}, enabled: true }`;
+  const lines = text.split('\n');
+  const at = before ? lines.findIndex((l) => new RegExp(`^\\s*-\\s*\\{\\s*package:\\s*${before}\\s*,`).test(l)) : -1;
+  if (at >= 0) {
+    lines.splice(at, 0, `${lines[at].match(/^\s*-\s*/)[0]}${entry}`);
+    await fs.writeFile(file, lines.join('\n'));
+  } else {
+    await fs.writeFile(file, `${text.replace(/\n*$/, '\n')}  - ${entry}\n`);
+  }
   log.info(`hosted-apps.yaml: added ${name} at ${mountPath}`);
 }
 
 /**
- * Moves the data folder of each folded app to where the app that took it in keeps it (data/product →
- * data/factory/product), and of each unfolded app back to its own (data/factory/infrastructure → data/infrastructure),
+ * Moves the data folder of each folded app to where the app that took it in keeps it, and of each unfolded app back
+ * to its own (data/factory/infrastructure → data/infrastructure, data/factory/product → data/product),
  * before any app is loaded. Returns what moved.
  */
 export async function foldData(dataDir, log) {
@@ -88,7 +100,7 @@ export async function foldData(dataDir, log) {
     const to = path.join(dataDir, ...unfold.to);
     if (!(await moveData(name, from, to, log))) continue;
     log.info(`${name} was ${unfold.was} and is an app of its own again: moved its data from ${from} to ${to}`);
-    await listApp(dataDir, name, unfold.mountPath, log);
+    await listApp(dataDir, name, unfold.mountPath, log, unfold.before);
     moved.push({ name, from, to });
   }
   return moved;

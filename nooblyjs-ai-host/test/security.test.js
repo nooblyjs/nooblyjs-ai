@@ -15,7 +15,7 @@ let env;
 let stevie;
 let thabo;
 let priya;
-const design = '/factory/design/api/v1';
+const design = '/design/api/v1';
 const security = '/security/api/v1';
 const lifecycle = '/workflows/api/v1';
 const post = (c, url, json = {}) => c.request(url, { method: 'POST', json });
@@ -32,6 +32,8 @@ before(async () => {
   env = await startApp({
     env: { CHAT_MOCK_REPLY_MS: '0' },
     hostedApps: [
+      { package: 'nooblyjs-ai-product', mountPath: '/product', enabled: true },
+      { package: 'nooblyjs-ai-design', mountPath: '/design', enabled: true },
       { package: 'nooblyjs-ai-factory', mountPath: '/factory', enabled: true },
       { package: 'nooblyjs-ai-teammate', mountPath: '/teammates', enabled: true },
       { package: 'nooblyjs-ai-security', mountPath: '/security', enabled: true },
