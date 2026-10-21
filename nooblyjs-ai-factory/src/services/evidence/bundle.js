@@ -88,6 +88,7 @@ export function buildEvidence(f) {
     costUsd: f.run.costUsd,
     ...(f.noobly?.itemId ? { noobly: { itemId: f.noobly.itemId, workItemId: f.noobly.workItemId ?? null, handoffId: f.noobly.handoffId ?? null, attributes: noobly.checks } } : {}),
     ...(f.required ? { requiredTests: f.required } : {}),
+    ...(verify?.security ? { security: verify.security } : {}),
   };
 
   // ── the same facts, for people ──
@@ -103,6 +104,7 @@ export function buildEvidence(f) {
       : '',
     agent.outcome === 'success' ? formatGates(verify?.gates?.results ?? []) : '',
     requiredTestsSection(f.required),
+    securitySection(verify?.security),
     noobly.md,
     scope ? scopeSection(scope, spec) : '',
     reviews.length ? formatReview(reviews) : '',
@@ -113,6 +115,15 @@ export function buildEvidence(f) {
     `## Review it\n\n\`\`\`bash\ncd ${f.repo}\ngit log --oneline ${f.base}..${f.head}\ngit diff ${f.base}...${f.head}\ngit merge ${f.head}          # when you're happy: merging is your call\n\`\`\`\n\nThe run's whole story: \`factory logs ${f.runId}\` · this evidence as data: \`evidence.json\` (a run artifact)\n\nBase: \`${f.base}\` @ \`${String(build.prBaseSha ?? build.workspace?.baseSha ?? '').slice(0, 12)}\``,
   ];
   return { md: `${sections.filter(Boolean).join('\n\n')}\n`, json };
+}
+
+/** NooblyJS Phase 19: who scanned the commit, and its SBOM (the findings are in the checks above). */
+function securitySection(security) {
+  if (!security) return '';
+  const components = security.sbom?.components ?? [];
+  const who = security.real ? `the ${security.scanner} scanner` : `the ${security.scanner ?? 'mock'} scanner (not a real scan)`;
+  const rows = components.map((c) => `| ${c.name} | ${c.version} | ${c.licence} |`).join('\n');
+  return `## Security scan and SBOM\n\nScanned by NooblyJS Security with ${who}${security.scanId ? `, scan \`${security.scanId}\`` : ''}. The SBOM (${security.sbom?.format ?? 'CycloneDX'}): ${components.length} component${components.length === 1 ? '' : 's'}.${components.length ? `\n\n| Component | Version | Licence |\n|---|---|---|\n${rows}` : ''}`;
 }
 
 function scopeSection(scope, spec) {

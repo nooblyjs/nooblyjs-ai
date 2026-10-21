@@ -1,6 +1,6 @@
 # Phase 18 — Requirements elicitation: summary
 
-**Status:** built 2026-10-21, waiting for your review (started at your word, with the defaults, while 16a–17 wait for
+**Status:** done, signed off 2026-10-21 (built 2026-10-21, started at your word, with the defaults, while 16a–17 wait for
 theirs). Spec: `.claude/specs/phase-18-requirements-elicitation/`. Root `product.md` §3.4 is what it builds. The work is
 in `nooblyjs-ai-factory/product` (elicitation, the page, the spec's requirements), `nooblyjs-ai-factory/design` (the NFR
 catalogue's prompts) and `nooblyjs-ai-host` (the extra readiness check, Teams meeting notes, the Business analyst).

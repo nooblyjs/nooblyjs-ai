@@ -18,6 +18,7 @@ const PROJECTS = [
   'nooblyjs-ai-factory',
   'nooblyjs-ai-teammate',
   'nooblyjs-ai-infrastructure',
+  'nooblyjs-ai-security',
   'nooblyjs-ai-knowledge',
   'nooblyjs-ai-host',
   'nooblyjs-ai-desktop',

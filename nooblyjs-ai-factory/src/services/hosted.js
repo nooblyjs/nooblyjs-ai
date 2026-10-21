@@ -275,6 +275,17 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
   // so we poll it, like the dashboard's SSE feed does (src/services/sse.js). Each event carries
   // the NooblyJS item the run is for, so Activity, the item's page and its thread can show it.
   let seq = store.read().at(-1)?.seq ?? 0;
+  /** NooblyJS Phase 20: a verify step's gates (the repository's and Security's), or a deliver step's required tests. */
+  async function testRun(e, run) {
+    const quality = host.service?.('quality');
+    const result = e.data.result;
+    const noobly = run.request.noobly;
+    if (result?.gates?.results && typeof quality?.recordGates === 'function') {
+      await quality.recordGates({ runId: run.id, itemId: noobly.itemId ?? null, repo: noobly.repoName ?? run.request.repo, sha: result.checkedSha ?? null, gates: result.gates.results });
+    } else if (result?.requiredTests && typeof quality?.recordRequired === 'function') {
+      await quality.recordRequired({ runId: run.id, sha: result.sha ?? null, requiredTests: result.requiredTests });
+    }
+  }
   async function flush() {
     for (const e of store.read({ after: seq })) {
       seq = e.seq;
@@ -286,6 +297,8 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       }
       // Phase 16e: a delivered pull request for a story is the lifecycle's, with its Build and Test approvals.
       if (e.type === 'run.finished' && run?.pr) await bridge.record(run).catch((error) => log.warn?.(`factory: run ${run.id}'s pull request was not recorded in NooblyJS: ${error.message}`));
+      // NooblyJS Phase 20: each verify of a commit is a test run in the Test section; deliver adds the required tests.
+      if (e.type === 'step.finished' && run?.request?.noobly) await testRun(e, run).catch((error) => log.warn?.(`factory: run ${run.id}'s test run was not recorded: ${error.message}`));
     }
   }
   const timer = pollMs > 0 ? setInterval(() => {
@@ -332,7 +345,9 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       itemId: run?.request?.noobly?.itemId ?? null, runId, system: NAME, href: `${mountPath}/runs/${runId}`,
       stop: () => cancelRun(store, runId),
     }) ?? (() => {});
-    return executeRun(store, runId, { live: { ...live, log: (line) => log.debug?.(`[factory ${runId.slice(-6)}] ${line}`) } }).finally(unregister);
+    // NooblyJS Phase 19: the verify station asks NooblyJS Security to scan the commit (its gates), when Security runs.
+    const scan = (input) => { const s = host.service?.('security'); return typeof s?.scanChange === 'function' ? s.scanChange(input) : null; };
+    return executeRun(store, runId, { live: { ...live, scan, log: (line) => log.debug?.(`[factory ${runId.slice(-6)}] ${line}`) } }).finally(unregister);
   };
   const scheduler = createScheduler({ store, config, execute, worker: workerName('noobly') });
   if (schedule) {
@@ -445,6 +460,8 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       waitingWork: async (itemId) => intake.waiting(itemId),
       /** Take a handoff's work items in now (the handoff.created event does this by itself). */
       intake: (payload) => intake.onHandoff(payload),
+      /** One work item from another app (NooblyJS Phase 19: Security's fix for a finding): { runId } or { waiting }. */
+      startWork: (input) => intake.startWork(input),
       /**
        * Cancel one run (NooblyJS Platform · Containers → Stop): a queued one at once, a running one at its next
        * heartbeat. Returns 'cancelled', 'requested' or 'finished' (nothing to do).

@@ -1,6 +1,6 @@
 # Phase 16e — Build and Test: the AI builds and tests, engineers and testers approve: requirements
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-16e-summary.md`. Root `product.md` §3.2, §3.2c, §5; root `roadmap.md` Phase 16e. Bugs
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Summary: `.claude/phases/phase-16e-summary.md`. Root `product.md` §3.2, §3.2c, §5; root `roadmap.md` Phase 16e. Bugs
 > found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Asked 2026-10-21: "Start Phase 16e" (16a–16d still waiting for review).

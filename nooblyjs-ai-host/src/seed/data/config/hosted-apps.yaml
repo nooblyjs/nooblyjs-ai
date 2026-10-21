@@ -4,6 +4,8 @@
 # 2026-10-20 (CHG-007); it is an app of its own again.
 apps:
   - { package: nooblyjs-ai-factory, mountPath: /factory, enabled: true }
+  # Security (root roadmap Phase 19): threat models, findings, risk acceptances; it scans every Factory run.
+  - { package: nooblyjs-ai-security, mountPath: /security, enabled: true }
   - { package: nooblyjs-ai-teammate, mountPath: /teammates, enabled: true }
   - { package: nooblyjs-ai-knowledge, mountPath: /wiki, enabled: true }
   - { package: nooblyjs-ai-infrastructure, mountPath: /infrastructure, enabled: true }

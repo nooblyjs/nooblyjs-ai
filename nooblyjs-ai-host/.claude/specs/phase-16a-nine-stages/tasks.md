@@ -1,6 +1,6 @@
 # Phase 16a — Nine stages: tasks
 
-> **Status: built 2026-10-19, waiting for review.** Summary: `.claude/phases/phase-16a-summary.md`.
+> **Status: done, signed off 2026-10-21** (built 2026-10-19). Summary: `.claude/phases/phase-16a-summary.md`.
 > Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 - [x] 1. Nine stages in `src/lifecycle/stages.js`; `ship` still read (as Verify) and labelled (as Ship). _R1_

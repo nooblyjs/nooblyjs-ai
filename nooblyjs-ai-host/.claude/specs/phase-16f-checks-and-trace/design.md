@@ -1,6 +1,6 @@
 # Phase 16f — One shape for checks, and the trace: design
 
-> **Status: built 2026-10-21, waiting for review.** Requirements: `requirements.md`. Summary: `.claude/phases/phase-16f-summary.md`.
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Requirements: `requirements.md`. Summary: `.claude/phases/phase-16f-summary.md`.
 
 ## Where it lives
 

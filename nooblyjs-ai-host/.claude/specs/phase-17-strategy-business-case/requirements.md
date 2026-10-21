@@ -1,6 +1,6 @@
 # Phase 17 — Strategy and the business case: requirements
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-17-summary.md`. Root `product.md` §3.3, §5; root `roadmap.md` Phase 17. Bugs found
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Summary: `.claude/phases/phase-17-summary.md`. Root `product.md` §3.3, §5; root `roadmap.md` Phase 17. Bugs found
 > while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Asked 2026-10-21: "Please continue with next phase" (16a–16f still waiting for review).

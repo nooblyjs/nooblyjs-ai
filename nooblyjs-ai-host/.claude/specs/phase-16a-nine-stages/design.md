@@ -1,6 +1,6 @@
 # Phase 16a — Nine stages: design
 
-> **Status: built 2026-10-19, waiting for review.** Requirements: `requirements.md`.
+> **Status: done, signed off 2026-10-21** (built 2026-10-19). Requirements: `requirements.md`.
 
 ## Where the stages are written down
 

@@ -1,6 +1,6 @@
 # Phase 17 — Strategy and the business case: tasks
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-17-summary.md`.
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Summary: `.claude/phases/phase-17-summary.md`.
 
 - [x] 1. Product section: portfolio epics, epics and features in the catalogue, with documents from templates. _R1_
 - [x] 2. Product section: an idea's feature; the board's epic and feature filters. _R1_

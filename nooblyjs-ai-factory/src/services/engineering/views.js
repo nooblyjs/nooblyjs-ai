@@ -3,8 +3,9 @@
 // Engineering is real since Phase 16d: each story's application architecture (architecture.js: draft from the code,
 // edit, accept), its test analysis (the Test section, host.service('quality')) and its Engineering sign-off (the
 // lifecycle engine's readiness checks, and the sign-off itself). Pull requests and Test approvals are
-// src/services/pull-requests/views.js since Phase 16e; the test runs, coverage and defects are the seed story's sample
-// (samples.js) until Phase 20.
+// src/services/pull-requests/views.js since Phase 16e. Since Phase 20 the test runs, coverage and defects are the Test
+// section's (host.service('quality'): runs recorded from the line, coverage per item, defects as lifecycle items), with
+// the seed story's sample (samples.js) after them, marked as sample data.
 //
 //   GET  /api/engineering                                   stories in Engineer: architecture, tests, the sign-off's checks
 //   GET  /api/engineering/architecture/:id                  one story's application architecture, per system
@@ -31,6 +32,11 @@ export function engineeringRoutes({ home, host, architecture }) {
   const nameOf = async (id) => (id ? (await host.people?.get?.(id))?.name ?? id : null);
   const lifecycle = (id) => `/home/lifecycle/${encodeURIComponent(id)}`;
   const person = (req) => req?.person ?? null;
+  const testSection = () => {
+    const q = quality();
+    if (typeof q?.raiseDefect !== 'function') throw Object.assign(new Error('The Test section is not running here, so no defect can be recorded.'), { status: 503 });
+    return q;
+  };
 
   async function storyRow(item, signoffs) {
     const parent = item.parentId ? await workflows()?.item?.({ itemId: item.parentId }) : null;
@@ -71,14 +77,26 @@ export function engineeringRoutes({ home, host, architecture }) {
     return { json: { outcome: result.outcome, text: result.text, item: { id: result.item?.id, stage: result.item?.stage }, handoff: result.handoff ? { id: result.handoff.id, workItems: result.handoff.workItems.length } : null } };
   }
 
+  /** A recorded test run as the Test runs page lists it (the sample's shape, with what Phase 20 adds). */
+  const recordedRow = (r) => ({
+    id: r.id, at: r.at, itemId: r.storyId ?? r.itemId, ref: `${r.repo}${r.sha ? ` @ ${String(r.sha).slice(0, 7)}` : ''}`, kind: r.kind ?? 'gates',
+    suite: r.gates.map((g) => g.name).join(' · '), environment: r.environment, status: r.status,
+    passed: r.gates.filter((g) => g.status === 'passed').length, failed: r.gates.filter((g) => !['passed', 'skipped'].includes(g.status)).length, skipped: r.gates.filter((g) => g.status === 'skipped').length,
+    durationS: null, failures: r.failures, cases: r.cases, requirements: r.requirements, defects: r.defects ?? [], text: r.text, runId: r.runId, storyId: r.storyId,
+    href: r.runId ? `/factory/runs/${encodeURIComponent(r.runId)}` : null, recorded: true,
+  });
+
   async function runs() {
-    const { runs: list } = await readSamples(home);
+    const { runs: sample } = await readSamples(home);
+    const recorded = ((await quality()?.testRuns?.({}).catch(() => [])) ?? []).map(recordedRow);
+    const list = [...recorded, ...sample.map((r) => ({ ...r, sample: true }))];
     const failed = list.filter((r) => r.status === 'failed').length;
-    return { json: { sample: SAMPLE, runs: list, text: list.length ? `${plural(list.length, 'run')} · ${failed} failed · ${list.filter((r) => r.status === 'running').length} running` : 'No test runs yet' } };
+    return { json: { sample: sample.length ? SAMPLE : null, recorded: recorded.length, runs: list, text: list.length ? `${plural(list.length, 'run')} · ${failed} failed · ${list.filter((r) => r.status === 'running').length} running` : 'No test runs yet' } };
   }
 
   async function coverage() {
     const samples = await readSamples(home);
+    const items = (await quality()?.coverage?.().catch(() => [])) ?? [];
     const stories = ((await quality()?.stories?.().catch(() => [])) ?? []).map((s) => ({ id: s.id, itemId: s.parentId, title: s.title, ...s.summary, href: `/factory/quality/test-analysis/${encodeURIComponent(s.id)}` }));
     const byItem = new Map();
     for (const r of samples.runs.filter((x) => x.itemId)) {
@@ -88,13 +106,15 @@ export function engineeringRoutes({ home, host, architecture }) {
       byItem.set(r.itemId, row);
     }
     for (const d of samples.defects) if (byItem.has(d.itemId) && d.status === 'open') byItem.get(d.itemId).openDefects += 1;
-    return { json: { sample: SAMPLE, stories, pullRequests: [...byItem.values()] } };
+    return { json: { sample: SAMPLE, items, stories, pullRequests: [...byItem.values()] } };
   }
 
   async function defects() {
-    const { defects: list } = await readSamples(home);
+    const { defects: sample } = await readSamples(home);
+    const recorded = ((await quality()?.defects?.({}).catch(() => [])) ?? []).map((d) => ({ ...d, status: d.state, itemId: d.storyId, recorded: true }));
+    const list = [...recorded, ...sample.map((d) => ({ ...d, sample: true }))];
     const open = list.filter((d) => d.status === 'open');
-    return { json: { sample: SAMPLE, defects: list, text: list.length ? `${plural(list.length, 'defect')} · ${open.length} open` : 'No defects recorded' } };
+    return { json: { sample: sample.length ? SAMPLE : null, recorded: recorded.length, defects: list, text: list.length ? `${plural(list.length, 'defect')} · ${open.length} open` : 'No defects recorded' } };
   }
 
   return [
@@ -107,6 +127,9 @@ export function engineeringRoutes({ home, host, architecture }) {
     ['GET', '/api/test/runs', runs],
     ['GET', '/api/test/coverage', coverage],
     ['GET', '/api/test/defects', defects],
+    // Phase 20: a defect raised from a failing test run, and a decision on one (the Test section's, which the lifecycle checks).
+    ['POST', '/api/test/runs/:id/defects', async ({ params, body, req }) => ({ status: 201, json: await testSection().raiseDefect({ testRunId: params.id, ...(body ?? {}), actor: person(req) }) })],
+    ['POST', '/api/test/defects/:id/decision', async ({ params, body, req }) => ({ json: await testSection().decideDefect({ defectId: params.id, ...(body ?? {}), actor: person(req) }) })],
   ];
 }
 
@@ -116,4 +139,6 @@ export const ENGINEERING_PERMISSIONS = {
   'PUT /api/engineering/architecture/:id/systems/:name': 'draft',
   'POST /api/engineering/architecture/:id/systems/:name/accept': 'accept-decisions',
   'POST /api/engineering/:id/sign-off': 'draft',
+  'POST /api/test/runs/:id/defects': 'draft',
+  'POST /api/test/defects/:id/decision': 'draft',
 };

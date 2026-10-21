@@ -1,6 +1,6 @@
 # Phase 16c — The Design section: summary
 
-**Status:** built 2026-10-20, waiting for your review (started at your word while 16a and 16b wait for theirs). Spec:
+**Status:** done, signed off 2026-10-21 (built 2026-10-20, started at your word while 16a and 16b wait for theirs). Spec:
 `.claude/specs/phase-16c-design-section/`. The work is in `nooblyjs-ai-factory` (the Design section, `design/` and
 `public/design/`; the Product section's `designInputs`), `nooblyjs-ai-host` (stories in the lifecycle engine, Design's
 readiness, Platform's repository teams, the two Design homes) and the root steering. Root `product.md` §3.2a is what

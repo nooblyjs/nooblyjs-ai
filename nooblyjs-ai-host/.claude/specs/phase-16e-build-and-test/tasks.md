@@ -1,6 +1,6 @@
 # Phase 16e — Build and Test: tasks
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-16e-summary.md`.
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Summary: `.claude/phases/phase-16e-summary.md`.
 
 - [x] 1. Factory: the run carries its test cases; the issue asks for tests named by id. _R1_
 - [x] 2. Factory: the required tests in the PR evidence and the deliver result. _R1_

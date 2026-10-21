@@ -22,6 +22,9 @@ each feature. Each story is a lifecycle item of its own and goes to Engineering 
 - Agents draft; people accept, edit, merge, split and hand off. Agents are refused every acceptance and handoff, in the
   route and in the service, and the refusal is audited.
 - A draft only adds what is missing: it never overwrites what a person accepted or edited. Ids are never reused.
+- A handed-off story no longer changes here, except one thing (NooblyJS Phase 20): a person changes one acceptance
+  criterion (`PATCH /items/:id/stories/:storyId/criteria/:n`, with a reason) until the story is done; it emits
+  `design.criterion_changed`, and the Test section marks that criterion's cases "criterion changed".
 - The Architecture rows of the Design group are still the Product section's code and pages (`../product/`).
 
 The shared rules are the Factory's copy: `../.claude/steering/nooblyjs-ai.md`. The spec is

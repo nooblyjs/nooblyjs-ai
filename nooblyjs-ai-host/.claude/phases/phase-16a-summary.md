@@ -1,6 +1,6 @@
 # Phase 16a — Nine stages: summary
 
-**Status:** built 2026-10-19, waiting for your review. Spec: `.claude/specs/phase-16a-nine-stages/` (all 9 tasks done).
+**Status:** done, signed off 2026-10-21 (built 2026-10-19). Spec: `.claude/specs/phase-16a-nine-stages/` (all 9 tasks done).
 All the work is in `nooblyjs-ai-host`.
 
 ## What is there

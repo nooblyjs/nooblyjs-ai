@@ -14,7 +14,7 @@ import crypto from 'node:crypto';
 
 const ORDER = ['readiness', 'standard', 'gate', 'test', 'policy', 'approval'];
 const KIND_WORDS = { readiness: 'Readiness', standard: 'Standards', gate: 'Gate', test: 'Tests', policy: 'Policy', approval: 'Approval' };
-const SYSTEM_WORDS = { workflows: 'Lifecycle', product: 'Product section', design: 'Design section', factory: 'Software Factory', quality: 'Test section', infrastructure: 'Infrastructure' };
+const SYSTEM_WORDS = { workflows: 'Lifecycle', product: 'Product section', design: 'Design section', factory: 'Software Factory', quality: 'Test section', infrastructure: 'Infrastructure', security: 'Security' };
 const SAFE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 
 const idOf = (c) => `chk_${crypto.createHash('sha1').update([c.definedBy?.system, c.kind, c.subject?.item, c.subject?.ref, c.key].join('|')).digest('hex').slice(0, 12)}`;
@@ -29,6 +29,7 @@ export function createChecks({ store, services, events, log = console }) {
       ['product', () => svc('product')?.checksFor?.(itemId)],
       ['factory', () => svc('factory')?.checksFor?.({ itemId, itemIds: family })],
       ['infrastructure', () => svc('infrastructure')?.checksFor?.(itemId)],
+      ['security', () => svc('security')?.checksFor?.(itemId)],
     ];
     const missing = [];
     const lists = await Promise.all(asks.map(async ([name, ask]) => {

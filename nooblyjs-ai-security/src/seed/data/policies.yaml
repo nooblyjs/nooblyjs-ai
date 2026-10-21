@@ -1,0 +1,33 @@
+# Security's policies (root product.md §3.5, §9). Everything here is a default taken in Phase 19 [CONFIRM].
+#
+# The scanner: only the mock exists until a scanner is approved (root stack.md §6).
+scanner:
+  name: mock
+# Fix-by days per severity, from when a finding is opened [CONFIRM].
+fixByDays: { critical: 7, high: 14, medium: 30, low: 90 }
+# The scans each Software Factory run gets, after the repository's own gates. A gate fails when one of its findings is at
+# or above `blockAt` and its risk is not accepted.
+gates:
+  - { kind: secrets, blockAt: low }
+  - { kind: sast, blockAt: high }
+  - { kind: sca, blockAt: medium }
+  - { kind: licence, blockAt: medium }
+  - { kind: iac, blockAt: high }
+# Who may accept a risk: accept-risk (Architect, Owner) for these severities; the others only an Owner [CONFIRM].
+riskAcceptance:
+  maxDays: 90
+  architectMay: [low, medium]
+# Packages anyone may use without asking (sample data: the demo repository's and the seed services').
+sca:
+  unapprovedSeverity: medium
+  approved: [express, js-yaml, pg, ioredis, kafkajs, zod, react, react-dom, express-rate-limit]
+licence:
+  denied: [GPL-3.0, AGPL-3.0]
+  known: { express: MIT, js-yaml: MIT, pg: MIT, ioredis: MIT, kafkajs: MIT, zod: MIT, react: MIT, react-dom: MIT, chart.js: MIT, express-rate-limit: MIT }
+# Who owns a finding when it is opened: the repository's owner, else the default [CONFIRM].
+owners:
+  default: thabo-n
+  repositories: { web-storefront: priya-s, slots-api: thabo-n }
+# The security agent, and who drafts when it can't take work.
+agent:
+  teammates: [rook-vale, rhea-voss]

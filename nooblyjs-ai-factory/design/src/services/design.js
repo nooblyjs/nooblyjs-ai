@@ -138,6 +138,9 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
     const CHECKS = { 'requirements-covered': 'Every business requirement is covered by a story', 'decisions-decided': 'No decision is still proposed', 'interfaces-complete': 'Every interface has both sides named' };
     const checks = facts ? Object.entries(CHECKS).map(([key, words]) => ({ key, passed: facts[key].value === true, text: facts[key].value ? words : `${words}: no, ${facts[key].detail}` })) : [];
     const featureTitle = (id) => design.features.find((f) => f.id === id)?.title ?? id;
+    // NooblyJS Phase 19: the item's threat model is Security's; Solution architecture shows it and asks for one.
+    const security = host.service?.('security');
+    const tm = typeof security?.threatModelFor === 'function' ? await Promise.resolve(security.threatModelFor(itemId)).catch(() => null) : null;
     return {
       itemId, ref: item.ref ?? item.id, title: item.title, stage: item.stage, stageLabel: stageWord(item.stage), status: item.status,
       writable: item.status === 'active' && item.stage === 'design',
@@ -165,7 +168,8 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
         architecture: `${mountPath}/architecture/${encodeURIComponent(itemId)}`,
         infrastructure: '/infrastructure',
       },
-      threatModel: 'The threat model comes with the Security app (Phase 19).',
+      threatModel: tm ? { id: tm.id, version: tm.version, status: tm.status, statusText: tm.statusText, text: tm.text, href: tm.href, threats: tm.threats.length, draftedBy: tm.draftedBy?.name ?? null }
+        : { id: null, available: Boolean(security), text: security ? 'No threat model yet: ask for one, and the security agent draws it from the container view.' : 'No threat model: the Security app is not running here.' },
     };
   }
 
@@ -594,8 +598,41 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
     return { inDesign: inDesignNow, handedOff: gone, text: `${plural(inDesignNow, 'item')} in Design · ${plural(gone, 'story', 'stories')} handed off` };
   }
 
+  /**
+   * NooblyJS Phase 20: a person changes one acceptance criterion of a story (`n` from 1: AC-031-2-1 is n 1), with a
+   * reason, also after the story's handoff (until it is done): requirements move while a story is built. Nothing else of
+   * a handed-off story changes. The Test section marks the criterion's test cases "criterion changed".
+   */
+  async function changeCriterion(itemId, storyId, n, body, actor) {
+    await peopleOnly(actor, `change ${storyId}'s acceptance criteria`);
+    const index = Number(n) - 1;
+    const words = text(body?.text, 600, 'text');
+    const reason = text(body?.reason, 500, 'reason');
+    if (!words) throw badRequest('Say what the criterion is now.', { text: 'required' });
+    if (!reason) throw badRequest('Say why it changes.', { reason: 'required' });
+    const lifecycle = (await storyStages(itemId)).get(storyId);
+    if (lifecycle && lifecycle.status !== 'active') throw conflict('not_active', `${storyId} is ${lifecycle.status}: its criteria don't change any more.`);
+    let from = null;
+    const saved = await repo.update(itemId, (d) => {
+      const story = d.stories.find((x) => x.id === storyId);
+      if (!story) return null;
+      if (!Number.isInteger(index) || index < 0 || index >= (story.criteria ?? []).length) throw notFound(`${storyId} has no criterion ${n}.`);
+      from = story.criteria[index];
+      if (from === words) return d;
+      story.criteria = story.criteria.map((c, i) => (i === index ? words : c));
+      story.criteriaHistory = [...(story.criteriaHistory ?? []), { at: now(), by: by(actor), n: index + 1, from, to: words, reason }];
+      return d;
+    });
+    if (!saved) throw notFound(`${itemId} has no story ${storyId}.`);
+    const ref = `AC-${String(storyId).replace(/^STORY-/, '')}-${index + 1}`;
+    if (from !== words) {
+      await emit('design.criterion_changed', { itemId: storyId, parentId: itemId, storyId, index, ref, from, to: words, reason, summary: `changed ${ref} of ${storyId}: "${words.slice(0, 80)}" (${reason})` }, actor);
+    }
+    return view(itemId);
+  }
+
   return {
     view, items, draft, readinessFacts, acceptRequirement, editRequirement, setSystems,
-    addInterface, updateInterface, removeInterface, updateFeature, updateStory, mergeStories, splitStory, handoff, status,
+    addInterface, updateInterface, removeInterface, updateFeature, updateStory, mergeStories, splitStory, handoff, status, changeCriterion,
   };
 }

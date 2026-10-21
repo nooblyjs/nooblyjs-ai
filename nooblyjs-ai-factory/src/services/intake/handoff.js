@@ -15,6 +15,9 @@
 // pull request's evidence looks for (src/services/pull-requests/evidence.js). Hosted runs never merge
 // (stations/merge.js), and unsandboxed commands are allowed only when the host says this
 // is development.
+//
+// NooblyJS Phase 19: startWork() takes in one work item from another app the same way (Security's "Draft a fix as a
+// PR"); its run carries the finding it fixes (request.noobly.findingId), so Security can close it on a passing scan.
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadFactoryConfig } from '../../config/factory-config.js';
@@ -72,6 +75,8 @@ export function createIntake({ store, env, host, development = false, log = cons
     }
     // Phase 16d: the story's application architecture of this repository's system, and the test cases to automate.
     if (context.length) lines.push('', ...context);
+    // Phase 19: what a work item from another app (a finding to fix) asks for, in its words.
+    if (workItem.brief) lines.push('', 'What to do:', '', clip(workItem.brief, 8000));
     fs.writeFileSync(file, `${lines.join('\n')}\n`);
     return file;
   }
@@ -83,6 +88,21 @@ export function createIntake({ store, env, host, development = false, log = cons
    */
   async function onHandoff({ handoffId } = /** @type {any} */ ({})) {
     const handoff = await host.service?.('workflows')?.handoffOf?.({ handoffId });
+    return takeIn(handoff);
+  }
+
+  /**
+   * NooblyJS Phase 19: one work item that isn't from a handoff (Security's "Draft a fix as a PR"), taken in the same way:
+   * the same repository map, the same Platform check, a script by its title or a model. Once per work item id.
+   * @param {{ itemId?: string|null, workItemId: string, title: string, repo: string, brief?: string, findingId?: string|null }} input
+   */
+  async function startWork({ itemId = null, workItemId, title, repo, brief = '', findingId = null } = /** @type {any} */ ({})) {
+    if (!workItemId || !title || !repo) throw new Error('startWork needs a work item id, a title and a repository');
+    const [out] = await takeIn({ id: `work-${slugify(workItemId, 40)}`, itemId, workItems: [{ id: workItemId, title, repo, brief, findingId }], repositories: [] });
+    return out ?? { workItemId, waiting: 'nothing was started' };
+  }
+
+  async function takeIn(handoff) {
     if (!handoff?.workItems?.length) return [];
     const repos = loadReposMap(env);
     // The operator's config may ask for agent merges (autonomy L3). Hosted in NooblyJS that is refused, and said so.
@@ -133,7 +153,7 @@ export function createIntake({ store, env, host, development = false, log = cons
         allowUnsandboxed: development === true,
         agent: hasScript ? { script } : {},
         ...(fromBitbucket ? { forge: { kind: 'bitbucket', name: short } } : {}),
-        noobly: { itemId: handoff.itemId, workItemId: workItem.id, handoffId: handoff.id, repoName: workItem.repo, attributes, ...(cases.length ? { testCases: cases } : {}) },
+        noobly: { itemId: handoff.itemId, workItemId: workItem.id, handoffId: handoff.id, repoName: workItem.repo, attributes, ...(cases.length ? { testCases: cases } : {}), ...(workItem.findingId ? { findingId: workItem.findingId } : {}) },
       }, { key });
       if (runId) log.info?.(`factory intake: ${workItem.id} "${workItem.title}" → run ${runId} on ${workItem.repo}`);
       if (runId && asked === 'L3') {
@@ -160,5 +180,5 @@ export function createIntake({ store, env, host, development = false, log = cons
     for (const handoffId of new Set(waiting().map((w) => w.handoffId))) await onHandoff({ handoffId });
   }
 
-  return { onHandoff, waiting, retryWaiting };
+  return { onHandoff, startWork, waiting, retryWaiting };
 }

@@ -17,30 +17,38 @@ you" homes), 4 (Team chat), 5 (Product Factory, the hosted app `nooblyjs-ai-prod
 everywhere, and the Teams simulator), 7 (Software Factory integration), 8 (Knowledge
 Repository), 9 (Platform and governance), 9a (Infrastructure joins NooblyJS), 10 (Metrics) and 11 (Development tools:
 Bitbucket and Jira, read-only) are done** (`.claude/phases/phase-0N-summary.md`; Phase 11: `src/services/devtools/`,
-tech.md §8a). **Phase 16a (nine stages: Verify, Release and Operate replace Ship) is built and waiting for review**
+tech.md §8a). **Phase 16a (nine stages: Verify, Release and Operate replace Ship) is done (reviewed 2026-10-21)**
 (`.claude/specs/phase-16a-nine-stages/`), and so is **Phase 16b (lifecycle v3: eight stages, Discover · Product · Design ·
 Engineer · Build · Test · Release · Operate; approvals given on someone's behalf; the Factory's five sidebar groups)**
 (`.claude/specs/phase-16b-product-design-build/`; the root roadmap `../.claude/steering/roadmap.md` holds every phase). **Phase 16c (the
 Design section: business requirements, solution architecture, functional analysis and stories, each story a lifecycle
-item of its own with its own Design handoff) is built and waiting for review** (`.claude/specs/phase-16c-design-section/`;
+item of its own with its own Design handoff) is done (reviewed 2026-10-21)** (`.claude/specs/phase-16c-design-section/`;
 the section is `../nooblyjs-ai-factory/design/`, `host.service('design')`; stories in `src/lifecycle/services/engine.js`). **Phase 16d (Engineering:
 each story's application architecture drawn from the code, its test analysis in the Factory's new Test section, and the
-Engineering sign-off's checks) is built and waiting for review** (`.claude/specs/phase-16d-engineering/`; the Factory's
+Engineering sign-off's checks) is done (reviewed 2026-10-21)** (`.claude/specs/phase-16d-engineering/`; the Factory's
 `src/services/engineering/` and `../nooblyjs-ai-factory/quality/`, `host.service('quality')`). **Phase 16e (Build and
 Test: each pull request the Factory delivers for a story is a lifecycle item with its Build and Test approvals, its
 evidence listing the required tests by test case id; changes asked for are repaired by the line; a new commit clears
 both approvals; a person merges after both; a story passes Test with its last merge and a feature goes to Release on its
-own) is built and waiting for review** (`.claude/specs/phase-16e-build-and-test/`; `src/lifecycle/services/pull-requests.js`
+own) is done (reviewed 2026-10-21)** (`.claude/specs/phase-16e-build-and-test/`; `src/lifecycle/services/pull-requests.js`
 and the Factory's `src/services/pull-requests/`). **Phase 16f (one shape for checks, and the trace: each app's
 `checksFor` and `trace` services, gathered by `src/services/checks.js` and `src/services/trace.js`; the item page's Checks
-and Trace tabs; `npm run trace:rebuild`) is built and waiting for review** (`.claude/specs/phase-16f-checks-and-trace/`). **Phase 17
+and Trace tabs; `npm run trace:rebuild`) is done (reviewed 2026-10-21)** (`.claude/specs/phase-16f-checks-and-trace/`). **Phase 17
 (Strategy and the business case: portfolio epics, epics and features in the Product section with ideas under features;
 a business case on an idea or epic, drafted by an agent with an estimate from the factory's history, and "Business case
 complete" before an idea is accepted; budgets by portfolio and spend by value stream in Metrics; the Business owner's
-home) is built and waiting for review** (`.claude/specs/phase-17-strategy-business-case/`). **Phase 18 (Requirements
+home) is done (reviewed 2026-10-21)** (`.claude/specs/phase-17-strategy-business-case/`). **Phase 18 (Requirements
 elicitation: stakeholders, sessions and Teams meeting notes, candidate requirements quoting their source, requirements
 `REQ-033-01` a person accepts, the NFR walk into quality attributes, open questions holding the spec approval; the
-Business analyst's home) is built and waiting for review** (`.claude/specs/phase-18-requirements-elicitation/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
+Business analyst's home) is done (reviewed 2026-10-21)** (`.claude/specs/phase-18-requirements-elicitation/`). **Phase 19 (Security by
+design: the hosted app `nooblyjs-ai-security` at `/security`, threat models accepted through the `threat-model`
+approval, every Factory run scanned by the scanner adapter (the mock) as gates with an SBOM, findings with an owner and a
+fix-by date, a fix as a Factory run, risk acceptance with an expiry; the Security engineer's home) is done (reviewed
+2026-10-21)** (`.claude/specs/phase-19-security-by-design/`). **Phase 20 (Quality: each verify of a commit is a test run
+in the Factory's Test section, coverage per item, feature and story in words, test cases marked "criterion changed" when
+Design changes a criterion, defects as lifecycle items `DEF-031-1` linked to the requirement and story they break
+(`src/lifecycle/services/defects.js`); the tester's coverage gaps and defects) is built and waiting for review**
+(`.claude/specs/phase-20-quality/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed
 2026-10-20)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent

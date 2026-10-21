@@ -13,6 +13,7 @@ import { newId } from '../ids.js';
 import { ITEM_ID } from '../repos.js';
 import { createPullRequests } from './pull-requests.js';
 import { createLifecycleChecks } from './checks.js';
+import { createDefects } from './defects.js';
 
 const DECISIONS = new Set(['approve', 'request-changes']);
 const MAX_TEXT = 2000;
@@ -46,7 +47,9 @@ const RETIRED_APPROVALS = {
  * Home · Approvals as on its own screen. They move no stage.
  */
 const APP_TYPES = new Set(['infra-design', 'devtools-write', 'threat-model', 'risk-acceptance']);
-const sameRef = (a, b) => a && b && a.app === b.app && a.designId === b.designId && a.kind === b.kind;
+// An app names its artefact by `designId` (Infrastructure) or `id` (Security, Phase 19).
+const refId = (r) => r?.designId ?? r?.id ?? null;
+const sameRef = (a, b) => a && b && a.app === b.app && refId(a) === refId(b) && a.kind === b.kind;
 
 const text = (value, max = MAX_TEXT) => {
   if (value === undefined || value === null || value === '') return null;
@@ -282,6 +285,8 @@ export function createEngine({ repos, host, log, clock }) {
    * pull request outside its own approvals: from Phase 16e it goes pull request by pull request.
    */
   async function refuseWithPullRequests(item, what) {
+    // A defect (Phase 20) stays in the stage it was found in: it is fixed, closed or rejected on its own.
+    if (item.type === 'defect' && item.defect) throw refused('per_defect', `${item.ref ?? item.id} is a defect: it doesn't move through the stages; it is fixed, closed or rejected.`);
     if (item.type === 'pr' && item.pr) {
       throw refused('per_pull_request', `${item.ref ?? item.id} moves on with its own Build and Test approvals: decide them in Approvals or on its page.`);
     }
@@ -640,6 +645,7 @@ export function createEngine({ repos, host, log, clock }) {
     if (!to) throw badRequest(`"to" must be one of ${STAGE_KEYS.join(', ')}.`, { to: 'a stage' });
     const item = await itemOr404(itemId);
     if (item.status !== 'active') throw conflict('not_active', `${item.ref ?? item.id} is ${item.status}.`);
+    if (item.type === 'defect' && item.defect) throw refused('per_defect', `${item.ref ?? item.id} is a defect: it doesn't move through the stages; reopen or reject it instead.`);
     if (stageIndex(to) >= stageIndex(item.stage)) {
       throw refused('not_earlier', `Send back goes to an earlier stage. ${item.ref ?? item.id} is in ${stageLabel(item.stage)}.`, { to: `before ${item.stage}` });
     }
@@ -995,8 +1001,8 @@ export function createEngine({ repos, host, log, clock }) {
    */
   async function closeAppApproval({ type, ref, decision, reason = null, actor } = {}) {
     if (!APP_TYPES.has(type) || !DECISIONS.has(decision)) throw badRequest('closeAppApproval needs an app approval type and a decision.');
-    const person = await personFor(actor, { what: 'approve anything', target: `${type} ${ref?.designId ?? ''}` });
-    await requireApprover(person, `${type} ${ref?.designId ?? ''}`);
+    const person = await personFor(actor, { what: 'approve anything', target: `${type} ${refId(ref) ?? ''}` });
+    await requireApprover(person, `${type} ${refId(ref) ?? ''}`);
     const open = (await repos.approvals.list()).find((a) => a.type === type && a.status === 'open' && sameRef(a.ref, ref));
     if (!open) return null;
     const at = now();
@@ -1022,7 +1028,7 @@ export function createEngine({ repos, host, log, clock }) {
 
   /** The app's artefact no longer waits (a newer version, or it was decided elsewhere): its open approvals go. */
   async function withdrawAppApprovals({ type, ref, reason }) {
-    const open = (await repos.approvals.list()).filter((a) => a.type === type && a.status === 'open' && a.ref?.app === ref?.app && a.ref?.designId === ref?.designId && (!ref?.kind || a.ref?.kind === ref.kind));
+    const open = (await repos.approvals.list()).filter((a) => a.type === type && a.status === 'open' && a.ref?.app === ref?.app && refId(a.ref) === refId(ref) && (!ref?.kind || a.ref?.kind === ref.kind));
     for (const a of open) await withdrawApp(a, reason ?? 'no longer needed');
     return open.length;
   }
@@ -1114,6 +1120,8 @@ export function createEngine({ repos, host, log, clock }) {
   const prs = createPullRequests({ repos, host, log, now, emit, audit, personFor, requirePermission, reviewersFor, ruleOr500, itemOr404, storiesOf, followStories, moveStage });
   // One shape for checks, and the trace (Phase 16f).
   const checks = createLifecycleChecks({ repos, host, now, emit, audit, personFor, requireApprover, readinessOf, storiesOf });
+  // Defects as items of their own, each the child of the story it breaks (Phase 20).
+  const defects = createDefects({ repos, host, now, emit, audit, personFor, itemOr404 });
 
-  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories, signOffEngineering, acceptIdea, pullRequests: prs, checks };
+  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories, signOffEngineering, acceptIdea, pullRequests: prs, checks, defects };
 }

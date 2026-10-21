@@ -1,0 +1,59 @@
+{
+  "_comment": "NooblyJS Phase 19 seed: the scripted agent for Security's fix \"Remove chart.js\" (a finding on web-storefront): the console's slot chart drawn as plain SVG, with no chart library, so Security's SCA scan passes and the finding closes. Sample data.",
+  "triage": [
+    {
+      "text": "I read the work item and the code.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"Draw the slot chart without chart.js.\"\n}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "I'll look at the code that is there.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "format-slot.js"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Drawing the slot chart as plain SVG, with no chart library.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "slot-chart.js",
+            "content": "/**\n * The store console's chart of today's slots (PRD-031), drawn as plain SVG with no chart library: one bar per slot,\n * its height the places left, each with its time as a label a screen reader can say.\n * slotChartSvg([{ start: '18:00', end: '19:00', left: 2 }]) → '<svg …>…</svg>'.\n */\nimport { formatSlot } from './format-slot.js';\n\nconst esc = (s) => String(s).replace(/[&<>\"]/g, (c) => `&#${c.charCodeAt(0)};`);\n\nexport const slotChartSvg = (slots, { barWidth = 24, unit = 10 } = {}) => {\n  const top = Math.max(1, ...slots.map((s) => s.left));\n  const bars = slots.map((s, i) => {\n    const h = s.left * unit;\n    const label = `${formatSlot(s.start, s.end)}: ${s.left} places left`;\n    return `<rect x=\"${i * (barWidth + 4)}\" y=\"${top * unit - h}\" width=\"${barWidth}\" height=\"${h}\"><title>${esc(label)}</title></rect>`;\n  });\n  return `<svg xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Places left in today's slots\" width=\"${slots.length * (barWidth + 4)}\" height=\"${top * unit}\">${bars.join('')}</svg>`;\n};\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "And a test.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/slot-chart.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { slotChartSvg } from '../slot-chart.js';\n\ntest('slotChartSvg: one bar per slot, each with its time and places left', () => {\n  const svg = slotChartSvg([{ start: '18:00', end: '19:00', left: 2 }, { start: '19:00', end: '20:00', left: 0 }]);\n  assert.equal((svg.match(/<rect /g) ?? []).length, 2);\n  assert.match(svg, /18:00–19:00: 2 places left/);\n  assert.match(svg, /role=\"img\"/);\n});\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "The console's slot chart is plain SVG now (slotChartSvg in slot-chart.js), so no chart library is needed and package.json has no dependency. Each bar has its time and places left as a label a screen reader can say. The test suite passes."
+    },
+    {
+      "text": "All tests pass."
+    },
+    {
+      "text": "All tests pass."
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"No new dependency; small, tested and accessible.\", \"findings\": []}\n```"
+    }
+  ]
+}

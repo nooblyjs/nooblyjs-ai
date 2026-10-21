@@ -1,6 +1,6 @@
 # Phase 18 — Requirements elicitation: requirements
 
-> **Status: built 2026-10-21, waiting for review.** Root `product.md` §3.4; root `roadmap.md` Phase 18. Bugs found while
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Root `product.md` §3.4; root `roadmap.md` Phase 18. Bugs found while
 > reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Asked 2026-10-21: "Yes please commit and push and then do the next phase" (16a–17 still waiting for review).

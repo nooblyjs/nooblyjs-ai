@@ -13,7 +13,7 @@ export const SOURCE = path.join(NOOBLY, '.claude', 'steering', 'nooblyjs-ai-shar
 // The Software Factory's Product section (nooblyjs-ai-factory/product) reads the Factory's copy: its CLAUDE.md imports
 // ../.claude/steering/nooblyjs-ai.md.
 export const REPOS = ['nooblyjs-ai-harness', 'nooblyjs-ai-factory', 'nooblyjs-ai-teammate', 'nooblyjs-ai-knowledge',
-  'nooblyjs-ai-infrastructure'];
+  'nooblyjs-ai-infrastructure', 'nooblyjs-ai-security'];
 
 /** Each sibling repo that exists, with where its copy goes and whether that copy matches the source. */
 export async function steeringCopies({ root = path.dirname(NOOBLY) } = {}) {

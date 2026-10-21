@@ -1,6 +1,6 @@
 # Phase 16f — One shape for checks, and the trace: requirements
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-16f-summary.md`. Root `design.md` §4 (the trace), §5 (checks); root `roadmap.md` Phase
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Summary: `.claude/phases/phase-16f-summary.md`. Root `design.md` §4 (the trace), §5 (checks); root `roadmap.md` Phase
 > 16f. Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Asked 2026-10-21: "Start Phase 16f" (16a–16e still waiting for review).

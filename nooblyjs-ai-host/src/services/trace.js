@@ -15,17 +15,22 @@ const SOURCES = [
   ['quality', (s, itemId) => s.trace?.(itemId)],
   ['factory', (s, itemId, family) => s.trace?.({ itemId, itemIds: family })],
   ['infrastructure', (s, itemId) => s.trace?.(itemId)],
+  // Phase 19: the threat model, its threats and mitigations, and the findings.
+  ['security', (s, itemId) => s.trace?.(itemId)],
 ];
 
 /** Which link makes a node a child of another in the tree, best first (each node is drawn once, under its best parent). */
-const PARENT_RELS = ['verifies', 'criterion-of', 'opened-by', 'delivers', 'runs', 'implements', 'serves', 'derives-from', 'builds', 'pull-request-of', 'story-of', 'goal-of', 'feature-of', 'decides', 'quality-attribute-of', 'interface-of', 'infrastructure-for', 'for'];
+const PARENT_RELS = ['verifies', 'criterion-of', 'opened-by', 'delivers', 'runs', 'implements', 'serves', 'derives-from', 'builds', 'pull-request-of', 'story-of', 'goal-of', 'feature-of', 'decides', 'quality-attribute-of', 'interface-of', 'infrastructure-for', 'mitigates', 'part-of', 'models', 'found-in', 'for', 'breaks', 'tested-by'];
 const TYPE_WORDS = {
   item: 'Item', goal: 'Goal', 'business-requirement': 'Business requirement', feature: 'Feature', story: 'Story', criterion: 'Acceptance criterion',
   'test-case': 'Test case', interface: 'Interface', 'work-item': 'Work item', run: 'Run', 'pull-request': 'Pull request', adr: 'Decision',
   'quality-attribute': 'Quality attribute', infrastructure: 'Infrastructure design',
+  'threat-model': 'Threat model', threat: 'Threat', mitigation: 'Mitigation', finding: 'Finding',
+  // Phase 20: defects (each breaks a story, its requirements and a criterion) and the test runs they were found in.
+  defect: 'Defect', 'test-run': 'Test run',
 };
 /** The order children are drawn in: down the chain first, then what hangs off the item. */
-const TYPE_ORDER = ['goal', 'business-requirement', 'feature', 'story', 'criterion', 'test-case', 'work-item', 'run', 'pull-request', 'adr', 'quality-attribute', 'interface', 'infrastructure'];
+const TYPE_ORDER = ['goal', 'business-requirement', 'feature', 'story', 'criterion', 'test-case', 'work-item', 'run', 'pull-request', 'adr', 'quality-attribute', 'interface', 'infrastructure', 'threat-model', 'threat', 'mitigation', 'finding', 'test-run', 'defect'];
 const typeRank = (n) => { const i = TYPE_ORDER.indexOf(n.type); return i < 0 ? TYPE_ORDER.length : i; };
 const SAFE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const byId = (a, b) => String(a.id).localeCompare(String(b.id), 'en', { numeric: true });

@@ -1,6 +1,6 @@
 # Phase 17 — Strategy and the business case: summary
 
-**Status:** built 2026-10-21, waiting for your review (started at your word, with the defaults, while 16a–16f wait for
+**Status:** done, signed off 2026-10-21 (built 2026-10-21, started at your word, with the defaults, while 16a–16f wait for
 theirs). Spec: `.claude/specs/phase-17-strategy-business-case/`. Root `product.md` §3.3 and §5 are what it builds. The
 work is in `nooblyjs-ai-factory/product` (the hierarchy, business cases, the board, the pages), `nooblyjs-ai-host` (the
 idea acceptance rule, spend by value stream, budgets by portfolio, the Business owner) and `nooblyjs-ai-infrastructure`

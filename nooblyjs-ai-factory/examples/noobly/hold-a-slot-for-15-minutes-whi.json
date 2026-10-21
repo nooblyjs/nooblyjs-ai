@@ -1,0 +1,78 @@
+{
+  "_comment": "NooblyJS Phase 20 seed: the scripted agent for STORY-031-2's work item \"Hold a slot for 15 minutes while I finish checkout\" on the demo web-storefront repository. The builder sweeps expired holds once a minute, so its own test for TC-031-2-1 (the slot returns to the pool within 5 seconds) fails; the fixer believes the minute's sweep is right and changes nothing, so the factory asks a person and delivers a draft PR. The run is a failing test run to raise a defect from. Sample data.",
+  "triage": [
+    {
+      "text": "I read the work item and the code.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"One small module for slot holds, with its test.\"\n}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "I'll look at the code that is there.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "format-slot.js"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Holds in slot-hold.js: a hold lasts 15 minutes, and a sweep once a minute returns expired holds to the pool.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "slot-hold.js",
+            "content": "/**\n * Slot holds (PRD-031, STORY-031-2): a customer holds a slot for 15 minutes while they finish checkout. Holds are\n * swept once a minute: releaseAt(heldAt) is when a hold's slot goes back to the pool.\n */\nexport const HOLD_MS = 15 * 60 * 1000;\nexport const SWEEP_MS = 60 * 1000;\n\n/** When the slot held at `heldAt` (ms) is back in the pool: at the first sweep after the hold ends. */\nexport const releaseAt = (heldAt) => heldAt + HOLD_MS + SWEEP_MS;\n\n/** The holds whose slots are back in the pool at `now`. */\nexport const released = (holds, now) => holds.filter((h) => !h.paid && releaseAt(h.heldAt) <= now);\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "And the test for TC-031-2-1.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/slot-hold.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { HOLD_MS, releaseAt, released } from '../slot-hold.js';\n\n// TC-031-2-1: Given a slot is held, when 15 minutes pass without payment, then the slot returns to the pool within 5 seconds.\ntest('TC-031-2-1: the slot returns to the pool within 5 seconds', () => {\n  const heldAt = 0;\n  assert.ok(releaseAt(heldAt) - (heldAt + HOLD_MS) <= 5000, `released ${(releaseAt(heldAt) - HOLD_MS) / 1000} s after the hold ends`);\n});\n\ntest('a paid hold is never released', () => {\n  assert.deepEqual(released([{ heldAt: 0, paid: true }], HOLD_MS * 2), []);\n});\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Added slot-hold.js (releaseAt, released) with a test for TC-031-2-1."
+    },
+    {
+      "text": "I'm confident it works: the sweep runs once a minute."
+    },
+    {
+      "text": "Done."
+    },
+    {
+      "text": "Done."
+    }
+  ],
+  "fix#1": [
+    {
+      "text": "Looking at the failure.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "slot-hold.js"
+          }
+        }
+      ]
+    },
+    {
+      "text": "The sweep runs once a minute by design, so a slot comes back up to a minute after its hold ends. Whether five seconds is the right target is a person's call, so I changed nothing."
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Small and tested.\", \"findings\": []}\n```"
+    }
+  ]
+}

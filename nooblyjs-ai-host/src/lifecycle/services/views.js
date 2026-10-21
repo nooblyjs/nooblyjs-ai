@@ -270,6 +270,8 @@ export function createViews({ repos, host, engine }) {
     const pulls = ctx.items.filter((i) => i.type === 'pr' && i.parentId === found.id && i.pr && i.status !== 'withdrawn')
       .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
     const features = stories.length ? await engine.pullRequests.featuresOf(found.id) : [];
+    // Phase 20: a story's defects (each an item of its own), and a defect's own facts.
+    const defects = found.type === 'story' ? await Promise.all((await engine.defects.defectsOf({ storyId: found.id })).map((d) => engine.defects.shape(d))) : [];
     const prLink = (id) => `/factory/pull-requests/${encodeURIComponent(id)}`;
     return {
       at: ctx.at,
@@ -291,6 +293,11 @@ export function createViews({ repos, host, engine }) {
           pullRequests: pulls.map((p) => ({ id: p.id, ref: p.ref ?? p.id, title: p.title, stage: p.stage, stageLabel: stageLabel(p.stage), status: p.status, evidence: p.pr.evidence?.text ?? null, href: prLink(p.id) })),
         } : {}),
         ...(features.length ? { features } : {}),
+        ...(engine.defects.isDefect(found) ? {
+          defect: await engine.defects.shape(found),
+          parent: parent ? { id: parent.id, ref: parent.ref ?? parent.id, title: parent.title, href: `/home/lifecycle/${encodeURIComponent(parent.id)}` } : null,
+        } : {}),
+        ...(defects.length ? { defects: { open: defects.filter((d) => d.state === 'open').length, rows: defects } } : {}),
         ...(stories.length ? {
           stories: {
             total: stories.length, handedOff,
@@ -309,11 +316,11 @@ export function createViews({ repos, host, engine }) {
       })).reverse(),
       approvals: await Promise.all(approvals.map((a) => queueRow(a, ctx, nameOf))),
       actions: {
-        canSendBack: canApprove && found.status === 'active' && stageIndex(found.stage) > 0,
+        canSendBack: canApprove && found.type !== 'defect' && found.status === 'active' && stageIndex(found.stage) > 0,
         sendBackTo: STAGES.slice(0, Math.max(0, stageIndex(found.stage))).map((s) => ({ key: s.key, label: s.label })),
         // An item with stories goes on story by story (Phase 16c); a story with pull requests, and a pull request, pull
         // request by pull request (Phase 16e).
-        canAdvance: mayApprove && found.status === 'active' && !blocking.length && !stories.length && !(found.type === 'pr' && found.pr) && !(pulls.length && ['build', 'test'].includes(found.stage)),
+        canAdvance: mayApprove && found.type !== 'defect' && found.status === 'active' && !blocking.length && !stories.length && !(found.type === 'pr' && found.pr) && !(pulls.length && ['build', 'test'].includes(found.stage)),
         ...(stories.length ? { perStory: `${found.ref ?? found.id} goes on story by story: hand each one off in Design.` } : {}),
         ...(found.type === 'pr' && found.pr ? { perPullRequest: `${found.ref ?? found.id} moves on with its own Build and Test approvals: decide them on its page or in Approvals.` }
           : pulls.length && ['build', 'test'].includes(found.stage) ? { perPullRequest: `${found.ref ?? found.id} goes on pull request by pull request: decide each one's Build and Test approvals.` } : {}),

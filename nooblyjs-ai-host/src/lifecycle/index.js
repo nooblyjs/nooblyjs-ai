@@ -133,6 +133,12 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       storiesOf: async ({ itemId } = {}) => (await engine.storiesOf(itemId)).map(({ id, ref, title, stage, status, feature, stageEnteredAt }) => ({ id, ref, title, stage, status, feature: feature ?? null, stageEnteredAt })),
       /** One handoff with its work items ({ id, itemId, workItems: [{ id, repo, title, status }], … }), or null. The Software Factory reads it. */
       handoffOf: async ({ handoffId } = {}) => repos.handoffs.get(handoffId),
+      /** A defect on a story (Phase 20): what it breaks and the test run it was found in. See defects.js. */
+      recordDefect: (input) => engine.defects.recordDefect(input),
+      /** Fixed (a run's proof, or a person), close, reject or reopen a defect. */
+      decideDefect: (input) => engine.defects.decideDefect(input),
+      /** Defects of a story, of an item, or all, as the pages show them; optionally in one state. */
+      defects: async (input = {}) => Promise.all((await engine.defects.defectsOf(input)).map((d) => engine.defects.shape(d))),
       /** One item, as the lifecycle sees it (null when unknown). */
       item: async ({ itemId } = {}) => repos.items.get(itemId),
       /** Approvals, optionally of one type (the Factory's Pull requests and Test approvals pages). */

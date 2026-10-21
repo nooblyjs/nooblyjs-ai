@@ -1,0 +1,93 @@
+{
+  "_comment": "NooblyJS Phase 19 seed: the scripted agent for PRD-031's work item \"Slot chart on the store console\" on the demo web-storefront repository. The builder adds chart.js (not on Security's approved list) to draw the chart; the tests pass, but Security's SCA gate fails. The fixer believes chart.js is right and changes nothing, so the factory asks a person and delivers a draft PR that shows the finding. Sample data.",
+  "triage": [
+    {
+      "text": "I read the work item and the code.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"One small module for the console's slot chart, with a test.\"\n}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "I'll look at the code that is there, and its package.json.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "format-slot.js"
+          }
+        },
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "package.json"
+          }
+        }
+      ]
+    },
+    {
+      "text": "The console draws charts with chart.js: adding it to package.json.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "package.json",
+            "content": "{\n  \"name\": \"web-storefront-demo\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test\"\n  },\n  \"dependencies\": {\n    \"chart.js\": \"4.4.1\"\n  }\n}\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Adding the chart's config in slot-chart.js.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "slot-chart.js",
+            "content": "/**\n * The store console's chart of today's slots (PRD-031): one bar per slot, its height the places left. The console\n * draws it with chart.js: slotChartConfig([{ start: '18:00', end: '19:00', left: 2 }]) → a chart.js bar config.\n */\nimport { formatSlot } from './format-slot.js';\n\nexport const slotChartConfig = (slots) => ({\n  type: 'bar',\n  data: { labels: slots.map((s) => formatSlot(s.start, s.end)), datasets: [{ label: 'Places left', data: slots.map((s) => s.left) }] },\n});\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "And a test.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/slot-chart.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { slotChartConfig } from '../slot-chart.js';\n\ntest('slotChartConfig: one bar per slot, its height the places left', () => {\n  const c = slotChartConfig([{ start: '18:00', end: '19:00', left: 2 }, { start: '19:00', end: '20:00', left: 0 }]);\n  assert.deepEqual(c.data.labels, ['18:00–19:00', '19:00–20:00']);\n  assert.deepEqual(c.data.datasets[0].data, [2, 0]);\n});\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Added slotChartConfig() in slot-chart.js for the console's chart.js bar chart of today's slots, with a test. The test suite passes."
+    },
+    {
+      "text": "All tests pass."
+    },
+    {
+      "text": "All tests pass."
+    }
+  ],
+  "fix#1": [
+    {
+      "text": "Looking at the failure.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "package.json"
+          }
+        }
+      ]
+    },
+    {
+      "text": "chart.js is the library the console's charts need, so I believe it is right as it is. Whether it may be approved is a person's call."
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"Small and tested.\", \"findings\": []}\n```"
+    }
+  ]
+}

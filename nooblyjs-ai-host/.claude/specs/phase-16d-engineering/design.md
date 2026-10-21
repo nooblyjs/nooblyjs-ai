@@ -1,6 +1,6 @@
 # Phase 16d — Engineering: design
 
-> **Status: built 2026-10-20, waiting for review.** Requirements: `requirements.md`. Summary: `.claude/phases/phase-16d-summary.md`.
+> **Status: done, signed off 2026-10-21** (built 2026-10-20). Requirements: `requirements.md`. Summary: `.claude/phases/phase-16d-summary.md`.
 
 ## Where it lives
 

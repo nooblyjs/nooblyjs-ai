@@ -96,8 +96,16 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         } catch { /* the Design section is there but can't answer: the panels say it isn't running */ }
       }
     }
-    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business, elicitation };
-    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst, 'business-owner': businessOwner, 'business-analyst': businessAnalyst }[role.layout](ctx);
+    // The tester's coverage gaps and open defects (Phase 20): from the Software Factory's Test section.
+    let quality = null;
+    if (role.layout === 'test-analyst' && typeof services.get('quality')?.gaps === 'function') {
+      const q = services.get('quality');
+      quality = await Promise.all([q.gaps(), q.defects({ state: 'open' })]).then(([gaps, defects]) => ({ gaps, defects })).catch(() => null);
+    }
+    // The Security engineer's home (Phase 19): from the Security app.
+    const security = role.layout === 'security-engineer' ? await Promise.resolve(services.get('security')?.home?.()).catch(() => null) : null;
+    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business, elicitation, security, quality };
+    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst, 'business-owner': businessOwner, 'business-analyst': businessAnalyst, 'security-engineer': securityEngineer }[role.layout](ctx);
     return { ...base, layout: role.layout, engine: true, now: snapshot.at, ...shaped };
   }
 
@@ -326,7 +334,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
    * Test analyst: criteria without a ready test case, interfaces without a test, the sign-offs waiting on them, and
    * (Phase 16e) the pull requests waiting on a Test approval.
    */
-  function testAnalyst({ mine, engineering, snapshot, items }) {
+  function testAnalyst({ mine, engineering, snapshot, items, quality, base }) {
     const stories = engineering ?? [];
     const inScope = new Set(items.map((i) => i.id));
     const testing = snapshot.approvals.filter((a) => a.type === 'test-approval' && (a.mine || inScope.has(a.itemId))).sort((a, b) => b.ageHours - a.ageHours);
@@ -334,6 +342,10 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const untouched = stories.filter((s) => !s.testAnalysis.cases);
     const untested = stories.flatMap((s) => (s.testAnalysis.untestedInterfaces ?? []).map((id) => ({ s, id })));
     const yours = signOffsFor(mine);
+    // Phase 20: criteria with no passing test in Build or Test, and open defects.
+    const gaps = quality?.gaps ?? [];
+    const defects = (quality?.defects ?? []).filter((d) => base.scope === 'all' || inScope.has(d.storyId) || inScope.has(d.id));
+    const gapCount = gaps.reduce((n, g) => n + g.missing, 0);
     return {
       summary: engineering === null ? ENGINEERING_OFF
         : missing ? `${words(missing)} ${plural(missing, 'criterion has', 'criteria have')} no ready test case yet, which holds the Engineering sign-off.` : 'Every criterion in Engineer has a ready test case.',
@@ -345,6 +357,8 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         { key: 'interfaces', label: 'Interfaces without a ready test', value: untested.length, note: 'contract or integration' },
         { key: 'sign-offs', label: 'Sign-offs waiting on you', value: yours.length, note: yours.length ? null : 'Nothing waiting' },
         { key: 'test-approvals', label: 'Pull requests waiting on a Test approval', value: testing.length, note: testing.length ? `oldest ${testing[0].age}` : 'Nothing waiting' },
+        { key: 'gaps', label: 'Criteria with no passing test', value: quality === null ? null : gapCount, note: gaps.length ? `in ${plural(gaps.length, 'story', 'stories')} in Build or Test` : 'None in Build or Test', tone: gapCount ? 'warning' : null },
+        { key: 'defects', label: 'Open defects', value: quality === null ? null : defects.length, note: defects.some((d) => d.severity === 'S1') ? 'An S1 among them' : defects.length ? null : 'None open', tone: defects.some((d) => d.severity === 'S1') ? 'danger' : null },
       ],
       panels: {
         lists: [
@@ -361,6 +375,15 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
           {
             key: 'interfaces', title: 'Interfaces without a ready test', link: { label: 'Test analysis', href: '/factory/quality/test-analysis' }, empty: 'Every interface has a ready contract or integration test.',
             rows: untested.map(({ s, id }) => ({ id: `${s.id}:${id}`, title: `${s.ref} · ${id}`, text: s.title, action: { label: 'Open', href: `/factory/quality/test-analysis/${encodeURIComponent(s.id)}` } })),
+          },
+          {
+            key: 'gaps', title: 'Coverage gaps', link: { label: 'Coverage', href: '/factory/test/coverage' },
+            empty: quality === null ? 'The Test section is not running here, so there is no coverage to show.' : 'Every criterion in Build or Test has a passing test.',
+            rows: gaps.map((g) => ({ id: g.storyId, title: `${g.storyId} · ${g.title}`, text: `${g.text} · in ${g.stage === 'build' ? 'Build' : 'Test'}`, action: { label: 'Open', href: g.href } })),
+          },
+          {
+            key: 'defects', title: 'Open defects', link: { label: 'Defects', href: '/factory/test/defects' }, empty: 'No defect is open.',
+            rows: defects.map((d) => ({ id: d.id, title: `${d.id} · ${d.title}`, text: `${d.severityLabel} · ${d.breaksText}${d.ownerName ? ` · ${d.ownerName}` : ''}`, late: d.severity === 'S1', action: { label: 'Open', href: d.href } })),
           },
         ],
         side: [signOffList(mine)],
@@ -399,6 +422,37 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         side: [
           { key: 'no-session', title: 'Specs with no session', empty: 'Every spec has a session.', rows: noSession.map((e) => ({ id: e.itemId, title: `${e.itemId} · ${e.title}`, text: 'No interview, workshop or meeting yet', action: { label: 'Record one', href: href(e.itemId) } })) },
           { key: 'nfr', title: 'NFR walks to finish', empty: 'Every walk is finished.', rows: walks.map((e) => ({ id: e.itemId, title: `${e.itemId} · ${e.title}`, text: `${e.walked} of ${e.categories} categories walked`, action: { label: 'Walk', href: href(e.itemId) } })) },
+        ],
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------------------- Security engineer (Phase 19)
+
+  /** Security engineer: findings past or near their fix-by date, threat models waiting, risks ending, items with none. */
+  function securityEngineer({ security, snapshot }) {
+    const off = 'The Security app is not running here, so there are no findings or threat models to show.';
+    const s = security ?? { open: [], late: [], soon: [], waiting: [], risks: [], without: [] };
+    const tmApprovals = snapshot.approvals.filter((a) => a.type === 'threat-model');
+    const due = [...s.late, ...s.soon];
+    return {
+      summary: security === null ? off : s.late.length ? `${words(s.late.length)} ${plural(s.late.length, 'finding is', 'findings are')} past ${plural(s.late.length, 'its', 'their')} fix-by date.` : s.waiting.length ? `${words(s.waiting.length)} threat ${plural(s.waiting.length, 'model waits', 'models wait')} to be accepted.` : 'No finding is past its fix-by date.',
+      filters: { what: 'Security' },
+      action: { label: 'Open Findings', href: '/security/findings' },
+      tiles: [
+        { key: 'late', label: 'Past fix-by', value: security === null ? null : s.late.length, note: s.late.length ? 'Each has an owner: ask for a fix' : 'None', tone: s.late.length ? 'danger' : null },
+        { key: 'open', label: 'Open findings', value: security === null ? null : s.open.length, note: `${s.soon.length} due within a week` },
+        { key: 'threat-models', label: 'Threat models waiting', value: security === null ? null : Math.max(s.waiting.length, tmApprovals.length), note: 'An Architect accepts them' },
+        { key: 'risks', label: 'Risks ending soon', value: security === null ? null : s.risks.length, note: 'Within two weeks' },
+      ],
+      panels: {
+        lists: [
+          { key: 'findings', title: 'Findings past or near fix-by', empty: security === null ? off : 'Nothing due.', rows: due.map((f) => ({ id: f.id, title: `${f.id} · ${f.title}`, text: `${f.severityLabel} · ${f.fixByText} · owner ${f.ownerName ?? 'nobody'}`, late: f.late, action: { label: 'Open', href: f.href } })) },
+          { key: 'threat-models', title: 'Threat models waiting', empty: 'None waiting.', rows: s.waiting.map((tm) => ({ id: tm.id, title: `${tm.id} v${tm.version} · ${tm.itemId}`, text: tm.text, action: { label: 'Review', href: tm.href } })) },
+        ],
+        side: [
+          { key: 'risks', title: 'Risks ending soon', empty: 'No risk ends in the next two weeks.', rows: s.risks.map((r) => ({ id: r.findingId, title: `${r.findingId} · ${r.title}`, text: r.stateText, action: { label: 'Open', href: r.href } })) },
+          { key: 'without', title: 'Items with no threat model', empty: 'Every item in Design or later has one.', rows: s.without.map((i) => ({ id: i.id, title: `${i.id} · ${i.title}`, text: `In ${i.stage}`, action: { label: 'Ask for one', href: `/security/threat-models?itemId=${encodeURIComponent(i.id)}` } })) },
         ],
       },
     };

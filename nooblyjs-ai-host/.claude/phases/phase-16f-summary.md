@@ -1,6 +1,6 @@
 # Phase 16f — One shape for checks, and the trace: summary
 
-**Status:** built 2026-10-21, waiting for your review (started at your word, while 16a–16e wait for theirs). Spec:
+**Status:** done, signed off 2026-10-21 (built 2026-10-21, started at your word, while 16a–16e wait for theirs). Spec:
 `.claude/specs/phase-16f-checks-and-trace/`. Root `design.md` §4 (the trace) and §5 (checks) are what it builds. The
 work is in `nooblyjs-ai-host` (the checks and trace services, the lifecycle's checks and override, the item page,
 Overview), `nooblyjs-ai-factory` (the line's checks and runs; the Product, Design and Test sections' checks and links)

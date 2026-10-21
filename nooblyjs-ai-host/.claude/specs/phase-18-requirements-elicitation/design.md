@@ -1,6 +1,6 @@
 # Phase 18 — Requirements elicitation: design
 
-> **Status: built 2026-10-21, waiting for review.** Requirements: `requirements.md`. Summary: `.claude/phases/phase-18-summary.md`.
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Requirements: `requirements.md`. Summary: `.claude/phases/phase-18-summary.md`.
 
 ## Where it lives
 

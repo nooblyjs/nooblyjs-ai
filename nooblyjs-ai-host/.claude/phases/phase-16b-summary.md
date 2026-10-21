@@ -1,6 +1,6 @@
 # Phase 16b — Eight stages, and the Factory's five groups: summary
 
-**Status:** built 2026-10-20, waiting for your review. Spec: `.claude/specs/phase-16b-product-design-build/`. The work
+**Status:** done, signed off 2026-10-21 (built 2026-10-20). Spec: `.claude/specs/phase-16b-product-design-build/`. The work
 is in `nooblyjs-ai-host` (the lifecycle engine, Home, Metrics, roles) and `nooblyjs-ai-factory` (the sidebar and the
 Design section). Lifecycle v3 is root `product.md` §3.2, §3.2a–c and §4.
 

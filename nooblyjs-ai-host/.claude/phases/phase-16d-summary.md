@@ -1,6 +1,6 @@
 # Phase 16d — Engineering: application architecture from the code, and test analysis: summary
 
-**Status:** built 2026-10-20, waiting for your review (started at your word, with your defaults, while 16a–16c wait for
+**Status:** done, signed off 2026-10-21 (built 2026-10-20, started at your word, with your defaults, while 16a–16c wait for
 theirs). Spec: `.claude/specs/phase-16d-engineering/`. The work is in `nooblyjs-ai-factory` (`src/services/engineering/`,
 the new Test section `quality/`, the intake, the pages) and `nooblyjs-ai-host` (the lifecycle's Engineering checks and
 sign-off, the two Engineering homes). Root `product.md` §3.2b is what Engineering is for.

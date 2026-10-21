@@ -38,7 +38,7 @@ test('checks from every app in one list, each with a stable id; check.recorded o
   const first = await checks.checksFor('PRD-1');
   assert.deepEqual(first.checks.map((c) => [c.kind, c.source, c.result]), [['readiness', 'Lifecycle', 'failed'], ['policy', 'Infrastructure', 'passed']]);
   assert.equal(first.text, '1 of 2 pass · 1 failing');
-  assert.deepEqual(first.unavailable, ['Product section', 'Software Factory'], 'not running here, and failing');
+  assert.deepEqual(first.unavailable, ['Product section', 'Software Factory', 'Security'], 'not running here, and failing');
   assert.equal(env.emitted.filter((e) => e.type === 'check.recorded').length, 2);
   const again = await checks.checksFor('PRD-1');
   assert.deepEqual(again.checks.map((c) => c.id), first.checks.map((c) => c.id), 'the same id each time');

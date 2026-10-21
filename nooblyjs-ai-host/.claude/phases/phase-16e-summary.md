@@ -1,6 +1,6 @@
 # Phase 16e — Build and Test: the AI builds and tests, engineers and testers approve: summary
 
-**Status:** built 2026-10-21, waiting for your review (started at your word, with the defaults, while 16a–16d wait for
+**Status:** done, signed off 2026-10-21 (built 2026-10-21, started at your word, with the defaults, while 16a–16d wait for
 theirs). Spec: `.claude/specs/phase-16e-build-and-test/`. The work is in `nooblyjs-ai-factory` (`src/services/pull-requests/`,
 the deliver station and evidence, the intake, the pages) and `nooblyjs-ai-host` (`src/lifecycle/services/pull-requests.js`,
 the engine's hooks, devtools' Bitbucket merge, the homes, Metrics, the item page). Root `product.md` §3.2c is what Build

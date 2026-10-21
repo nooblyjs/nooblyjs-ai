@@ -1,6 +1,6 @@
 # Phase 16f — One shape for checks, and the trace: tasks
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-16f-summary.md`.
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Summary: `.claude/phases/phase-16f-summary.md`.
 
 - [x] 1. The check shape (a helper) and NooblyJS's checks service: gather, `check.recorded`, overrides. _R1, R2_
 - [x] 2. The lifecycle's checks (readiness, approvals) and one check's override. _R1, R2_

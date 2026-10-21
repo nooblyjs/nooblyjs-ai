@@ -1,14 +1,16 @@
 // Build's Pull requests and the Test group (CHG-008; Phase 16e): each pull request with its Build and Test approvals and
 // its evidence; a pull request's page, where an engineer gives the Build approval or asks for changes, a tester gives the
 // Test approval or sends it back (for themselves or on someone's behalf), and a person merges it after both; the Test
-// approvals (waiting on a tester, in Test, given). The pull requests and approvals are the lifecycle engine's; the test
-// runs, coverage and defects are the seed story's sample until Phase 20 records them, and the pages say so.
+// approvals (waiting on a tester, in Test, given). The pull requests and approvals are the lifecycle engine's. Since
+// Phase 20 the test runs, coverage and defects are the Test section's (recorded from the line; defects are lifecycle
+// items), with the seed story's sample after them, marked as such.
 // Data: GET /pull-requests, /pull-requests/:id, /test/approvals, /test/runs, /test/coverage, /test/defects;
-// POST /pull-requests/:id/decision, /pull-requests/:id/merge.
+// POST /pull-requests/:id/decision, /pull-requests/:id/merge, /test/runs/:id/defects, /test/defects/:id/decision.
 import { h, page, ago, fmtDur } from '../lib.js';
 import { pill, pageHead, tableWrap, empty, tile } from '../parts.js';
 
-const SAMPLE = 'Phase 20 records test runs, coverage and defects from the line and the environments; until then these are sample data of the seed story.';
+const SAMPLE = 'The rows marked sample are the seed story\'s sample data (CHG-008); the others are recorded from the Factory\'s line (Phase 20). Environment runs join in Phase 21.';
+const SEVERITY = { S1: 'S1 Critical', S2: 'S2 Major', S3: 'S3 Minor', S4: 'S4 Trivial' };
 const RUN_TONE = { passed: 'teal', failed: 'danger', running: 'accent' };
 const APPROVAL_TONE = { approved: 'teal', waiting: 'warn', 'changes-requested': 'danger', cleared: '', none: '' };
 const TEST_TONE = { passing: 'teal', failing: 'danger', unproven: 'warn', missing: 'danger' };
@@ -107,48 +109,80 @@ async function approvalsView(p) {
 }
 
 async function runsView(p) {
-  const { runs, text } = await p.get('test/runs');
-  return [pageHead('Test runs', `The Factory's gates on each pull request, and the suites run in an environment. ${text}.`),
-    table('Test runs', ['Run', 'Pull request', 'Suite', 'Where', 'Result', 'Took', 'When'], runs.map((r) => h('tr', {},
+  const { runs, text, recorded } = await p.get('test/runs');
+  return [pageHead('Test runs', `Each verify of a commit by the Factory's line (Build level), against the story's test cases and requirements; then the suites run in an environment. ${text}.`),
+    table('Test runs', ['Run', 'Story and commit', 'Suite', 'Where', 'Result', 'Took', 'When'], runs.map((r) => h('tr', {},
       h('td.mono', {}, r.id),
-      h('td.title', {}, r.ref ?? 'All journeys'),
-      h('td', {}, r.suite, r.failures?.length ? h('ul', {}, r.failures.map((f) => h('li.muted', {}, f))) : null, r.note ? h('div.muted', {}, r.note) : null),
+      h('td.title', {}, r.storyId ? h('div', {}, r.storyId) : null, r.ref ?? 'All journeys', r.requirements?.length ? h('div.muted', {}, `For ${r.requirements.join(', ')}`) : null),
+      h('td', {}, r.suite, r.failures?.length ? h('ul', {}, r.failures.map((f) => h('li.muted', {}, f))) : null, r.note ? h('div.muted', {}, r.note) : null,
+        r.recorded && r.text ? h('div.muted', {}, r.text) : null,
+        r.defects?.length ? h('div', {}, 'Defects: ', r.defects.map((id) => h('a.mono', { href: `/home/lifecycle/${enc(id)}` }, `${id} `))) : null,
+        r.recorded && r.status !== 'passed' && r.storyId && p.can('draft') ? raiseForm(p, r) : null),
       h('td', {}, r.environment),
-      h('td', {}, pill(r.status === 'running' ? `Running · ${r.passed} passed so far` : `${r.status === 'passed' ? 'Passed' : 'Failed'} · ${r.passed} passed, ${r.failed} failed${r.skipped ? `, ${r.skipped} skipped` : ''}`, RUN_TONE[r.status] ?? '', 'plain')),
+      h('td', {}, pill(r.status === 'running' ? `Running · ${r.passed} passed so far` : `${r.status === 'passed' ? 'Passed' : r.status === 'error' ? 'Could not run' : 'Failed'} · ${r.passed} passed, ${r.failed} failed${r.skipped ? `, ${r.skipped} skipped` : ''}`, RUN_TONE[r.status] ?? '', 'plain')),
       h('td.muted', {}, r.durationS ? fmtDur(r.durationS * 1000) : '—'),
-      h('td.muted', {}, ago(r.at)))), 'No test runs yet.'),
-    h('p.note', {}, SAMPLE)];
+      h('td.muted', {}, ago(r.at), r.sample ? ' · sample' : ''))), 'No test runs yet.'),
+    recorded < runs.length ? h('p.note', {}, SAMPLE) : null];
+}
+
+/** Raise a defect from a failing run: what goes wrong (it defaults to the failing case) and how bad. */
+function raiseForm(p, r) {
+  const failing = r.cases?.find((c) => c.status === 'failing');
+  const title = h('input', { type: 'text', placeholder: failing ? `${failing.id} fails: ${failing.title}` : 'What goes wrong', 'aria-label': 'What goes wrong' });
+  const severity = h('select', { 'aria-label': 'Severity' }, Object.entries(SEVERITY).map(([k, v]) => h('option', { value: k, ...(k === 'S2' ? { selected: true } : {}) }, v)));
+  return h('details', {}, h('summary', {}, 'Raise a defect'),
+    h('div.btns', {}, title, severity, h('button.primary', { onclick: p.act(() => p.post(`test/runs/${enc(r.id)}/defects`, { title: title.value.trim() || undefined, severity: severity.value })) }, 'Raise')));
 }
 
 async function coverageView(p) {
-  const { stories, pullRequests } = await p.get('test/coverage');
-  return [pageHead('Coverage', 'Per story, the acceptance criteria with a ready test case and what the AI automates; per pull request, its runs and open defects.'),
+  const { items = [], stories, pullRequests } = await p.get('test/coverage');
+  const all = items.flatMap((i) => i.stories.flatMap((s) => s.rows));
+  const passing = all.filter((r) => r.passing).length;
+  return [pageHead('Coverage', 'Every acceptance criterion of an item, across its features and stories: with a ready test case, with an automated test, with a passing test (Build). Test runs in environments join in Phase 21.'),
     h('div.tiles', {},
-      tile('Criteria with a ready test case', `${stories.reduce((n, s) => n + s.ready, 0)} of ${stories.reduce((n, s) => n + s.criteria, 0)}`, `across ${stories.length} ${stories.length === 1 ? 'story' : 'stories'} in Engineer`),
-      tile('Test cases the AI automates', `${stories.reduce((n, s) => n + s.automated, 0)} of ${stories.reduce((n, s) => n + s.cases, 0)}`, 'the rest a person checks'),
-      tile('Open defects', pullRequests.reduce((n, r) => n + r.openDefects, 0), 'on pull requests in flight')),
-    h('section.card', { 'aria-label': 'Stories' }, h('h2', {}, 'Stories'),
-      table('Coverage per story', ['Story', 'Criteria', 'Test cases', ''], stories.map((s) => h('tr', {},
-        h('td.title', {}, `${s.id} · ${s.title}`), h('td', {}, s.text), h('td', {}, `${s.cases} (${s.automated} automated)`), h('td.r', {}, h('a.btn', { href: s.href }, 'Test analysis')))), 'No story has a test analysis yet.')),
-    h('section.card', { 'aria-label': 'Pull requests' }, h('h2', {}, 'Pull requests'),
-      table('Coverage per pull request', ['Pull request', 'Runs', 'Last run', 'Open defects'], pullRequests.map((r) => h('tr', {},
-        h('td.title', {}, r.ref), h('td', {}, r.runs), h('td', {}, pill(`${r.last.suite}: ${r.last.status}`, RUN_TONE[r.last.status] ?? '', 'plain')), h('td', {}, r.openDefects ? pill(String(r.openDefects), 'danger', 'plain') : 'None'))), 'No runs yet.')),
-    h('p.note', {}, SAMPLE)];
+      tile('Criteria with a passing test', `${passing} of ${all.length}`, `across ${items.length} ${items.length === 1 ? 'item' : 'items'} past Design`),
+      tile('Criteria with a ready test case', `${all.filter((r) => r.ready).length} of ${all.length}`, `${all.filter((r) => r.changed).length} with a changed criterion`),
+      tile('Criteria with an automated test', `${all.filter((r) => r.automated).length} of ${all.length}`, 'found in the latest run\'s commit')),
+    ...items.map((i) => h('section.card', { 'aria-label': `${i.ref} coverage` },
+      h('div.card-head', {}, h('h2', {}, `${i.ref} · ${i.title}`), pill(i.text, i.passing === i.criteria && i.criteria ? 'teal' : 'warn', 'plain')),
+      h('p.muted', {}, i.detail),
+      i.features.length ? table(`${i.ref} per feature`, ['Feature', 'Stories', 'Coverage'], i.features.map((f) => h('tr', {},
+        h('td.title', {}, `${f.id} · ${f.title}`), h('td', {}, f.stories.join(', ')), h('td', {}, f.text, h('div.muted', {}, f.detail)))), '') : null,
+      table(`${i.ref} per story`, ['Story', 'Criterion', 'Ready case', 'Automated', 'Passing (Build)'], i.stories.flatMap((st) => st.rows.map((row, k) => h('tr', {},
+        h('td.title', {}, k === 0 ? h('a', { href: st.href }, `${st.id} · ${st.title}`) : '', k === 0 && st.latestRun ? h('div.muted', {}, `Latest run ${st.latestRun.id}: ${st.latestRun.text}`) : null),
+        h('td', {}, h('span.mono', {}, row.ref), ` ${row.text}`, row.changed ? h('div', {}, pill('Criterion changed: its cases need a look', 'warn', 'plain')) : null),
+        h('td', {}, yesNo(row.ready)), h('td', {}, yesNo(row.automated)), h('td', {}, yesNo(row.passing))))), 'No acceptance criteria yet.'))),
+    h('section.card', { 'aria-label': 'Stories in Engineer' }, h('h2', {}, 'Test analysis in Engineer'),
+      table('Coverage per story in Engineer', ['Story', 'Criteria', 'Test cases', ''], stories.map((s) => h('tr', {},
+        h('td.title', {}, `${s.id} · ${s.title}`), h('td', {}, s.text, s.changedText ? h('div.muted', {}, s.changedText) : null), h('td', {}, `${s.cases} (${s.automated} automated)`), h('td.r', {}, h('a.btn', { href: s.href }, 'Test analysis')))), 'No story is in Engineer.')),
+    pullRequests.length ? h('section.card', { 'aria-label': 'Sample pull requests' }, h('h2', {}, 'Sample pull requests'),
+      table('Coverage per pull request (sample)', ['Pull request', 'Runs', 'Last run', 'Open defects'], pullRequests.map((r) => h('tr', {},
+        h('td.title', {}, r.ref), h('td', {}, r.runs), h('td', {}, pill(`${r.last.suite}: ${r.last.status}`, RUN_TONE[r.last.status] ?? '', 'plain')), h('td', {}, r.openDefects ? pill(String(r.openDefects), 'danger', 'plain') : 'None'))), 'No runs yet.'), h('p.note', {}, SAMPLE)) : null];
 }
+const yesNo = (v) => pill(v ? 'Yes' : 'No', v ? 'teal' : 'warn', 'plain');
 
 async function defectsView(p) {
-  const { defects, text } = await p.get('test/defects');
-  const SEV = { S1: 'danger', S2: 'warn', S3: '' };
-  const STATUS = { open: 'Open', fixed: 'Fixed, not yet closed', closed: 'Closed' };
-  return [pageHead('Defects', `Each defect with the pull request and requirement it breaks, and the run that found it. ${text}.`),
-    table('Defects', ['Defect', 'Severity', 'Status', 'Pull request', 'Breaks', 'Found'], defects.map((d) => h('tr', {},
-      h('td.title', {}, h('span.mono', {}, d.id), ' ', d.title, d.body ? h('div.muted', {}, d.body) : null),
-      h('td', {}, pill(d.severity, SEV[d.severity] ?? '', 'plain')),
-      h('td', {}, pill(STATUS[d.status] ?? d.status, d.status === 'open' ? 'danger' : 'teal', 'plain')),
-      h('td', {}, d.ref ?? ''),
-      h('td', {}, d.breaks ?? ''),
-      h('td.muted', {}, `${d.foundIn} · ${ago(d.foundAt)}`))), 'No defects recorded.'),
-    h('p.note', {}, SAMPLE)];
+  const { defects, text, recorded } = await p.get('test/defects');
+  const SEV = { S1: 'danger', S2: 'warn', S3: '', S4: '' };
+  const STATUS = { open: 'Open', fixed: 'Fixed, not yet closed', closed: 'Closed', rejected: 'Rejected' };
+  return [pageHead('Defects', `Each defect with the story and requirement it breaks, and the run that found it. A passing run of its story marks it fixed; a person closes it. ${text}.`),
+    table('Defects', ['Defect', 'Severity', 'Status', 'Story', 'Breaks', 'Found'], defects.map((d) => h('tr', {},
+      h('td.title', {}, d.recorded ? h('a.mono', { href: d.href }, d.id) : h('span.mono', {}, d.id), ' ', d.title, d.sample ? h('div.muted', {}, 'sample') : null,
+        (d.body || d.text) ? h('div.muted', {}, d.body || d.text) : null, d.recorded && p.can('draft') ? decideForm(p, d) : null),
+      h('td', {}, pill(d.severityLabel ?? d.severity, SEV[d.severity] ?? '', 'plain')),
+      h('td', {}, pill(STATUS[d.status] ?? d.status, d.status === 'open' ? 'danger' : 'teal', 'plain'), d.fixedBy ? h('div.muted', {}, `${d.fixedBy.testRunId} passes`) : null),
+      h('td', {}, d.recorded ? d.storyId : d.ref ?? ''),
+      h('td', {}, d.recorded ? d.breaksText : d.breaks ?? ''),
+      h('td.muted', {}, d.recorded ? `${d.foundIn?.testRunId ?? 'by hand'} · ${ago(d.createdAt)}` : `${d.foundIn} · ${ago(d.foundAt)}`))), 'No defects recorded.'),
+    recorded < defects.length ? h('p.note', {}, SAMPLE) : null];
+}
+
+/** A person's decision on a defect: close a fixed one; mark fixed, reject or reopen with a reason. */
+function decideForm(p, d) {
+  const choices = { open: [['fixed', 'Mark fixed'], ['reject', 'Not a defect']], fixed: [['close', 'Close'], ['reopen', 'Reopen'], ['reject', 'Not a defect']], closed: [['reopen', 'Reopen']], rejected: [] }[d.status] ?? [];
+  if (!choices.length) return null;
+  const reason = h('input', { type: 'text', placeholder: 'Why (needed to mark fixed, reject or reopen)', 'aria-label': `Why, for ${d.id}` });
+  return h('div.btns', {}, reason, choices.map(([decision, label]) => h('button', { onclick: p.act(() => p.post(`test/defects/${enc(d.id)}/decision`, { decision, reason: reason.value.trim() })) }, label)));
 }
 
 const VIEWS = { 'pull-requests': pullRequestsView, 'pull-request': pullRequestView, approvals: approvalsView, runs: runsView, coverage: coverageView, defects: defectsView };

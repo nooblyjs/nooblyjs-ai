@@ -87,7 +87,9 @@ function solutionPart(ctx, d, drafters) {
   });
   const more = card({
     title: 'Container view, decisions and the rest',
-    body: html`<ul class="dz-criteria"><li><a href="${d.links.architecture}">The container view, ADRs and the standards check</a></li><li>${d.threatModel}</li><li><a href="${d.links.infrastructure}">The infrastructure design is in Infrastructure</a></li></ul>`,
+    body: html`<ul class="dz-criteria"><li><a href="${d.links.architecture}">The container view, ADRs and the standards check</a></li>
+      <li>${d.threatModel.id ? html`<a href="${d.threatModel.href}">Threat model ${d.threatModel.text}</a>` : d.threatModel.text}</li><li><a href="${d.links.infrastructure}">The infrastructure design is in Infrastructure</a></li></ul>
+      ${d.threatModel.available !== false && ctx.can('draft') ? html`<div class="actions">${button({ label: d.threatModel.id ? 'Ask for the threat model again' : 'Ask for a threat model', kind: 'secondary', small: true, icon: 'spark', attrs: { 'data-action': 'threat-model' } })}</div>` : ''}`,
   });
   return html`<div class="actions">${askButton(ctx, d, 'solution', drafters)}</div>${systems}${nfrs}${landscape}${more}`;
 }
@@ -233,6 +235,8 @@ export async function render(view, { params, route, ctx }) {
     const target = el.dataset.id;
     const actions = {
       draft: () => act(() => ctx.api.post(path(`/draft/${el.dataset.part}`), {}), `Drafted ${DRAFTS[el.dataset.part]}.`),
+      // The threat model is Security's: the page shows the design again, read afresh, with it.
+      'threat-model': () => act(async () => { const tm = await ctx.api.post(path('/threat-model'), {}); return { tm, design: await ctx.api.get(path('')) }; }, ({ tm }) => `${tm.draftedBy.name} drafted ${tm.id} v${tm.version}: ${tm.threats.length} threats, each with a mitigation. An Architect accepts it in Security.`),
       accept: () => act(() => ctx.api.post(path(`/requirements/${target}/accept`), {}), `${target} accepted.`),
       'edit-req': () => { const f = view.querySelector(`[data-form="req"][data-id="${target}"]`); if (f) f.hidden = !f.hidden; },
       'remove-interface': () => act(() => ctx.api.del(path(`/interfaces/${target}`)), `${target} removed.`),

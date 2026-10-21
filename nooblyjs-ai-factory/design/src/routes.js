@@ -20,6 +20,12 @@ export function createApi({ host, log, design, catalogue, drafter, about }) {
   api.get('/items', read, asyncRoute(async (req, res) => res.json({ items: await design.items() })));
   api.get('/items/:id', read, asyncRoute(async (req, res) => res.json(await design.view(req.params.id))));
 
+  // NooblyJS Phase 19: ask Security's agent for the item's threat model (Security checks the person and records it).
+  api.post('/items/:id/threat-model', draft, asyncRoute(async (req, res) => {
+    const security = host.service?.('security');
+    if (typeof security?.draftThreatModel !== 'function') return res.status(503).json({ error: { code: 'security_unavailable', message: 'The Security app is not running here, so no threat model can be drafted.' } });
+    res.status(201).json(await security.draftThreatModel({ itemId: req.params.id, actor: req.person }));
+  }));
   api.post('/items/:id/draft/:part', draft, asyncRoute(async (req, res) => res.json(await design.draft(req.params.id, req.params.part, req.person))));
 
   api.post('/items/:id/requirements/:brId/accept', host.requireRole('accept-requirement'), asyncRoute(async (req, res) => {
@@ -36,6 +42,8 @@ export function createApi({ host, log, design, catalogue, drafter, about }) {
   api.patch('/items/:id/features/:featureId', draft, asyncRoute(async (req, res) => res.json(await design.updateFeature(req.params.id, req.params.featureId, req.body, req.person))));
 
   api.post('/items/:id/stories/merge', draft, asyncRoute(async (req, res) => res.json(await design.mergeStories(req.params.id, req.body, req.person))));
+  // NooblyJS Phase 20: one acceptance criterion of a story changes (with a reason), also after its handoff.
+  api.patch('/items/:id/stories/:storyId/criteria/:n', draft, asyncRoute(async (req, res) => res.json(await design.changeCriterion(req.params.id, req.params.storyId, req.params.n, req.body, req.person))));
   api.patch('/items/:id/stories/:storyId', draft, asyncRoute(async (req, res) => res.json(await design.updateStory(req.params.id, req.params.storyId, req.body, req.person))));
   api.post('/items/:id/stories/:storyId/split', draft, asyncRoute(async (req, res) => res.json(await design.splitStory(req.params.id, req.params.storyId, req.body, req.person))));
   // The lifecycle engine decides who may give it (any person but a Viewer; never an agent).

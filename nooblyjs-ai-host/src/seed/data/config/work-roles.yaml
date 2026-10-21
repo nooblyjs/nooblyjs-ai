@@ -148,6 +148,23 @@ roles:
     tools: [Jira Cloud, Bitbucket]
     home: /
     firstWeek: []
+  # Phase 19: the Security engineer (root product.md §3.5): threat models, findings and risks.
+  - key: security-engineer
+    name: Security engineer
+    initials: SE
+    layout: security-engineer
+    blurb: Keep every item threat-modelled and every finding owned and fixed on time.
+    promise: The security agent drafts each threat model from the container view and scans every pull request; you decide what is accepted.
+    tasks:
+      - { title: Accept threat models, detail: STRIDE per trust boundary; each mitigation a requirement or a quality attribute., where: Security · Threat models }
+      - { title: Chase findings past their fix-by date, detail: 'Each has an owner; ask the Software Factory for a fix.', where: Security · Findings }
+      - { title: Review risk acceptances before they end, detail: An accepted risk opens again when it expires., where: Security · Risk register }
+    leadsWith: [Findings past or near fix-by, Threat models waiting, Risks ending soon]
+    agent: rook-vale
+    agents: Security agent · threat models and scans
+    tools: [Microsoft Teams]
+    home: /
+    firstWeek: []
   - key: developer
     name: Developer
     initials: DV

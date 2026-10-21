@@ -1,6 +1,6 @@
 # Phase 16d — Engineering: application architecture from the code, and test analysis: requirements
 
-> **Status: built 2026-10-20, waiting for review.** Summary: `.claude/phases/phase-16d-summary.md`. Root `product.md` §3.2b,
+> **Status: done, signed off 2026-10-21** (built 2026-10-20). Summary: `.claude/phases/phase-16d-summary.md`. Root `product.md` §3.2b,
 > §4; root `roadmap.md` Phase 16d. Bugs found while reviewing it go in `.claude/specs/bugs-and-changes/`.
 
 > Asked 2026-10-20: "Take the defaults and continue with 16d" (16a, 16b and 16c still waiting for review).

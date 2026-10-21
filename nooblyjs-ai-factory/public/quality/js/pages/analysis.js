@@ -1,6 +1,7 @@
 // Test analysis (Phase 16d): the stories in Engineer with their coverage in words, and a story's test cases: drafted by
 // the test agent from its acceptance criteria under the test policy, edited, added and removed by a test analyst, who
-// marks each ready. Data: GET /stories, GET /stories/:id.
+// marks each ready. Data: GET /stories, GET /stories/:id. Phase 20: a case whose criterion changed in Design says so,
+// with the old and new words; in Build and Test a person may still edit it or mark it ready again (only such a case).
 import { html } from '/ui/js/html.js';
 import { pageHead, card, listRow, notice, button, statusPill, dataTable } from '/ui/js/components/index.js';
 
@@ -23,11 +24,11 @@ async function list(view, ctx) {
 }
 
 function caseRow(ctx, d, c) {
-  const canEdit = d.writable && ctx.can('draft');
+  const canEdit = (d.writable || (d.reviewable && c.criterionChanged)) && ctx.can('draft');
   const person = ctx.person?.kind !== 'agent';
-  return html`<strong>${c.title}</strong>${c.given ? html`<p class="qa-gwt">Given ${c.given}, when ${c.when}, then ${c.then}</p>` : ''}
+  return html`<strong>${c.title}</strong>${c.criterionChanged ? html`<p class="qa-gwt">${c.criterionChanged.text}. Was: “${c.criterionChanged.from}”${c.criterionChanged.to ? html`. Now: “${c.criterionChanged.to}”` : ''}</p>` : ''}${c.given ? html`<p class="qa-gwt">Given ${c.given}, when ${c.when}, then ${c.then}</p>` : ''}
     <p class="qa-gwt">${c.interface ? `Interface ${c.interface} · ` : ''}${c.journey ? `Journey: ${c.journey} · ` : ''}${c.nfr ? `${c.nfr} · ` : ''}Runs against ${(c.systems ?? []).join(', ') || 'every system'}</p>
-    ${canEdit ? html`<span class="qa-inline">${c.status !== 'ready' && person ? button({ label: 'Mark ready', kind: 'secondary', small: true, attrs: { 'data-action': 'ready', 'data-id': c.id, 'aria-label': `Mark ${c.id} ready` } }) : ''}${button({ label: 'Edit', kind: 'secondary', small: true, attrs: { 'data-action': 'edit', 'data-id': c.id, 'aria-label': `Edit ${c.id}` } })}${button({ label: 'Remove', kind: 'secondary', small: true, attrs: { 'data-action': 'remove', 'data-id': c.id, 'aria-label': `Remove ${c.id}` } })}</span>
+    ${canEdit ? html`<span class="qa-inline">${c.status !== 'ready' && person ? button({ label: 'Mark ready', kind: 'secondary', small: true, attrs: { 'data-action': 'ready', 'data-id': c.id, 'aria-label': `Mark ${c.id} ready` } }) : ''}${button({ label: 'Edit', kind: 'secondary', small: true, attrs: { 'data-action': 'edit', 'data-id': c.id, 'aria-label': `Edit ${c.id}` } })}${d.writable ? button({ label: 'Remove', kind: 'secondary', small: true, attrs: { 'data-action': 'remove', 'data-id': c.id, 'aria-label': `Remove ${c.id}` } }) : ''}</span>
     <form class="qa-form" data-form="edit" data-id="${c.id}" hidden>${fields(c)}${button({ label: 'Save', type: 'submit', small: true })}</form>` : ''}`;
 }
 
@@ -47,6 +48,7 @@ function story(ctx, d, message) {
   })}
   <p class="qa-message${message.tone === 'error' ? ' qa-message--error' : ''}" role="status" aria-live="polite">${message.text}</p>
   ${canEdit ? html`<div class="actions">${button({ label: d.drafted ? 'Ask Ada to draft what is missing' : 'Ask Ada to draft the test analysis', kind: 'accent', small: true, icon: 'spark', attrs: { 'data-action': 'draft' } })}</div>` : ''}
+  ${d.summary.changedText ? notice({ title: 'A criterion changed', text: `${d.summary.changedText}. Check each against the criterion as it reads now: edit it, or mark it ready again.`, tone: 'warning' }) : ''}
   ${card({ title: 'Acceptance criteria', meta: d.summary.text, body: html`<ol class="qa-criteria">${d.criteria.map((c) => html`<li>${c.text}<br>${statusPill({ text: c.ready ? 'Has a ready test case' : c.cases.length ? `${c.cases.join(', ')}: none ready yet` : 'No test case yet', tone: c.ready ? 'success' : 'warning' })}</li>`)}</ol>` })}
   ${d.interfaces.length ? card({ title: 'Interfaces', body: html`<ul class="qa-criteria">${d.interfaces.map((i) => html`<li>${i.id} · ${i.name}: ${i.tested ? 'has a ready integration test' : 'no ready integration test yet'}</li>`)}</ul>` }) : ''}
   ${card({
@@ -57,7 +59,7 @@ function story(ctx, d, message) {
         { key: 'id', label: 'Id' },
         { key: 'title', label: 'Test case', render: (c) => caseRow(ctx, d, c) },
         { key: 'level', label: 'Level', render: (c) => html`${LEVEL_TEXT[c.level] ?? c.level}<br><span class="muted">${c.automate ? 'Automated by the AI' : 'Checked by a person'}</span>` },
-        { key: 'status', label: 'Status', render: (c) => statusPill({ text: c.status === 'ready' ? `Ready · ${c.readyBy?.name ?? ''}`.trim() : 'Draft', tone: c.status === 'ready' ? 'success' : 'warning' }) },
+        { key: 'status', label: 'Status', render: (c) => statusPill(c.criterionChanged ? { text: 'Criterion changed', tone: 'warning' } : { text: c.status === 'ready' ? `Ready · ${c.readyBy?.name ?? ''}`.trim() : 'Draft', tone: c.status === 'ready' ? 'success' : 'warning' }) },
       ],
       rows: d.cases, empty: 'No test cases yet.',
     })}${canEdit && d.drafted ? html`<form class="qa-form" data-form="add" aria-label="Add a test case">${fields()}${button({ label: 'Add the test case', type: 'submit', kind: 'secondary', small: true })}</form>` : ''}`,

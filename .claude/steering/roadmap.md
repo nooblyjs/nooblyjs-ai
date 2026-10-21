@@ -90,16 +90,16 @@ inclusion: always
 | 13 | Writing to Bitbucket and Jira and production readiness | ✅ (reviewed 2026-10-20; the pilot is still to do) |
 | 14 | NooblyJS in the browser: the Edge extension (agent chat beside Jira) | ✅ (reviewed 2026-10-20 as the skeleton in `apps/edge`; its Build list is not built) |
 | 15 | No mocks: everything real | ☐ blocked on the cloud, runtime and model decisions (`stack.md` §5) |
-| 16a | Nine stages: Verify, Release and Operate replace Ship | ☐ built, waiting for review |
-| 16b | Eight stages, and the Factory's five groups | ☐ built, waiting for review |
-| 16c | The Design section: business requirements, solution architecture, functional analysis, stories | ☐ built, waiting for review |
-| 16d | Engineering: application architecture from the code, and test analysis | ☐ built, waiting for review |
-| 16e | Build and Test: the AI builds and tests, engineers and testers approve | ☐ built, waiting for review |
-| 16f | One shape for checks, and the trace | ☐ built, waiting for review |
-| 17 | Strategy and the business case | ☐ built, waiting for review |
-| 18 | Requirements elicitation | ☐ built, waiting for review |
-| 19 | Security by design (new app: Security) | ☐ |
-| 20 | Quality (the Factory's Test section) | ☐ |
+| 16a | Nine stages: Verify, Release and Operate replace Ship | ✅ (reviewed 2026-10-21) |
+| 16b | Eight stages, and the Factory's five groups | ✅ (reviewed 2026-10-21) |
+| 16c | The Design section: business requirements, solution architecture, functional analysis, stories | ✅ (reviewed 2026-10-21) |
+| 16d | Engineering: application architecture from the code, and test analysis | ✅ (reviewed 2026-10-21) |
+| 16e | Build and Test: the AI builds and tests, engineers and testers approve | ✅ (reviewed 2026-10-21) |
+| 16f | One shape for checks, and the trace | ✅ (reviewed 2026-10-21) |
+| 17 | Strategy and the business case | ✅ (reviewed 2026-10-21) |
+| 18 | Requirements elicitation | ✅ (reviewed 2026-10-21) |
+| 19 | Security by design (new app: Security) | ✅ (reviewed 2026-10-21) |
+| 20 | Quality (the Factory's Test section) | ☐ built, waiting for review |
 | 21 | Testing in environments | ☐ |
 | 22 | Release (new app: Operations, part 1) | ☐ |
 | 23 | Operate and learn (Operations, part 2) | ☐ |

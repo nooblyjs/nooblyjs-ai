@@ -6,6 +6,10 @@
 //
 // One file per story, data/factory/quality/test-analysis/<storyId>.md. The story is the Design section's; its stage the
 // lifecycle engine's. Case ids are TC-<item number>-<story number>-<n>, never given out twice.
+//
+// Phase 20: TEST CASES KEPT IN STEP. Each case remembers the words of the criterion it was written for (criterionText).
+// When Design changes that criterion, the case is "criterion changed": not ready, for a person to edit or mark ready
+// again, which they may do in Build and Test too (only for such a case: the rest of the analysis is Engineer's).
 import { HttpError, badRequest, notFound, conflict } from '../util/errors.js';
 import { draftAnalysis } from './drafts.js';
 
@@ -17,6 +21,16 @@ const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const clip = (s, n = 80) => (String(s).length > n ? `${String(s).slice(0, n - 1)}…` : String(s));
 /** STORY-031-1 → TC-031-1-<n>. */
 const caseId = (storyId, n) => `TC-${String(storyId).replace(/^STORY-/, '')}-${n}`;
+const LATER = new Set(['build', 'test']);
+
+/** The words a case was written for, and whether its criterion has changed (or gone) since. */
+export function criterionChange(c, criteria, doc = null) {
+  if (!Number.isInteger(c?.criterion)) return null;
+  const was = c.criterionText ?? doc?.criteria?.[c.criterion]?.text ?? null;
+  const now = criteria?.[c.criterion];
+  if (was === null || now === was) return null;
+  return { from: was, to: now ?? null, text: now === undefined ? 'Its criterion was removed' : 'Its criterion changed: check the case' };
+}
 
 function text(value, max, field) {
   if (value === undefined || value === null) return null;
@@ -65,7 +79,8 @@ export function createAnalysis({ host, log }) {
   function summary(doc, ctx) {
     const criteria = ctx?.criteria?.length ? ctx.criteria : doc?.criteria?.map((c) => c.text) ?? [];
     const cases = doc?.cases ?? [];
-    const readyFor = (i) => cases.some((c) => c.criterion === i && c.status === 'ready');
+    const changed = cases.filter((c) => criterionChange(c, criteria, doc));
+    const readyFor = (i) => cases.some((c) => c.criterion === i && c.status === 'ready' && !criterionChange(c, criteria, doc));
     const ready = criteria.filter((_, i) => readyFor(i)).length;
     const interfaces = (ctx?.interfaces ?? []).map((i) => i.id);
     const tested = interfaces.filter((id) => cases.some((c) => c.interface === id && c.status === 'ready' && ['contract', 'integration'].includes(c.level)));
@@ -75,6 +90,8 @@ export function createAnalysis({ host, log }) {
       text: `${ready} of ${plural(criteria.length, 'criterion', 'criteria')} ${ready === 1 ? 'has' : 'have'} a ready test case`,
       untestedInterfaces: interfaces.filter((id) => !tested.includes(id)),
       notReady: criteria.map((t, i) => ({ t, i })).filter(({ i }) => !readyFor(i)).map(({ t }) => t),
+      changed: changed.map((c) => c.id),
+      ...(changed.length ? { changedText: `${plural(changed.length, 'test case')} ${changed.length === 1 ? 'has' : 'have'} a changed criterion: ${changed.map((c) => c.id).join(', ')}` } : {}),
     };
   }
 
@@ -85,10 +102,15 @@ export function createAnalysis({ host, log }) {
     return {
       storyId, itemId: ctx.item.parentId ?? null, title: ctx.title, stage: ctx.item.stage,
       writable: ctx.item.status === 'active' && ctx.item.stage === 'engineer',
+      // Phase 20: in Build and Test only a case whose criterion changed may be edited or marked ready again.
+      reviewable: ctx.item.status === 'active' && (ctx.item.stage === 'engineer' || LATER.has(ctx.item.stage)),
       drafted: Boolean(doc), sample: doc?.sampleData === true,
-      criteria: ctx.criteria.map((t, i) => ({ text: t, cases: (doc?.cases ?? []).filter((c) => c.criterion === i).map((c) => c.id), ready: (doc?.cases ?? []).some((c) => c.criterion === i && c.status === 'ready') })),
+      criteria: ctx.criteria.map((t, i) => ({ text: t, cases: (doc?.cases ?? []).filter((c) => c.criterion === i).map((c) => c.id), ready: (doc?.cases ?? []).some((c) => c.criterion === i && c.status === 'ready' && !criterionChange(c, ctx.criteria, doc)) })),
       interfaces: ctx.interfaces.map((i) => ({ id: i.id, name: i.name, cases: (doc?.cases ?? []).filter((c) => c.interface === i.id).map((c) => c.id), tested: !s.untestedInterfaces.includes(i.id) })),
-      cases: doc?.cases ?? [],
+      cases: (doc?.cases ?? []).map((c) => {
+        const changed = criterionChange(c, ctx.criteria, doc);
+        return changed ? { ...c, criterionChanged: changed, statusText: 'Criterion changed' } : c;
+      }),
       summary: s,
       draftedBy: doc?.draftedBy ?? null, draftedAt: doc?.draftedAt ?? null,
       href: `/home/lifecycle/${encodeURIComponent(storyId)}`,
@@ -162,7 +184,7 @@ export function createAnalysis({ host, log }) {
     for (const c of output.cases ?? []) {
       if (!c?.title || doc.cases.some((x) => same(x, c))) continue;
       doc.counter = (doc.counter ?? 0) + 1;
-      doc.cases.push({ id: caseId(storyId, doc.counter), ...c, level: LEVELS.has(c.level) ? c.level : 'integration', automate: c.automate !== false, status: 'draft', draftedBy: teammate });
+      doc.cases.push({ id: caseId(storyId, doc.counter), ...c, ...(Number.isInteger(c.criterion) ? { criterionText: ctx.criteria[c.criterion] } : {}), level: LEVELS.has(c.level) ? c.level : 'integration', automate: c.automate !== false, status: 'draft', draftedBy: teammate });
     }
     doc.criteria = ctx.criteria.map((t, i) => ({ text: t, cases: doc.cases.filter((c) => c.criterion === i).map((c) => c.id) }));
     Object.assign(doc, { title: ctx.title, draftedBy: teammate, draftedAt: now() });
@@ -191,11 +213,18 @@ export function createAnalysis({ host, log }) {
     return out;
   }
 
-  async function change(storyId, fn) {
-    await writable(storyId);
+  /**
+   * In Engineer, any change; in Build and Test (Phase 20), only to a case whose criterion changed (`caseId`). `fn` gets
+   * the document and the story's criteria now.
+   */
+  async function change(storyId, fn, { caseId: only = null } = {}) {
+    const ctx = await storyOf(storyId);
     const doc = await get(storyId);
+    const later = ctx.item.status === 'active' && LATER.has(ctx.item.stage);
+    const flagged = later && only && doc?.cases?.some((c) => c.id === only && criterionChange(c, ctx.criteria, doc));
+    if (!flagged) await writable(storyId);
     if (!doc) throw notFound(`${storyId} has no test analysis yet: ask for a draft first.`);
-    const result = fn(doc);
+    const result = fn(doc, ctx.criteria);
     doc.criteria = (doc.criteria ?? []).map((c, i) => ({ ...c, cases: doc.cases.filter((x) => x.criterion === i).map((x) => x.id) }));
     await save(doc);
     return result;
@@ -205,9 +234,9 @@ export function createAnalysis({ host, log }) {
     const fields = caseFields(body ?? {}, { partial: false });
     // A case added with no systems runs against the story's (a work item carries the cases of its own system).
     if (!fields.systems?.length) fields.systems = (await storyOf(storyId)).systems;
-    const id = await change(storyId, (doc) => {
+    const id = await change(storyId, (doc, criteria) => {
       doc.counter = (doc.counter ?? doc.cases.length) + 1;
-      const c = { id: caseId(storyId, doc.counter), ...fields, status: 'draft', editedBy: by(actor) };
+      const c = { id: caseId(storyId, doc.counter), ...fields, ...(Number.isInteger(fields.criterion) ? { criterionText: criteria[fields.criterion] } : {}), status: 'draft', editedBy: by(actor) };
       doc.cases.push(c);
       return c.id;
     });
@@ -217,13 +246,15 @@ export function createAnalysis({ host, log }) {
 
   async function editCase(storyId, id, body, actor) {
     const fields = caseFields(body ?? {}, { partial: true });
-    await change(storyId, (doc) => {
+    await change(storyId, (doc, criteria) => {
       const c = doc.cases.find((x) => x.id === id);
       if (!c) throw notFound(`${storyId} has no test case ${id}.`);
       Object.assign(c, fields, { status: 'draft', editedBy: by(actor) });
+      // Edited, it is written for the criterion as it reads now.
+      if (Number.isInteger(c.criterion)) c.criterionText = criteria[c.criterion];
       delete c.readyBy;
       delete c.readyAt;
-    });
+    }, { caseId: id });
     await emit('quality.case_changed', { itemId: storyId, storyId, caseId: id, change: 'edited', summary: `edited the test case ${id} of ${storyId}: it is a draft again` }, actor);
     return view(storyId);
   }
@@ -240,11 +271,12 @@ export function createAnalysis({ host, log }) {
   /** A test analyst marks a case ready (people only). */
   async function markReady(storyId, id, actor) {
     await peopleOnly(actor, 'mark a test case ready');
-    await change(storyId, (doc) => {
+    await change(storyId, (doc, criteria) => {
       const c = doc.cases.find((x) => x.id === id);
       if (!c) throw notFound(`${storyId} has no test case ${id}.`);
-      Object.assign(c, { status: 'ready', readyBy: by(actor), readyAt: now() });
-    });
+      // Marked ready, it holds for the criterion as it reads now (a changed one is reviewed).
+      Object.assign(c, { status: 'ready', readyBy: by(actor), readyAt: now(), ...(Number.isInteger(c.criterion) ? { criterionText: criteria[c.criterion] } : {}) });
+    }, { caseId: id });
     await emit('quality.case_ready', { itemId: storyId, storyId, caseId: id, summary: `marked the test case ${id} of ${storyId} ready` }, actor);
     return view(storyId);
   }

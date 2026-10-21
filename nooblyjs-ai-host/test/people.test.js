@@ -35,7 +35,7 @@ test('step 1: Naledi (no profile) is sent to onboarding from any page, with Prod
     // The Business owner (Phase 17), after the Product manager.
     'Product manager', 'Business owner', 'Architect',
     // Lifecycle v3's Design and Engineer people and the testers (Phase 16b).
-    'Business analyst', 'Solution Architect', 'Functional Analyst', 'Application Architect', 'Test analyst',
+    'Business analyst', 'Solution Architect', 'Functional Analyst', 'Application Architect', 'Test analyst', 'Security engineer',
     'Developer', 'Designer', 'Engineering lead', 'Platform engineer',
   ]);
   const pm = body.roles[0];

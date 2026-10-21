@@ -1,6 +1,6 @@
 # Phase 18 — Requirements elicitation: tasks
 
-> **Status: built 2026-10-21, waiting for review.** Summary: `.claude/phases/phase-18-summary.md`.
+> **Status: done, signed off 2026-10-21** (built 2026-10-21). Summary: `.claude/phases/phase-18-summary.md`.
 
 - [x] 1. Product section: the elicitation file, stakeholders, sessions, questions. _R1, R4_
 - [x] 2. Product section: candidates (Ada's draft), accept, merge, reject; requirements; the spec reads them. _R2_

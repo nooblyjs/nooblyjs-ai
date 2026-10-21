@@ -260,6 +260,19 @@ test('a story\'s handoff goes to the lifecycle engine with one work item per sys
   assert.equal(status2.card.pill.text, '1 item in Design · 1 story handed off');
 });
 
+test('NooblyJS Phase 20: one criterion of a handed-off story changes, with a reason; an agent is refused', async () => {
+  const url = '/items/PRD-031/stories/STORY-031-1/criteria/1';
+  assert.equal((await env.call('ada-quill', 'PATCH', url, { text: 'x', reason: 'y' })).status, 403);
+  assert.equal((await env.call('priya-s', 'PATCH', url, { text: 'Given a slot, when I look, then I see it' })).status, 400, 'a reason is needed');
+  assert.equal((await env.call('priya-s', 'PATCH', '/items/PRD-031/stories/STORY-031-1/criteria/9', { text: 'x', reason: 'y' })).status, 404);
+  const { status, body } = await env.call('priya-s', 'PATCH', url, { text: 'Given a slot, when I look, then I see it within 2 seconds', reason: 'The pilot asked for it' });
+  assert.equal(status, 200);
+  const story = body.stories.find((s) => s.id === 'STORY-031-1');
+  assert.equal(story.criteria[0], 'Given a slot, when I look, then I see it within 2 seconds');
+  const e = env.stand.eventLog.find((x) => x.type === 'design.criterion_changed');
+  assert.deepEqual([e.payload.storyId, e.payload.index, e.payload.ref, e.payload.reason], ['STORY-031-1', 0, 'AC-031-1-1', 'The pilot asked for it']);
+});
+
 test('outside Design the design is read only, and an item with no spec has nothing to design from', async () => {
   env.workflows.byId.set('PRD-099', { id: 'PRD-099', ref: 'PRD-099', type: 'spec', title: 'No spec', stage: 'design', status: 'active' });
   const none = await env.call('priya-s', 'POST', '/items/PRD-099/draft/requirements');
@@ -284,7 +297,7 @@ test('the pages draw every part of the design, and the list, from the API\'s ans
   const item = await import('../../public/design/js/pages/item.js');
   const expect = {
     requirements: ['BR-031-06', 'Accepted', 'Same-day slots still open at 12:00'],
-    solution: ['web-storefront', 'delivery-squad', 'NFR-031-07', 'FEAT-031-3', 'value="FEAT-031-1"', 'The threat model comes with the Security app'],
+    solution: ['web-storefront', 'delivery-squad', 'NFR-031-07', 'FEAT-031-3', 'value="FEAT-031-1"', 'No threat model: the Security app is not running here'],
     functional: ['IF-031-05', 'Both named', 'Add the interface'],
     stories: ['STORY-031-4', 'Release evening capacity', 'In Engineer', 'Merge the picked stories'],
     handoff: ['1 of 3 stories handed off', 'Hand off STORY-031-2 to Engineering', 'Override the failing checks'],

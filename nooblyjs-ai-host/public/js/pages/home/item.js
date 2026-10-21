@@ -205,6 +205,22 @@ export async function render(view, { ctx, params, query }) {
           ${item.passedTest ? html`<p class="row__meta">Passed Test: its last pull request is merged.${item.passedTest.notBuiltHere?.length ? ` Not built here: ${item.passedTest.notBuiltHere.map((w) => `${w.repo} (${w.reason})`).join('; ')}.` : ''}</p>` : ''}`,
       })
       : '';
+    // Phase 20: a defect's own facts, and a story's defects (each an item of its own). Decisions are on Test · Defects.
+    const defectCard = item.defect
+      ? card({
+        title: 'Defect', meta: `${item.defect.severityLabel} · ${item.defect.stateText}`,
+        body: html`<p>${item.defect.breaksText}.</p><p class="row__meta">Found ${item.defect.foundIn?.testRunId ? `in ${item.defect.foundIn.testRunId}` : 'by hand'} by ${item.defect.raisedBy?.name ?? 'someone'}${item.defect.fixedBy ? ` · fixed: ${item.defect.fixedBy.testRunId} passes` : ''}.</p>
+          ${item.defect.text ? html`<p class="row__meta">${item.defect.text}</p>` : ''}
+          <ul class="waits" role="list">${item.defect.history.map((h) => html`<li class="wait"><div class="wait__main"><span class="wait__title">${h.what}</span></div></li>`)}</ul>
+          <p class="row__meta"><a href="/factory/test/defects">Decide it on Test · Defects</a></p>`,
+      })
+      : '';
+    const defectsCard = item.defects?.rows?.length
+      ? card({
+        title: 'Defects', meta: `${item.defects.open} open`,
+        body: html`<ul class="waits" role="list">${item.defects.rows.map((d) => html`<li class="wait"><div class="wait__main"><a class="wait__title" href="${d.href}">${d.ref} · ${d.title}</a><span class="row__meta">${d.severityLabel} · ${d.breaksText}</span></div>${statusPill({ text: d.stateText, tone: d.state === 'open' ? 'danger' : d.state === 'fixed' ? 'warning' : 'success' })}</li>`)}</ul>`,
+      })
+      : '';
     const earlyNote = item.mergedEarly ? html`<p class="flash flash--error" role="alert">Merged in Bitbucket by ${item.mergedEarly.by} before ${item.mergedEarly.missing.join(' and ')}: not counted as done.</p>` : '';
     ctx.setTitle(`${item.ref} · ${item.title}`);
     const failing = readiness.failing.length > 0;
@@ -235,6 +251,8 @@ export async function render(view, { ctx, params, query }) {
     ${card({ title: 'Where this is', body: tracker(item) })}
     ${featuresCard}
     ${pullsCard}
+    ${defectCard}
+    ${defectsCard}
     <div class="split">
       ${card({ title: 'Readiness', meta: readiness.total ? `${readiness.passed} of ${readiness.total} checks` : null, body: readiness.total ? checklist({ label: 'Readiness checks', items: readiness.checks.map((c) => ({ text: c.text, state: c.passed ? 'done' : 'failed' })) }) : html`<p class="row__meta">${item.stageLabel} has no readiness checks.</p>` })}
       ${card({ title: 'Approvals', body: approvals })}
