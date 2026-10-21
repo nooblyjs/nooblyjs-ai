@@ -101,7 +101,7 @@ it said.
 | Discover | Signal clusters, Idea with RICE score | Research agent (e.g. Ada Quill) | Idea accepted |
 | Product | Spec/PRD (problem, goals, user stories, acceptance criteria, readiness checks), journeys and flows, screens | Product, design and UI agents | **Product handoff** (Product lead + Engineering) |
 | Design | Business requirements, impacted systems, NFRs, the feature landscape, interfaces and technical requirements, the **stories** (Phase 16c); the container diagram, ADRs, standards check and quality attributes | Analyst agent (Ada Quill stands in), architect agent (e.g. Rhea Voss) | **Design handoff per story** (Solution Architect, `accept-decisions`; any person but a Viewer may give it for them), with the story's work items; ADR acceptance when a new dependency is added. An item without stories (from before 16c) keeps one Design handoff |
-| Engineer | Application architecture and test analysis (Phase 16d) | Application architect agent, test agent | **Engineering sign-off** (an Application Architect and a test lead, one approval): the work items go to the Software Factory |
+| Engineer | Per story: the application architecture per system, drawn from the code; the test analysis (Phase 16d) | Application architect agent (Rhea Voss stands in), test agent (Ada Quill stands in) | **Engineering sign-off** (an Application Architect and a test lead, one approval), with its checks: the work items go to the Software Factory, each with its architecture and test cases |
 | Build | Work items → Software Factory runs → PRs | Factory stations / engineering teammates | Gates pass (tests, contracts, quality attributes); **Build approval** (an engineer, the code owner) |
 | Test | The pull request verified by a person (tests in environments: root roadmap Phases 19–21) | Test agent, security agent | **Test approval** (a tester, `sign-off-tests`); then the PR may merge |
 | Release | Release, rollout and rollback plans (the Operations app, Phase 22) | Release agent | **Production deploy** (two different people, `deploy-production`) |
@@ -351,12 +351,22 @@ Line, Runs, Inbox and Campaigns come from the existing repo. The existing line i
 spec → approve → build → verify → review → repair → deliver → merge, with every step an
 event.
 
-**Engineering, Pull requests and Test** (the sidebar's other rows, CHG-008): Application architecture, Test analysis and
-Engineering sign-off list the stories in Engineer, each with its architecture per system, its test cases and what the
-sign-off still needs, in words; Pull requests shows each one's Build and Test approvals; Test approvals what waits on a
-tester, what is in Test and what was given; Test runs, Coverage and Defects. The stories, pull requests and approvals
-are the lifecycle's, live. The architecture, test analysis, runs and defects are the seed story's sample (STORY-027-1 and
-the seed's pull requests), said so on each page, until Phases 16d, 16e and 20 build them.
+**Engineering** (Phase 16d, root `product.md` §3.2b). **Application architecture**: the stories in Engineer, each impacted
+system's state in words; a story's page with, per system, the application flow, the objects, the NFRs per component and
+the changes, drawn by an agent from the repository's code at the head of main (Ask Rhea to draft, as a teammate task;
+Platform refuses a repository agents may not read), edited and accepted by a person (`accept-decisions`), and said
+stale when main moves past the commit it was read at. A repository the Factory can't read here is drawn from the design
+alone, and says so. **Test analysis** (the Test section, `/factory/quality`): a story's test cases from its acceptance
+criteria (given/when/then), at the levels the test policy gives (E2E when a customer sees it, else integration; a
+contract test per interface; an E2E test for its journey; accessibility checked by a person), marked ready by a test
+analyst; coverage in words ("1 of 2 criteria have a ready test case"). **Engineering sign-off**: each story's three
+checks (the architecture accepted and current, every criterion with a ready test case, every interface with a ready
+integration test), each naming what fails, and Sign off & send to Build, with an override reason when a check fails. A
+work item then carries its system's architecture and its test cases into the Software Factory.
+
+**Pull requests and Test** (CHG-008): Pull requests shows each one's Build and Test approvals; Test approvals what waits
+on a tester, what is in Test and what was given; Test runs, Coverage and Defects. The pull requests and approvals are
+the lifecycle's, live; the runs and defects are the seed story's sample, said so, until Phases 16e and 20.
 
 ### 5.5 Digital Teammates (`teammates`): existing, restyle to NooblyJS
 
@@ -537,6 +547,9 @@ How it sits in NooblyJS:
     - **The Design homes** (Phase 16c): the Solution Architect's (items in Design, decisions awaiting them, stories ready
       for their Design handoff, stories handed off) and the Functional Analyst's (interfaces with a side missing, stories
       to finish: no criteria or no business requirement, items in Design), each row linking to its Design page.
+    - **The Engineering homes** (Phase 16d): the Application Architect's (architectures to draft, accept or draw again,
+      stale ones, the stories in Engineer, sign-offs waiting on them) and the Test analyst's (criteria without a ready
+      test case, stories with no test analysis, interfaces without a ready test, sign-offs waiting on them).
     - **Your first week** checklist (Hide). It tracks the onboarding's first three things
       plus "Pick your role and teams" to completion, and drives the Getting started card.
 

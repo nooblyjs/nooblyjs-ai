@@ -60,7 +60,7 @@ test('FACTORY_SECTIONS chooses the sections; unset means all, and a name that is
   assert.deepEqual(sectionsFromEnv(''), []);
   assert.throws(() => sectionsFromEnv('product,prodcut'), /FACTORY_SECTIONS names prodcut, which is not a section/);
   // Infrastructure is a hosted app of its own again (CHG-007), not a section.
-  assert.throws(() => sectionsFromEnv('product,infrastructure'), /FACTORY_SECTIONS names infrastructure, which is not a section \(product, design\)/);
+  assert.throws(() => sectionsFromEnv('product,infrastructure'), /FACTORY_SECTIONS names infrastructure, which is not a section \(product, design, quality\)/);
 });
 
 test('every section row in the sidebar has its page in the Factory\'s route table', async () => {
@@ -104,7 +104,8 @@ test('mounted at /factory: the section answers under its path, keeps its data in
 test('other apps still reach the section by the name they always used', async () => {
   const t = await startApp();
   try {
-    assert.deepEqual(Object.keys(t.hosted.provides), ['product', 'design']);
+    assert.deepEqual(Object.keys(t.hosted.provides), ['product', 'design', 'quality']);
+    for (const fn of ['readinessFacts', 'casesFor', 'summaryFor', 'stories']) assert.equal(typeof t.hosted.provides.quality[fn], 'function', `quality.${fn}`);
     for (const fn of ['readinessFacts', 'designFor', 'items']) assert.equal(typeof t.hosted.provides.design[fn], 'function', `design.${fn}`);
     for (const fn of ['artefactsFor', 'readinessFacts', 'adrFor', 'gatesFor', 'waitingFor']) assert.equal(typeof t.hosted.provides.product[fn], 'function', `product.${fn}`);
     // The links they hand out are under the Factory.

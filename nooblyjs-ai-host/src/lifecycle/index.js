@@ -96,6 +96,13 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       syncStories: (input) => engine.syncStories(input),
       /** One story's Design handoff (Phase 16c): it moves to Engineer; its item follows when its last story has gone. */
       handoffStory: (input) => engine.handoffStory(input),
+      /** The Engineering sign-off of an item in Engineer (Phase 16d), with its readiness checks or an override. */
+      signOffEngineering: (input) => engine.signOffEngineering(input),
+      /** The readiness of an item for its current stage's decision (the Factory's Engineering sign-off page). */
+      readinessOf: async ({ itemId } = {}) => {
+        const item = await repos.items.get(itemId);
+        return item ? engine.readinessOf(item) : null;
+      },
       /** An item's stories as the lifecycle sees them: [{ id, title, stage, status, feature }]. */
       storiesOf: async ({ itemId } = {}) => (await engine.storiesOf(itemId)).map(({ id, ref, title, stage, status, feature, stageEnteredAt }) => ({ id, ref, title, stage, status, feature: feature ?? null, stageEnteredAt })),
       /** One handoff with its work items ({ id, itemId, workItems: [{ id, repo, title, status }], … }), or null. The Software Factory reads it. */

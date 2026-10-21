@@ -10,12 +10,14 @@
 import { SECTIONS, sectionRoutes } from './sections.js';
 import { routes as productRoutes } from '../product/js/module.js';
 import { routes as designRoutes } from '../design/js/module.js';
+import { routes as qualityRoutes } from '../quality/js/module.js';
 
 const isArchitecture = (route) => route.nav === 'architecture';
 // The Design section's Architecture pages are the Product section's (drawn in its scope); the rest are Design's own.
 const OWN = {
   product: productRoutes.filter((r) => !isArchitecture(r)),
   design: [...productRoutes.filter(isArchitecture).map((r) => ({ ...r, scope: 'product' })), ...designRoutes],
+  quality: qualityRoutes,
 };
 
 const PAGES = { engineering: () => import('./pages/engineering.js'), testing: () => import('./pages/testing.js') };
@@ -34,8 +36,9 @@ export const routes = [
   view('/pull-requests', 'pull-requests', 'Pull requests', 'testing', 'pull-requests'),
   view('/engineering/architecture', 'app-architecture', 'Application architecture', 'engineering', 'architecture'),
   view('/engineering/architecture/:id', 'app-architecture', 'Application architecture', 'engineering', 'architecture-detail'),
-  view('/engineering/test-analysis', 'test-analysis', 'Test analysis', 'engineering', 'tests'),
-  view('/engineering/test-analysis/:id', 'test-analysis', 'Test analysis', 'engineering', 'tests-detail'),
+  // Test analysis is the Test section's since Phase 16d (/quality/test-analysis): old links keep working.
+  { path: '/engineering/test-analysis', redirect: '/quality/test-analysis' },
+  { path: '/engineering/test-analysis/:id', nav: 'quality-test-analysis', title: 'Test analysis', page: () => import('./pages/moved.js'), meta: { to: '/quality/test-analysis' } },
   view('/engineering/sign-off', 'engineering-signoff', 'Engineering sign-off', 'engineering', 'signoff'),
   view('/test/approvals', 'test-approvals', 'Test approvals', 'testing', 'approvals'),
   view('/test/runs', 'test-runs', 'Test runs', 'testing', 'runs'),

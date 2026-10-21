@@ -16,3 +16,9 @@ stages:
     - { key: requirements-covered, passed: Every business requirement is covered by a story, failed: A business requirement has no story }
     - { key: decisions-decided, passed: No decision is still proposed, failed: A decision is still proposed }
     - { key: interfaces-complete, passed: Every interface has both sides named, failed: An interface has a side missing }
+  # Before each story's Engineering sign-off (Phase 16d). The Software Factory works them out from the story's
+  # application architecture and its test analysis; an item with no Engineering work (from before 16d) has none.
+  engineer:
+    - { key: architecture-accepted, passed: The application architecture is accepted and current, failed: The application architecture is not accepted }
+    - { key: criteria-ready, passed: Every criterion has a ready test case, failed: A criterion has no ready test case }
+    - { key: interfaces-tested, passed: Every interface has an integration test, failed: An interface has no integration test }

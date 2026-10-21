@@ -13,6 +13,7 @@
 export const SECTIONS = [
   { key: 'product', path: '/product', prefix: 'product' },
   { key: 'design', path: '/design', prefix: 'design' },
+  { key: 'quality', path: '/quality', prefix: 'quality' },
 ];
 
 const under = (base, path) => `${base}${path === '/' ? '' : path}`;

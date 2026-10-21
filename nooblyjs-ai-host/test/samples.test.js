@@ -1,5 +1,6 @@
 // CHG-008: a fresh seed fills the Factory's pages. PRD-027's design (every part of it) and its three stories, one of them
-// in Engineer; that story's application architecture and test analysis; the pull requests with their approvals; and the
+// in Engineer; that story's application architecture and test analysis (the Test section's since Phase 16d); the pull
+// requests with their approvals; and the
 // test runs, coverage and defects. The lifecycle's parts are live; the rest is the seed story's sample, and says so.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -40,9 +41,15 @@ test('Design: PRD-027 has every part, its stories are items, and the handoff che
 test('Engineering: STORY-027-1 with its sample architecture and test analysis, and what its sign-off still needs', async () => {
   const { stories } = (await thabo.json('/factory/api/v1/engineering')).body;
   assert.deepEqual(stories.map((s) => [s.id, s.architecture.text, s.testAnalysis.text, s.signOff.ready]), [['STORY-027-1', '1 of 2 systems accepted', '1 of 2 criteria has a ready test case', false]]);
+  // Phase 16d: the sign-off's checks come from the sample, and name what fails.
+  assert.deepEqual(stories[0].signOff.checks.map((c) => [c.key, c.passed]), [['architecture-accepted', false], ['criteria-ready', false], ['interfaces-tested', false]]);
+  assert.match(stories[0].signOff.checks[0].text, /delivery-planner's architecture is proposed/);
+  assert.match(stories[0].signOff.checks[2].text, /IF-027-03 has no ready integration test/);
   const arch = (await thabo.json('/factory/api/v1/engineering/architecture/STORY-027-1')).body;
-  assert.deepEqual(arch.systems.map((s) => s.name), ['web-storefront', 'delivery-planner']);
-  assert.ok((await thabo.json('/factory/api/v1/engineering/test-analysis/STORY-027-1')).body.cases.length >= 4);
+  assert.deepEqual(arch.systems.map((s) => [s.name, s.status]), [['web-storefront', 'accepted'], ['delivery-planner', 'proposed']]);
+  assert.equal(arch.sample, true);
+  const analysis = (await thabo.json('/factory/quality/api/v1/stories/STORY-027-1')).body;
+  assert.deepEqual([analysis.cases.length, analysis.summary.text, analysis.sample], [7, '1 of 2 criteria has a ready test case', true]);
 });
 
 test('Pull requests and Test: approvals from the lifecycle, runs, coverage and defects from the sample', async () => {
@@ -61,7 +68,7 @@ test('every page of the Design, Engineering, Build and Test groups answers', asy
   for (const page of [
     '/factory/design/solution', '/factory/design/solution/PRD-027', '/factory/design/stories/PRD-027',
     '/factory/engineering/architecture', '/factory/engineering/architecture/STORY-027-1', '/factory/engineering/test-analysis/STORY-027-1',
-    '/factory/engineering/sign-off', '/factory/pull-requests', '/factory/test/approvals', '/factory/test/runs', '/factory/test/coverage',
+    '/factory/engineering/sign-off', '/factory/quality/test-analysis', '/factory/quality/test-analysis/STORY-027-1', '/factory/pull-requests', '/factory/test/approvals', '/factory/test/runs', '/factory/test/coverage',
     '/factory/test/defects', '/factory/js/pages/engineering.js', '/factory/js/pages/testing.js',
   ]) assert.equal((await thabo.get(page)).status, 200, page);
 });

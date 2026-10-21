@@ -16,7 +16,7 @@
   "scripts": {
     "start": "node bin/factory.js",
     "run": "npm start",
-    "test": "node --test \"test/**/*.test.js\" \"product/test/**/*.test.js\" \"design/test/**/*.test.js\"",
+    "test": "node --test \"test/**/*.test.js\" \"product/test/**/*.test.js\" \"design/test/**/*.test.js\" \"quality/test/**/*.test.js\"",
     "coverage": "node --test --experimental-test-coverage \"test/**/*.test.js\" \"product/test/**/*.test.js\"",
     "build": "node -e \"console.log('No build step: plain JavaScript')\"",
     "clean": "node -e \"for (const d of ['node_modules','coverage','dist']) require('fs').rmSync(d, { recursive: true, force: true })\"",

@@ -1,0 +1,14 @@
+# The test policy (Phase 16d): which tests the AI must automate, and at which level, by what is being tested. The test
+# analysis is drafted from it; a test analyst can change any case. Defaults to agree with the test leads [CONFIRM].
+#   criteria     the first rule whose `when` (a regular expression, case-insensitive) matches the criterion; the last has none
+#   interfaces   every interface of the story has one case at this level
+#   journeys     the story's feature is a journey: one case at this level
+#   nfrs         a case for each NFR of these categories
+criteria:
+  - { when: '\b(customer|sees?|shown|opens?|screen|page|clicks?|taps?|appears?|told|notification)\b', level: e2e, automate: true }
+  - { level: integration, automate: true }
+interfaces: { level: contract, automate: true }
+journeys: { level: e2e, automate: true }
+nfrs:
+  accessibility: { level: manual, automate: false, title: 'A person checks it with a screen reader and the keyboard' }
+  performance: { level: performance, automate: true, title: 'A load test proves the target' }

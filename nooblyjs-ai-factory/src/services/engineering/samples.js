@@ -1,10 +1,11 @@
 // @ts-check
-// Sample content for the Engineering and Test pages (2026-10-20, CHG-008): the seed story's application architecture
-// and test analysis of STORY-027-1, and its test runs and defects. Phases 16d, 16e and 20 build these for real (drafted
-// from the code, edited, signed off, recorded from the line); until then the pages show the sample, and say so.
+// Sample content for the Engineering and Test pages (2026-10-20, CHG-008): the seed story's application architecture of
+// STORY-027-1 (read since Phase 16d by architecture.js, as any other), and its test runs and defects, which Phases 16e
+// and 20 record for real. Until then the pages show the sample, and say so. (STORY-027-1's test analysis is the Test
+// section's seed since 16d.)
 //
 //   seedSamples(home, { now })   copies examples/noobly/samples/ into the Factory's folder, times moved to now
-//   readSamples(home)            what is there: { architecture, analysis, runs, defects }
+//   readSamples(home)            the runs and defects that are there
 //
 // The files are Markdown with YAML front matter and YAML, under data/factory/engineering/ and data/factory/testing/,
 // so a person can read and change them. Whatever is already there is left alone.
@@ -67,12 +68,10 @@ async function docs(store, folder, key) {
  */
 export async function readSamples(home) {
   const store = new FsStore(home);
-  const [architecture, analysis, defects, runsDoc] = await Promise.all([
-    docs(store, ['engineering', 'architecture'], 'storyId'),
-    docs(store, ['engineering', 'test-analysis'], 'storyId'),
+  const [defects, runsDoc] = await Promise.all([
     docs(store, ['testing', 'defects'], 'id'),
     store.readYaml(['testing', 'runs.yaml']).catch(() => null),
   ]);
   const runs = (/** @type {any} */ (runsDoc)?.runs ?? []).filter((r) => r?.id).sort((a, b) => String(b.at).localeCompare(String(a.at)));
-  return { architecture, analysis, defects: [...defects.values()].sort((a, b) => a.id.localeCompare(b.id)), runs };
+  return { defects: [...defects.values()].sort((a, b) => a.id.localeCompare(b.id)), runs };
 }

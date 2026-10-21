@@ -49,7 +49,7 @@ test('the route table covers every nav row, and every page keeps the frame\'s co
   // engineering.js and testing.js: the Engineering, Pull requests and Test rows (CHG-008); moved.js: old Architecture links.
   assert.deepEqual(pages.sort(), ['campaigns.js', 'engineering.js', 'inbox.js', 'line.js', 'metrics.js', 'moved.js', 'run.js', 'runs.js', 'testing.js']);
   // The sections' routes are checked in test/sections.test.js; these are the Factory's own.
-  const own = routes.filter((r) => !/^\/(product|design)(\/|$)/.test(r.path) || r.path === '/product/architecture/:id');
+  const own = routes.filter((r) => !/^\/(product|design|quality)(\/|$)/.test(r.path) || r.path === '/product/architecture/:id');
   for (const route of own.filter((r) => r.page)) {
     assert.match(route.path, /^\/[a-z:/-]*$/);
     const [, file] = /import\('\.\/pages\/([a-z]+\.js)'\)/.exec(String(route.page)) ?? [];

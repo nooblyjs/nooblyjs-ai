@@ -108,14 +108,20 @@ export async function loadRules(repos, log) {
 const READINESS_BEFORE = { product: 'specify', design: 'architect', test: 'verify' };
 
 /**
- * Checks added after a data folder was made (Phase 16c: Design's, before each story's Design handoff). The file wins
- * where it lists the stage.
+ * Checks added after a data folder was made (Phase 16c: Design's, before each story's Design handoff; Phase 16d:
+ * Engineering's, before its sign-off). The file wins where it lists the stage.
  */
 export const BUILT_IN_READINESS = {
   design: [
     { key: 'requirements-covered', passed: 'Every business requirement is covered by a story', failed: 'A business requirement has no story' },
     { key: 'decisions-decided', passed: 'No decision is still proposed', failed: 'A decision is still proposed' },
     { key: 'interfaces-complete', passed: 'Every interface has both sides named', failed: 'An interface has a side missing' },
+  ],
+  // Phase 16d: before each story's Engineering sign-off, worked out by the Software Factory.
+  engineer: [
+    { key: 'architecture-accepted', passed: 'The application architecture is accepted and current', failed: 'The application architecture is not accepted' },
+    { key: 'criteria-ready', passed: 'Every criterion has a ready test case', failed: 'A criterion has no ready test case' },
+    { key: 'interfaces-tested', passed: 'Every interface has an integration test', failed: 'An interface has no integration test' },
   ],
 };
 

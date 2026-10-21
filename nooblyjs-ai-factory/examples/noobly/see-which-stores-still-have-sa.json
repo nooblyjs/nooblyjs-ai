@@ -1,0 +1,59 @@
+{
+  "_comment": "NooblyJS Phase 16d seed: the scripted agent for STORY-031-1's web-storefront work item \"See which stores still have same-day capacity\" on the demo repository, as its application architecture proposes (stores-same-day-capacity.js, using formatSlot) and with tests named after its test cases. The gate passes and the PR is ready. Sample data.",
+  "triage": [
+    {
+      "text": "I read the work item, its application architecture and its test cases.\n\n```json\n{\n  \"kind\": \"feature\",\n  \"size\": \"small\",\n  \"clear\": true,\n  \"outOfScope\": false,\n  \"questions\": [],\n  \"reason\": \"One new module next to format-slot.js, as the architecture proposes, with the test cases automated.\"\n}\n```"
+    }
+  ],
+  "build": [
+    {
+      "text": "I'll read format-slot.js, which the architecture says the story uses.",
+      "tools": [
+        {
+          "name": "Read",
+          "input": {
+            "file_path": "format-slot.js"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Adding storesSameDayCapacity() in stores-same-day-capacity.js.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "stores-same-day-capacity.js",
+            "content": "import { formatSlot } from './format-slot.js';\n\n/**\n * The stores that still have same-day capacity, each with its open slots as people read them (STORY-031-1):\n * storesSameDayCapacity([{ id: 'a', slots: [{ start: '18:00', end: '19:00', left: 2 }] }]) → [{ id: 'a', slots: ['18:00–19:00'] }].\n */\nexport const storesSameDayCapacity = (stores) => stores\n  .map((store) => ({ id: store.id, slots: store.slots.filter((s) => s.left > 0).map((s) => formatSlot(s.start, s.end)) }))\n  .filter((store) => store.slots.length > 0);\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "And the automated test cases.",
+      "tools": [
+        {
+          "name": "Write",
+          "input": {
+            "file_path": "test/stores-same-day-capacity.test.js",
+            "content": "import assert from 'node:assert/strict';\nimport { test } from 'node:test';\nimport { storesSameDayCapacity } from '../stores-same-day-capacity.js';\n\nconst stores = [\n  { id: 'a', slots: [{ start: '18:00', end: '19:00', left: 1 }, { start: '19:00', end: '20:00', left: 0 }] },\n  { id: 'b', slots: [{ start: '18:00', end: '19:00', left: 0 }] },\n];\n\ntest('TC-031-1-1: the last slot goes to one customer; the store shows the next one', () => {\n  assert.deepEqual(storesSameDayCapacity(stores), [{ id: 'a', slots: ['18:00–19:00'] }]);\n});\n\ntest('TC-031-1-2: a store with no capacity left is not listed', () => {\n  assert.equal(storesSameDayCapacity(stores).some((s) => s.id === 'b'), false);\n});\n"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Added storesSameDayCapacity() with its test cases. All tests pass."
+    },
+    {
+      "text": "All tests pass."
+    },
+    {
+      "text": "All tests pass."
+    }
+  ],
+  "review": [
+    {
+      "text": "```json\n{\"verdict\": \"approve\", \"summary\": \"A small module in the repository's style, as the architecture proposes, with the test cases automated.\", \"findings\": []}\n```"
+    }
+  ]
+}

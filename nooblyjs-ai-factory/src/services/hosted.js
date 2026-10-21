@@ -29,7 +29,8 @@ import { createIntake } from './intake/handoff.js';
 import { setHostDevtools } from './forge/index.js';
 import { seedDemo } from './intake/demo-repo.js';
 import { seedSamples } from './engineering/samples.js';
-import { engineeringRoutes } from './engineering/views.js';
+import { engineeringRoutes, ENGINEERING_PERMISSIONS } from './engineering/views.js';
+import { createArchitecture } from './engineering/architecture.js';
 import { executeRun } from './job/run-job.js';
 import { workerName } from './scheduler/leases.js';
 import { createScheduler } from './scheduler/scheduler.js';
@@ -68,7 +69,6 @@ export const NAV = [
  */
 export const ENGINEERING_NAV = [
   { key: 'app-architecture', label: 'Application architecture', path: '/engineering/architecture', icon: 'layers' },
-  { key: 'test-analysis', label: 'Test analysis', path: '/engineering/test-analysis', icon: 'list' },
   { key: 'engineering-signoff', label: 'Engineering sign-off', path: '/engineering/sign-off', icon: 'approve' },
 ];
 
@@ -192,15 +192,49 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     }
   };
 
+  // Phase 16d: each story's application architecture, drawn from the code (src/services/engineering/architecture.js).
+  const architecture = createArchitecture({ home: dataDir, env, host, log });
+
+  /**
+   * The Engineering sign-off's checks for an item (the lifecycle engine asks): its architecture accepted and current, and
+   * the Test section's: every criterion with a ready test case, every interface with a ready integration test. Null for
+   * an item with no Engineering work (not a story, and no architecture): it has no Engineering checks.
+   */
+  async function engineeringReadiness(itemId) {
+    const item = await host.service?.('workflows')?.item?.({ itemId });
+    if (!item) return null;
+    if (item.type !== 'story' && !(await architecture.get(itemId))) return null;
+    const off = { value: false, detail: 'the Test section is not running here' };
+    const [arch, tests] = await Promise.all([architecture.facts(itemId), host.service?.('quality')?.readinessFacts?.(itemId).catch(() => null)]);
+    return {
+      itemId,
+      facts: {
+        'architecture-accepted': arch ?? { value: false, detail: 'its design names no impacted system' },
+        'criteria-ready': tests?.facts?.['criteria-ready'] ?? off,
+        'interfaces-tested': tests?.facts?.['interfaces-tested'] ?? off,
+      },
+    };
+  }
+
+  /** What a work item on one repository carries (Phase 16d): its system's architecture and its test cases, as lines. */
+  async function workContext(itemId, repo) {
+    const archLines = await architecture.contextFor(itemId, repo).catch(() => []);
+    const cases = (await host.service?.('quality')?.casesFor?.(itemId, repo).catch(() => [])) ?? [];
+    const caseLines = cases.length ? ['', '## Test cases to automate and run (the test analysis)', '', ...cases.map((c) => `- ${c.id} (${c.level}${c.automate ? ', automated by you' : ', checked by a person'}): ${c.title}${c.given ? `. Given ${c.given}, when ${c.when}, then ${c.then}.` : ''}`)] : [];
+    return [...archLines, ...caseLines];
+  }
+
+  // The Engineering, Pull requests and Test pages (CHG-008; Engineering is real since Phase 16d).
+  const extra = engineeringRoutes({ home: dataDir, host, architecture });
+  const engineeringList = /** @type {Function} */ (extra.find(([m, p]) => m === 'GET' && p === '/api/engineering')?.[2]);
+
   let router;
   try {
     router = host.express.Router();
-    // The Engineering, Pull requests and Test pages read the lifecycle and the seed story's sample (CHG-008).
-    const extra = engineeringRoutes({ home: dataDir, host });
     const routes = apiRoutes({ store, env, extra }).filter(([, pattern]) => pattern !== '/api/events'); // live updates are the host's stream
     const before = (method, pattern) => {
       if (method === 'GET') return [host.requireRole('read')];
-      const permission = PERMISSIONS[`${method} ${pattern}`];
+      const permission = PERMISSIONS[`${method} ${pattern}`] ?? ENGINEERING_PERMISSIONS[`${method} ${pattern}`];
       if (!permission) throw new Error(`${method} ${pattern} has no permission in PERMISSIONS.`);
       return pattern === '/api/inbox/:id' ? [host.requireRole(permission), inboxGate, host.audit] : [host.requireRole(permission), host.audit];
     };
@@ -237,7 +271,7 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
   timer?.unref();
 
   // A handoff approved in NooblyJS becomes runs (once per work item, however often the event arrives).
-  const intake = createIntake({ store, env, host, development, log });
+  const intake = createIntake({ store, env, host, development, log, workContext });
   // A run on a repository from Bitbucket asks NooblyJS to push and open its pull request (NooblyJS Phase 13).
   setHostDevtools(() => host.service?.('devtools') ?? null);
   const offHandoff = host.events.on?.('handoff.created', (event) => {
@@ -313,9 +347,14 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     // Product, Design, then the Factory's own Engineering, Build and Test: the order work moves in (lifecycle v3).
     nav: [
       ...sections.nav('before'),
-      ...ENGINEERING_NAV.map((row) => ({ ...row, group: 'Engineering' })),
+      // Engineering: Application architecture, then the sections' rows for it (the Test section's Test analysis), then the
+      // sign-off (Phase 16d). The kit groups rows that follow each other, so they go in this order.
+      ...ENGINEERING_NAV.slice(0, 1).map((row) => ({ ...row, group: 'Engineering' })),
+      ...sections.nav('within').filter((row) => row.group === 'Engineering'),
+      ...ENGINEERING_NAV.slice(1).map((row) => ({ ...row, group: 'Engineering' })),
       ...NAV.map((row) => ({ ...row, group: 'Build' })),
       ...TEST_NAV.map((row) => ({ ...row, group: 'Test' })),
+      ...sections.nav('within').filter((row) => row.group === 'Test'),
       ...sections.nav('after'),
     ],
     // The sidebar's group headers: an icon and a line saying what each part of the Factory does.
@@ -346,6 +385,10 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     // What other apps may call through host.service('factory').
     services: {
       status: async () => summary(),
+      /** The Engineering sign-off's checks for an item ({ itemId, facts }), or null when it has no Engineering work. */
+      engineeringReadiness,
+      /** The stories in Engineer, each with its architecture, test analysis and sign-off checks (the Engineering homes). */
+      engineeringFor: async () => (await engineeringList({})).json.stories,
       /** The runs a NooblyJS lifecycle item's work items became, newest first. */
       runsForItem: async (itemId) => store.list('runs').filter((r) => (r.request?.noobly?.itemId ?? r.itemId) === itemId).map(runView),
       /** Runs for the Developer home. Until repositories have owners (NooblyJS Phase 9), that is every run. */

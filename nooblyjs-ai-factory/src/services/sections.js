@@ -23,19 +23,23 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { register as registerProduct, NAV as PRODUCT_NAV } from '../../product/index.js';
 import { register as registerDesign, NAV as DESIGN_NAV } from '../../design/index.js';
+import { register as registerQuality, NAV as QUALITY_NAV } from '../../quality/index.js';
 
 const require = createRequire(import.meta.url);
 const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
 
 /**
  * Each section: where it is under the Factory's mount path, the sidebar group its rows go in and whether that group
- * comes before or after the Factory's own (Build) rows, in lifecycle order, the prefix that keeps its nav and badge
+ * comes before or after the Factory's own rows, in lifecycle order, or `within` them (each row in the Factory group its
+ * `factoryGroup` names, Phase 16d), the prefix that keeps its nav and badge
  * keys apart from the Factory's own, and its stylesheet (relative to the Factory's mount path).
  * The browser side has the same table (public/js/sections.js); test/sections.test.js checks the two agree.
  */
 export const SECTIONS = [
   { key: 'product', label: 'Product', group: 'Product', icon: 'product', hint: 'Requirements, UX and UI, together', place: 'before', path: '/product', prefix: 'product', register: registerProduct, nav: PRODUCT_NAV, omit: ['architecture'], styles: 'product/css/product.css' },
   { key: 'design', label: 'Design', group: 'Design', icon: 'pen', hint: 'Solution architecture, then the stories', place: 'before', path: '/design', prefix: 'design', register: registerDesign, nav: [...PRODUCT_NAV.filter((row) => row.key === 'architecture'), ...DESIGN_NAV], styles: 'design/css/design.css' },
+  // The Test section (Phase 16d): its rows go within the Factory's own groups (Test analysis is Engineering's).
+  { key: 'quality', label: 'Test', group: 'Test', icon: 'approve', hint: 'Testers verify pull requests and approve', place: 'within', path: '/quality', prefix: 'quality', register: registerQuality, nav: QUALITY_NAV, styles: 'quality/css/quality.css' },
 ];
 
 /** The Factory's own group for the line, after the sections that come 'before' it. */
@@ -114,7 +118,7 @@ export async function mountSections({ app, serverManager, mountPath, dataDir, ho
   return {
     /** The sections that are mounted, in sidebar order. */
     list: mounted,
-    /** Sidebar rows for one place in the sidebar ('before' the Factory's own rows, or 'after' them). */
+    /** Sidebar rows for one place in the sidebar ('before' the Factory's own rows, 'after' them, or 'within' its groups). */
     nav: (where) => mounted.filter(({ section }) => section.place === where).flatMap(({ section }) => sectionNav(section)),
     /**
      * How the sidebar names each group, in its order ({ name, icon, hint }): the sections' and the Factory's own,

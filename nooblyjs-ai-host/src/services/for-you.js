@@ -59,6 +59,16 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         } catch { /* the Factory is there but can't answer: the panels say it isn't running */ }
       }
     }
+    // The Engineering homes (Phase 16d) read the stories in Engineer from the Software Factory, when it is running here.
+    let engineering = null;
+    if (role.layout === 'application-architect' || role.layout === 'test-analyst') {
+      const service = services.get('factory');
+      if (typeof service?.engineeringFor === 'function') {
+        try {
+          engineering = (await service.engineeringFor()).filter((s) => base.scope === 'all' || items.some((i) => i.id === s.id));
+        } catch { /* the Factory is there but can't answer: the panels say it isn't running */ }
+      }
+    }
     // The Design homes (Phase 16c) read each item's design from the Factory's Design section, when it is running here.
     let design = null;
     if (role.layout === 'solution-architect' || role.layout === 'functional-analyst') {
@@ -71,8 +81,8 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         } catch { /* the Design section is there but can't answer: the panels say it isn't running */ }
       }
     }
-    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design };
-    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst }[role.layout](ctx);
+    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering };
+    const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst }[role.layout](ctx);
     return { ...base, layout: role.layout, engine: true, now: snapshot.at, ...shaped };
   }
 
@@ -251,6 +261,83 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         side: [
           { key: 'items', title: 'Items in Design', link: { label: 'Design', href: '/factory/design/requirements' }, empty: design === null ? DESIGN_OFF : `Nothing is in Design${base.scope === 'all' ? '' : ' for your teams'}.`, rows: (design ?? []).map((d) => ({ id: d.itemId, title: `${d.ref} · ${d.title}`, text: d.parts.functional, action: { label: 'Open', href: designHref('functional', d.itemId) } })) },
         ],
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------------------- Engineering (Phase 16d)
+
+  const ENGINEERING_OFF = 'The Software Factory is not running here, so there are no stories in Engineer to show.';
+  const signOffsFor = (mine) => mine.filter((a) => a.type === 'engineering-signoff');
+  const signOffList = (mine) => ({
+    key: 'sign-offs', title: 'Sign-offs waiting on you', link: { label: 'Engineering sign-off', href: '/factory/engineering/sign-off' }, empty: 'No Engineering sign-off is waiting on you.',
+    rows: signOffsFor(mine).map((a) => ({ id: a.id, title: a.title, text: `${a.age}${a.due ? ` · ${a.due.text}` : ''}`, late: a.overdue, action: { label: 'Sign off', href: '/factory/engineering/sign-off' } })),
+  });
+
+  /** Application Architect: architectures to draft, accept or draw again, and the sign-offs waiting on them. */
+  function applicationArchitect({ mine, engineering }) {
+    const open = (engineering ?? []).flatMap((s) => (s.architecture.systemsList ?? []).filter((x) => x.status !== 'accepted' || /^Stale/.test(x.statusText)).map((x) => ({ s, x })));
+    const stale = open.filter(({ x }) => /^Stale/.test(x.statusText));
+    const yours = signOffsFor(mine);
+    return {
+      summary: engineering === null ? ENGINEERING_OFF
+        : open.length ? `${words(open.length)} ${plural(open.length, 'application architecture needs', 'application architectures need')} you before ${plural((engineering ?? []).length, 'its story', 'their stories')} can be signed off.` : 'Every application architecture in Engineer is accepted and current.',
+      filters: { what: 'Stories in Engineer' },
+      action: { label: 'Open Application architecture', href: '/factory/engineering/architecture' },
+      tiles: [
+        { key: 'in-engineer', label: 'Stories in Engineer', value: engineering?.length ?? null, note: engineering === null ? 'The Factory is not running here' : null },
+        { key: 'to-accept', label: 'Architectures to draft or accept', value: open.length - stale.length, note: 'per impacted system' },
+        { key: 'stale', label: 'Stale architectures', value: stale.length, note: stale.length ? 'main moved since they were read' : 'All current', tone: stale.length ? 'warning' : null },
+        { key: 'sign-offs', label: 'Sign-offs waiting on you', value: yours.length, note: yours.length ? null : 'Nothing waiting' },
+      ],
+      panels: {
+        lists: [
+          {
+            key: 'architectures', title: 'Architectures to draft, accept or draw again', link: { label: 'Application architecture', href: '/factory/engineering/architecture' },
+            empty: engineering === null ? ENGINEERING_OFF : 'Nothing to do: every system\'s architecture is accepted and current.',
+            rows: open.map(({ s, x }) => ({ id: `${s.id}:${x.name}`, title: `${s.ref} · ${x.name}`, text: `${s.title} · ${x.statusText}`, late: /^Stale/.test(x.statusText), action: { label: x.status === 'none' ? 'Draft' : /^Stale/.test(x.statusText) ? 'Draw again' : 'Review', href: `/factory/engineering/architecture/${encodeURIComponent(s.id)}` } })),
+          },
+          {
+            key: 'stories', title: 'Stories in Engineer', link: { label: 'Engineering sign-off', href: '/factory/engineering/sign-off' }, empty: engineering === null ? ENGINEERING_OFF : 'Nothing is in Engineer.',
+            rows: (engineering ?? []).map((s) => ({ id: s.id, title: `${s.ref} · ${s.title}`, text: `${s.architecture.text} · ${s.signOff.text}`, action: { label: 'Open', href: `/factory/engineering/architecture/${encodeURIComponent(s.id)}` } })),
+          },
+        ],
+        side: [signOffList(mine)],
+      },
+    };
+  }
+
+  /** Test analyst: criteria without a ready test case, interfaces without a test, and the sign-offs waiting on them. */
+  function testAnalyst({ mine, engineering }) {
+    const stories = engineering ?? [];
+    const missing = stories.reduce((n, s) => n + Math.max(0, (s.testAnalysis.criteria ?? 0) - (s.testAnalysis.ready ?? 0)), 0);
+    const untouched = stories.filter((s) => !s.testAnalysis.cases);
+    const untested = stories.flatMap((s) => (s.testAnalysis.untestedInterfaces ?? []).map((id) => ({ s, id })));
+    const yours = signOffsFor(mine);
+    return {
+      summary: engineering === null ? ENGINEERING_OFF
+        : missing ? `${words(missing)} ${plural(missing, 'criterion has', 'criteria have')} no ready test case yet, which holds the Engineering sign-off.` : 'Every criterion in Engineer has a ready test case.',
+      filters: { what: 'Stories in Engineer' },
+      action: { label: 'Open Test analysis', href: '/factory/quality/test-analysis' },
+      tiles: [
+        { key: 'criteria', label: 'Criteria without a ready test case', value: missing, note: missing ? 'They hold the sign-off' : 'All ready', tone: missing ? 'warning' : null },
+        { key: 'untouched', label: 'Stories with no test analysis', value: untouched.length, note: untouched.length ? 'Ask for a draft' : 'None' },
+        { key: 'interfaces', label: 'Interfaces without a ready test', value: untested.length, note: 'contract or integration' },
+        { key: 'sign-offs', label: 'Sign-offs waiting on you', value: yours.length, note: yours.length ? null : 'Nothing waiting' },
+      ],
+      panels: {
+        lists: [
+          {
+            key: 'analyses', title: 'Test analyses to finish', link: { label: 'Test analysis', href: '/factory/quality/test-analysis' },
+            empty: engineering === null ? ENGINEERING_OFF : 'Every story in Engineer has a ready test case for each criterion.',
+            rows: stories.filter((s) => !s.testAnalysis.cases || s.testAnalysis.ready < s.testAnalysis.criteria).map((s) => ({ id: s.id, title: `${s.ref} · ${s.title}`, text: s.testAnalysis.cases ? s.testAnalysis.text : 'No test analysis yet', late: !s.testAnalysis.cases, action: { label: s.testAnalysis.cases ? 'Finish' : 'Draft', href: `/factory/quality/test-analysis/${encodeURIComponent(s.id)}` } })),
+          },
+          {
+            key: 'interfaces', title: 'Interfaces without a ready test', link: { label: 'Test analysis', href: '/factory/quality/test-analysis' }, empty: 'Every interface has a ready contract or integration test.',
+            rows: untested.map(({ s, id }) => ({ id: `${s.id}:${id}`, title: `${s.ref} · ${id}`, text: s.title, action: { label: 'Open', href: `/factory/quality/test-analysis/${encodeURIComponent(s.id)}` } })),
+          },
+        ],
+        side: [signOffList(mine)],
       },
     };
   }

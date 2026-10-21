@@ -34,9 +34,10 @@ export function modelConfigured(env = process.env) {
 export const scriptFor = (env, title) => path.join(factoryHome(env), 'scripts', `${slugify(title)}.json`);
 
 /**
- * @param {{ store: import('../../models/store/events.js').Store, env: NodeJS.ProcessEnv, host: any, development?: boolean, log?: any }} options
+ * @param {{ store: import('../../models/store/events.js').Store, env: NodeJS.ProcessEnv, host: any, development?: boolean, log?: any, workContext?: ((itemId: string, repo: string) => Promise<string[]>) | null }} options
+ *   workContext: what a work item carries besides its spec (Phase 16d: its architecture and test cases), as lines
  */
-export function createIntake({ store, env, host, development = false, log = console }) {
+export function createIntake({ store, env, host, development = false, log = console, workContext = null }) {
   const home = factoryHome(env);
 
   function wait(handoff, workItem, reason) {
@@ -48,7 +49,7 @@ export function createIntake({ store, env, host, development = false, log = cons
   }
 
   /** The work item as an issue file the factory's local forge files, with where it came from. */
-  function issueFile(handoff, workItem, spec, knowledge = []) {
+  function issueFile(handoff, workItem, spec, knowledge = [], context = []) {
     const file = path.join(home, 'intake', handoff.id, `${workItem.id}.md`);
     fs.mkdirSync(path.dirname(file), { recursive: true });
     const lines = [
@@ -67,6 +68,8 @@ export function createIntake({ store, env, host, development = false, log = cons
         else if (k.text) lines.push('', clip(k.text, 8000));
       }
     }
+    // Phase 16d: the story's application architecture of this repository's system, and the test cases to automate.
+    if (context.length) lines.push('', ...context);
     fs.writeFileSync(file, `${lines.join('\n')}\n`);
     return file;
   }
@@ -117,8 +120,9 @@ export function createIntake({ store, env, host, development = false, log = cons
       const script = scriptFor(env, workItem.title);
       const hasScript = fs.existsSync(script);
       if (!hasScript && !modelConfigured(env)) { out.push(wait(handoff, workItem, 'no model is configured, and there is no script for this work item')); continue; }
+      const context = workContext ? await workContext(handoff.itemId, workItem.repo).catch(() => []) : [];
       const runId = submitJob(store, {
-        issueFile: issueFile(handoff, workItem, spec, knowledge),
+        issueFile: issueFile(handoff, workItem, spec, knowledge, context),
         repo,
         line: 'default',
         autonomy: 'L2', // no plan approval for a small item; never L3: hosted runs don't merge

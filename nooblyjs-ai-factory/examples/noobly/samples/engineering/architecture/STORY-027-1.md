@@ -11,7 +11,7 @@ systems:
     status: accepted
     acceptedBy: { id: thabo-n, name: Thabo N. }
     acceptedAt: '2026-10-09T08:40:00.000Z'
-    readAt: { branch: main, commit: 4f2c9a1 }
+    readAt: { branch: main, commit: 4f2c9a1, source: bitbucket }
     stale: false
     flow:
       - The customer opens Track my order (/orders/:id/track) from the order page or the out-for-delivery email.
@@ -34,7 +34,7 @@ systems:
   - repo: acme/delivery-planner
     name: delivery-planner
     status: proposed
-    readAt: { branch: main, commit: b91e07d }
+    readAt: { branch: main, commit: b91e07d, source: bitbucket }
     stale: false
     flow:
       - The driver app sends courier.position every 10 seconds (IF-027-01); PositionConsumer keeps the latest per courier.
@@ -53,5 +53,6 @@ systems:
 sampleData: true
 ---
 
-STORY-027-1's application architecture, per impacted system. web-storefront's is accepted; delivery-planner's is
-proposed, waiting on the Application Architect. Phase 16d drafts these from the code and marks them stale when main moves.
+STORY-027-1's application architecture, per impacted system (sample data of the seed story). web-storefront's is
+accepted; delivery-planner's is proposed, waiting on the Application Architect. Their commits are a sample, so they
+can't be checked against the demo repository: ask for a draft to read the code.

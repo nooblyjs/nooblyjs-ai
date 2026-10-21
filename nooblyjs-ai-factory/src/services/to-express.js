@@ -14,10 +14,12 @@
 
 const CODES = { 400: 'bad_request', 401: 'unauthenticated', 403: 'forbidden', 404: 'not_found', 409: 'conflict', 422: 'unprocessable' };
 
-/** @param {any} res  @param {number} status  @param {string} message */
-export function sendError(res, status, message) {
-  res.status(status).json({ error: { code: CODES[status] ?? 'error', message } });
+/** @param {any} res  @param {number} status  @param {string} message  @param {string} [code]  the error's own, when it has one */
+export function sendError(res, status, message, code) {
+  res.status(status).json({ error: { code: code ?? CODES[status] ?? 'error', message } });
 }
+// An error's own code ("people_only", "readiness_failed") is passed on; a Node error's (ENOENT) is not.
+const ownCode = (error) => (typeof error?.code === 'string' && /^[a-z][a-z0-9_]{1,60}$/.test(error.code) ? error.code : undefined);
 
 /**
  * @param {Array<[string, string, (ctx: any) => any]>} routes
@@ -38,7 +40,7 @@ export function toExpressRouter(routes, { express, strip = '/api', before = () =
         res.status(out?.status ?? 200).json(out?.json ?? {});
       } catch (error) {
         if (res.headersSent) return res.end();
-        sendError(res, /** @type {any} */ (error).status ?? 400, error instanceof Error ? error.message : String(error));
+        sendError(res, /** @type {any} */ (error).status ?? 400, error instanceof Error ? error.message : String(error), ownCode(error));
       }
     });
   }

@@ -300,8 +300,8 @@ Quality, which are sections of the Software Factory (Product since 2026-10-19; Q
 | Home | Home | For you, Overview, Lifecycle, Approvals, Activity, Metrics, Teams & roles | `nooblyjs-ai-host` | Built |
 | Product Factory | Factory (Product section) | Strategy, Discover, Product (spec with elicitation, UX, UI) | `nooblyjs-ai-factory/product` | Built; strategy and elicitation to extend |
 | **Design** | Factory (Design section) | Business requirements, solution architecture (feature landscape, impacted systems, NFRs; today's Architecture pages), functional analysis (interface and technical requirements), feature generation (the stories), the Design handoff | `nooblyjs-ai-factory/design` (at `/factory/design`) | Built (Phase 16c, waiting for review): stories go to Engineering one at a time |
-| Software Factory | Factory (Engineering, Build) | Engineer: system / application architecture from the code; Build: the line (the AI builds and tests), runs, pull requests and the engineer's Build approval | `nooblyjs-ai-factory` | Build built; Engineering decided, Phase 16d |
-| **Quality** | Factory (Test section: test analysis in Engineering; the Test group) | Test analysis (test cases, automated testing requirements, integration and E2E tests), the human tester's verification and Test approval on each pull request, test runs, coverage, defects, evidence | `nooblyjs-ai-factory/quality` (new, at `/factory/quality`) `[CONFIRM folder and path]` | Decided; Phases 16d–16e and 20 |
+| Software Factory | Factory (Engineering, Build) | Engineer: system / application architecture from the code; Build: the line (the AI builds and tests), runs, pull requests and the engineer's Build approval | `nooblyjs-ai-factory` | Build built; Engineering built (Phase 16d, waiting for review) |
+| **Quality** | Factory (Test section: test analysis in Engineering; the Test group) | Test analysis (test cases, automated testing requirements, integration and E2E tests), the human tester's verification and Test approval on each pull request, test runs, coverage, defects, evidence | `nooblyjs-ai-factory/quality` (at `/factory/quality`, decided 2026-10-20) | Test analysis built (Phase 16d, waiting for review); 16e and 20 to come |
 | **Security** | Security | Threat models, scans, findings, risk acceptance, pen tests, compliance evidence | `nooblyjs-ai-security` (new) `[CONFIRM name]` | Decided; Phase 19 |
 | Infrastructure | Infra | Designs, environments, provisioning, drift, cloud cost | `nooblyjs-ai-infrastructure` | Built on a mock |
 | **Operations** | Ops | Releases, deployments, SLOs, incidents, post-incident reviews, outcome reviews | `nooblyjs-ai-operations` (new) `[CONFIRM name]` | Decided; Phases 22–23 |
@@ -470,8 +470,8 @@ system, agent vs people share) stay. Added, all computed from events:
 **Open**
 
 1. Who owns releases: Operations (proposed), Infrastructure, or the lifecycle engine? (Infrastructure I10.)
-2. The names and paths: the Test section's folder and path (`nooblyjs-ai-factory/quality`, `/factory/quality`, or
-   `test`), and the apps `nooblyjs-ai-security` and `nooblyjs-ai-operations` with their mount paths `[CONFIRM]`.
+2. The names and paths of the apps `nooblyjs-ai-security` and `nooblyjs-ai-operations` and their mount paths `[CONFIRM]`.
+   (The Test section's was taken on 2026-10-20, Phase 16d: `nooblyjs-ai-factory/quality`, at `/factory/quality`.)
 3. The work hierarchy above the feature (portfolio epic, epic) against ideas, specs and Jira
    (`nooblyjs-ai-factory/product` §8). Feature → stories is decided: many stories per feature, one feature per story.
 4. Which scanners, load-test and monitoring tools are approved (`stack.md` §6), and where they run.

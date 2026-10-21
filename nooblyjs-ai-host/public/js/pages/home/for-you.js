@@ -15,6 +15,9 @@ const LAYOUTS = {
   // Phase 16c: the Design homes, over the Factory's Design section.
   'solution-architect': () => import('./for-you-design.js'),
   'functional-analyst': () => import('./for-you-design.js'),
+  // Phase 16d: the Engineering homes, over the Software Factory's Engineering pages.
+  'application-architect': () => import('./for-you-design.js'),
+  'test-analyst': () => import('./for-you-design.js'),
 };
 
 function greeting(name) {
@@ -129,5 +132,5 @@ export async function render(view, { ctx, query }) {
   }, { signal: ctx.signal });
 
   await draw();
-  onChange(ctx, draw, { types: ['item.', 'approval.', 'handoff.', 'profile.', 'clock.', 'run.', 'pr.', 'design.'] });
+  onChange(ctx, draw, { types: ['item.', 'approval.', 'handoff.', 'profile.', 'clock.', 'run.', 'pr.', 'design.', 'engineering.', 'quality.'] });
 }

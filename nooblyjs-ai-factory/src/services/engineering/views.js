@@ -1,105 +1,73 @@
 // @ts-check
-// The Engineering, Pull requests and Test pages' data (2026-10-20, CHG-008), as rows of the Factory's route table:
-// read-only, `read` for everyone. What the lifecycle engine knows is live (the stories in Engineer, the pull requests
-// and their Build and Test approvals, the Test approvals); the application architecture, test analysis, test runs and
-// defects are the seed story's sample (samples.js) until Phases 16d, 16e and 20 build them. Every answer says which.
+// The Engineering, Pull requests and Test pages' data, as rows of the Factory's route table (CHG-008; Phase 16d).
+// Engineering is real since Phase 16d: each story's application architecture (architecture.js: draft from the code,
+// edit, accept), its test analysis (the Test section, host.service('quality')) and its Engineering sign-off (the
+// lifecycle engine's readiness checks, and the sign-off itself). The pull requests and approvals are the lifecycle's;
+// the test runs and defects are the seed story's sample (samples.js) until Phases 16e and 20.
 //
-//   GET /api/engineering                       stories in Engineer: architecture, test analysis, what the sign-off needs
-//   GET /api/engineering/architecture/:id      one story's application architecture, per system
-//   GET /api/engineering/test-analysis/:id     one story's test analysis
-//   GET /api/pull-requests                     pull requests with their Build and Test approvals and last test run
-//   GET /api/test/approvals                    waiting on a tester, in Test, given
-//   GET /api/test/runs · /api/test/coverage · /api/test/defects
+//   GET  /api/engineering                                   stories in Engineer: architecture, tests, the sign-off's checks
+//   GET  /api/engineering/architecture/:id                  one story's application architecture, per system
+//   POST /api/engineering/architecture/:id/systems/:name/draft    an agent drafts it from the code (draft)
+//   PUT  /api/engineering/architecture/:id/systems/:name          a person edits it (draft)
+//   POST /api/engineering/architecture/:id/systems/:name/accept   a person accepts it (accept-decisions)
+//   POST /api/engineering/:id/sign-off                      the Engineering sign-off, with an override reason (draft;
+//                                                           the lifecycle engine checks the person)
+//   GET  /api/pull-requests · /api/test/approvals · /api/test/runs · /api/test/coverage · /api/test/defects
 import { readSamples } from './samples.js';
 
 const SAMPLE = 'Sample data of the seed story.';
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-const notFound = (message) => Object.assign(new Error(message), { status: 404 });
-
-/** One story's architecture in words: "1 of 2 systems accepted". */
-function architectureSummary(doc) {
-  if (!doc) return { systems: 0, accepted: 0, text: 'No application architecture yet', missing: ['no application architecture yet'] };
-  const accepted = doc.systems.filter((s) => s.status === 'accepted');
-  const open = doc.systems.filter((s) => s.status !== 'accepted');
-  const stale = doc.systems.filter((s) => s.stale);
-  return {
-    systems: doc.systems.length, accepted: accepted.length,
-    text: `${accepted.length} of ${plural(doc.systems.length, 'system')} accepted${stale.length ? ` · ${stale.length} stale` : ''}`,
-    missing: [...open.map((s) => `${s.name}'s architecture is ${s.status}`), ...stale.map((s) => `${s.name}'s architecture is stale`)],
-  };
-}
-
-/** One story's test analysis in words: "1 of 2 criteria have a ready test case". */
-function analysisSummary(doc) {
-  if (!doc) return { criteria: 0, ready: 0, cases: 0, text: 'No test analysis yet', missing: ['no test analysis yet'] };
-  const byId = new Map(doc.cases.map((c) => [c.id, c]));
-  const isReady = (id) => byId.get(id)?.status === 'ready';
-  const readyCriteria = doc.criteria.filter((c) => c.cases.some(isReady));
-  const drafts = doc.cases.filter((c) => c.status !== 'ready');
-  const untested = (doc.interfaces ?? []).filter((i) => !i.cases?.length);
-  return {
-    criteria: doc.criteria.length, ready: readyCriteria.length, cases: doc.cases.length,
-    automated: doc.cases.filter((c) => c.automate).length,
-    text: `${readyCriteria.length} of ${plural(doc.criteria.length, 'criterion', 'criteria')} ${readyCriteria.length === 1 ? 'has' : 'have'} a ready test case`,
-    missing: [...drafts.map((c) => `${c.id} is a draft`), ...untested.map((i) => `${i.id} has no integration test`)],
-  };
-}
 
 /**
- * @param {{ home: string, host: any }} options   home: the Factory's data folder
+ * @param {{ home: string, host: any, architecture: ReturnType<typeof import('./architecture.js').createArchitecture> }} options
  * @returns {Array<[string, string, (ctx: any) => any]>}
  */
-export function engineeringRoutes({ home, host }) {
+export function engineeringRoutes({ home, host, architecture }) {
   const workflows = () => host.service?.('workflows') ?? null;
+  const quality = () => host.service?.('quality') ?? null;
   const items = async (stage) => (await workflows()?.items?.(stage ? { stage } : {})) ?? [];
   const approvals = async (type) => (await workflows()?.approvals?.({ type })) ?? [];
   const nameOf = async (id) => (id ? (await host.people?.get?.(id))?.name ?? id : null);
   const lifecycle = (id) => `/home/lifecycle/${encodeURIComponent(id)}`;
-  const live = Boolean(workflows());
+  const person = (req) => req?.person ?? null;
 
-  async function storyRow(item, samples, signoffs) {
+  async function storyRow(item, signoffs) {
     const parent = item.parentId ? await workflows()?.item?.({ itemId: item.parentId }) : null;
-    const arch = architectureSummary(samples.architecture.get(item.id));
-    const tests = analysisSummary(samples.analysis.get(item.id));
+    const arch = await architecture.view(item.id).catch(() => null);
+    const tests = (await quality()?.summaryFor?.(item.id).catch(() => null)) ?? null;
+    const readiness = await workflows()?.readinessOf?.({ itemId: item.id }).catch(() => null);
     const open = signoffs.find((a) => a.itemId === item.id && a.status === 'open');
-    const missing = [...arch.missing, ...tests.missing];
     return {
       id: item.id, ref: item.ref ?? item.id, title: item.title, type: item.type, stageEnteredAt: item.stageEnteredAt ?? null,
       parent: parent ? { id: parent.id, ref: parent.ref ?? parent.id, title: parent.title } : null,
       feature: item.feature ?? null,
-      architecture: arch, testAnalysis: tests,
+      architecture: arch ? { ...arch.summary, systemsList: arch.systems.map((s) => ({ name: s.name, status: s.status, statusText: s.statusText })) } : { systems: 0, accepted: 0, text: 'No impacted systems in its design' },
+      testAnalysis: tests ?? { criteria: 0, ready: 0, cases: 0, text: quality() ? 'No test analysis yet' : 'The Test section is not running here' },
       signOff: {
-        ready: !missing.length, missing,
-        text: missing.length ? `Not ready to sign off: ${missing.join('; ')}` : 'Ready for the Engineering sign-off',
+        checks: readiness?.checks ?? [], passed: readiness?.passed ?? 0, total: readiness?.total ?? 0,
+        ready: Boolean(readiness && readiness.passed === readiness.total),
+        text: !readiness?.total ? 'No Engineering checks for this item' : readiness.passed === readiness.total ? 'Ready for the Engineering sign-off' : `${readiness.passed} of ${readiness.total} checks pass`,
         waitingOn: open ? await Promise.all((open.reviewers ?? []).filter((r) => r.status === 'waiting').map((r) => nameOf(r.id))) : [],
       },
-      sample: samples.architecture.has(item.id) || samples.analysis.has(item.id),
+      sample: arch?.sample === true,
       href: lifecycle(item.id),
       designHref: item.parentId ? `/factory/design/stories/${encodeURIComponent(item.parentId)}` : null,
     };
   }
 
   async function engineering() {
-    const samples = await readSamples(home);
+    const live = Boolean(workflows());
     const [inEngineer, signoffs] = await Promise.all([items('engineer'), approvals('engineering-signoff')]);
-    const rows = await Promise.all(inEngineer.filter((i) => i.status === 'active').map((i) => storyRow(i, samples, signoffs)));
-    return { json: { live, sample: SAMPLE, stories: rows.sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true })) } };
+    const rows = await Promise.all(inEngineer.filter((i) => i.status === 'active').map((i) => storyRow(i, signoffs)));
+    return { json: { live, stories: rows.sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true })) } };
   }
 
-  async function storyDoc(kind, id) {
-    const samples = await readSamples(home);
-    const doc = (kind === 'architecture' ? samples.architecture : samples.analysis).get(id);
-    if (!doc) throw notFound(`${id} has no ${kind === 'architecture' ? 'application architecture' : 'test analysis'} yet.`);
-    const item = await workflows()?.item?.({ itemId: id }) ?? null;
-    const people = async (x) => (x?.id ? { ...x, name: x.name ?? await nameOf(x.id) } : x);
-    return {
-      json: {
-        sample: SAMPLE, ...doc,
-        stage: item?.stage ?? null, href: lifecycle(id), designHref: `/factory/design/stories/${encodeURIComponent(doc.itemId)}`,
-        summary: kind === 'architecture' ? architectureSummary(doc) : analysisSummary(doc),
-        ...(kind === 'architecture' ? { systems: await Promise.all(doc.systems.map(async (s) => ({ ...s, acceptedBy: await people(s.acceptedBy) }))) } : {}),
-      },
-    };
+  async function signOff({ params, body, req }) {
+    const w = workflows();
+    if (typeof w?.signOffEngineering !== 'function') throw Object.assign(new Error('The lifecycle engine is not running here, so nothing can be signed off.'), { status: 503 });
+    const reason = typeof body?.override?.reason === 'string' ? body.override.reason.trim().slice(0, 500) : '';
+    const result = await w.signOffEngineering({ itemId: params.id, ...(reason ? { override: { reason } } : {}), comment: typeof body?.comment === 'string' ? body.comment.slice(0, 500) : null, actor: person(req) });
+    return { json: { outcome: result.outcome, text: result.text, item: { id: result.item?.id, stage: result.item?.stage }, handoff: result.handoff ? { id: result.handoff.id, workItems: result.handoff.workItems.length } : null } };
   }
 
   /** The approvals of one pull request, said in words. */
@@ -126,7 +94,7 @@ export function engineeringRoutes({ home, host }) {
       };
     }));
     const order = { build: 0, test: 1 };
-    return { json: { live, pullRequests: rows.sort((a, b) => (order[a.stage] ?? 2) - (order[b.stage] ?? 2) || a.ref.localeCompare(b.ref)) } };
+    return { json: { live: Boolean(workflows()), pullRequests: rows.sort((a, b) => (order[a.stage] ?? 2) - (order[b.stage] ?? 2) || a.ref.localeCompare(b.ref)) } };
   }
 
   async function testApprovals() {
@@ -138,7 +106,7 @@ export function engineeringRoutes({ home, host }) {
     };
     return {
       json: {
-        live,
+        live: Boolean(workflows()),
         waiting: await Promise.all(given.filter((a) => a.status === 'open').map(row)),
         inTest: inTest.filter((i) => i.status === 'active').map((i) => {
           const last = samples.runs.find((r) => r.itemId === i.id);
@@ -157,7 +125,7 @@ export function engineeringRoutes({ home, host }) {
 
   async function coverage() {
     const samples = await readSamples(home);
-    const stories = [...samples.analysis.values()].map((doc) => ({ id: doc.storyId, itemId: doc.itemId, title: doc.title, ...analysisSummary(doc), href: `/factory/engineering/test-analysis/${encodeURIComponent(doc.storyId)}` }));
+    const stories = ((await quality()?.stories?.().catch(() => [])) ?? []).map((s) => ({ id: s.id, itemId: s.parentId, title: s.title, ...s.summary, href: `/factory/quality/test-analysis/${encodeURIComponent(s.id)}` }));
     const byItem = new Map();
     for (const r of samples.runs.filter((x) => x.itemId)) {
       const row = byItem.get(r.itemId) ?? { itemId: r.itemId, ref: r.ref, runs: 0, last: null, openDefects: 0 };
@@ -177,8 +145,11 @@ export function engineeringRoutes({ home, host }) {
 
   return [
     ['GET', '/api/engineering', engineering],
-    ['GET', '/api/engineering/architecture/:id', ({ params }) => storyDoc('architecture', params.id)],
-    ['GET', '/api/engineering/test-analysis/:id', ({ params }) => storyDoc('analysis', params.id)],
+    ['GET', '/api/engineering/architecture/:id', async ({ params }) => ({ json: await architecture.view(params.id) })],
+    ['POST', '/api/engineering/architecture/:id/systems/:name/draft', async ({ params, req }) => ({ json: await architecture.draft(params.id, params.name, person(req)) })],
+    ['PUT', '/api/engineering/architecture/:id/systems/:name', async ({ params, body, req }) => ({ json: await architecture.edit(params.id, params.name, body, person(req)) })],
+    ['POST', '/api/engineering/architecture/:id/systems/:name/accept', async ({ params, req }) => ({ json: await architecture.accept(params.id, params.name, person(req)) })],
+    ['POST', '/api/engineering/:id/sign-off', signOff],
     ['GET', '/api/pull-requests', pullRequests],
     ['GET', '/api/test/approvals', testApprovals],
     ['GET', '/api/test/runs', runs],
@@ -186,3 +157,11 @@ export function engineeringRoutes({ home, host }) {
     ['GET', '/api/test/defects', defects],
   ];
 }
+
+/** The permission each write of these routes needs (the Factory's PERMISSIONS table). */
+export const ENGINEERING_PERMISSIONS = {
+  'POST /api/engineering/architecture/:id/systems/:name/draft': 'draft',
+  'PUT /api/engineering/architecture/:id/systems/:name': 'draft',
+  'POST /api/engineering/architecture/:id/systems/:name/accept': 'accept-decisions',
+  'POST /api/engineering/:id/sign-off': 'draft',
+};

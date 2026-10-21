@@ -93,7 +93,7 @@ inclusion: always
 | 16a | Nine stages: Verify, Release and Operate replace Ship | ☐ built, waiting for review |
 | 16b | Eight stages, and the Factory's five groups | ☐ built, waiting for review |
 | 16c | The Design section: business requirements, solution architecture, functional analysis, stories | ☐ built, waiting for review |
-| 16d | Engineering: application architecture from the code, and test analysis | ☐ |
+| 16d | Engineering: application architecture from the code, and test analysis | ☐ built, waiting for review |
 | 16e | Build and Test: the AI builds and tests, engineers and testers approve | ☐ |
 | 16f | One shape for checks, and the trace | ☐ |
 | 17 | Strategy and the business case | ☐ |
@@ -1028,9 +1028,12 @@ Design handoff per story), `nooblyjs-ai-knowledge` (context for impacted systems
 
 ## Phase 16d — Engineering: application architecture from the code, and test analysis
 
-> **Until it is built** the Engineering pages show the lifecycle's stories in Engineer with the seed story's sample
-> application architecture and test analysis of STORY-027-1 (CHG-008, `nooblyjs-ai-factory/src/services/engineering/`);
-> this phase replaces the sample with drafts from the code and the criteria, edits, and the sign-off's readiness.
+> **Built 2026-10-20, waiting for review** (started at your word, with your defaults). Spec:
+> `nooblyjs-ai-host/.claude/specs/phase-16d-engineering/`. Summary: `nooblyjs-ai-host/docs/phases/phase-16d-summary.md`.
+> Decided at the start: agents read every repository Platform lists, as each one's agent access says; test cases are
+> given/when/then, with the levels the AI automates in the Test section's `test-policy.yaml`; the Test section is
+> `nooblyjs-ai-factory/quality/` at `/factory/quality`. STORY-027-1's CHG-008 sample is now the seed of the real formats.
+> The roadmap's step 2 said "four criteria"; the script counts the criteria Design gave STORY-031-1 (two).
 
 **Goal:** before anything is built, each story has an application architecture drawn from the real code and a test
 analysis, signed off in one approval.
@@ -1247,7 +1250,8 @@ architecture), `nooblyjs-ai-host`.
 ## Phase 20 — Quality (the Factory's Test section)
 
 > **Until it is built** Test runs, Coverage and Defects show the seed story's sample (CHG-008, `data/factory/testing/`);
-> this phase records them from the line and the environments, in the Test section.
+> this phase records them from the line and the environments, in the Test section (`quality/`, started in 16d with Test
+> analysis).
 
 **Goal:** quality is a fact across an item: coverage over all its stories and features, test runs recorded against
 requirements, and defects as items of their own.

@@ -51,8 +51,8 @@ roles:
       - { key: review-container-view, text: Review the container view of PRD-031, short: Container view, next: review a container view, done: { type: architecture.diagram_updated, where: { itemId: PRD-031 } } }
       - { key: give-design-handoff, text: Give your first Design handoff, short: Design handoff, next: give a Design handoff, done: { type: approval.decided, where: { type: design-handoff } } }
   # Lifecycle v3 (Phase 16b, root product.md §5): the Design and Engineer stages' people and the testers. The Solution
-  # Architect and Functional Analyst homes came with Phase 16c; the others come with 16d–16e, and until then onboarding
-  # lands on Overview.
+  # Architect and Functional Analyst homes came with Phase 16c, the Application Architect and Test analyst homes with
+  # 16d; the tester's comes with 16e, and until then onboarding lands on Overview.
   - key: solution-architect
     name: Solution Architect
     initials: SA
@@ -87,6 +87,7 @@ roles:
   - key: application-architect
     name: Application Architect
     initials: AA
+    layout: application-architect
     blurb: Own each system's application architecture, drawn from its code, and sign off Engineering.
     promise: An agent reads the code and drafts the application flow and objects; you accept it before anything is built.
     tasks:
@@ -96,11 +97,12 @@ roles:
     leadsWith: [Stories in Engineer, Architecture to accept, Engineering sign-offs waiting]
     agents: Application architect agent · application flow and objects
     tools: [Bitbucket, Jira Cloud]
-    home: /home/overview
+    home: /
     firstWeek: []
   - key: test-analyst
     name: Test analyst
     initials: TA
+    layout: test-analyst
     blurb: Write the test analysis, then verify each pull request and give the Test approval.
     promise: The AI writes and runs the automated tests; you decide what must be tested and sign it off.
     tasks:
@@ -110,7 +112,7 @@ roles:
     leadsWith: [Pull requests waiting on a Test approval, Test analysis to finish, Coverage gaps]
     agents: Test agent · test cases and automated tests
     tools: [Jira Cloud, Bitbucket]
-    home: /home/overview
+    home: /
     firstWeek: []
   - key: developer
     name: Developer

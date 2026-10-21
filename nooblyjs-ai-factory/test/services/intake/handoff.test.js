@@ -90,7 +90,7 @@ test('the seed makes the demo repository, the map that names it, and the scripts
   assert.ok(fs.existsSync(path.join(repo, '.git')));
   assert.ok(fs.existsSync(path.join(repo, '.factory', 'config.json')));
   assert.deepEqual(Object.keys(loadReposMap({ FACTORY_HOME: t.dataDir })), ['web-storefront']);
-  assert.deepEqual(fs.readdirSync(path.join(t.dataDir, 'scripts')).sort(), ['picker-nearby-basket.json', 'slotchip-holdtimer.json']);
+  assert.deepEqual(fs.readdirSync(path.join(t.dataDir, 'scripts')).sort(), ['picker-nearby-basket.json', 'see-which-stores-still-have-sa.json', 'slotchip-holdtimer.json']);
   fs.appendFileSync(path.join(t.dataDir, 'repos.yaml'), '# edited by a person\n');
   await t.hosted.seed();
   assert.match(fs.readFileSync(path.join(t.dataDir, 'repos.yaml'), 'utf8'), /edited by a person/);

@@ -7,6 +7,7 @@ import { createRequire, registerHooks } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { seedSamples } from '../src/services/engineering/samples.js';
 import { engineeringRoutes } from '../src/services/engineering/views.js';
+import { createArchitecture } from '../src/services/engineering/architecture.js';
 import { tmpDir } from './helpers.js';
 
 const require = createRequire(import.meta.url);
@@ -49,15 +50,29 @@ before(() => {
   globalThis.CSS ??= { escape: (s) => s };
   const home = tmpDir('factory-pages-');
   seedSamples(home, { now: () => Date.parse('2026-10-09T10:00:00.000Z') });
-  const host = {
-    people: { get: async (id) => ({ id, name: { 'lerato-m': 'Lerato M.', 'priya-s': 'Priya S.', 'thabo-n': 'Thabo N.' }[id] ?? id }) },
-    service: () => ({
+  const services = {
+    workflows: {
       items: async ({ stage } = {}) => ITEMS.filter((i) => !stage || i.stage === stage),
       item: async ({ itemId }) => ITEMS.find((i) => i.id === itemId) ?? null,
       approvals: async ({ type } = {}) => APPROVALS.filter((a) => !type || a.type === type),
-    }),
+      readinessOf: async () => ({ passed: 1, total: 3, checks: [
+        { key: 'architecture-accepted', passed: false, text: "The application architecture is not accepted: delivery-planner's architecture is proposed" },
+        { key: 'criteria-ready', passed: false, text: 'A criterion has no ready test case: "Given the order is delivered…" has no ready test case' },
+        { key: 'interfaces-tested', passed: true, text: 'Every interface has an integration test' },
+      ] }),
+    },
+    design: { designFor: async () => ({ stories: [{ id: 'STORY-027-1', title: 'See the driver on a live map', systems: ['web-storefront', 'delivery-planner'], criteria: [] }], systems: [{ name: 'web-storefront', repo: 'acme/web-storefront' }, { name: 'delivery-planner', repo: 'acme/delivery-planner' }] }) },
+    quality: {
+      summaryFor: async () => ({ criteria: 2, ready: 1, cases: 7, automated: 6, text: '1 of 2 criteria has a ready test case', untestedInterfaces: [] }),
+      stories: async () => [{ id: 'STORY-027-1', parentId: 'PRD-027', title: 'See the driver on a live map', summary: { criteria: 2, ready: 1, cases: 7, automated: 6, text: '1 of 2 criteria has a ready test case' } }],
+    },
   };
-  const routes = engineeringRoutes({ home, host }).map(([, pattern, fn]) => [new RegExp(`^${pattern.replace('/api/', '').replace(':id', '([^/]+)')}$`), fn]);
+  const host = {
+    people: { get: async (id) => ({ id, name: { 'lerato-m': 'Lerato M.', 'priya-s': 'Priya S.', 'thabo-n': 'Thabo N.' }[id] ?? id }) },
+    service: (name) => services[name],
+  };
+  const architecture = createArchitecture({ home, env: { FACTORY_HOME: home }, host });
+  const routes = engineeringRoutes({ home, host, architecture }).filter(([method]) => method === 'GET').map(([, pattern, fn]) => [new RegExp(`^${pattern.replace('/api/', '').replace(':id', '([^/]+)')}$`), fn]);
   api = {
     get: async (path) => {
       for (const [re, fn] of routes) {
@@ -80,15 +95,14 @@ async function draw(module, view, params = {}) {
   return root.text;
 }
 
-test('Engineering: the stories in Engineer, one story\'s architecture and test analysis, and the sign-off\'s needs', async () => {
-  assert.match(await draw('engineering', 'architecture'), /STORY-027-1 · See the driver on a live map.*1 of 2 systems accepted.*sample data of the seed story/i);
-  assert.match(await draw('engineering', 'tests'), /1 of 2 criteria has a ready test case/);
-  assert.match(await draw('engineering', 'signoff'), /Not ready.*delivery-planner's architecture is proposed.*TC-027-1-4 is a draft/);
+test('Engineering: the stories in Engineer, one story\'s architecture with its actions, and the sign-off\'s checks', async () => {
+  assert.match(await draw('engineering', 'architecture'), /STORY-027-1 · See the driver on a live map.*1 of 2 systems accepted.*web-storefront: Accepted by Thabo N\..*delivery-planner: Proposed/);
+  const signoff = await draw('engineering', 'signoff');
+  assert.match(signoff, /1 of 3 checks pass.*Fails .*delivery-planner's architecture is proposed.*Passes .*Every interface has an integration test/);
+  assert.match(signoff, /Override the failing checks, with a reason .*Sign off & send to Build/);
   const arch = await draw('engineering', 'architecture-detail', { id: 'STORY-027-1' });
   assert.ok(arch.includes('position (lat, lng, at)'), 'a field with commas is one field');
-  for (const words of ['Application flow', 'TrackingSnapshot', 'NFRs per component', 'src/tracking/', 'Accepted by Thabo N.', 'Proposed: an Application Architect accepts it']) assert.ok(arch.includes(words), words);
-  const tests = await draw('engineering', 'tests-detail', { id: 'STORY-027-1' });
-  for (const words of ['TC-027-1-5', 'By a person', 'IF-027-03 : no integration test yet', 'Before the sign-off']) assert.ok(tests.replace(/\s+:/g, ' :').includes(words.replace(/\s+:/g, ' :')), words);
+  for (const words of ['Application flow', 'TrackingSnapshot', 'NFRs per component', 'src/tracking/', 'Accepted by Thabo N.', 'Proposed: an Application Architect accepts it', "Accept delivery-planner's architecture", 'Ask Rhea to draft it again', "can't be checked against the code", 'Sample data of the seed story']) assert.ok(arch.includes(words), words);
 });
 
 test('Pull requests and Test: approvals, runs, coverage and defects, each in words', async () => {

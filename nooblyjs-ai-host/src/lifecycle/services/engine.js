@@ -119,7 +119,8 @@ export function createEngine({ repos, host, log, clock }) {
   /**
    * Readiness for the item's current stage: n of m, each check in words, the failing ones named. In Design (Phase 16c)
    * the Design section works the checks out, for a story from its item's design; an item with no Design work (handed off
-   * before 16c, or with the Design section not running here) has no Design checks.
+   * before 16c, or with the Design section not running here) has no Design checks. In Engineer (Phase 16d) the Software
+   * Factory works them out from the story's application architecture and test analysis, the same way.
    */
   async function readinessOf(item) {
     const checks = await loadReadiness(repos, item.stage);
@@ -140,7 +141,20 @@ export function createEngine({ repos, host, log, clock }) {
         return NO_CHECKS;
       }
     }
-    const product = item.system === 'product' && item.stage !== 'design' ? host.service('product') : null;
+    if (item.stage === 'engineer') {
+      const factory = host.service('factory');
+      if (typeof factory?.engineeringReadiness !== 'function') return NO_CHECKS;
+      try {
+        const facts = (await factory.engineeringReadiness(item.id))?.facts;
+        if (!facts) return NO_CHECKS;
+        ({ results, details } = factsOf(facts));
+        source = 'factory';
+      } catch (err) {
+        log.warn(`engineering readiness(${item.id}) failed: ${err.message}`);
+        return NO_CHECKS;
+      }
+    }
+    const product = item.system === 'product' && !['design', 'engineer'].includes(item.stage) ? host.service('product') : null;
     if (typeof product?.readinessFacts === 'function') {
       try {
         const facts = (await product.readinessFacts(item.id))?.facts;
@@ -682,6 +696,16 @@ export function createEngine({ repos, host, log, clock }) {
     return openAndDecide({ item, type, to, person, input, extra });
   }
 
+  /**
+   * The Engineering sign-off from the Factory's Engineering pages (Phase 16d): the person's Approve & send to Build on an
+   * item in Engineer, with its readiness checks or an override with a reason. Refused anywhere but Engineer.
+   */
+  async function signOffEngineering({ itemId, override = null, comment = null, actor } = {}) {
+    const item = await itemOr404(itemId);
+    if (item.stage !== 'engineer') throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}: the Engineering sign-off is given in Engineer.`);
+    return advance(itemId, { ...(override ? { override } : {}), ...(comment ? { comment } : {}) }, actor);
+  }
+
   // ---------------------------------------------------------------------------- services for other apps
 
   /** The Product section's Approve / Request changes on a spec: the open spec approval this person is waiting on. */
@@ -995,5 +1019,5 @@ export function createEngine({ repos, host, log, clock }) {
     return { items: items.map((i) => i.id), approvals, withdrawn };
   }
 
-  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories };
+  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories, signOffEngineering };
 }

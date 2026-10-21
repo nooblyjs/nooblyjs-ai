@@ -1,6 +1,7 @@
-// For you · Solution Architect and Functional Analyst (Phase 16c): lists of the work in the Factory's Design section
-// (items in Design, stories ready for their Design handoff, interfaces with a side missing, stories to finish), each row
-// with what it needs in words and a link to where it is done. The server shapes both homes as lists
+// For you · Solution Architect and Functional Analyst (Phase 16c), Application Architect and Test analyst (Phase 16d):
+// lists of the work in the Factory's Design and Engineering pages (stories ready for their Design handoff, interfaces
+// with a side missing, architectures to accept, criteria without a ready test case…), each row with what it needs in
+// words and a link to where it is done. The server shapes both homes as lists
 // (src/services/for-you.js); this draws them. Every decision is made on the Design and Approvals pages.
 import { html } from '/ui/js/html.js';
 import { button } from '/ui/js/components/index.js';

@@ -23,6 +23,7 @@ nooblyjs-ai/                   the monorepo
   nooblyjs-ai-factory/         Software Factory: one app at /factory           (module + workers + CLI)
     product/                   its Product section: screens, artefacts + drafting (was nooblyjs-ai-product)
     design/                    its Design section: requirements, solution, functional analysis, stories (Phase 16c)
+    quality/                   its Test section: test analysis (Phase 16d); test approvals, runs, coverage later
   nooblyjs-ai-infrastructure/  Infrastructure: designs, environments, runs, drift, cost   (module + standalone server)
   nooblyjs-ai-teammate/        Digital Teammates                               (module + standalone server)
   nooblyjs-ai-knowledge/       Knowledge Repository                            (module + workers)
@@ -171,7 +172,7 @@ stays in place. Why: `docs/adr/ADR-001-host-owned-shell.md`.
 
 | Child project | Mount path | Has a UI module (`public/js/module.js`) | API base |
 | --- | --- | --- | --- |
-| `nooblyjs-ai-factory` (with its Product section since 2026-10-19 and its Design section since Phase 16c; provides `product` and `design`) | `/factory`; the sections at `/factory/product` and `/factory/design` | yes (one module: the sections' routes are in it) | `/factory/api/v1/…`, `/factory/product/api/v1/…`, `/factory/design/api/v1/…` |
+| `nooblyjs-ai-factory` (with its Product section since 2026-10-19, its Design section since Phase 16c and its Test section since 16d; provides `product`, `design` and `quality`) | `/factory`; the sections at `/factory/product`, `/factory/design` and `/factory/quality` | yes (one module: the sections' routes are in it) | `/factory/api/v1/…`, `/factory/product/api/v1/…`, `/factory/design/api/v1/…`, `/factory/quality/api/v1/…` |
 | `nooblyjs-ai-infrastructure` | `/infrastructure` | yes | `/infrastructure/api/v1/…` |
 | `nooblyjs-ai-teammate` | `/teammates` | yes | `/teammates/api/v1/…` |
 | `nooblyjs-ai-knowledge` (the Wiki Platform; provides `knowledge`) | `/wiki` | yes | `/wiki/api/v1/…` |
@@ -633,6 +634,10 @@ data/
       ui/<PRD-ID>/            screens/<screen>.md · handoff.md
     design/               the Design section (Phase 16c)
       nfr-catalogue.yaml · items/<itemId>/design.md (requirements, systems, NFRs, features, interfaces, technical, stories)
+    quality/              the Test section (Phase 16d)
+      test-policy.yaml · test-analysis/<storyId>.md (the cases: given/when/then, level, automated, systems, status)
+    engineering/architecture/<storyId>.md   each story's application architecture, per system (Phase 16d)
+    testing/              runs.yaml · defects/<id>.md (CHG-008's sample, until Phase 20)
   infrastructure/         (owned by nooblyjs-ai-infrastructure; in data/factory/infrastructure/ 2026-10-19 to 2026-10-20)
     designs/<id>.md · designs/<id>/versions/vN.md   a design, and each approved version kept as it was
     environments/<name>.md · runs/<id>.md · drift/<id>.md   (a destroyed environment keeps its file)
