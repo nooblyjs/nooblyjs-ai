@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fromFen, squareIndex, squareName, colorOf, legalMoves, applyMove, inCheck, outcome, positionKey, notation, chooseMove } from '../public/chess.js';
+import { fromFen, squareIndex, squareName, colorOf, legalMoves, applyMove, inCheck, outcome, positionKey, notation, chooseMove, analyze, explainMove } from '../public/chess.js';
 
 function find(state, from, to, promotion) {
   const move = legalMoves(state).find((m) => m.from === squareIndex(from) && m.to === squareIndex(to) && (!promotion || m.promotion === promotion));
@@ -158,4 +158,55 @@ test('computer finds mate in one and does not move after game over', () => {
   const move = chooseMove(state, 'medium', [positionKey(state)], { timeMs: 1500 });
   assert.equal(outcome(applyMove(state, move)).reason, 'Checkmate');
   assert.equal(chooseMove(fromFen('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1')), null);
+});
+
+test('analyze reports the move, an honest score and how deep it looked', () => {
+  const state = fromFen('7k/8/5KQ1/8/8/8/8/8 w - - 0 1');
+  const analysis = analyze(state, 'medium', [positionKey(state)], { timeMs: 1500 });
+  assert.equal(outcome(applyMove(state, analysis.move)).reason, 'Checkmate');
+  assert.ok(analysis.score >= 90000, 'a mate score');
+  assert.ok(analysis.depth >= 1);
+  assert.equal(analyze(fromFen('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1')), null);
+});
+
+test('explanations name checkmate and a forced mate verdict', () => {
+  let state = fromFen();
+  for (const [from, to] of [['f2','f3'],['e7','e5'],['g2','g4']]) state = play(state, from, to);
+  const mate = find(state, 'd8', 'h4');
+  const explanation = explainMove(state, mate, { score: 99999, depth: 1 });
+  assert.equal(explanation.text, 'Qh4#');
+  assert.equal(explanation.color, 'b');
+  assert.match(explanation.reasons[0], /^Checkmate!/);
+  assert.match(explanation.verdict, /forced checkmate in 1 move\./);
+});
+
+test('explanations spot free captures, trades and hanging pieces', () => {
+  const free = fromFen('4k3/8/8/3n4/8/8/8/3QK3 w - - 0 1');
+  assert.ok(explainMove(free, find(free, 'd1', 'd5')).reasons.some((r) => /Wins a knight for free/.test(r)));
+  const trade = fromFen('4k3/8/2p5/3n4/8/4N3/8/4K3 w - - 0 1');
+  assert.ok(explainMove(trade, find(trade, 'e3', 'd5')).reasons.some((r) => /Trades a knight for a knight/.test(r)));
+  const minor = fromFen('4k3/8/2p5/3b4/8/4N3/8/4K3 w - - 0 1'); // knight and bishop are worth about the same
+  assert.ok(explainMove(minor, find(minor, 'e3', 'd5')).reasons.some((r) => /Trades a knight for a bishop/.test(r)));
+  const hanging = fromFen('4k3/8/8/4p3/8/8/8/2B1K3 w - - 0 1'); // the pawn on e5 guards f4
+  assert.ok(explainMove(hanging, find(hanging, 'c1', 'f4')).reasons.some((r) => /unprotected and can be taken/.test(r)));
+});
+
+test('explanations describe castling, development, the centre and forks', () => {
+  const castle = fromFen('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+  assert.match(explainMove(castle, find(castle, 'e1', 'g1')).reasons.join(' '), /Castles/);
+  const opening = fromFen();
+  assert.match(explainMove(opening, find(opening, 'e2', 'e4')).reasons.join(' '), /centre/);
+  assert.match(explainMove(opening, find(opening, 'g1', 'f3')).reasons.join(' '), /Develops the knight/);
+  const royal = fromFen('r3k3/8/8/1N6/8/8/8/4K3 w - - 0 1');
+  const reasons = explainMove(royal, find(royal, 'b5', 'c7')).reasons.join(' ');
+  assert.match(reasons, /Gives check/);
+  assert.match(reasons, /Forks the king and the rook on a8/);
+});
+
+test('verdicts translate the score into plain words', () => {
+  const state = fromFen(), move = find(state, 'e2', 'e4');
+  assert.match(explainMove(state, move, { score: 10, depth: 3 }).verdict, /about level \(looking 3 half-moves ahead\)/);
+  assert.match(explainMove(state, move, { score: 150, depth: 2 }).verdict, /White is ahead by about 1.5 pawns/);
+  assert.match(explainMove(state, move, { score: -100, depth: 2 }).verdict, /Black is ahead by about 1 pawn /);
+  assert.equal(explainMove(state, move).verdict, '');
 });

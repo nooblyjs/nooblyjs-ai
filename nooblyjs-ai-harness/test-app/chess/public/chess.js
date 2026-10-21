@@ -201,11 +201,17 @@ const priority = (state, move) => (state.board[move.to] ? values[state.board[mov
 
 // Iterative-deepening negamax, with alpha-beta pruning and a bounded capture search.
 export function chooseMove(state, difficulty = 'medium', history = [], options = {}) {
+  return analyze(state, difficulty, history, options)?.move ?? null;
+}
+
+// The same search, but it also reports what the engine concluded:
+// score (centipawns, from the mover's point of view; null if no depth finished) and depth (half-moves looked ahead).
+export function analyze(state, difficulty = 'medium', history = [], options = {}) {
   const settings = { easy: { depth: 1, ms: 250 }, medium: { depth: 3, ms: 900 }, hard: { depth: 4, ms: 2200 } }[difficulty] || { depth: 3, ms: 900 };
   const deadline = Date.now() + (options.timeMs ?? settings.ms);
   const rootMoves = legalMoves(state).sort((a, b) => priority(state, b) - priority(state, a));
   if (outcome(state, history, rootMoves).over) return null;
-  let best = rootMoves[0], nodes = 0;
+  let best = rootMoves[0], bestRaw = null, depthDone = 0, nodes = 0;
   const timeout = Symbol('timeout');
   function search(position, depth, alpha, beta, ply, keys, captureDepth = 0) {
     if ((++nodes & 63) === 0 && Date.now() > deadline) throw timeout;
@@ -233,21 +239,118 @@ export function chooseMove(state, difficulty = 'medium', history = [], options =
     return alpha;
   }
   for (let depth = 1; depth <= settings.depth; depth++) {
-    let iterationBest = best, bestScore = -Infinity;
+    let iterationBest = best, bestScore = -Infinity, iterationRaw = null;
     rootMoves.sort((a, b) => Number(b === best) - Number(a === best));
     try {
       for (const move of rootMoves) {
         if (Date.now() > deadline) throw timeout;
         const next = applyMove(state, move);
-        let score = -search(next, depth - 1, -Infinity, -bestScore, 1, [...history, positionKey(next)]);
-        if (difficulty === 'easy') score += Math.random() * 100;
-        if (score > bestScore) { bestScore = score; iterationBest = move; }
+        const raw = -search(next, depth - 1, -Infinity, -bestScore, 1, [...history, positionKey(next)]);
+        // Casual adds noise to the choice, but we keep the honest score for the explanation.
+        const score = difficulty === 'easy' ? raw + Math.random() * 100 : raw;
+        if (score > bestScore) { bestScore = score; iterationBest = move; iterationRaw = raw; }
       }
       best = iterationBest;
+      bestRaw = iterationRaw;
+      depthDone = depth;
     } catch (error) {
       if (error !== timeout) throw error;
       break;
     }
   }
-  return best;
+  return { move: best, score: bestRaw, depth: depthDone };
+}
+
+const pieceNames = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
+const colorName = (color) => color === 'w' ? 'White' : 'Black';
+const article = (word) => /^[aeiou]/.test(word) ? `an ${word}` : `a ${word}`;
+const pawns = (centipawns) => {
+  const amount = Math.round(Math.abs(centipawns) / 10) / 10;
+  return `${amount} pawn${amount === 1 ? '' : 's'}`;
+};
+
+// Enemy pieces the piece on `square` attacks right now (pins ignored: a threat is still a threat).
+function targetsFrom(state, square) {
+  const mover = colorOf(state.board[square]);
+  const reach = pseudoMoves({ ...state, turn: mover, castling: '', ep: -1 }).filter((m) => m.from === square);
+  return [...new Set(reach.map((m) => m.to))].filter((to) => state.board[to] && colorOf(state.board[to]) !== mover);
+}
+
+// Plain-English reasons for a move, worked out from the position (not from the search itself).
+// `analysis` is the optional { score, depth } from analyze(), used for the overall verdict.
+export function explainMove(state, move, analysis = {}) {
+  const me = state.turn, them = opposite(me);
+  const piece = state.board[move.from], type = piece.toLowerCase(), name = pieceNames[type];
+  const after = applyMove(state, move);
+  const result = outcome(after);
+  const captured = state.board[move.to] || (move.enPassant ? 'p' : null);
+  const reasons = [];
+
+  if (result.over && result.reason === 'Checkmate') reasons.push('Checkmate! The king is attacked and has no way out.');
+  else if (result.over) reasons.push(`This ends the game in a draw (${result.reason.toLowerCase()}).`);
+
+  if (move.castle) reasons.push('Castles: tucks the king away behind its pawns and brings the rook toward the centre.');
+  if (move.promotion) reasons.push(`Promotes the pawn to ${article(pieceNames[move.promotion])} on ${squareName(move.to)}.`);
+
+  if (captured) {
+    const gain = pieceNames[captured.toLowerCase()];
+    const recapture = attacked(after, move.to, them);
+    if (!recapture) reasons.push(`Wins ${article(gain)} for free: nothing can take back on ${squareName(move.to)}.`);
+    else if (Math.abs(values[captured.toLowerCase()] - values[type]) < 50) reasons.push(`Trades ${article(name)} for ${article(gain)}.`);
+    else if (values[captured.toLowerCase()] > values[type]) reasons.push(`Takes ${article(gain)} with ${article(name)}: a good trade even if it is recaptured.`);
+    else reasons.push(`Takes ${article(gain)}, though the ${name} can be recaptured; the engine calculated the exchange still works out.`);
+  }
+
+  if (!result.over && inCheck(after)) reasons.push(`Gives check, so ${colorName(them)} must deal with the king before anything else.`);
+
+  if (!captured && !move.castle && attacked(state, move.from, them) && !attacked(after, move.to, them)) {
+    reasons.push(`Moves the ${name} out of danger: it was under attack on ${squareName(move.from)}.`);
+  }
+
+  // New threats from the piece that just moved: bigger pieces, or ones nobody protects.
+  const threats = targetsFrom(after, move.to).filter((to) => {
+    const target = after.board[to].toLowerCase();
+    return target !== 'k' && (values[target] > values[type] || !attacked(after, to, them));
+  });
+  // Move generation never "captures" a king, so to see if this piece gives check itself,
+  // swap the king for a pawn and look again.
+  const king = after.board.indexOf(them === 'w' ? 'K' : 'k');
+  const probe = { ...after, board: after.board.map((p, square) => square === king ? (them === 'w' ? 'P' : 'p') : p) };
+  const directCheck = !result.over && king !== -1 && targetsFrom(probe, move.to).includes(king);
+  if (threats.length && !result.over) {
+    const list = threats.map((to) => `the ${pieceNames[after.board[to].toLowerCase()]} on ${squareName(to)}`);
+    if (directCheck) reasons.push(`Forks the king and ${list.join(' and ')}: once the check is dealt with, the ${name} can take.`);
+    else if (threats.length > 1) reasons.push(`Forks ${list.slice(0, -1).join(', ')} and ${list.at(-1)}: they can't both be saved.`);
+    else reasons.push(`Attacks ${list[0]}.`);
+  }
+
+  const row = Math.floor(move.to / 8), col = move.to % 8;
+  const homeRow = me === 'w' ? 7 : 0;
+  if (['n', 'b'].includes(type) && Math.floor(move.from / 8) === homeRow && state.fullmove <= 15) {
+    reasons.push(`Develops the ${name}: it leaves the back row and joins the game.`);
+  }
+  if (type === 'p' && [27, 28, 35, 36].includes(move.to)) reasons.push('Stakes a claim in the centre of the board.');
+  else if (type === 'n' && row >= 2 && row <= 5 && col >= 2 && col <= 5) reasons.push('Puts the knight on a central square, where it controls the most squares.');
+  if (type === 'p' && !move.promotion && (me === 'w' ? row <= 2 : row >= 5)) reasons.push('Pushes the pawn closer to becoming a queen.');
+
+  // Honesty: point out when the moved piece is left hanging.
+  if (!result.over && type !== 'k' && attacked(after, move.to, them) && !attacked(after, move.to, me)) {
+    reasons.push(`Note: the ${name} on ${squareName(move.to)} is unprotected and can be taken. The engine judged this acceptable, or (on Casual) it may simply be a slip.`);
+  }
+
+  if (!reasons.length) reasons.push('A quiet move: nothing urgent was happening, and this was the most solid improvement the engine could find.');
+
+  let verdict = '';
+  const { score, depth } = analysis;
+  if (typeof score === 'number') {
+    const ahead = depth ? ` (looking ${depth} half-move${depth === 1 ? '' : 's'} ahead)` : '';
+    if (score >= 90000) {
+      const turns = Math.ceil((100000 - score) / 2);
+      verdict = `It has found a forced checkmate in ${turns} move${turns === 1 ? '' : 's'}.`;
+    } else if (score <= -90000) verdict = 'It can see it is being checkmated, so it is putting up the longest defence it can.';
+    else if (Math.abs(score) < 40) verdict = `It judges the position about level${ahead}.`;
+    else verdict = `It thinks ${colorName(score > 0 ? me : them)} is ahead by about ${pawns(score)}${ahead}.`;
+  }
+
+  return { color: me, text: notation(state, move), piece: name, reasons, verdict };
 }

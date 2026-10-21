@@ -4,3 +4,46 @@
 .history-move{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;border-bottom:1px dotted transparent}
 .history-move:hover,.history-move:focus-visible{color:var(--gold);border-bottom-color:currentColor;filter:none}
 .history-move:focus-visible{outline-offset:2px}
+
+/* Computer vs computer: controls that only make sense while watching. */
+.watch-only{display:none}
+body.watching label.watch-only,body.watching select.watch-only{display:block}
+body.watching button.watch-only{display:inline-block}
+body.watching #undo{display:none}
+
+/* The engine's reasoning panel. */
+.commentary{grid-column:1/-1}
+.commentary h3{margin-bottom:12px}
+.commentary-move{font-family:Georgia,"Times New Roman",serif;font-size:18px;margin:0 0 10px;color:var(--gold)}
+.commentary-reasons{margin:0;padding-left:18px;color:var(--text);font-size:12px;line-height:1.55}
+.commentary-reasons li+li{margin-top:6px}
+.commentary-verdict{margin:12px 0 0;font-size:11px;color:var(--muted);font-style:italic}
+.commentary-verdict:empty{display:none}
+@media(max-width:760px){.commentary{padding:17px}}
+
+/* The opening book panel. */
+.opening{grid-column:1/-1}
+.opening h3{margin-bottom:12px}
+.opening-name{font-family:Georgia,"Times New Roman",serif;font-size:18px;margin:0 0 8px;color:var(--gold)}
+.opening-status{margin:0 0 12px;font-size:12px;line-height:1.55;color:var(--text)}
+.opening-status:empty{display:none}
+.opening-line{display:grid;grid-template-columns:24px 1fr 1fr;gap:4px 8px;font-size:12px;font-variant-numeric:tabular-nums}
+.opening-line:empty{display:none}
+.opening-line .number{font-size:10px;color:#7f9497;align-self:center}
+.opening-line .ply{color:var(--muted);padding:2px 5px;border-radius:4px;cursor:help}
+.opening-line .ply.played{color:var(--text)}
+.opening-line .ply.next{color:#122229;background:#8fb3c4;font-weight:650}
+.opening-line .ply.off{text-decoration:line-through;opacity:.55}
+.opening-plans{margin-top:12px;font-size:11px;line-height:1.55;color:var(--muted)}
+.opening-plans:empty{display:none}
+.opening-plans p{margin:0 0 6px}
+.opening-plans strong{color:#bcc5c1;font-weight:600}
+.opening-library{margin-top:12px;font-size:11px}
+.opening-library summary{cursor:pointer;color:var(--muted)}
+.opening-library ul{list-style:none;margin:10px 0 0;padding:0;max-height:260px;overflow:auto;scrollbar-width:thin}
+.opening-library li+li{margin-top:8px}
+.opening-library button{background:none;border:0;padding:0;color:var(--text);text-align:left;font-size:11px;line-height:1.5}
+.opening-library button span{display:block;color:var(--muted);font-size:10px}
+.opening-library .group{margin-top:12px;font-size:8px;letter-spacing:1.3px;color:var(--gold)}
+.book-dot{background:#8fb3c4}
+@media(max-width:760px){.opening{padding:17px}}

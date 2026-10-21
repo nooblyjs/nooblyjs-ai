@@ -1,4 +1,5 @@
 import { fromFen, colorOf, opposite, squareName, squareIndex, legalMoves, applyMove, inCheck, outcome, positionKey, notation } from './chess.js';
+import { OPENINGS, getOpening, findMove, bookStatus, identifyOpening } from './openings.js';
 
 const $ = (id) => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -7,6 +8,9 @@ const board = $('board');
 let state, human = 'w', flipped = false, selected = null, focused = 60;
 let moves = [], records = [], snapshots = [], keys = [], promotionMoves = [];
 let worker = null, aiTimer = null, generation = 0, thinking = false;
+// Watch mode: the engine plays both sides (human is null), slowly, explaining each move.
+let watching = false, paused = false;
+const colorName = (color) => color === 'w' ? 'White' : 'Black';
 let animationFrame = 0, animationEnds = 0;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -55,6 +59,7 @@ function renderBoard(animation) {
   board.append(polygon([back, right, front, left], { fill: 'none', stroke: '#738479', 'stroke-width': 9, 'stroke-linejoin': 'round' }));
   const targets = moves.filter((m) => m.from === selected);
   const last = records.at(-1)?.move;
+  const hint = bookHint();
   const checkedKing = inCheck(state) ? state.board.indexOf(state.turn === 'w' ? 'K' : 'k') : -1;
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
@@ -63,6 +68,7 @@ function renderBoard(animation) {
       const isTarget = targets.some((m) => m.to === square);
       let fill = (row + col) % 2 ? '#5e7e76' : '#d4d4b6';
       if (last && (square === last.from || square === last.to)) fill = (row + col) % 2 ? '#a1975d' : '#d1c48a';
+      if (hint && (square === hint.move.from || square === hint.move.to)) fill = (row + col) % 2 ? '#6f97a8' : '#a9c8d4';
       if (square === selected) fill = '#d9b565';
       if (square === checkedKing) fill = '#ba6a60';
       const label = `${squareName(square)}${piece ? `, ${colorOf(piece) === 'w' ? 'white' : 'black'} ${names[piece.toLowerCase()]}` : ', empty'}${isTarget ? ', available move' : ''}`;
@@ -196,11 +202,11 @@ function selectSquare(square) {
   renderBoard();
 }
 
-function play(move) {
+function play(move, explanation) {
   snapshots.push(state);
   const captured = state.board[move.to] || (move.enPassant ? (state.turn === 'w' ? 'p' : 'P') : null);
   const piece = state.board[move.from];
-  records.push({ move, text: notation(state, move, moves), color: state.turn, captured });
+  records.push({ move, text: notation(state, move, moves), color: state.turn, captured, explanation });
   state = applyMove(state, move);
   keys.push(positionKey(state));
   selected = null;
@@ -217,12 +223,15 @@ function cancelComputer() {
   thinking = false;
 }
 function startComputer() {
-  if (state.turn === human || outcome(state, keys, moves).over) return;
+  if (paused || state.turn === human || outcome(state, keys, moves).over) return;
   cancelComputer();
   thinking = true;
   renderStatus();
   const ticket = generation;
   const started = Date.now();
+  // When watching, wait long enough between moves to read the last explanation.
+  const minimumWait = watching ? Number($('pace').value) : 400;
+  const book = bookMove();
   function finish(data) {
     if (ticket !== generation) return;
     worker?.terminate();
@@ -232,10 +241,12 @@ function startComputer() {
     aiTimer = setTimeout(() => {
       if (ticket !== generation) return;
       thinking = false;
-      if (move) play(move);
+      if (move) play(move, data.error ? undefined : data.explanation);
       if (data.error) $('status-detail').textContent = 'The search engine was unavailable, so the computer made a random legal move.';
-    }, Math.max(0, 400 - (Date.now() - started), animationEnds - Date.now() + 60)); // let the last move land first
+    }, Math.max(0, minimumWait - (Date.now() - started), animationEnds - Date.now() + 60)); // let the last move land first
   }
+  // Still in the chosen opening: play the book move instead of searching.
+  if (book) { finish(book); return; }
   try {
     worker = new Worker('./ai-worker.js', { type: 'module' });
     worker.onmessage = ({ data }) => finish(data);
@@ -245,11 +256,14 @@ function startComputer() {
 }
 
 function renderStatus() {
+  if (watching) return renderWatchStatus();
   const result = outcome(state, keys, moves);
   document.body.classList.toggle('thinking', thinking);
   let title = thinking ? 'Considering…' : 'Your move.';
   let detail = thinking ? 'A moment to find a little possibility in the position.' : selected === null ? 'Select a piece. The highlighted squares show your options.' : 'Choose a highlighted square to make your move.';
   if (!records.length && human === 'w') detail = 'You’re playing white. Open with a little ambition.';
+  const hint = !thinking && selected === null && bookHint();
+  if (hint) detail = `Book move: ${hint.san}. ${hint.note}`;
   if (result.reason === 'Check') {
     title = thinking ? 'Computer in check.' : 'You’re in check.';
     detail = thinking ? 'The engine is looking for a way out.' : 'Protect your king: move, block, or capture the attacker.';
@@ -267,6 +281,57 @@ function renderStatus() {
   $('human-tag').textContent = result.over ? 'FINISHED' : state.turn === human ? 'YOUR TURN' : 'WAITING';
   $('human-tag').classList.toggle('active', !result.over && state.turn === human);
   $('undo').disabled = !records.some((r) => r.color === human);
+}
+
+// Status while the engine plays itself. The top strip is black, the bottom strip white.
+function renderWatchStatus() {
+  const result = outcome(state, keys, moves);
+  const side = colorName(state.turn);
+  document.body.classList.toggle('thinking', thinking);
+  let title = paused ? 'Paused.' : thinking ? `${side} is thinking…` : `${side} to move.`;
+  let detail = paused ? 'Press Resume to carry on watching.' : 'Two engines, one board. The reasons for each move appear below.';
+  if (result.reason === 'Check' && !paused) {
+    title = `${side} is in check.`;
+    detail = 'The engine is looking for a way out.';
+  }
+  if (result.over) {
+    title = 'The game is over.';
+    detail = `${result.reason}. ${result.winner ? `${colorName(result.winner)} wins.` : 'It’s a draw.'} Start a new game to watch another.`;
+  }
+  $('status').textContent = title;
+  $('status-detail').textContent = detail;
+  $('move-number').textContent = `MOVE ${String(state.fullmove).padStart(2, '0')}`;
+  $('turn-color').textContent = result.over ? 'GAME COMPLETE' : `${state.turn === 'w' ? 'WHITE' : 'BLACK'} TO PLAY`;
+  const tag = (color) => result.over ? 'FINISHED' : paused ? 'PAUSED' : state.turn !== color ? 'WAITING' : thinking ? 'THINKING…' : 'TO MOVE';
+  for (const [id, color] of [['thinking', 'b'], ['human-tag', 'w']]) {
+    $(id).textContent = tag(color);
+    $(id).classList.toggle('active', !result.over && state.turn === color);
+  }
+  $('pause').textContent = paused ? '▶ Resume' : '❚❚ Pause';
+  $('pause').disabled = result.over;
+}
+
+// The latest computer move and why it was played.
+function renderCommentary() {
+  let index = records.length - 1;
+  while (index >= 0 && records[index].color === human) index--;
+  const record = records[index];
+  const reasons = $('commentary-reasons');
+  reasons.replaceChildren();
+  $('commentary-verdict').textContent = '';
+  if (!record) {
+    $('commentary-move').textContent = watching ? 'The first move is on its way.' : 'No computer moves yet.';
+    return;
+  }
+  const number = Math.floor(index / 2) + 1;
+  $('commentary-move').textContent = `${colorName(record.color)} · ${number}${record.color === 'w' ? '.' : '…'} ${record.text}`;
+  const lines = record.explanation?.reasons ?? ['Played at random: the search engine was unavailable.'];
+  for (const line of lines) {
+    const item = document.createElement('li');
+    item.textContent = line;
+    reasons.append(item);
+  }
+  $('commentary-verdict').textContent = record.explanation?.verdict ?? '';
 }
 
 function renderHistory() {
@@ -288,7 +353,10 @@ function renderHistory() {
       const span = document.createElement('span');
       const target = rewindPoint(index);
       if (!records[index]) span.textContent = '—';
-      else if (target === null) span.textContent = records[index].text;
+      else if (target === null) {
+        span.textContent = records[index].text;
+        if (records[index].explanation) span.title = records[index].explanation.reasons.join(' ');
+      }
       else {
         // Clicking a move rewinds to the moment it is your turn at that point in the game.
         const button = document.createElement('button');
@@ -306,24 +374,162 @@ function renderHistory() {
   list.scrollTop = list.scrollHeight;
   $('human-captures').replaceChildren();
   $('computer-captures').replaceChildren();
+  const bottom = human ?? 'w'; // when watching, white sits in the bottom strip
   for (const record of records) {
-    if (record.captured) $(record.color === human ? 'human-captures' : 'computer-captures').append(smallPiece(record.captured));
+    if (record.captured) $(record.color === bottom ? 'human-captures' : 'computer-captures').append(smallPiece(record.captured));
   }
 }
-function render(animation) { renderBoard(animation); renderStatus(); renderHistory(); }
+function render(animation) { renderBoard(animation); renderStatus(); renderHistory(); renderCommentary(); renderOpening(); }
+
+// ---- Opening book ----
+const chosenOpening = () => getOpening($('opening').value);
+const played = () => records.map((record) => record.text);
+// "1.e4 e5 2.Nf3 Nc6": the usual way to write a line.
+const formatLine = (moves) => moves.map((san, i) => i % 2 ? san : `${i / 2 + 1}.${san}`).join(' ');
+
+// The chosen opening's next move, if the game is still following it: { move, san, note, index, opening }.
+function nextBookMove() {
+  const opening = chosenOpening();
+  if (!opening) return null;
+  const status = bookStatus(opening, played());
+  const move = status.next && findMove(state, status.next.san);
+  return move ? { move, ...status.next, index: status.matched, opening } : null;
+}
+// The book move to show you on the board, when it is your turn.
+function bookHint() {
+  return !watching && state.turn === human && !outcome(state, keys, moves).over ? nextBookMove() : null;
+}
+// The computer's book move, packaged like a worker reply so it gets the same commentary.
+function bookMove() {
+  const book = nextBookMove();
+  if (!book) return null;
+  const { opening, index, note } = book;
+  const remaining = opening.moves.length - index - 1;
+  return {
+    move: book.move,
+    explanation: {
+      reasons: [note, `Book move ${index + 1} of ${opening.moves.length} in the ${opening.name} (${opening.eco}).`],
+      verdict: remaining ? 'Played from the opening book, not calculated.' : 'That was the last book move. From here the engine thinks for itself.',
+    },
+  };
+}
+
+// The moves of a line as a grid: played moves bright, the next one highlighted, skipped ones struck out.
+function renderLine(opening, status) {
+  const grid = $('opening-line');
+  grid.replaceChildren();
+  opening.moves.forEach(({ san, note }, i) => {
+    if (i % 2 === 0) {
+      const number = document.createElement('span');
+      number.className = 'number';
+      number.textContent = `${i / 2 + 1}.`;
+      grid.append(number);
+    }
+    const ply = document.createElement('span');
+    ply.className = `ply ${i < status.matched ? 'played' : status.left ? 'off' : i === status.matched ? 'next' : ''}`;
+    ply.textContent = san;
+    ply.title = note;
+    grid.append(ply);
+  });
+}
+
+function renderOpening() {
+  const opening = chosenOpening(), sans = played();
+  const shown = opening ?? identifyOpening(sans);
+  let status = '';
+  if (!opening) {
+    status = shown
+      ? `Your game is following the ${shown.name}. Choose it under Set the pace to have the computer play the whole line.`
+      : 'Choose an opening under Set the pace and the computer will play its main line, or just play: the book names the opening once it recognises it.';
+  } else {
+    const book = bookStatus(opening, sans), next = nextBookMove();
+    if (book.left) status = `Out of book: ${sans[book.matched]} was played instead of ${opening.moves[book.matched].san}. The engine now thinks for itself.`;
+    else if (book.complete) status = 'The book line is complete. The middlegame starts here, and the engine plays on its own.';
+    else if (next && state.turn === human) status = `Your book move: ${next.san}. ${next.note} It is highlighted on the board, but you are free to try something else.`;
+    else if (next) status = `Next book move for ${colorName(state.turn)}: ${next.san}.`;
+  }
+  $('opening-name').textContent = shown ? `${shown.name} · ${shown.eco}` : 'No opening chosen';
+  $('opening-status').textContent = status;
+  if (shown) renderLine(shown, bookStatus(shown, sans));
+  else $('opening-line').replaceChildren();
+  const plans = $('opening-plans');
+  plans.replaceChildren();
+  if (shown) {
+    for (const [label, text] of [['', shown.summary], ['White’s plan: ', shown.plans.w], ['Black’s plan: ', shown.plans.b]]) {
+      const p = document.createElement('p');
+      if (label) { const strong = document.createElement('strong'); strong.textContent = label; p.append(strong); }
+      p.append(text);
+      plans.append(p);
+    }
+  }
+}
+
+// Fill the Opening menu and the library list once, grouped by how the game starts.
+function buildOpeningMenus() {
+  const select = $('opening'), library = $('opening-library');
+  for (const group of new Set(OPENINGS.map((o) => o.group))) {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = group;
+    const heading = document.createElement('li');
+    heading.className = 'group';
+    heading.textContent = group.toUpperCase();
+    library.append(heading);
+    for (const opening of OPENINGS.filter((o) => o.group === group)) {
+      optgroup.append(new Option(opening.name, opening.id));
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.title = 'Choose this opening';
+      const moves = document.createElement('span');
+      moves.textContent = formatLine(opening.moves.map((m) => m.san));
+      button.append(`${opening.name} (${opening.eco})`, moves);
+      button.addEventListener('click', () => { select.value = opening.id; openingChanged(); });
+      item.append(button);
+      library.append(item);
+    }
+    select.append(optgroup);
+  }
+}
+// A new opening takes effect at once if the moves so far still fit it; start a new game to play it from move one.
+function openingChanged() {
+  renderBoard(); renderStatus(); renderOpening();
+  if (thinking) startComputer();
+}
+
+// The bottom strip's name: "You" when playing, the engine when watching.
+function setBottomName() {
+  const name = $('human-name');
+  if (watching) name.textContent = 'Oblique engine';
+  else {
+    const label = document.createElement('span');
+    label.className = 'you-label';
+    label.textContent = 'THE CHALLENGER';
+    name.replaceChildren('You ', label);
+  }
+  $('human-avatar').textContent = watching ? '◇' : '♙';
+}
 function newGame() {
   cancelComputer();
   $('promotion').close();
   $('restart').close();
-  human = $('side').value;
+  watching = $('mode').value === 'watch';
+  paused = false;
+  document.body.classList.toggle('watching', watching);
+  human = watching ? null : $('side').value;
   flipped = human === 'b';
   state = fromFen();
   moves = legalMoves(state);
   keys = [positionKey(state)];
   records = []; snapshots = []; promotionMoves = []; selected = null;
-  focused = squareIndex(human === 'w' ? 'e2' : 'e7');
-  $('human-label').textContent = human === 'w' ? 'White pieces · you move first' : 'Black pieces · the computer opens';
-  $('computer-label').textContent = `Computer · ${human === 'w' ? 'black' : 'white'} pieces`;
+  focused = squareIndex(human === 'b' ? 'e7' : 'e2');
+  setBottomName();
+  if (watching) {
+    $('human-label').textContent = 'Computer · white pieces';
+    $('computer-label').textContent = 'Computer · black pieces';
+  } else {
+    $('human-label').textContent = human === 'w' ? 'White pieces · you move first' : 'Black pieces · the computer opens';
+    $('computer-label').textContent = `Computer · ${human === 'w' ? 'black' : 'white'} pieces`;
+  }
   render();
   startComputer();
 }
@@ -336,6 +542,13 @@ $('new-game').addEventListener('click', () => {
 $('cancel-restart').addEventListener('click', () => $('restart').close());
 $('confirm-restart').addEventListener('click', newGame);
 $('difficulty').addEventListener('change', () => { if (thinking) startComputer(); });
+$('mode').addEventListener('change', () => { $('side').disabled = $('mode').value === 'watch'; });
+$('pause').addEventListener('click', () => {
+  paused = !paused;
+  if (paused) cancelComputer();
+  renderStatus();
+  if (!paused) startComputer();
+});
 $('promotion').addEventListener('cancel', () => { promotionMoves = []; selected = null; renderBoard(); });
 // Where clicking history entry `index` takes you: the number of moves to keep.
 // Your own move: back to just before you played it. A computer move: back to just after it.
@@ -376,7 +589,8 @@ $('download').addEventListener('click', () => {
   const result = outcome(state, keys, moves);
   const score = !result.over ? '*' : result.winner === 'w' ? '1-0' : result.winner === 'b' ? '0-1' : '1/2-1/2';
   const date = new Date().toISOString().slice(0, 10).replaceAll('-', '.');
-  let pgn = `[Event "Oblique local game"]\n[Site "Local"]\n[Date "${date}"]\n[Round "-"]\n[White "${human === 'w' ? 'You' : 'Oblique engine'}"]\n[Black "${human === 'b' ? 'You' : 'Oblique engine'}"]\n[Result "${score}"]\n\n`;
+  const opening = identifyOpening(played());
+  let pgn = `[Event "Oblique local game"]\n[Site "Local"]\n[Date "${date}"]\n[Round "-"]\n[White "${human === 'w' ? 'You' : 'Oblique engine'}"]\n[Black "${human === 'b' ? 'You' : 'Oblique engine'}"]\n[Result "${score}"]\n${opening ? `[ECO "${opening.eco}"]\n[Opening "${opening.name}"]\n` : ''}\n`;
   for (let i = 0; i < records.length; i++) pgn += `${i % 2 === 0 ? `${Math.floor(i / 2) + 1}. ` : ''}${records[i].text} `;
   pgn += score + '\n';
   const url = URL.createObjectURL(new Blob([pgn], { type: 'application/x-chess-pgn' }));
@@ -385,4 +599,7 @@ $('download').addEventListener('click', () => {
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
+$('opening').addEventListener('change', openingChanged);
+buildOpeningMenus();
+$('side').disabled = $('mode').value === 'watch'; // browsers may restore the select after a refresh
 newGame();
