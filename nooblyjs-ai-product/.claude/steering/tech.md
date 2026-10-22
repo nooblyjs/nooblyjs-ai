@@ -52,5 +52,5 @@ system: 'product', workType, teammateId, itemId })`: at the budget it is refused
 ## 4. This repo today
 
 Built in NooblyJS Phase 5 (the engine, its screens and the hosted-app contract) and wired to real teammate drafting,
-Knowledge context and Platform routes in Phases 6, 8 and 9. The phase history is `docs/roadmap-history.md`; what is
+Knowledge context and Platform routes in Phases 6, 8 and 9. The phase history is `.claude/steering/roadmap-history.md`; what is
 still open is in `../../.claude/steering/roadmap.md`, "Hosted apps: open work".

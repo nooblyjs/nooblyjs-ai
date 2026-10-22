@@ -19,4 +19,4 @@ To run it, run NooblyJS (`npm start` in `../nooblyjs-ai-host`): it is on the rai
 Factory.
 
 Needs Node 24 and `nooblyjs-core` next to the monorepo (`../../nooblyjs-core`). How it is built: `CLAUDE.md` and
-`.claude/steering/` (product, structure, tech). Its phase history is `docs/roadmap-history.md`.
+`.claude/steering/` (product, structure, tech). Its phase history is `.claude/steering/roadmap-history.md`.

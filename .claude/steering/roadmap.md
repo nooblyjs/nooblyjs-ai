@@ -1577,7 +1577,7 @@ and whether the teams can do what is in Now, and a roadmap is something people e
 ## Hosted apps: open work
 
 This file is the only roadmap. The hosted apps used to keep their own; those are history now
-(`docs/roadmap-history.md` in `nooblyjs-ai-factory/product`, `nooblyjs-ai-teammate` and `nooblyjs-ai-infrastructure`). This is what was
+(`.claude/steering/roadmap-history.md` in `nooblyjs-ai-product`, `docs/roadmap-history.md` in `nooblyjs-ai-teammate` and `nooblyjs-ai-infrastructure`). This is what was
 still open in them on 2026-10-11. Each item goes into a numbered phase above (or a new one) before it is built, with
 its spec in `nooblyjs-ai-host/.claude/specs/`.
 
