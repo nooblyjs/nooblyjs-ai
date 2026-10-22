@@ -28,14 +28,16 @@ function ideaCard(i, { ctx, others }) {
       ${own ? button({ label: 'Take my vote back', kind: 'secondary', small: true, attrs: { 'data-action': 'unvote', 'data-id': i.id, 'data-vote': own.id } }) : button({ label: 'Vote', small: true, attrs: { 'data-action': 'vote', 'data-id': i.id, 'aria-label': `Vote for ${i.title}` } })}
       ${button({ label: i.following ? 'Unfollow' : 'Follow', kind: 'secondary', small: true, attrs: { 'data-action': i.following ? 'unfollow' : 'follow', 'data-id': i.id } })}
     </span>
-    <form class="pf-inline" data-form="behalf" data-id="${i.id}"><label>Vote on behalf of <input name="name" maxlength="80" autocomplete="off" placeholder="A colleague who asked you"></label>${button({ label: 'Vote for them', kind: 'secondary', small: true, type: 'submit' })}</form>
+    <details class="pf-details"><summary>Vote on behalf of a colleague who asked you</summary>
+      <form class="pf-inline pf-inline--wide" data-form="behalf" data-id="${i.id}"><label>Their name <input name="name" maxlength="80" autocomplete="off" placeholder="Store manager, Sandton" required></label>${button({ label: 'Vote for them', kind: 'secondary', small: true, type: 'submit' })}</form>
+    </details>
     ${behalf.length ? html`<p class="muted">Your votes for others: ${behalf.map((v) => html`${v.onBehalfOf} ${button({ label: 'Take back', kind: 'secondary', small: true, attrs: { 'data-action': 'unvote', 'data-id': i.id, 'data-vote': v.id, 'aria-label': `Take back your vote for ${v.onBehalfOf}` } })} `)}</p>` : ''}` : '';
   const deciding = canDraft && i.status === 'suggested' ? html`<form class="pf-inline" data-form="merge" data-id="${i.id}">
       ${button({ label: 'Put it on the board', small: true, attrs: { 'data-action': 'promote', 'data-id': i.id } })}
       <label>Or merge it into <select name="into" required><option value="">Choose an idea</option>${others.filter((o) => o.id !== i.id).map((o) => html`<option value="${o.id}">${o.id} · ${o.title}</option>`)}</select></label>${button({ label: 'Merge', kind: 'secondary', small: true, type: 'submit' })}
     </form>` : '';
   const comments = html`<ul class="pf-comments" aria-label="Comments">${i.comments.map((c) => html`<li><strong>${c.byName}</strong> ${c.text}${c.from ? html` <span class="muted">(on ${c.from})</span>` : ''}</li>`)}</ul>
-    ${canSuggest && i.status !== 'merged' ? html`<form class="pf-inline" data-form="comment" data-id="${i.id}"><label>Comment <input name="text" maxlength="2000" autocomplete="off"></label>${button({ label: 'Add', kind: 'secondary', small: true, type: 'submit' })}</form>` : ''}`;
+    ${canSuggest && i.status !== 'merged' ? html`<form class="pf-inline pf-inline--wide" data-form="comment" data-id="${i.id}"><label>Comment <input name="text" maxlength="2000" autocomplete="off" placeholder="Add to the idea" required></label>${button({ label: 'Add', kind: 'secondary', small: true, type: 'submit' })}</form>` : ''}`;
   return html`<li class="card pf-portal__idea" id="${i.id}">
     <div class="pf-portal__votes" aria-label="${i.votes} vote${i.votes === 1 ? '' : 's'}"><strong>${i.votes}</strong>vote${i.votes === 1 ? '' : 's'}</div>
     <div class="pf-portal__body">
