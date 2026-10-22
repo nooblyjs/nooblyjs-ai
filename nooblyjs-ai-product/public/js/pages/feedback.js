@@ -15,7 +15,7 @@ const importanceSelect = (name, chosen = 'important') => html`<select name="${na
 function filtersView(data, query, products, ctx) {
   const chip = (label, params, active, count) => {
     const q = new URLSearchParams(Object.entries(params).filter(([, v]) => v));
-    return html`<a class="pf-chip${active ? ' pf-chip--on' : ''}" aria-pressed="${active ? 'true' : 'false'}" href="${hrefFor(ctx, `/feedback${q.size ? `?${q}` : ''}`)}">${label}${count == null ? '' : html` <span class="muted">${count}</span>`}</a>`;
+    return html`<a class="pf-chip${active ? ' pf-chip--on' : ''}"${active ? html` aria-current="true"` : ''} href="${hrefFor(ctx, `/feedback${q.size ? `?${q}` : ''}`)}">${label}${count == null ? '' : html` <span class="muted">${count}</span>`}</a>`;
   };
   const product = query.get('product');
   const keep = { product };

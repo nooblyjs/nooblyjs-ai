@@ -259,3 +259,6 @@
 [data-module="product"] .pf-objective h2.card__title { margin: 0; }
 [data-module="product"] .pf-kr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 [data-module="product"] .pf-radio { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-small); margin-right: 12px; }
+/* A feedback link's address wraps rather than pushing the page sideways at phone width. */
+[data-module="product"] :is(.row__meta code, .pf-message) { overflow-wrap: anywhere; }
+[data-module="product"] .row__meta code { word-break: break-all; }

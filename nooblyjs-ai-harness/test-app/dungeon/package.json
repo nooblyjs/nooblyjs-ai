@@ -1,0 +1,17 @@
+{
+  "name": "sandstone-depths",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A turn-based isometric dungeon game built with the Kenney Dungeon Pack",
+  "scripts": {
+    "assets": "node scripts/copy-assets.js",
+    "prestart": "node scripts/copy-assets.js",
+    "start": "node server.js",
+    "predev": "node scripts/copy-assets.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": { "express": "4.22.3" }
+}

@@ -46,7 +46,7 @@ function workFilters(board, ctx) {
   if (!board.epics?.length) return '';
   const link = (key, value, label, count, active) => {
     const q = new URLSearchParams(Object.entries({ ...board.filter, epic: null, feature: null, [key]: active ? null : value }).filter(([k, v]) => v && v !== false && k !== 'mine'));
-    return html`<a class="pf-chip${active ? ' pf-chip--on' : ''}" aria-pressed="${active ? 'true' : 'false'}" href="${hrefFor(ctx, `/board${q.size ? `?${q}` : ''}`)}">${label} <span class="muted">${count}</span></a>`;
+    return html`<a class="pf-chip${active ? ' pf-chip--on' : ''}"${active ? html` aria-current="true"` : ''} href="${hrefFor(ctx, `/board${q.size ? `?${q}` : ''}`)}">${label} <span class="muted">${count}</span></a>`;
   };
   return html`<div class="pf-filters" aria-label="Epics and features">
     <span class="muted">Epics</span> ${board.epics.map((e) => link('epic', e.id, `${e.id} ${e.name}`, e.count, e.active))}

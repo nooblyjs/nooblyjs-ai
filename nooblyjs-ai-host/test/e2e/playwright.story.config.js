@@ -8,7 +8,7 @@ const PORT = 11298;
 export default defineConfig({
   testDir: '.',
   testMatch: '*.story.js',
-  testIgnore: ['software-factory.story.js', 'knowledge.story.js', 'platform.story.js', 'infrastructure.story.js'], // each has its own config and its own NooblyJS
+  testIgnore: ['software-factory.story.js', 'knowledge.story.js', 'platform.story.js', 'infrastructure.story.js', 'customers.story.js'], // each has its own config and its own NooblyJS
   workers: 1,
   timeout: 120_000,
   reporter: [['list']],

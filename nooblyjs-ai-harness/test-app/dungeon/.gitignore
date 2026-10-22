@@ -1,0 +1,5 @@
+node_modules/
+# Copied from .noobly/ui by `npm run assets`, so they are not committed twice.
+public/assets/
+# Scratch tools for checking the look offline (no browser in the dev container).
+.probe/

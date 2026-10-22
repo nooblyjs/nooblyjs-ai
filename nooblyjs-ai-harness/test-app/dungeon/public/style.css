@@ -1,0 +1,42 @@
+/* Phase 0: a full-window canvas on the warm sandstone background of the reference art. */
+:root {
+  --sand: #d6a77f;
+  --ink: #3b2a1e;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* the canvas is the whole page; no scroll bars */
+  background: var(--sand);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+.notice {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+/* Hidden on screen but still read by screen readers. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
