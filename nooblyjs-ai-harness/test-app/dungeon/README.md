@@ -2,7 +2,7 @@
 
 A small, turn-based dungeon game for the browser. Guide an adventurer through sandstone dungeon floors: open chests, find keys, unlock doors, avoid pits and patrolling guards, and reach the stairs down. It runs locally with Node.js and needs no account, API key or internet connection.
 
-**Status: Phase 2 (player and movement).** You can walk an adventurer around an 8 × 8 test room. Walls, barrels, the chest and the wooden posts block your way. Levels, keys and doors come in later phases. See `.noobly/specification/product.md` for the full design and `.noobly/specification/roadmap.md` for the build plan.
+**Status: Phase 3 (level files and the exit).** Floor 1, "The Cellar", loads from a level file. Walk through the cellar and down the corridor to the stairs, and the floor is complete. Keys, doors, pits and guards come in later phases. See `.noobly/specification/product.md` for the full design and `.noobly/specification/roadmap.md` for the build plan.
 
 ## Run
 
@@ -25,8 +25,9 @@ Open **http://localhost:3000**. If that port is busy, use `PORT=3001 npm start`.
 | ↓ or S | Walk down-left |
 | ← or A | Walk up-left |
 | Z | Wait a turn |
+| Enter | Play the floor again (once it is complete) |
 
-The floor is a diamond grid turned 45° on screen, so each arrow key walks along the grid line nearest to it, turned clockwise. Walking into something turns you to face it but doesn't use a turn.
+The floor is a diamond grid turned 45° on screen, so each arrow key walks along the grid line nearest to it, turned clockwise. Walking into something turns you to face it but doesn't use a turn. The top left shows your turns against the floor's par (the number of turns a good route takes).
 
 ## Scripts
 
@@ -43,12 +44,14 @@ The floor is a diamond grid turned 45° on screen, so each arrow key walks along
 server.js               Express server for public/ (exports `app` for tests)
 public/                 Everything the browser loads
   index.html  style.css
-  app.js                Loads the sprites, runs the walk animation and the camera, draws each frame
-  game.js               The rules: game state and `step(state, action)`; no DOM, so it is tested in Node
+  app.js                Loads the level and sprites, runs the walk animation and the camera, draws each frame
+  game.js               The rules: game state, `step(state, action)` and the exit; no DOM, so it is tested in Node
+  levels.js             `loadLevel(data)`: checks a level file and builds the floor, walls and objects
+  levels/1.json         Level files (one per floor)
   input.js              Keys → actions, and a one-action queue
   render.js             Isometric maths (grid ↔ screen), draw order, camera, drawing
   sprites.js            Image loading with progress; tile and character sprite names
-  room.js               The hard-coded test room (replaced by level files in Phase 3)
+  room.js               A hard-coded test room, kept for the draw-order and movement tests
   assets/               Copied sprites (not committed; made by `npm run assets`)
 scripts/copy-assets.js  Copies the sprites from .noobly/ui
 test/                   node --test tests
@@ -71,6 +74,30 @@ test/                   node --test tests
 - **One-action queue.** A key pressed during a step is remembered (only the latest), so walking feels responsive. Holding a key doesn't pile up moves that carry on after you let go.
 - **Draw order while walking.** Between two tiles, the character is sorted as if standing on whichever tile is nearer the camera, so it isn't hidden by something it's walking in front of.
 - **Camera.** If the whole room fits in the window, it's centred and stays still. In a small window the camera follows the player, stops at the room's edges, and eases into place. The easing uses the time between frames, so it moves at the same speed at any frame rate.
+
+## Level files
+
+Each floor is a JSON file in `public/levels/`. Here is a small example:
+
+```json
+{
+  "id": 1, "name": "The Cellar", "par": 20,
+  "size": [12, 10],
+  "legend": { "s": "stone", "t": { "tile": "stone", "facing": "N" } },
+  "floor": ["sssssss.....", "..."],
+  "start": { "col": 1, "row": 4, "facing": 2 },
+  "objects": [{ "col": 3, "row": 2, "tile": "tableRoundChairs", "facing": "N" }],
+  "exit": { "col": 10, "row": 8, "tile": "stairs", "facing": "N", "requires": [] }
+}
+```
+
+- **`floor`** is an ASCII map with one line per row and one character per column. `.` means nothing is there, and the `legend` says which floor tile each other character is. A legend entry without a `facing` turns the tile from square to square to break up the pattern.
+- **Walls are added for you** along the back edges of the floor (the upper edges on screen). The front edges stay open so you can see in. To use a different wall piece somewhere, such as a window, put it in `objects`. That tile then gets no automatic wall.
+- **`objects`** are props and wall pieces, given by name and facing from `.noobly/ui/Isometric`. Props such as barrels block their tile.
+- **`exit`** is the stairs. Stepping onto them ends the floor once everything in `requires` (keys such as `"key:brass"`, from Phase 4) is in your pockets.
+- **`par`** is the turn count for a good route. A test finds the shortest route and checks that it is within par.
+
+`loadLevel` lists every problem in a file at once, for example `floor tile 9, 2 uses "x", which is not in the legend` or `the start 3, 2 is not walkable`. When you use a new sprite, add it to `STARTER_TILES` in `scripts/copy-assets.js` (a test reminds you).
 
 ## Credits
 

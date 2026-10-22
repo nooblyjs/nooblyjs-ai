@@ -22,7 +22,8 @@ test('the page, stylesheet and script are served with a strict security policy',
   const files = [
     ['/', 'text/html'], ['/style.css', 'text/css'],
     ['/app.js', 'javascript'], ['/render.js', 'javascript'], ['/sprites.js', 'javascript'], ['/room.js', 'javascript'],
-    ['/game.js', 'javascript'], ['/input.js', 'javascript'],
+    ['/game.js', 'javascript'], ['/input.js', 'javascript'], ['/levels.js', 'javascript'],
+    ['/levels/1.json', 'application/json'],
   ];
   for (const [file, contentType] of files) {
     const response = await fetch(`${base}${file}`);

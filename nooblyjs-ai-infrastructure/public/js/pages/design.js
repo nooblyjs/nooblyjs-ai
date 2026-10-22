@@ -45,7 +45,7 @@ export async function render(view, { params, query, ctx }) {
         <p class="inf-meta"><span class="pill inf-mono">${d.id} · v${d.version}</span>${statusPill({ text: d.statusText, tone: d.tone, dot: false })}<span class="inf-muted">${d.draftedText}</span></p>
       </div>
       <div class="actions">
-        ${ctx.can('draft') && d.itemId ? button({ label: 'Ask Ines for a new draft', kind: 'secondary', attrs: { 'data-action': 'redraft', 'aria-label': `Ask Ines Tau for a new draft of ${d.id} from the architecture` } }) : ''}
+        ${ctx.can('draft') && d.itemId ? button({ label: 'Ask Ines for a new draft', kind: 'secondary', attrs: { 'data-action': 'redraft', 'aria-label': `Ask Ines for a new draft of ${d.id} from the architecture` } }) : ''}
         ${d.decision.canRequestChanges ? button({ label: 'Request changes', kind: 'secondary', attrs: { 'data-action': 'ask' } }) : ''}
         ${button({ label: d.decision.label, disabled: !d.decision.allowed, attrs: { 'data-action': 'approve' } })}
       </div>

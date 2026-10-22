@@ -2,6 +2,7 @@
 :root {
   --sand: #d6a77f;
   --ink: #3b2a1e;
+  --panel: #f1dcc3; /* Phase 3: the "Floor complete" message box */
   color-scheme: light;
 }
 

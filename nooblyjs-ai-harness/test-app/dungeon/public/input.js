@@ -1,6 +1,7 @@
 // Phase 2: turn key presses into game actions.
 // The grid is turned 45° on screen, so each arrow key moves along the grid direction nearest to it,
 // turned clockwise: Up goes up-right, Right goes down-right, Down goes down-left, Left goes up-left.
+// Phase 3: Enter plays the floor again once it is complete.
 
 /** Keys (event.key, lower-cased) and the action each one makes. */
 export const KEY_ACTIONS = Object.freeze({
@@ -13,6 +14,7 @@ export const KEY_ACTIONS = Object.freeze({
   arrowleft: { type: 'move', direction: 6 },
   a: { type: 'move', direction: 6 },
   z: { type: 'wait' },
+  enter: { type: 'playAgain' }, // handled by app.js, not game.js: it starts a new game state
 });
 
 /** The action for a keyboard event, or null if the key does nothing (or is part of a shortcut like Ctrl+S). */

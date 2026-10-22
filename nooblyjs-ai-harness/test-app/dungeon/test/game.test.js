@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createState, step, buildMap, wallBetween, isWalkable, DIRECTIONS, WALL_SIDE, FLOOR_LAYER,
+  status, missingForExit, onExit,
 } from '../public/game.js';
 import { LAYER, gridToScreen } from '../public/render.js';
 import { testLevel } from '../public/room.js';
@@ -13,12 +14,12 @@ const LEFT = { type: 'move', direction: 6 }; // up-left, col − 1
 const WAIT = { type: 'wait' };
 
 /** A small open level: a floor of `width` × `height`, plus any extra drawables. */
-function openLevel({ width = 4, height = 4, start = { col: 1, row: 1, facing: 0 }, items = [] } = {}) {
+function openLevel({ width = 4, height = 4, start = { col: 1, row: 1, facing: 0 }, items = [], exit } = {}) {
   const floor = [];
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) floor.push({ tile: 'stone', facing: 'N', col, row, layer: FLOOR_LAYER });
   }
-  return { width, height, start, items: [...floor, ...items] };
+  return { width, height, start, items: [...floor, ...items], exit };
 }
 
 const object = (tile, facing, col, row) => ({ tile, facing, col, row, layer: LAYER.object });
@@ -147,4 +148,40 @@ test('in the test room the player starts on the floor and the walls and props bl
   assert.deepEqual(atWall.player, { col: 3, row: 0, facing: 0 });
   assert.equal(atWall.turn, 6);
   assert.equal(step(atWall, UP).event, 'blocked');
+});
+
+// Phase 3: the exit.
+
+test('a new game is playing, with empty pockets, and a level without an exit never ends', () => {
+  const state = createState(openLevel());
+  assert.equal(status(state), 'playing');
+  assert.deepEqual(state.inventory, []);
+  assert.equal(state.exit, null);
+  assert.equal(onExit(state), false);
+  assert.deepEqual(missingForExit(state), []);
+});
+
+test('stepping onto the exit completes the floor, and the step still counts', () => {
+  const state = play(createState(openLevel({ exit: { col: 3, row: 1 } })), [RIGHT, RIGHT]);
+  assert.equal(status(state), 'complete');
+  assert.equal(state.event, 'moved');
+  assert.equal(state.turn, 2);
+  assert.ok(onExit(state));
+});
+
+test('once the floor is complete, actions are ignored', () => {
+  const done = play(createState(openLevel({ exit: { col: 2, row: 1 } })), [RIGHT]);
+  assert.equal(status(done), 'complete');
+  assert.equal(step(done, LEFT), done);
+  assert.equal(step(done, WAIT), done);
+});
+
+test('an exit that needs a key lets you stand on it but does not end the floor', () => {
+  const state = play(createState(openLevel({ exit: { col: 2, row: 1, requires: ['key:brass'] } })), [RIGHT]);
+  assert.ok(onExit(state));
+  assert.equal(status(state), 'playing');
+  assert.deepEqual(missingForExit(state), ['key:brass']);
+  // With the key in the inventory (Phase 4 adds a way to get it), stepping back on finishes.
+  const withKey = Object.freeze({ ...play(state, [LEFT]), inventory: Object.freeze(['key:brass']) });
+  assert.equal(status(step(withKey, RIGHT)), 'complete');
 });

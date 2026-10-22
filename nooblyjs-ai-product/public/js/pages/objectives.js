@@ -29,7 +29,7 @@ function objectiveCard(o, { ctx, items }) {
   const krs = o.keyResults.length
     ? html`<ul class="pf-list" aria-label="Key results">${o.keyResults.map((k) => html`<li class="pf-kr">${statusPill({ text: k.statusText, tone: KR_TONE[k.status] })} <span>${k.text}</span>
         ${canDraft ? (k.source === 'monitor'
-    ? button({ label: 'Read again', kind: 'secondary', small: true, attrs: { 'data-action': 'refresh', 'data-id': o.id, 'data-kr': k.id, 'aria-label': `Read ${k.measure} again from the monitor` } })
+    ? button({ label: 'Read again', kind: 'secondary', small: true, attrs: { 'data-action': 'refresh', 'data-id': o.id, 'data-kr': k.id, 'aria-label': `Read again: ${k.measure}, from the monitor` } })
     : html`<form class="pf-inline" data-form="reading" data-id="${o.id}" data-kr="${k.id}"><label>Value today <input name="value" maxlength="40" autocomplete="off" required placeholder="${k.target}"></label>${button({ label: 'Record', kind: 'secondary', small: true, type: 'submit' })}</form>`) : ''}</li>`)}</ul>`
     : html`<p class="muted">No key results yet.</p>`;
   const krForm = canDraft ? html`<details class="pf-details"><summary>Add a key result</summary><form class="pf-form pf-form--inline" data-form="kr" data-id="${o.id}">

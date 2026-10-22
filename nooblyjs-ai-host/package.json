@@ -44,7 +44,7 @@
     "test:live:product": "node --env-file-if-exists=.env --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=.temp/test-results/live-product.txt test/live/product-drafts.live.js",
     "pretest:live:factory": "node -e \"process.getBuiltinModule('fs').mkdirSync('.temp/test-results',{recursive:true})\"",
     "test:live:factory": "node --env-file-if-exists=.env --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=.temp/test-results/live-factory.txt test/live/factory.live.js",
-    "test:e2e": "playwright test -c test/e2e/playwright.config.js && playwright test -c test/e2e/playwright.story.config.js && playwright test -c test/e2e/playwright.factory.config.js && playwright test -c test/e2e/playwright.knowledge.config.js && playwright test -c test/e2e/playwright.platform.config.js && playwright test -c test/e2e/playwright.infrastructure.config.js",
+    "test:e2e": "playwright test -c test/e2e/playwright.config.js && playwright test -c test/e2e/playwright.story.config.js && playwright test -c test/e2e/playwright.factory.config.js && playwright test -c test/e2e/playwright.knowledge.config.js && playwright test -c test/e2e/playwright.platform.config.js && playwright test -c test/e2e/playwright.infrastructure.config.js && playwright test -c test/e2e/playwright.customers.config.js",
     "run": "npm start"
   },
   "dependencies": {

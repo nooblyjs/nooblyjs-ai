@@ -19,9 +19,13 @@ test('Z waits', () => {
   assert.deepEqual(keyToAction(key('z')), { type: 'wait' });
 });
 
+test('Enter asks to play the floor again', () => {
+  assert.deepEqual(keyToAction(key('Enter')), { type: 'playAgain' });
+});
+
 test('other keys and browser shortcuts are ignored', () => {
   assert.equal(keyToAction(key('q')), null);
-  assert.equal(keyToAction(key('Enter')), null);
+  assert.equal(keyToAction(key('Escape')), null);
   assert.equal(keyToAction(key('s', { ctrlKey: true })), null); // Ctrl+S saves the page, not a move
   assert.equal(keyToAction(key('a', { metaKey: true })), null);
 });

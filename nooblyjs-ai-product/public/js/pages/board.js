@@ -23,13 +23,13 @@ function boardCard(c, ctx) {
   const canDraft = ctx.can('draft');
   if (c.kind === 'signal') {
     return html`<li class="kanban__card"><span class="kanban__title">${c.title}</span><span class="kanban__meta">${c.text}</span>${c.notes ? html`<a class="pf-card-link" href="${hrefFor(ctx, `/feedback?signal=${encodeURIComponent(c.id)}`)}">Show its notes</a>` : ''}${canDraft
-      ? button({ label: 'Make it an idea', kind: 'secondary', small: true, attrs: { 'data-action': 'to-idea', 'data-id': c.id, 'aria-label': `Make "${c.title}" an idea` } })
+      ? button({ label: 'Make it an idea', kind: 'secondary', small: true, attrs: { 'data-action': 'to-idea', 'data-id': c.id, 'aria-label': `Make it an idea: ${c.title}` } })
       : ''}</li>`;
   }
   if (c.kind === 'idea') {
     const scored = c.rice.score != null;
     const actions = canDraft
-      ? html`<span class="pf-card-actions">${button({ label: scored ? 'Rescore' : 'Score it', kind: 'secondary', small: true, attrs: { 'data-action': 'score', 'data-id': c.id, 'aria-label': `${scored ? 'Rescore' : 'Score'} "${c.title}" with RICE` } })}${scored
+      ? html`<span class="pf-card-actions">${button({ label: scored ? 'Rescore' : 'Score it', kind: 'secondary', small: true, attrs: { 'data-action': 'score', 'data-id': c.id, 'aria-label': `${scored ? 'Rescore' : 'Score it'}: ${c.title}, with RICE` } })}${scored
         ? button({ label: 'Draft a spec', kind: 'secondary', small: true, attrs: { 'data-action': 'spec-from', 'data-id': c.id, 'aria-label': `Draft a spec for "${c.title}"` } })
         : ''}</span>`
       : '';

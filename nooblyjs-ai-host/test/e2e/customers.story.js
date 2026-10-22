@@ -215,7 +215,7 @@ test('For you: the PM sees customer evidence', async ({ page }) => {
 test('Infrastructure: Thabo asks Ines Tau for a new draft of INF-031', async ({ page }) => {
   await signIn(page, 'thabo-n');
   await page.goto('/infrastructure/designs/INF-031');
-  await content(page).getByRole('button', { name: /Ask Ines Tau for a new draft/ }).click();
+  await content(page).getByRole('button', { name: /^Ask Ines for a new draft/ }).click();
   await expect(content(page).getByRole('status').first()).toContainText('Ines Tau drafted INF-031 v3');
   await expect(content(page).locator('.inf-meta')).toContainText('INF-031 · v3');
   await axe(page, 'a design after Ines\'s draft');

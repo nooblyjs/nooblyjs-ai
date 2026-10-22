@@ -1,0 +1,33 @@
+{
+  "id": 1,
+  "name": "The Cellar",
+  "par": 20,
+  "size": [12, 10],
+  "legend": { "s": "stone", "t": { "tile": "stone", "facing": "N" } },
+  "floor": [
+    "sssssss.....",
+    "sssssss..sss",
+    "sssssssttsss",
+    "sssssssttsss",
+    "sssssss..sss",
+    "sssssss..sss",
+    ".........sss",
+    ".........sss",
+    ".........sss",
+    ".........sss"
+  ],
+  "start": { "col": 1, "row": 4, "facing": 2 },
+  "objects": [
+    { "col": 4, "row": 0, "tile": "stoneWallWindow", "facing": "S" },
+    { "col": 1, "row": 0, "tile": "barrels", "facing": "S" },
+    { "col": 0, "row": 1, "tile": "barrel", "facing": "E" },
+    { "col": 3, "row": 2, "tile": "tableRoundChairs", "facing": "N" },
+    { "col": 5, "row": 5, "tile": "woodenCrates", "facing": "W" },
+    { "col": 6, "row": 5, "tile": "woodenCrate", "facing": "N" },
+    { "col": 11, "row": 1, "tile": "barrelsStacked", "facing": "S" },
+    { "col": 11, "row": 4, "tile": "woodenSupports", "facing": "N" },
+    { "col": 11, "row": 6, "tile": "woodenSupports", "facing": "N" },
+    { "col": 9, "row": 9, "tile": "woodenCrates", "facing": "E" }
+  ],
+  "exit": { "col": 10, "row": 8, "tile": "stairs", "facing": "N", "requires": [] }
+}

@@ -1,6 +1,6 @@
 // Phase 0: copy the sprites the game uses from the Kenney pack (.noobly/ui) into public/assets.
 // .noobly/ui stays the untouched source. Copying only what we need keeps the served folder small.
-// For now the list is fixed (the Phase 1 test room). In Phase 6 it will be worked out from the level files.
+// For now the list is fixed (the test room and Level 1). In Phase 6 it will be worked out from the level files.
 import { copyFile, mkdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,15 +13,22 @@ export const TARGET_DIR = path.join(root, 'public', 'assets');
 /** Every tile comes in four facings. */
 export const FACINGS = ['N', 'E', 'S', 'W'];
 
-/** Tiles for the Phase 1 test room. */
+/** Tiles for the Phase 1 test room and Level 1. test/levels.test.js checks every level's tiles are here. */
 export const STARTER_TILES = [
   'stone',
   'stoneWall',
   'stoneWallCorner',
   'stoneWallDoorOpen',
+  'stoneWallWindow',
   'barrel',
+  'barrels',
+  'barrelsStacked',
   'chestClosed',
+  'tableRoundChairs',
+  'woodenCrate',
+  'woodenCrates',
   'woodenSupports',
+  'stairs',
 ];
 
 /** The character's animations and how many frames each one has (see Characters/Male). */

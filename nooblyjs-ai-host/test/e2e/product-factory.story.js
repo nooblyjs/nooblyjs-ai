@@ -44,7 +44,7 @@ test.afterAll(async () => {
 test('step 1: Lerato turns "Substitutions feel random" into an idea and scores it with RICE', async () => {
   await open(lerato, '/product/board');
   await expectNoAxeViolations(lerato, 'the Product board');
-  await content(lerato).getByRole('button', { name: 'Make "Substitutions feel random" an idea' }).click();
+  await content(lerato).getByRole('button', { name: 'Make it an idea: Substitutions feel random' }).click();
   await expect(said(lerato)).toContainText('in Ideas. Score it with RICE below.');
   const form = content(lerato).locator('[data-form="rice"]');
   await expect(form.getByLabel(/Reach/)).toBeFocused();

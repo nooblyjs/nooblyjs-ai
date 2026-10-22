@@ -1,19 +1,9 @@
-// Phase 1–2: a hard-coded 8 × 8 test room. Phase 3 replaces this with level files.
+// Phase 1–2: a hard-coded 8 × 8 test room. Since Phase 3 the game plays level files (levels.js);
+// this room stays as a fixture for the draw-order and movement tests, because it has the tricky cases.
 import { LAYER } from './render.js';
+import { WALL_EDGE, BACK_CORNER } from './levels.js';
 
-/**
- * The facing of a wall sprite for each edge of its tile (see WALL_SIDE in game.js for the reverse).
- * The "back" edges are the two upper edges of the diamond on screen, the "front" edges the two lower ones.
- */
-export const WALL_EDGE = Object.freeze({
-  backRow: 'S', // upper-right edge, towards row − 1
-  backCol: 'E', // upper-left edge, towards col − 1
-  frontRow: 'N', // lower-left edge, towards row + 1
-  frontCol: 'W', // lower-right edge, towards col + 1
-});
-
-/** The facing of `stoneWallCorner` that joins the two back walls at the top corner of a tile. */
-export const BACK_CORNER = 'S';
+export { WALL_EDGE, BACK_CORNER };
 
 export const ROOM_SIZE = 8;
 

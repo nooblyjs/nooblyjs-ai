@@ -75,7 +75,7 @@ function portfolioView(p, c, ctx, editingThemes, editing) {
         <div class="actions">${button({ label: 'Save themes', small: true, attrs: { 'data-action': 'save-themes', 'data-portfolio': p.name } })}${button({ label: 'Cancel', kind: 'secondary', small: true, attrs: { 'data-action': 'cancel' } })}</div>
       </fieldset>`
     : html`<p class="pf-portfolio__name">Works towards: <span class="muted">${p.themes.length ? listed(p.themes) : 'no strategic theme yet'}</span>
-        ${canChange && c.themes.length ? button({ label: 'Change themes', kind: 'secondary', small: true, attrs: { 'data-action': 'edit-themes', 'data-portfolio': p.name, 'aria-label': `Change the themes ${p.name} works towards` } }) : ''}</p>`;
+        ${canChange && c.themes.length ? button({ label: 'Change themes', kind: 'secondary', small: true, attrs: { 'data-action': 'edit-themes', 'data-portfolio': p.name, 'aria-label': `Change themes: the ones ${p.name} works towards` } }) : ''}</p>`;
   return html`<section class="card pf-stack" aria-labelledby="pf-p-${p.id}">
     <div class="card__head"><h2 class="card__title" id="pf-p-${p.id}"><a href="${hrefFor(ctx, `/portfolios/${p.id}`)}">${p.name}</a></h2>
       <span class="card__meta">${plural(p.valueStreams.length, 'value stream')} · ${plural(p.products.length, 'product')}${canChange ? html` ${button({ label: 'Rename or remove', kind: 'secondary', small: true, attrs: { 'data-edit': 'portfolio', 'data-value': p.name, 'aria-expanded': editing?.kind === 'portfolio' && editing.name === p.name ? 'true' : 'false', 'aria-label': `Rename or remove ${p.name}` } })}` : ''}</span></div>
