@@ -1,6 +1,6 @@
 # Phase 25a — Customer evidence, the ideas portal, the feedback form, closing the loop: requirements
 
-> **Status: built (2026-10-22), waiting for your review.** Root `roadmap.md` Phase 25a; the comparison it came from is
+> **Status: done (built and reviewed 2026-10-22).** Root `roadmap.md` Phase 25a; the comparison it came from is
 > `.claude/audits/2026-10-21-product-tools-comparison.md`.
 
 > Asked 2026-10-22: "Lets make the feedback tool just a feedback from on a link ... no need to log in", "the link can

@@ -1,6 +1,6 @@
 # Phase 25a — Customer evidence, the ideas portal, the feedback form, closing the loop: design
 
-> **Status: built (2026-10-22), waiting for your review.** Requirements: `requirements.md`.
+> **Status: done (built and reviewed 2026-10-22).** Requirements: `requirements.md`.
 
 ## Where it lives
 

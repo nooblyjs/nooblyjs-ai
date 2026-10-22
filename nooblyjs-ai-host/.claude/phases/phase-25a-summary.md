@@ -1,6 +1,6 @@
 # Phase 25a — Customer evidence, the ideas portal, the feedback form, closing the loop: summary
 
-**Status:** built (2026-10-22), waiting for your review. Spec: `.claude/specs/phase-25a-customer-evidence/` (tasks 1–10
+**Status:** done (built and reviewed 2026-10-22). Spec: `.claude/specs/phase-25a-customer-evidence/` (tasks 1–10
 done). Your decisions on 2026-10-22: the feedback form on a link instead of a support-tool connector, no sign-in
 (anyone with the link), no email source, no limit on submissions, 10 open votes. The work is in
 `nooblyjs-ai-product`, `nooblyjs-ai-host` and `nooblyjs-ai-operations`.

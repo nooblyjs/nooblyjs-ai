@@ -1,6 +1,6 @@
 # Phase 25a — Customer evidence, the ideas portal, the feedback form, closing the loop: tasks
 
-> **Status: built (2026-10-22), waiting for your review.** Summary: `.claude/phases/phase-25a-summary.md`.
+> **Status: done (built and reviewed 2026-10-22).** Summary: `.claude/phases/phase-25a-summary.md`.
 
 - [x] 1. `suggest` in NooblyJS's matrix; `notify.tell` and notices on For you. _R3, R6, R7_
 - [x] 2. Notes, insights and the inbox's filters; Jira notes through devtools; redaction. _R1_

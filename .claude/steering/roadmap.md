@@ -111,8 +111,8 @@ inclusion: always
 | 22 | Release (new app: Operations, part 1) | ✅ (reviewed 2026-10-21) |
 | 23 | Operate and learn (Operations, part 2) | ✅ (reviewed 2026-10-21) |
 | 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ✅ (reviewed 2026-10-21) |
-| 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ✅ built 2026-10-22, waiting for your review (`nooblyjs-ai-host/.claude/phases/phase-25a-summary.md`) |
-| 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ☐ planned |
+| 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ✅ (reviewed 2026-10-22) |
+| 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ◐ in progress (spec `nooblyjs-ai-host/.claude/specs/phase-25b-objectives-roadmaps/`, 2026-10-22) |
 
 Open bugs and changes: none. BUG-001 to BUG-007 and CHG-001 to CHG-009 are verified (2026-10-21); the next IDs are BUG-008 and CHG-010 (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 
@@ -1534,10 +1534,11 @@ ideas forward and vote; and everyone who asked hears when it ships and whether i
 **Goal:** the board and the roadmap say why each item is there (the objective it serves, its RICE score, who asked)
 and whether the teams can do what is in Now, and a roadmap is something people edit and share, not a typed file.
 
-**Before you start**
-- How long Now is, for capacity (default: the next 12 weeks, set by an Owner) `[CONFIRM]`; Next and Later have no
-  dates.
-- Each team's people-days available in Now `[PLACEHOLDER]`, from Teams & roles.
+**Before you start** (answered 2026-10-22)
+- Now is the next 3 months, Next the 3 months after that, Later anything after 6 months (so Next and Later have dates
+  too). Capacity is still checked in Now only.
+- Each team's people-days available in Now: sample numbers (Delivery 50, Checkout 40, Platform 30) on Teams & roles,
+  `[PLACEHOLDER]` for the real ones.
 
 **Build**
 - **Objectives** (`OBJ-07`), each in **Now, Next or Later**, with key results that have a measure, a start, a target
@@ -1568,7 +1569,7 @@ and whether the teams can do what is in Now, and a roadmap is something people e
 6. Metrics shows feedback by portfolio and planned days by objective.
 
 **Done when:** steps 1–6 pass.
-**Guide points:** Is 12 weeks the right length for Now?
+**Guide points:** Is three months the right length for Now?
 
 ---
 
