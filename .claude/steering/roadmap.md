@@ -111,10 +111,10 @@ inclusion: always
 | 22 | Release (new app: Operations, part 1) | ✅ (reviewed 2026-10-21) |
 | 23 | Operate and learn (Operations, part 2) | ✅ (reviewed 2026-10-21) |
 | 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ✅ (reviewed 2026-10-21) |
-| 25a | Product: customer evidence, the ideas portal, closing the loop | ☐ planned (from the Productboard and Aha! comparison) |
+| 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ☐ planned (from the Productboard and Aha! comparison; decisions settled 2026-10-22) |
 | 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ☐ planned |
 
-Open bugs and changes: BUG-001 to BUG-007 and CHG-001 to CHG-007, all fixed and waiting for your checks (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
+Open bugs and changes: none. BUG-001 to BUG-007 and CHG-001 to CHG-009 are verified (2026-10-21); the next IDs are BUG-008 and CHG-010 (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 
 ### The plan from here
 
@@ -1454,12 +1454,17 @@ stays as it is. Two parts, each stopping for review.
 home), `nooblyjs-ai-operations` (a release tells Product), `nooblyjs-ai-design` (dependencies on the roadmap).
 
 **Decided 2026-10-21 (your answers):**
-- **Feedback** comes in as planned below: notes typed in, Teams, email, Jira (read through devtools) and the support
-  tool's connector (mock first).
+- **Feedback** comes in as planned below: notes typed in, Teams, Jira (read through devtools) and a **feedback form
+  on a link** (changed 2026-10-22: the form replaces the support tool's connector, and email is dropped).
+- **The feedback form needs no sign-in**: anyone who gets the link can use it, inside Acme or not. Its senders are
+  not told anything back and are not counted as colleagues who asked; no email address is asked for. There is no
+  limit on how many times it is submitted (decided 2026-10-22).
+- **Votes:** 10 open votes per person; a vote comes back when its idea ships or closes (confirmed 2026-10-22).
 - **The customer is the portfolio.** There are no customer or company records and no CRM: the people who ask are
   colleagues, and who they ask for is a portfolio, value stream and product from the catalogue. That is the segment
   the board and the evidence filter by. No revenue is held.
-- **The portal is for colleagues only, always**: everyone signed in to NooblyJS, and nobody outside Acme.
+- **The portal is for colleagues only, always**: everyone signed in to NooblyJS, and nobody outside Acme. (The
+  feedback form is not the portal: it only takes a note in.)
 - **Viewers submit, vote and comment too**: a new `suggest` permission that every access role has; agents never.
 - **Scoring stays RICE**, as today. Customer importance (25a) and the objective an item serves show beside the score;
   they don't change it.
@@ -1471,10 +1476,7 @@ home), `nooblyjs-ai-operations` (a release tells Product), `nooblyjs-ai-design` 
 ideas forward and vote; and everyone who asked hears when it ships and whether it worked.
 
 **Before you start**
-- The support tool behind the connector (Zendesk in the sample) `[PLACEHOLDER]`, and the email address feedback goes to
-  `[PLACEHOLDER]`.
-- The vote limit per person (default: 10 open votes at a time; a vote comes back when its idea ships or closes)
-  `[CONFIRM]`.
+- Nothing open: the feedback sources, the form and the vote limit are decided above.
 
 **Build**
 - **A feedback inbox** (Product · Feedback): each piece of feedback a **note** (`NOTE-0412`) with its source, the
@@ -1483,6 +1485,15 @@ ideas forward and vote; and everyone who asked hears when it ships and whether i
   links it to an idea, feature or spec with an **importance** (nice to have, important, critical): an **insight**. Ada
   suggests links and clusters notes into **signals**, which now count real notes instead of a typed number (the
   seeded counts stay sample data).
+- **The feedback form on a link**: a person with `draft` makes a link for a portfolio, value stream and product
+  (`/feedback/f/<token>`, a long random token), and can switch it off or replace it, audited. The page is outside
+  sign-in (no session, no CSRF token; no limit on submissions, only the host's general limit on signed-out
+  requests that guards the whole server; 2,000 characters a message, a hidden spam field, no uploads) and shows
+  only the product's name, one text box and an optional name. Each submission is a note with the source
+  "Feedback form", tagged from its link, redacted on the way in, audited as from an anonymous sender; the sender sees
+  "Thanks, we've got it" and nothing of NooblyJS. A form note can be linked into an insight like any other, but
+  it counts as "form feedback", not as a colleague who asked, and closing the loop never tells its sender. Ada treats
+  its text as untrusted data, never as instructions (a red-team case).
 - **Customer importance** on every idea, feature and spec: how many colleagues asked, for which portfolios, weighted
   by importance, said in words ("12 colleagues across 2 portfolios; 4 say critical"). The board and the evidence
   filter by portfolio, value stream and product.
@@ -1502,6 +1513,11 @@ ideas forward and vote; and everyone who asked hears when it ships and whether i
    a customer who wants to edit an order. Ada suggests linking the three to PRD-031 and the fourth to IDEA-019 "Edit
    order until picking starts"; Lerato accepts with "critical" and "important": PRD-031 shows "3 colleagues across 1
    portfolio; 1 says critical". The phone number in one note is redacted.
+1a. Lerato makes a feedback link for the Checkout product and opens it in a private window, signed out: she submits
+   "Slots were gone by 9am again". It lands in the inbox as a note from "Feedback form", tagged Checkout, and PRD-031
+   shows "3 colleagues across 1 portfolio; 1 says critical · 1 form note" once she links it. She submits five more
+   in a row and all are taken; a message carrying instructions to Ada is kept as plain text.
+   After she switches the link off, it says the form is closed.
 2. Signals: "Slots sell out before 10:00" counts the notes behind it; a click shows them. The board filtered by the
    Checkout product shows PRD-031's evidence and not IDEA-019's (Delivery).
 3. Naledi (Viewer) submits "Let me add to my order after paying" in the portal and votes; past the limit she is told
@@ -1510,7 +1526,7 @@ ideas forward and vote; and everyone who asked hears when it ships and whether i
 5. Slots 1.0 reaches production: everyone linked to PRD-031's ideas and insights gets "Same-day slots shipped", with
    the release notes; after the outcome review, "0 of 3 goals met" with a link.
 
-**Done when:** steps 1–5 pass.
+**Done when:** steps 1–5 (and 1a) pass.
 **Guide points:** Which portfolios bring the most feedback, and does the board now show it?
 
 ### Phase 25b — Objectives, roadmaps and capacity
