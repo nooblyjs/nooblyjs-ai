@@ -146,3 +146,6 @@ vite.config.ts.timestamp-*
 **/.claude/settings.local.json
 # The seed folders under src/ are source, not runtime data.
 !**/src/**/seed/data/
+
+# Product reference screenshots and videos from other tools (Aha!, Productboard): kept local, not published.
+nooblyjs-ai-product/.claude/ui/
