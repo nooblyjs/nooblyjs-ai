@@ -39,4 +39,6 @@ How this repo is laid out. The hosted-app contract it follows is `../../nooblyjs
 
 `releaseFor(id)` (the write gate asks whether two people approved it), `releases()`, `decideApproval` (the lifecycle
 engine relays each person's decision on a release's deploy approval, and on an outcome review), `home()` (the SRE),
-`slosFor(itemId)`, `incidents()`, `outcomeReviews()`.
+`slosFor(itemId)`, `incidents()`, `outcomeReviews()`, `measure({ measure, today, target })` (Phase 25b: the monitor's value
+today, for Product's key results). `outcome_review.closed` carries `measured` (each goal's measure, before, now,
+target, met) and `text` and `href` (Phases 25a and 25b).

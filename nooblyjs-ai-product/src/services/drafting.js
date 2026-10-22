@@ -10,6 +10,7 @@ import { validator } from '../util/validate.js';
 import { HttpError, conflict } from '../util/errors.js';
 import { monthSpend } from './views.js';
 import { redact } from '../util/redact.js';
+import { strategyText } from './strategy-context.js';
 
 const QUEUE = 'product-drafts';
 const MAX_CONTEXT = 12000;
@@ -21,8 +22,10 @@ function taskFor(kind, draft) {
 }
 
 /** The shape the draft must come back in (this stage's scripted draft), and what Knowledge has on the item. */
-function contextFor(shape, knowledge) {
+function contextFor(shape, knowledge, strategy = '') {
   const known = knowledge ? `\n\nWhat Knowledge has on this item:\n${(typeof knowledge === 'string' ? knowledge : JSON.stringify(knowledge, null, 2)).slice(0, MAX_CONTEXT)}` : '';
+  // NooblyJS Phase 25b: the product strategy people wrote (vision, positioning, personas, competitors).
+  const strategic = strategy ? `\n\nThe product strategy:\n${strategy}` : '';
   return [
     'Answer with one JSON object in a ```json block and nothing after it. Use exactly the keys of this example, with the same types.',
     'Its values show the content as it is now, or placeholders where there is none. Write real content from the brief and what you know.',
@@ -30,7 +33,7 @@ function contextFor(shape, knowledge) {
     '```json',
     JSON.stringify(shape, null, 2).slice(0, MAX_CONTEXT),
     '```',
-  ].join('\n') + known;
+  ].join('\n') + known + strategic;
 }
 
 const SOURCE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/;
@@ -253,7 +256,7 @@ export function createDrafting({ repos, host, log, queue, kinds, stepMs = 400, n
         const task = await teammates.runTask({
           slug: draft.teammate.id, workType: draft.workType, itemId: draft.itemId, system: 'product',
           caller: await requester(draft.requestedBy), billTo: await billedTeam(draft.itemId),
-          input: { task: taskFor(kind, withBrief), context: contextFor(script.output, context) },
+          input: { task: taskFor(kind, withBrief), context: contextFor(script.output, context, await strategyText(repos).catch(() => '')) },
           scripted: async () => script,
         });
         result = { output: task.scripted ? task.output : readDraft(task.output, script.output), costUsd: Number(task.costUsd) || 0, modelRoute: task.modelRoute ?? draft.workType };

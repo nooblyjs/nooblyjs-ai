@@ -177,7 +177,8 @@ call this repo's API at `/product/api/v1` through the frame's `ctx.api`. Sidebar
 
 - **Top signals this week** ("from Knowledge · 6 sources"): slot availability 412,
   substitution quality 188, order editing 96, promo codes on mobile 54.
-- **Q4 roadmap**: Oct–Dec bars with each item's stage span.
+- **Now: the next three months** (the Q4 roadmap until Phase 25b): bars with each item in Now's planned stage spans,
+  from the specs themselves; a link to the Roadmap.
 
 ### 5.2 Spec detail (`noobly-product-factory-spec`)
 
@@ -256,6 +257,28 @@ Build these in the same patterns.
 
 The **Portfolio template** and **Value stream template**: each section listed with its hint, and for an Approver the
 template as Markdown with **Save**. Everyone signed in can read them.
+
+### 5.10 Objectives, the roadmap, capacity and strategy documents (Strategy; NooblyJS Phase 25b, no mockup)
+
+- **Horizons**: Now is today to three months on, Next the three months after, Later anything beyond (decided
+  2026-10-22), on the business clock.
+- **Objectives** (`/product/objectives`, `OBJ-04`): by horizon, each with its strategic themes, key results (measure,
+  start → now, target; read from the monitor or typed in; met, on the way, behind or not measured, in words) and what
+  serves it (epics, features, ideas, specs; an item serves one objective). A key result is behind when an outcome
+  review of an item serving it measured it short. An item placed earlier than its objective is pointed out. `draft`
+  sets one up; a Product lead (`approve`) moves it between horizons.
+- **Why on every card**: "RICE 42 · serves OBJ-04 (Now) · 3 colleagues asked"; the board still orders by RICE.
+- **Roadmap** (`/product/roadmap`): made from the items (roadmap.yaml moved onto the specs, once): Now · Next · Later
+  with their dates and days; each item with its objective, team (the lifecycle's), days (its business case's estimate,
+  else planned), status, release and, in Now, Design's features with their dependencies; grouped by portfolio, theme,
+  objective or team; the Now timeline; items not placed yet. `draft` moves items and saves views; each saved view has a
+  read-only page (`/product/roadmap/views/:id`).
+- **Capacity in Now**: each team's people-days (Teams & roles) against its items' days in Now, said in words
+  ("Delivery squad: 64 of 50 days planned in Now, 14 over"). Next and Later aren't checked.
+- **Strategy documents** on the Portfolios page: vision, positioning, personas, competitors, each from its template in
+  Settings; the drafting agents read them (spec and business-case drafts, `designInputs`).
+- **Metrics** shows the Product reports: feedback by month and portfolio, planned days by objective and horizon, key
+  results.
 
 ### 5.9 Feedback and the ideas portal (Customers; NooblyJS Phase 25a, no mockup)
 

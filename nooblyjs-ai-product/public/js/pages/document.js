@@ -14,6 +14,8 @@ const KINDS = {
   'portfolio-epic': { api: 'portfolio-epics', label: 'Portfolio epic', hierarchy: true },
   epic: { api: 'epics', label: 'Epic', hierarchy: true },
   feature: { api: 'features', label: 'Feature', hierarchy: true },
+  // NooblyJS Phase 25b: a strategy document (vision, positioning, persona, competitor): its kind comes from the document.
+  strategy: { api: 'strategy-docs', label: 'Strategy document', strategy: true },
 };
 
 function sectionsView(doc) {
@@ -36,6 +38,9 @@ function editView(doc) {
 
 /** Where it sits, on the side: the themes, value streams and products (a value stream's portfolio too). */
 function railView(doc, kind, ctx) {
+  if (KINDS[kind].strategy) {
+    return card({ title: 'Who reads it', body: html`<p class="muted">The drafting agents read the strategy documents when they draft specs and business cases. All of them are on the <a href="${hrefFor(ctx, '/portfolios')}">Portfolios</a> page.</p>` });
+  }
   if (KINDS[kind].hierarchy) {
     return html`${card({ title: 'Where it sits', body: html`<p>${[doc.portfolio, doc.valueStream].filter(Boolean).join(' › ') || 'No portfolio'}</p>${doc.parent ? html`<p class="muted">Under <a href="${hrefFor(ctx, `/portfolio-epics/${doc.parent}`)}">${doc.parent}</a></p>` : ''}${doc.epic ? html`<p class="muted">A feature of <a href="${hrefFor(ctx, `/epics/${doc.epic}`)}">${doc.epic}</a></p>` : ''}` })}
       ${kind === 'feature' ? card({ title: 'Ideas', body: html`<p class="muted">The ideas filed under it are on the <a href="${hrefFor(ctx, `/board?feature=${doc.id}`)}">Product board</a>.</p>` }) : card({ title: 'Business case', body: html`<p><a href="${hrefFor(ctx, `/business-cases/${doc.id}`)}">Open its business case</a></p>` })}`;
@@ -93,7 +98,7 @@ export async function render(view, { params, route, ctx }) {
       ? `${doc.filled} of ${doc.sections.filter((s) => s.inTemplate).length} sections filled in · ${doc.text}${doc.updatedAt ? `, ${ago(doc.updatedAt)}` : ''}`
       : 'Nothing written yet.';
     view.innerHTML = String(html`${pageHead({
-      eyebrow: kind === 'portfolio' ? 'Portfolio' : k.hierarchy ? `${k.label} · ${doc.id}` : `Value stream · ${doc.portfolio ?? 'no portfolio'}`,
+      eyebrow: kind === 'portfolio' ? 'Portfolio' : k.strategy ? `Strategy · ${doc.kindLabel}` : k.hierarchy ? `${k.label} · ${doc.id}` : `Value stream · ${doc.portfolio ?? 'no portfolio'}`,
       title: doc.name,
       lead,
       actions: ctx.can('draft') && !editing ? button({ label: 'Edit', icon: 'pen', attrs: { 'data-action': 'edit' } }) : '',
@@ -102,7 +107,7 @@ export async function render(view, { params, route, ctx }) {
       ${behind ? html`<p class="muted">The ${k.label.toLowerCase()} template has changed since this was written. New sections show empty.</p>` : ''}
       <div class="pf-columns">
         <div class="pf-body pf-stack">${editing ? editView(doc) : card({ body: html`<div class="pf-stack">${sectionsView(doc)}</div>`, label: `${doc.name} document` })}</div>
-        <aside class="pf-rail pf-stack" aria-label="Where ${doc.name} sits">${railView(doc, kind, ctx)}${ctx.can('approve') && !k.hierarchy ? changeView(doc, kind, portfolios) : ''}</aside>
+        <aside class="pf-rail pf-stack" aria-label="Where ${doc.name} sits">${railView(doc, kind, ctx)}${ctx.can('approve') && !k.hierarchy && !k.strategy ? changeView(doc, kind, portfolios) : ''}</aside>
       </div>`);
   }
 

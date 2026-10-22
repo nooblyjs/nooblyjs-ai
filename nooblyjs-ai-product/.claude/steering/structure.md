@@ -113,6 +113,10 @@ data/product/
   drafts/<draft-id>.md                     a drafting job: who asked, teammate, stage, status, cost
   notes/NOTE-0412.md                       a feedback note (Phase 25a): source, from, through, product, signal, insights, Ada's suggestions; body = the redacted text
   feedback-links.yaml                      the feedback form's links: token, product, active, replacedBy
+  objectives/OBJ-04.md                     an objective (Phase 25b): horizon, themes, links, keyResults with readings
+  strategy/<std_id>.md                     a strategy document: kind (vision | positioning | persona | competitor), sections
+  roadmap-views.yaml                       the roadmap's saved views; specs and ideas carry horizon and plan { spans, days }
+  roadmap.yaml.moved                       the roadmap file from before Phase 25b, after its items moved onto the specs
   standards.yaml · accessibility.yaml      the check rules people can change `[CONFIRM location]`
 ```
 

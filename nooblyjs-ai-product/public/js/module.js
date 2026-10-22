@@ -9,6 +9,11 @@ export const routes = [
   { path: '/', nav: 'overview', title: 'Product Factory', page: page(() => import('./pages/overview.js')) },
   { path: '/portfolios', nav: 'portfolios', title: 'Portfolios', page: page(() => import('./pages/strategy.js')) },
   { path: '/portfolios/:id', nav: 'portfolios', title: 'Portfolio', page: page(() => import('./pages/document.js')), meta: { kind: 'portfolio' } },
+  // NooblyJS Phase 25b: objectives, the roadmap (and a saved view, read-only) and the strategy documents.
+  { path: '/objectives', nav: 'objectives', title: 'Objectives', page: page(() => import('./pages/objectives.js')) },
+  { path: '/roadmap', nav: 'roadmap', title: 'Roadmap', page: page(() => import('./pages/roadmap.js')) },
+  { path: '/roadmap/views/:id', nav: 'roadmap', title: 'Roadmap', page: page(() => import('./pages/roadmap.js')), meta: { readOnly: true } },
+  { path: '/strategy/:id', nav: 'portfolios', title: 'Strategy document', page: page(() => import('./pages/document.js')), meta: { kind: 'strategy' } },
   { path: '/value-streams/:id', nav: 'portfolios', title: 'Value stream', page: page(() => import('./pages/document.js')), meta: { kind: 'value-stream' } },
   // NooblyJS Phase 17: the work hierarchy's documents, and the business case of an idea or an epic.
   { path: '/portfolio-epics/:id', nav: 'portfolios', title: 'Portfolio epic', page: page(() => import('./pages/document.js')), meta: { kind: 'portfolio-epic' } },

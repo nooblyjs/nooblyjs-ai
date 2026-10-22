@@ -247,3 +247,15 @@
 [data-module="product"] .pf-portal__body .pf-details > form { margin-top: 8px; }
 [data-module="product"] .pf-comments { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: var(--text-small); }
 @media (max-width: 640px) { [data-module="product"] .pf-portal__idea { flex-direction: column; } [data-module="product"] .pf-portal__votes { flex-direction: row; gap: 6px; } }
+
+/* NooblyJS Phase 25b: the roadmap's Now · Next · Later, objectives and key results. */
+[data-module="product"] .pf-horizons { display: grid; gap: 12px; min-width: 760px; }
+[data-module="product"] .pf-horizons__head, [data-module="product"] .pf-lane__cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+[data-module="product"] .pf-horizon__head { display: flex; flex-direction: column; gap: 2px; font-size: var(--text-small); }
+[data-module="product"] .pf-horizon { list-style: none; margin: 0; padding: 8px; border-radius: var(--radius-tile); background: var(--surface-inset); display: flex; flex-direction: column; gap: 8px; }
+[data-module="product"] .pf-lane { display: grid; gap: 6px; }
+[data-module="product"] .pf-lane__name { margin: 8px 0 0; font-size: var(--text-small); font-weight: 600; color: var(--text); }
+[data-module="product"] .pf-features { font-size: var(--text-small); margin: 4px 0 0; }
+[data-module="product"] .pf-objective h2.card__title { margin: 0; }
+[data-module="product"] .pf-kr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+[data-module="product"] .pf-radio { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-small); margin-right: 12px; }

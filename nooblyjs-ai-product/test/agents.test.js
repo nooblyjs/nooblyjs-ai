@@ -58,6 +58,24 @@ test('the runTask contract: slug, work type, item, system, who asked, the task a
   }
 });
 
+test('NooblyJS Phase 25b: the context of a draft carries the product strategy people wrote, and nothing when none is written', async () => {
+  const calls = [];
+  const teammates = { runTask: async (input) => { calls.push(input); return { output: { rolloutPlan: 'Pilot first.' }, costUsd: 0.1, modelRoute: 'spec-drafting' }; } };
+  const t = await startApp({ seed: true, services: { teammates } });
+  try {
+    await t.post(`${API}/specs/PRD-031/drafts`, { as: 'lerato-m', body: { kind: 'rollout-plan' } });
+    await t.hosted.idle();
+    assert.doesNotMatch(calls[0].input.context, /The product strategy/);
+    const doc = await t.post(`${API}/strategy-docs`, { as: 'lerato-m', body: { kind: 'vision', name: 'Acme groceries' } });
+    await t.put(`${API}/strategy-docs/${doc.json.id}`, { as: 'lerato-m', body: { sections: [{ heading: 'Vision', text: 'Groceries home the same day, every day.' }] }, headers: { 'if-match': doc.etag } });
+    await t.post(`${API}/specs/PRD-031/drafts`, { as: 'lerato-m', body: { kind: 'rollout-plan' } });
+    await t.hosted.idle();
+    assert.match(calls.at(-1).input.context, /The product strategy:\n### Vision: Acme groceries\nVision: Groceries home the same day, every day\./);
+  } finally {
+    await t.close();
+  }
+});
+
 test('in production there are no mock drafts: without Teammates, drafting is refused and nothing is queued', async () => {
   const t = await startApp({ seed: true });
   const was = process.env.NODE_ENV;

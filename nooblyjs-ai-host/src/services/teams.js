@@ -41,7 +41,9 @@ export function createTeams({ store, people }) {
       if (!t?.id) continue;
       const members = (t.people ?? []).map((id) => everyone.get(id)).filter((p) => p?.active).map((p) => ({ id: p.id, name: p.name }));
       const agents = (t.agents ?? []).map((id) => ({ id, name: agentName(id) }));
-      teams.push({ id: t.id, name: t.name, focus: t.focus ?? '', people: members, agents, counts: `${plural(members.length, 'person', 'people')} · ${plural(agents.length, 'agent')}` });
+      // Phase 25b: the people-days the team has in Product's Now (three months), for its roadmap's capacity.
+      const capacityDays = Number.isFinite(Number(t.capacityDays)) && Number(t.capacityDays) > 0 ? Number(t.capacityDays) : null;
+      teams.push({ id: t.id, name: t.name, focus: t.focus ?? '', people: members, agents, counts: `${plural(members.length, 'person', 'people')} · ${plural(agents.length, 'agent')}`, capacityDays, capacityText: capacityDays ? `${capacityDays} people-days in Now` : 'Capacity not set' });
     }
     return teams;
   }
@@ -100,5 +102,15 @@ export function createTeams({ store, people }) {
     return people.get(person.id);
   }
 
-  return { list, matrix, members, invite };
+  /** Phase 25b: a team's people-days in Now (null clears it). The route has checked the permission. */
+  async function setCapacity(id, days) {
+    if (!ID.test(String(id ?? ''))) throw new HttpError(404, 'not_found', 'There is no such team.');
+    const value = days === null || days === '' ? null : Number(days);
+    if (value !== null && (!Number.isFinite(value) || value < 0 || value > 100000)) throw new HttpError(422, 'invalid', 'Capacity is a number of people-days.', { capacityDays: 'a number' });
+    const done = await store.updateDoc(['teams', `${id}.md`], (doc) => (doc ? { ...doc, data: { ...doc.data, capacityDays: value } } : null));
+    if (!done) throw new HttpError(404, 'not_found', `There is no team ${id}.`);
+    return (await list()).find((t) => t.id === id);
+  }
+
+  return { list, matrix, members, invite, setCapacity };
 }

@@ -9,12 +9,15 @@ import { initials } from '/ui/js/format.js';
 const HEAD = { eyebrow: 'NooblyJS · Teams & roles', title: 'Teams & roles', lead: 'Who works on what, people and agents together, and who may approve each decision.' };
 const MAX_FACES = 6;
 
-function teamCard(t) {
+function teamCard(t, canSetCapacity = false) {
   const faces = [...t.people.map((p) => ({ ...p, agent: false })), ...t.agents.map((a) => ({ ...a, agent: true }))];
   const more = faces.length - MAX_FACES;
   return html`<li class="team">
     <div class="team__head"><h3 class="team__name">${t.name}</h3><span class="row__meta">${t.counts}</span></div>
     <p class="team__focus">${t.focus}</p>
+    ${canSetCapacity
+    ? html`<form class="team__capacity" data-form="capacity" data-team="${t.id}"><label>People-days in Now <input type="number" name="capacityDays" min="0" max="100000" step="1" value="${t.capacityDays ?? ''}" aria-describedby="cap-${t.id}"></label><button type="submit" class="btn btn--secondary btn--small">Save</button><span class="row__meta" id="cap-${t.id}">Product's roadmap checks the next three months against it.</span></form>`
+    : html`<p class="row__meta">${t.capacityText ?? ''}</p>`}
     <ul class="team__faces" aria-label="${t.name} members">${faces.slice(0, MAX_FACES).map((f) => html`<li class="avatar avatar--small${f.agent ? ' avatar--agent' : ''}" title="${f.name}"><span aria-hidden="true">${initials(f.name)}</span><span class="visually-hidden">${f.name}${f.agent ? ' (agent)' : ''}</span></li>`)}${more > 0 ? html`<li class="avatar avatar--small team__more">+${more}</li>` : ''}</ul>
   </li>`;
 }
@@ -67,7 +70,7 @@ export async function render(view, { ctx }) {
       actions: html`${canInvite ? button({ label: 'Invite a person', icon: 'plus', attrs: { 'data-action': 'invite', 'aria-expanded': showInvite ? 'true' : 'false' } }) : ''}${button({ label: 'Hire a teammate', kind: 'secondary', icon: 'team', href: '/teammates/hire' })}`,
     })}
     ${canInvite && showInvite ? inviteForm(data, message) : message ? html`<p class="flash flash--${message.tone}" role="status">${message.text}</p>` : ''}
-    <section aria-label="Teams"><ul class="teams">${data.teams.map(teamCard)}</ul>
+    <section aria-label="Teams"><ul class="teams">${data.teams.map((t) => teamCard(t, ctx.can('set-budgets')))}</ul>
       <p class="legend"><span class="legend__key"><span class="avatar avatar--small face-key" aria-hidden="true"></span>Person (round)</span><span class="legend__key"><span class="avatar avatar--small avatar--agent face-key" aria-hidden="true"></span>Agent teammate (square)</span></p>
     </section>
     <section class="card card--flush" aria-label="Roles and permissions">
@@ -93,6 +96,20 @@ export async function render(view, { ctx }) {
   }, { signal: ctx.signal });
 
   view.addEventListener('submit', async (event) => {
+    const cap = event.target.closest('[data-form="capacity"]');
+    if (cap) {
+      event.preventDefault();
+      try {
+        const raw = cap.elements.capacityDays.value.trim();
+        const team = await ctx.hostApi.patch(`home/teams/${encodeURIComponent(cap.dataset.team)}`, { capacityDays: raw === '' ? null : Number(raw) });
+        message = { tone: 'ok', text: `${team.name}: ${team.capacityText}.` };
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
+        message = { tone: 'error', text: err.message };
+      }
+      await draw();
+      return;
+    }
     const form = event.target.closest('[data-form="invite"]');
     if (!form) return;
     event.preventDefault();

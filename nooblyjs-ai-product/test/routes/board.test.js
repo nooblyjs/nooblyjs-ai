@@ -102,9 +102,9 @@ test('top signals this week, from six Knowledge sources', async () => {
   ]);
 });
 
-test('the board carries the Q4 roadmap, and GET /roadmap returns it on its own', async () => {
+test('the board carries the Now timeline (roadmap.yaml moved onto the specs, Phase 25b), and GET /roadmap has them in Now', async () => {
   const { json: board } = await t.get('/product/api/v1/board', { as: 'naledi-k' });
-  assert.equal(board.roadmap.quarter, '2026-Q4');
+  assert.equal(board.roadmap.quarter, 'Now');
   const prd031 = board.roadmap.items.find((i) => i.id === 'PRD-031');
   assert.equal(prd031.title, 'Same-day delivery slots');
   assert.equal(prd031.current.key, 'product');
@@ -112,7 +112,11 @@ test('the board carries the Q4 roadmap, and GET /roadmap returns it on its own',
   assert.equal(prd031.spans.find((s) => s.current).stage, 'product');
 
   const { json: roadmap } = await t.get('/product/api/v1/roadmap', { as: 'naledi-k' });
-  assert.deepEqual(roadmap.items.map((i) => i.id), board.roadmap.items.map((i) => i.id));
+  const now = roadmap.lanes.flatMap((l) => l.columns.now.map((i) => i.id)).sort();
+  assert.deepEqual(now, board.roadmap.items.map((i) => i.id).sort());
+  // The file is gone, kept as roadmap.yaml.moved.
+  assert.equal(await fs.stat(path.join(t.dataDir, 'roadmap.yaml')).catch(() => null), null);
+  assert.ok(await fs.stat(path.join(t.dataDir, 'roadmap.yaml.moved')));
 });
 
 test('signals and ideas have their own lists', async () => {

@@ -117,6 +117,26 @@ function byValueStream(s) {
   </section>`;
 }
 
+/**
+ * Phase 25b: the Product reports, from the Product app: feedback by month and by portfolio, planned days by objective
+ * and by horizon, and each key result's progress. They are what Product holds now, not over the period chosen above.
+ */
+function productReports(r) {
+  if (!r) return '';
+  const list = (rows, value) => (rows.length ? html`<ul class="spend__list" role="list">${rows.map((x) => html`<li class="spend__row"><div class="spend__head"><span>${x.label}</span><span class="mono">${value(x)}</span></div></li>`)}</ul>` : html`<p class="row__meta">Nothing yet.</p>`);
+  return html`<section class="card spend" aria-label="Product">
+    <div class="card__head"><h2 class="card__title">Product</h2><span class="card__meta">What Product holds today, whatever the period</span></div>
+    <div class="metrics__row">
+      <div><h3 class="card__title card__title--small">Feedback by portfolio</h3>${list(r.feedback.byPortfolio, (x) => `${x.count} note${x.count === 1 ? '' : 's'}`)}
+        <h3 class="card__title card__title--small">Feedback by month</h3>${list(r.feedback.byMonth, (x) => `${x.count} note${x.count === 1 ? '' : 's'}`)}</div>
+      <div><h3 class="card__title card__title--small">Planned days by objective</h3>${list(r.plannedDays.byObjective, (x) => `${x.days} days`)}
+        <h3 class="card__title card__title--small">Planned days by horizon</h3>${list(r.plannedDays.byHorizon, (x) => `${x.days} days · ${x.items} item${x.items === 1 ? '' : 's'}`)}</div>
+    </div>
+    <h3 class="card__title card__title--small">Key results</h3>
+    ${r.keyResults.length ? html`<ul class="spend__list" role="list">${r.keyResults.map((k) => html`<li class="spend__row"><div class="spend__head"><span>${k.objective} · ${k.horizon}</span><span>${k.statusText}</span></div><p class="row__meta">${k.text}</p></li>`)}</ul>` : html`<p class="row__meta">No key results yet.</p>`}
+  </section>`;
+}
+
 /** Phase 16e: the pull requests waiting on a person now, by approval, with the oldest's age. */
 function waiting(rows = []) {
   return html`<section class="card" aria-label="Pull requests waiting on people">
@@ -151,6 +171,7 @@ export async function render(view, { ctx, query }) {
       ${waiting(data.waiting)}
       ${production(data.production)}
       ${byValueStream(data.spendByValueStream)}
+      ${productReports(data.product)}
       <p class="metrics__foot" role="status">Computed from the event log at ${at.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit', hour12: false })} on ${at.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}.
         Idea → merge is the median from opening an item to its last merged PR; a stage’s numbers are over the visits that ended in the period.</p>
     </div>`);

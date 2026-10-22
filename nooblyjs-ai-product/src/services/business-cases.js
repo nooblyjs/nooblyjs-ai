@@ -12,6 +12,7 @@
 import { HttpError, badRequest, notFound } from '../util/errors.js';
 import { isAgent } from '../util/http.js';
 import { estimateFor } from './estimate.js';
+import { strategyText } from './strategy-context.js';
 
 const OWNER = /^(IDEA|EPIC|PEPIC)-\d{3,}$/;
 const USUAL = { id: 'ada-quill', name: 'Ada Quill' };
@@ -164,7 +165,7 @@ export function createBusinessCases({ repos, host, hierarchy, log }) {
       const result = await host.service('teammates').runTask({
         slug: agent.id, workType: WORK_TYPE, itemId: id, system: 'product',
         caller: actor?.id ? { type: 'user', id: actor.id, name: actor.name ?? actor.id } : null,
-        input: { task: `Draft the business case of ${id} · ${owner.title}: value hypothesis, who benefits, the measure (what, today, target) and risks, as JSON.`, context: JSON.stringify({ owner, estimate }).slice(0, 20_000) },
+        input: { task: `Draft the business case of ${id} · ${owner.title}: value hypothesis, who benefits, the measure (what, today, target) and risks, as JSON.`, context: JSON.stringify({ owner, estimate, strategy: await strategyText(repos).catch(() => '') }).slice(0, 20_000) },
         scripted: async () => ({ output: scripted, costUsd: 0 }),
       });
       costUsd = Number(result.costUsd) || 0;

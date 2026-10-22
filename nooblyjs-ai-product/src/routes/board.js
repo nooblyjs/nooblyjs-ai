@@ -1,10 +1,9 @@
-// The Product board and its parts: GET /board, /signals, /ideas(/:id), /roadmap, and the Stage 1 writes
+// The Product board and its parts: GET /board, /signals, /ideas(/:id) (the roadmap is planning.js's since Phase 25b), and the Stage 1 writes
 // POST /signals/:id/idea, POST /ideas, PUT /ideas/:id.
 // Where work sits (catalogue.js): GET /catalogue, with the strategic themes, portfolios, value streams and products;
 // adding one takes `draft`; renaming, moving, removing and linking a portfolio to its themes change what other
 // people's work is filed under, so they take `approve`.
 import { buildBoard } from '../services/board.js';
-import { roadmapView } from '../services/roadmap.js';
 import { viewContext, signalView, ideaView } from '../services/views.js';
 import { notFound } from '../util/errors.js';
 import { etagOf } from '../util/http.js';
@@ -12,7 +11,7 @@ import { etagOf } from '../util/http.js';
 const truthy = (v) => ['1', 'true', 'yes'].includes(String(v ?? '').toLowerCase());
 const oneString = (v) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, 64) : null);
 
-export function boardRoutes({ host, repos, people, ideas, catalogue }) {
+export function boardRoutes({ host, repos, people, ideas, catalogue, planning = null }) {
   const router = host.express.Router();
   const read = host.requireRole('read');
   const draft = host.requireRole('draft');
@@ -21,12 +20,12 @@ export function boardRoutes({ host, repos, people, ideas, catalogue }) {
 
   router.get('/board', read, async (req, res) => {
     const ctx = await ctxFor(req);
-    res.json(await buildBoard(ctx, repos, { portfolio: oneString(req.query.portfolio), valueStream: oneString(req.query.valueStream), product: oneString(req.query.product), mine: truthy(req.query.mine), epic: oneString(req.query.epic), feature: oneString(req.query.feature) }, catalogue));
+    res.json(await buildBoard(ctx, repos, { portfolio: oneString(req.query.portfolio), valueStream: oneString(req.query.valueStream), product: oneString(req.query.product), mine: truthy(req.query.mine), epic: oneString(req.query.epic), feature: oneString(req.query.feature) }, catalogue, planning));
   });
 
   // ---------- strategic themes, portfolios, value streams and products ----------
   /** The catalogue with how many board cards sit under each product. */
-  const catalogueView = async (req) => (await buildBoard(await ctxFor(req), repos, {}, catalogue)).catalogue;
+  const catalogueView = async (req) => (await buildBoard(await ctxFor(req), repos, {}, catalogue, planning)).catalogue;
 
   router.get('/catalogue', read, async (req, res) => res.json(await catalogueView(req)));
 
@@ -127,11 +126,6 @@ export function boardRoutes({ host, repos, people, ideas, catalogue }) {
 
   router.put('/ideas/:id', draft, async (req, res) => {
     await sendIdea(req, res, 200, await ideas.update(req.params.id, req.body, req.person, { ifMatch: req.get('if-match') }));
-  });
-
-  router.get('/roadmap', read, async (req, res) => {
-    const roadmap = await repos.roadmap.get();
-    res.json(roadmap ? await roadmapView(await ctxFor(req), repos, roadmap) : { quarter: null, from: null, to: null, items: [] });
   });
 
   return router;

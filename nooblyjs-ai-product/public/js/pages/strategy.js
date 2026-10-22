@@ -47,6 +47,21 @@ function themesView(c, ctx, editing) {
   });
 }
 
+/** NooblyJS Phase 25b: the strategy documents (vision, positioning, personas, competitors), which the drafting agents read. */
+function strategyDocsView(s, ctx) {
+  if (!s) return '';
+  return card({
+    title: 'Product strategy',
+    meta: `${s.documents.length} document${s.documents.length === 1 ? '' : 's'}`,
+    body: html`<p class="muted">The vision, positioning, personas and competitors, each from its template in Settings. The drafting agents read what is written here when they draft specs and business cases.</p>
+      ${s.documents.length ? html`<div class="rows">${s.documents.map((d) => listRow({ title: d.name, meta: `${d.kindLabel} · ${d.text}`, href: hrefFor(ctx, `/strategy/${d.id}`) }))}</div>` : html`<p class="muted">None yet.</p>`}
+      ${ctx.can('draft') ? html`<form class="pf-form pf-form--inline" data-form="new-strategy-doc" aria-label="Start a strategy document">
+        <div class="pf-form__row"><label>Kind <select name="kind">${s.kinds.map((k) => html`<option value="${k.kind}">${k.label}</option>`)}</select></label>
+        <label>Name <input name="name" required maxlength="80" autocomplete="off" placeholder="After-work shopper"></label></div>
+        <div class="actions">${button({ label: 'Start it', type: 'submit', small: true })}</div></form>` : ''}`,
+  });
+}
+
 function portfolioView(p, c, ctx, editingThemes, editing) {
   const canChange = ctx.can('approve');
   const canAdd = ctx.can('draft');
@@ -109,6 +124,7 @@ function workView(p, h, ctx) {
 export async function render(view, { ctx }) {
   let catalogue = null;
   let hierarchy = { epics: [], features: [] };
+  let strategyDocs = null;
   let editingTheme = null;    // the theme an Approver is changing
   let editingThemesOf = null; // the portfolio whose themes an Approver is choosing
   const labels = { editing: null }; // the portfolio or product whose form is open (pages/portfolios.js)
@@ -116,7 +132,7 @@ export async function render(view, { ctx }) {
 
   async function draw() {
     try {
-      [catalogue, hierarchy] = await Promise.all([ctx.api.get('catalogue'), ctx.api.get('hierarchy').catch(() => ({ epics: [], features: [] }))]);
+      [catalogue, hierarchy, strategyDocs] = await Promise.all([ctx.api.get('catalogue'), ctx.api.get('hierarchy').catch(() => ({ epics: [], features: [] })), ctx.api.get('strategy-docs').catch(() => null)]);
     } catch (err) {
       if (!isAbort(err)) view.innerHTML = String(errorCard(err, 'the portfolios'));
       return;
@@ -131,6 +147,7 @@ export async function render(view, { ctx }) {
     })}
       <p class="pf-message" role="status" aria-live="polite" data-message></p>
       ${themesView(c, ctx, editingTheme)}
+      ${strategyDocsView(strategyDocs, ctx)}
       ${c.portfolios.map((p) => html`${portfolioView(p, c, ctx, editingThemesOf === p.name, labels.editing)}${card({ body: workView(p, hierarchy, ctx), label: `${p.name}'s work` })}`)}
       ${c.unfiled.length ? card({ title: 'Products in no portfolio', body: html`<div class="pf-labels__row">${c.unfiled.map((x) => catalogueLabel('product', x, ctx, labels.editing))}</div>${labels.editing?.kind === 'product' && c.unfiled.some((x) => x.name === labels.editing.name) ? labelEditForm(c, ctx, labels.editing) : ''}<p class="muted">${ctx.can('approve') ? 'Press a product to put it in a portfolio.' : 'An Approver can put these in a portfolio.'}</p>` }) : ''}
       ${c.portfolios.length ? '' : card({ title: 'Start with your portfolios', body: html`<p class="muted">A portfolio is a large area of the business, such as Buying or Banking. Add yours, then their value streams and products.</p>` })}
@@ -217,7 +234,9 @@ export async function render(view, { ctx }) {
     if (!form) return;
     e.preventDefault();
     const data = Object.fromEntries(new FormData(form));
-    if (form.dataset.form === 'new-epic') {
+    if (form.dataset.form === 'new-strategy-doc') {
+      act(() => ctx.api.post('strategy-docs', { kind: data.kind, name: data.name }), (d) => `The ${d.kindLabel.toLowerCase()} "${d.name}" is started from its template. Open it to fill it in.`);
+    } else if (form.dataset.form === 'new-epic') {
       act(() => ctx.api.post('catalogue/epics', { kind: data.kind, name: data.name, portfolio: form.dataset.portfolio, ...(data.valueStream ? { valueStream: data.valueStream } : {}), ...(data.parent ? { parent: data.parent } : {}) }), (r) => `${r.epic.id} · ${r.epic.name} is ${r.epic.kind === 'epic' ? 'an epic' : 'a portfolio epic'} in ${[r.epic.portfolio, r.epic.valueStream].filter(Boolean).join(' › ')} now, with its document.`);
     } else if (form.dataset.form === 'new-feature') {
       act(() => ctx.api.post('catalogue/features', { name: data.name, epic: data.epic }), (r) => `${r.feature.id} · ${r.feature.name} is a feature of ${r.feature.epic.id} now. File ideas under it on the board.`);

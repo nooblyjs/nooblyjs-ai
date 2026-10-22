@@ -11,10 +11,11 @@ import { checkIfMatch, etagOf, isAgent } from '../util/http.js';
 import { HttpError, unprocessable } from '../util/errors.js';
 import { templateSections } from './templates.js';
 
-export const DOCUMENT_KINDS = { portfolio: 'Portfolio', 'value-stream': 'Value stream', 'portfolio-epic': 'Portfolio epic', epic: 'Epic', feature: 'Feature' };
-// NooblyJS Phase 17: where each kind's documents are, and the event a save says it with.
-const REPOS = { portfolio: 'portfolios', 'value-stream': 'valueStreams', 'portfolio-epic': 'portfolioEpics', epic: 'epics', feature: 'features' };
-const SAVED = { portfolio: 'portfolio.updated', 'value-stream': 'value_stream.updated', 'portfolio-epic': 'portfolio_epic.updated', epic: 'epic.updated', feature: 'feature.updated' };
+export const DOCUMENT_KINDS = { portfolio: 'Portfolio', 'value-stream': 'Value stream', 'portfolio-epic': 'Portfolio epic', epic: 'Epic', feature: 'Feature', vision: 'Vision', positioning: 'Positioning', persona: 'Persona', competitor: 'Competitor' };
+// NooblyJS Phase 17: where each kind's documents are, and the event a save says it with. Phase 25b: the strategy
+// documents share one folder (strategy/), each saying its kind.
+const REPOS = { portfolio: 'portfolios', 'value-stream': 'valueStreams', 'portfolio-epic': 'portfolioEpics', epic: 'epics', feature: 'features', vision: 'strategyDocs', positioning: 'strategyDocs', persona: 'strategyDocs', competitor: 'strategyDocs' };
+const SAVED = { portfolio: 'portfolio.updated', 'value-stream': 'value_stream.updated', 'portfolio-epic': 'portfolio_epic.updated', epic: 'epic.updated', feature: 'feature.updated', vision: 'strategy.document_updated', positioning: 'strategy.document_updated', persona: 'strategy.document_updated', competitor: 'strategy.document_updated' };
 const MAX_SECTION = 20000;
 
 const same = (a, b) => String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase();

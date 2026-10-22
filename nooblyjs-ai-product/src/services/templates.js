@@ -65,7 +65,49 @@ export const TEMPLATE_KINDS = {
       ['Dependencies', 'What it needs first.'],
     ],
   },
+  // NooblyJS Phase 25b: the strategy documents (Portfolios page), which the drafting agents read.
+  vision: {
+    label: 'Vision',
+    sections: [
+      ['Vision', 'Where the products are going, in a sentence or two.'],
+      ['Who it is for', 'The customers and colleagues it serves.'],
+      ['What changes for them', 'What is different for them when it is true.'],
+      ['How we will know', 'The few measures that say it is happening.'],
+    ],
+  },
+  positioning: {
+    label: 'Positioning',
+    sections: [
+      ['For', 'The target customer.'],
+      ['Who', 'Their need or opportunity.'],
+      ['Our product is', 'The category it belongs in.'],
+      ['That', 'The key benefit: the reason to choose it.'],
+      ['Unlike', 'The main alternative.'],
+      ['We', 'How we are different.'],
+    ],
+  },
+  persona: {
+    label: 'Persona',
+    sections: [
+      ['Who they are', 'A short description: role, situation, context.'],
+      ['Goals', 'What they are trying to get done.'],
+      ['Frustrations', 'What gets in their way today.'],
+      ['How they shop', 'Channels, times, habits.'],
+      ['Quotes', 'Things they have said (from feedback or research).'],
+    ],
+  },
+  competitor: {
+    label: 'Competitor',
+    sections: [
+      ['Who they are', 'The company and its offer.'],
+      ['Strengths', 'What they do well.'],
+      ['Weaknesses', 'Where they fall short.'],
+      ['How we compare', 'Where we win and where we lose.'],
+    ],
+  },
 };
+/** NooblyJS Phase 25b: the kinds of strategy document. */
+export const STRATEGY_KINDS = ['vision', 'positioning', 'persona', 'competitor'];
 
 const MAX_BODY = 20000;
 const MAX_SECTIONS = 30;

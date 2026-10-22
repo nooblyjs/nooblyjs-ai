@@ -7,7 +7,9 @@
 // write it at /catalogue (board.js).
 import { viewContext, actorRef } from '../services/views.js';
 import { peopleOnly } from '../util/http.js';
-import { notFound } from '../util/errors.js';
+import { notFound, HttpError } from '../util/errors.js';
+import { newId } from '../util/ids.js';
+import { STRATEGY_KINDS, TEMPLATE_KINDS } from '../services/templates.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -57,6 +59,44 @@ export function strategyRoutes({ host, repos, people, catalogue, documents, temp
       res.set('ETag', doc.etag).json(await documentView(req, kind, doc));
     });
   }
+
+  // NooblyJS Phase 25b: the strategy documents (vision, positioning, personas, competitors), each from its template.
+  //   GET /strategy-docs · POST /strategy-docs { kind, name } (draft) · GET and PUT /strategy-docs/:id (PUT: draft, If-Match)
+  const strategyDoc = async (id) => {
+    const doc = /^std_[a-z0-9]{6,32}$/.test(String(id)) ? await repos.strategyDocs.get(id) : null;
+    if (!doc || !STRATEGY_KINDS.includes(doc.kind)) throw notFound(`There is no strategy document ${String(id).slice(0, 40)}.`);
+    return doc;
+  };
+  router.get('/strategy-docs', read, async (req, res) => {
+    const docs = (await repos.strategyDocs.list()).filter((d) => STRATEGY_KINDS.includes(d.kind));
+    const views = await Promise.all(docs.map((d) => documents.read(d.kind, { id: d.id, name: d.name })));
+    res.json({
+      kinds: STRATEGY_KINDS.map((kind) => ({ kind, label: TEMPLATE_KINDS[kind].label })),
+      documents: views.sort((a, b) => STRATEGY_KINDS.indexOf(a.kind) - STRATEGY_KINDS.indexOf(b.kind) || a.name.localeCompare(b.name))
+        .map((d) => ({ id: d.id, kind: d.kind, kindLabel: d.kindLabel, name: d.name, version: d.version ?? 0, text: `${d.filled} of ${d.sections.filter((x) => x.inTemplate).length} sections filled in` })),
+    });
+  });
+  router.post('/strategy-docs', draft, async (req, res) => {
+    const kind = String(req.body?.kind ?? '');
+    const name = typeof req.body?.name === 'string' ? req.body.name.replace(/\s+/g, ' ').trim().slice(0, 80) : '';
+    if (!STRATEGY_KINDS.includes(kind)) throw new HttpError(422, 'invalid', `Choose a kind: ${STRATEGY_KINDS.join(', ')}.`, { kind: STRATEGY_KINDS.join(', ') });
+    if (!name) throw new HttpError(422, 'invalid', 'Give it a name.', { name: 'a name' });
+    const id = newId('std', 10);
+    await documents.create(kind, { id, name }, req.person);
+    await host.events.emit('strategy.document_created', { system: 'product', id, kind, name, summary: `started the ${TEMPLATE_KINDS[kind].label.toLowerCase()} "${name}"` }, { actor: req.person.id });
+    const doc = await documents.read(kind, { id, name });
+    res.status(201).set('ETag', doc.etag).json(doc);
+  });
+  router.get('/strategy-docs/:id', read, async (req, res) => {
+    const d = await strategyDoc(req.params.id);
+    const doc = await documents.read(d.kind, { id: d.id, name: d.name });
+    res.set('ETag', doc.etag).json(await documentView(req, d.kind, doc));
+  });
+  router.put('/strategy-docs/:id', draft, async (req, res) => {
+    const d = await strategyDoc(req.params.id);
+    const doc = await documents.save(d.kind, { id: d.id, name: d.name }, req.body, req.person, { ifMatch: req.get('if-match') });
+    res.set('ETag', doc.etag).json(await documentView(req, d.kind, doc));
+  });
 
   router.get('/settings/templates', read, async (req, res) => {
     res.json({ templates: await templates.list(await viewContext({ people, repos }, req.person)) });

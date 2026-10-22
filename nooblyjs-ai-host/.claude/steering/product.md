@@ -258,7 +258,9 @@ Nav: For you, Overview, Lifecycle, Approvals (badge), Activity, Metrics, Teams &
 6. **Teams & roles**: **Invite a person** and **Hire a teammate**. Team cards mix people
    (round avatars) and agents (square avatars) and show focus areas (e.g. Delivery squad,
    Checkout squad, Platform team). A **roles × permissions matrix** and a **members table**
-   (name, kind and model, team, role, approvals in 30 days).
+   (name, kind and model, team, role, approvals in 30 days). Since Phase 25b each team card has its **people-days in
+   Now** (Product's next three months), which an Owner (`set-budgets`) changes (`PATCH /api/v1/home/teams/:id`); the
+   Product roadmap checks each team's items in Now against it.
 
 ### 5.3 Product Factory (`product factory`)
 

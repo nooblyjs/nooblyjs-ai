@@ -12,18 +12,21 @@ import { strategyRoutes } from './strategy.js';
 import { businessRoutes } from './business.js';
 import { elicitationRoutes } from './elicitation.js';
 import { feedbackRoutes } from './feedback.js';
+import { planningRoutes } from './planning.js';
 import { apiNotFound, apiErrors } from '../util/errors.js';
 
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-export function createApi({ host, log, about, seed, repos, people, catalogue, documents, templates, ideas, hierarchy = null, businessCases = null, elicitation = null, specWrites, drafting, summary, architecture, ux, ui, flow, kindKeys, mountPath, stageAgents = null, feedback = null, portal = null }) {
+export function createApi({ host, log, about, seed, repos, people, catalogue, documents, templates, ideas, hierarchy = null, businessCases = null, elicitation = null, specWrites, drafting, summary, architecture, ux, ui, flow, kindKeys, mountPath, stageAgents = null, feedback = null, portal = null, objectives = null, planning = null }) {
   const api = host.express.Router();
   api.use(host.auth);
   // NooblyJS audits every write app-wide and its host.audit passes through; the stand-in host records here.
   api.use((req, res, next) => (READS.has(req.method) ? next() : host.audit(req, res, next)));
 
   api.use(systemRoutes({ host, about, seed, summary }));
-  api.use(boardRoutes({ host, repos, people, ideas, catalogue }));
+  api.use(boardRoutes({ host, repos, people, ideas, catalogue, planning }));
+  // NooblyJS Phase 25b: objectives, the roadmap from the items, saved views and the Product reports.
+  if (objectives && planning) api.use(planningRoutes({ host, repos, people, objectives, planning }));
   api.use(strategyRoutes({ host, repos, people, catalogue, documents, templates }));
   // NooblyJS Phase 17: the work hierarchy, business cases, accepting an idea.
   if (hierarchy && businessCases) api.use(businessRoutes({ host, hierarchy, businessCases, ideas, repos }));

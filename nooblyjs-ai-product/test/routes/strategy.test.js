@@ -137,8 +137,8 @@ test('templates: anyone reads them; an Approver changes one; documents show the 
   const t = await startApp({ seed: true, people: promoted });
   try {
     const { templates } = (await t.get(`${API}/settings/templates`, { as: 'naledi-k' })).json;
-    // NooblyJS Phase 17 added the work hierarchy's three.
-    assert.deepEqual(templates.map((x) => [x.kind, x.version, x.sections.length]), [['portfolio', 1, 5], ['value-stream', 1, 10], ['portfolio-epic', 1, 4], ['epic', 1, 4], ['feature', 1, 4]]);
+    // NooblyJS Phase 17 added the work hierarchy's three; Phase 25b the four strategy documents.
+    assert.deepEqual(templates.map((x) => [x.kind, x.version, x.sections.length]), [['portfolio', 1, 5], ['value-stream', 1, 10], ['portfolio-epic', 1, 4], ['epic', 1, 4], ['feature', 1, 4], ['vision', 1, 4], ['positioning', 1, 6], ['persona', 1, 5], ['competitor', 1, 4]]);
     assert.deepEqual(templates[1].sections.map((s) => s.heading), ['Description', 'Value Stream Vision', 'Customer Segments', 'Channels', 'Customer Relationship', 'KPIs or Revenue', 'Solution Context', 'Economic Framework', 'People and Locations', 'Attachments']);
 
     // Fill in a section the template will lose.

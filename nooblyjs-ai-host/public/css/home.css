@@ -216,6 +216,11 @@
 [data-module="home"] .team__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
 [data-module="home"] .team__name { font-size: 18px; color: var(--navy-900); }
 [data-module="home"] .team__focus { font-size: var(--text-small); color: var(--text-muted); }
+/* Phase 25b: a team's people-days in Product's Now (an Owner changes it). */
+[data-module="home"] .team__capacity { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+[data-module="home"] .team__capacity label { display: flex; flex-direction: column; gap: 4px; font-size: var(--text-small); font-weight: 500; }
+[data-module="home"] .team__capacity input { width: 8rem; font: inherit; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-row); background: var(--surface-card); color: var(--text); min-height: var(--control-min); }
+[data-module="home"] .team__capacity .row__meta { flex-basis: 100%; }
 [data-module="home"] .team__faces { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 [data-module="home"] .team__more { background: var(--surface-inset); color: var(--text-muted); }
 [data-module="home"] .face-key { width: 16px; height: 16px; }

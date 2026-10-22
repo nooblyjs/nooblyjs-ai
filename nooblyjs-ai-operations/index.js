@@ -125,6 +125,11 @@ export async function register(app, serverManager, { mountPath = '/operations', 
       slosFor: (itemId) => slos.list({ itemId }),
       incidents: () => incidents.list(),
       outcomeReviews: () => outcomes.list(),
+      /**
+       * Phase 25b: a measure's value today from the monitoring adapter (Product's key results): { value, monitor, real },
+       * where value is text such as "31.5%", or null when it can't be read.
+       */
+      measure: async ({ measure, today, target } = {}) => ({ value: await monitor.measure({ measure: String(measure ?? ''), today, target }).catch(() => null), monitor: monitor.name, real: monitor.real === true }),
     },
     /** Writes the seed into dataDir; `reset` removes what is there first. */
     seed: async ({ reset = false, content = host.sampleData !== false } = {}) => {

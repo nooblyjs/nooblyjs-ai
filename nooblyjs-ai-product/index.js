@@ -35,6 +35,10 @@ import { createFeedback } from './src/services/feedback.js';
 import { createPortal } from './src/services/portal.js';
 import { createLoop } from './src/services/loop.js';
 import { formRoutes } from './src/routes/form.js';
+import { createObjectives } from './src/services/objectives.js';
+import { createPlanning } from './src/services/planning.js';
+import { viewContext } from './src/services/views.js';
+import { strategyDocs } from './src/services/strategy-context.js';
 
 const NAME = 'product';
 // One or more path segments (/product, or deeper for a host that nests it).
@@ -53,6 +57,9 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 export const NAV = [
   { key: 'overview', label: 'Overview', path: '/', icon: 'grid' },
   { key: 'portfolios', label: 'Portfolios', path: '/portfolios', icon: 'layers', group: 'Strategy' },
+  // NooblyJS Phase 25b: objectives and key results, and the roadmap made from the items (Now · Next · Later).
+  { key: 'objectives', label: 'Objectives', path: '/objectives', icon: 'pulse', group: 'Strategy' },
+  { key: 'roadmap', label: 'Roadmap', path: '/roadmap', icon: 'flow', group: 'Strategy' },
   // NooblyJS Phase 25a: what colleagues say (and the feedback form's links), and the ideas they put forward.
   { key: 'feedback', label: 'Feedback', path: '/feedback', icon: 'chat', group: 'Customers' },
   { key: 'portal', label: 'Ideas portal', path: '/portal', icon: 'spark', group: 'Customers' },
@@ -84,7 +91,9 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   // The host's logging provider, as an instance named after this app, so its lines are labelled and it shows up
   // once on /services.
   const log = serverManager.logger(serverManager.getDefaultProviderType('logging'), { instanceName: NAME });
-  const seed = (options) => seedStory(host.store, options);
+  // The seed may write roadmap.yaml (the story's, from before Phase 25b): it moves onto the specs at once.
+  const seed = async (options) => { const r = await seedStory(host.store, options); await planning?.migrate(); return r; };
+  let planning = null;
   // Ideas were "opportunities" until 2026-10-12: a data folder from before is moved over first.
   await migrateFromOpportunities(host.store, log);
   const repos = createRepos(host.store, { log });
@@ -103,6 +112,10 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   const feedback = createFeedback({ repos, host, log });
   const portal = createPortal({ repos, host, ideas });
   const loop = createLoop({ repos, host, log, feedback });
+  // NooblyJS Phase 25b: objectives, and the roadmap from the items. roadmap.yaml (before 25b) moves onto the specs once.
+  const objectives = createObjectives({ repos, host });
+  planning = createPlanning({ repos, host, log, objectives });
+  await planning.migrate();
   const businessCases = createBusinessCases({ repos, host, hierarchy, log });
   const specWrites = createSpecWriteService({ repos, host, log, flow, catalogue });
   const architecture = createArchitectureService({ repos, host, log });
@@ -135,7 +148,7 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   const router = host.express.Router();
   // The feedback form on a link (Phase 25a): anyone with the link, signed in or not, so before the API's sign-in.
   router.use(formRoutes({ host, feedback }));
-  router.use('/api/v1', createApi({ host, log, seed, repos, people, catalogue, documents, templates, ideas, hierarchy, businessCases, elicitation, specWrites, drafting, summary, architecture, ux, ui, flow, stageAgents, feedback, portal, kindKeys: Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.keys(v)])), mountPath, about: { name: NAME, version: VERSION, mountPath } }));
+  router.use('/api/v1', createApi({ host, log, seed, repos, people, catalogue, documents, templates, ideas, hierarchy, businessCases, elicitation, specWrites, drafting, summary, architecture, ux, ui, flow, stageAgents, feedback, portal, objectives, planning, kindKeys: Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.keys(v)])), mountPath, about: { name: NAME, version: VERSION, mountPath } }));
   // The browser files (module, pages, CSS). redirect: false, or /product would 301 to /product/ (public/ is a folder).
   router.use(host.express.static(PUBLIC_DIR, { index: false, redirect: false }));
   // Every other GET without a file extension is a page: the host's frame answers it, so deep links and refresh land
@@ -156,6 +169,8 @@ export async function register(app, serverManager, { mountPath = '/product', dat
     // NooblyJS Phase 25a: everyone who asked hears when it ships (Operations' release) and whether it worked.
     host.events.on('release.deployed', (event) => loop.onReleaseDeployed(event).catch((err) => log.warn(`product: telling who asked about ${event?.payload?.itemId}: ${err.message}`))),
     host.events.on('outcome_review.closed', (event) => loop.onOutcomeReviewed(event).catch((err) => log.warn(`product: telling who asked about ${event?.payload?.itemId}: ${err.message}`))),
+    // NooblyJS Phase 25b: an outcome review's goals move the key results with the same measure.
+    host.events.on('outcome_review.closed', (event) => objectives.onOutcomeReviewed(event).catch((err) => log.warn(`product: key results from ${event?.payload?.itemId}'s outcome review: ${err.message}`))),
     // NooblyJS Phase 18: meeting notes a person had a teammate post to a spec become one of its elicitation sessions.
     host.events.on('teams.meeting_notes_posted', (event) => {
       const p = event?.payload ?? {};
@@ -216,6 +231,10 @@ export async function register(app, serverManager, { mountPath = '/product', dat
         await host.events.emit('signal.raised', { signalId: id, title: record.title, product: record.product, release, itemId, count: record.count, summary: `raised the signal "${record.title}" from production${release ? ` (${release})` : ''}` }, { actor: by.id });
         return record;
       },
+      /** NooblyJS Phase 25b: Metrics' Product reports: feedback by month and portfolio, planned days, key results. */
+      reports: async () => planning.reports(await viewContext({ people: host.people, repos }, null)),
+      /** NooblyJS Phase 25b: the objectives with their key results' progress. */
+      objectives: () => objectives.list(),
       /** NooblyJS Phase 25a: the PM's home: notes not linked yet, Ada's suggestions waiting, portal ideas waiting, who will be told. */
       evidence: () => feedback.home(),
       /** NooblyJS Phase 25a: customer importance of ideas, features and specs, by id ("3 colleagues across 1 portfolio; …"). */
@@ -277,6 +296,8 @@ export async function register(app, serverManager, { mountPath = '/product', dat
           relations: (diagram?.edges ?? []).map(({ from, to, label, tech }) => ({ from, to, label, tech })),
           qualityAttributes: qa?.attributes ?? [],
           adrs: adrs.map(({ id, title, status }) => ({ id, title, status })),
+          // NooblyJS Phase 25b: the product strategy (vision, positioning, personas, competitors), what people wrote.
+          strategy: await strategyDocs(repos).catch(() => []),
         };
       },
       /** The quality attributes that become Software Factory gates on every PR for this item. */

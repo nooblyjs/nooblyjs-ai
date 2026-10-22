@@ -7,9 +7,10 @@ const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
 /** The numbered artefacts and their prefixes. */
 // NooblyJS Phase 17: the work hierarchy's portfolio epics, epics and features (catalogue.yaml, hierarchy.js).
 // NooblyJS Phase 25a: feedback notes (NOTE-0412), four digits.
-export const NUMBERED = { idea: 'IDEA', spec: 'PRD', adr: 'ADR', portfolioEpic: 'PEPIC', epic: 'EPIC', feature: 'FEAT', note: 'NOTE' };
+// NooblyJS Phase 25b: objectives (OBJ-04), two digits.
+export const NUMBERED = { idea: 'IDEA', spec: 'PRD', adr: 'ADR', portfolioEpic: 'PEPIC', epic: 'EPIC', feature: 'FEAT', note: 'NOTE', objective: 'OBJ' };
 
-const NUMBERED_ID = /^(IDEA|PRD|ADR|PEPIC|EPIC|FEAT|NOTE)-(\d{3,})$/;
+const NUMBERED_ID = /^(IDEA|PRD|ADR|PEPIC|EPIC|FEAT|NOTE)-(\d{3,})$|^(OBJ)-(\d{2,})$/;
 const GENERATED_ID = /^[a-z]{2,8}_[a-z0-9]{6,32}$/;
 
 /** A generated id, e.g. newId('drf') → 'drf_8f3k2q9a1b'. */
@@ -27,7 +28,8 @@ export function nextNumbered(prefix, existing = [], width = 3) {
   let max = 0;
   for (const id of existing) {
     const match = NUMBERED_ID.exec(id);
-    if (match?.[1] === prefix) max = Math.max(max, Number(match[2]));
+    const [p, n] = match ? [match[1] ?? match[3], match[2] ?? match[4]] : [];
+    if (p === prefix) max = Math.max(max, Number(n));
   }
   return `${prefix}-${String(max + 1).padStart(width, '0')}`;
 }

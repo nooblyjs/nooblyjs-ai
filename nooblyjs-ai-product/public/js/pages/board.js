@@ -12,8 +12,11 @@ import { filtersView, labelFields, wirePortfolios } from './portfolios.js';
 const TABS = [['board', 'Board'], ['roadmap', 'Roadmap'], ['insights', 'Insights']];
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** Who asked for it (NooblyJS Phase 25a): beside the RICE score, never part of it. */
-const evidenceLine = (c) => (c.evidence ? html`<span class="kanban__meta pf-evidence">${c.evidence.text}</span>` : '');
+/**
+ * Why it is there (NooblyJS Phase 25b): "RICE 42 · serves OBJ-04 (Now) · 3 colleagues asked". The RICE score orders the
+ * board; the objective and who asked sit beside it (Phase 25a) and never change it. The full words are its title.
+ */
+const evidenceLine = (c) => (c.why ? html`<span class="kanban__meta pf-evidence"${c.evidence ? html` title="${c.evidence.text}"` : ''}>${c.why}</span>` : '');
 
 /** One kanban card. Specs link to their page; signals offer "Make it an idea" to those who may draft. */
 function boardCard(c, ctx) {
@@ -30,7 +33,7 @@ function boardCard(c, ctx) {
         ? button({ label: 'Draft a spec', kind: 'secondary', small: true, attrs: { 'data-action': 'spec-from', 'data-id': c.id, 'aria-label': `Draft a spec for "${c.title}"` } })
         : ''}</span>`
       : '';
-    return html`<li class="kanban__card"><span class="kanban__title">${c.id} ${c.title}</span><span class="kanban__meta">${c.text}${c.feature ? ` · ${c.feature.id} ${c.feature.name}` : ''}</span>${evidenceLine(c)}${scored ? '' : statusPill({ text: 'Not scored yet', tone: 'warning' })}${c.status === 'accepted' ? statusPill({ text: 'Accepted', tone: 'success' }) : ''}${actions}<a class="pf-card-link" href="${hrefFor(ctx, `/business-cases/${c.id}`)}">Business case</a></li>`;
+    return html`<li class="kanban__card"><span class="kanban__title">${c.id} ${c.title}</span><span class="kanban__meta">${c.product ?? ''}${c.feature ? ` · ${c.feature.id} ${c.feature.name}` : ''}</span>${c.why ? evidenceLine(c) : html`<span class="kanban__meta">RICE not scored</span>`}${scored ? '' : statusPill({ text: 'Not scored yet', tone: 'warning' })}${c.status === 'accepted' ? statusPill({ text: 'Accepted', tone: 'success' }) : ''}${actions}<a class="pf-card-link" href="${hrefFor(ctx, `/business-cases/${c.id}`)}">Business case</a></li>`;
   }
   const progress = c.progress != null
     ? html`<span class="pf-progress" role="progressbar" aria-label="${c.statusText}" aria-valuenow="${c.progress}" aria-valuemin="0" aria-valuemax="100"><span style="width:${Math.max(0, Math.min(100, c.progress))}%"></span></span>`
@@ -81,8 +84,9 @@ function monthsOf(from, to) {
   return out;
 }
 
-function roadmapView(roadmap, ctx, { compact = false } = {}) {
-  if (!roadmap?.items?.length) return card({ title: 'Roadmap', body: html`<p class="muted">Nothing on the roadmap yet.</p>` });
+/** The Now timeline (Phase 25b: the specs placed in Now, with their planned stage spans). Roadmap.js draws it too. */
+export function roadmapView(roadmap, ctx, { compact = false } = {}) {
+  if (!roadmap?.items?.length) return card({ title: 'Now', body: html`<p class="muted">Nothing in Now has a plan yet. Place items on the <a href="${hrefFor(ctx, '/roadmap')}">Roadmap</a>.</p>` });
   const start = Date.parse(`${roadmap.from}T00:00:00Z`);
   const end = Date.parse(`${roadmap.to}T23:59:59Z`);
   const pct = (iso) => Math.max(0, Math.min(100, ((Date.parse(`${iso}T00:00:00Z`) - start) / (end - start)) * 100));
@@ -97,8 +101,8 @@ function roadmapView(roadmap, ctx, { compact = false } = {}) {
   });
   const legend = [['product', 'Product'], ['architecture', 'Architecture'], ['ux', 'UX design'], ['ui', 'UI design'], ['build', 'Software Factory']];
   return card({
-    title: compact ? 'Q4 roadmap' : `Roadmap · ${roadmap.quarter}`,
-    meta: compact ? null : 'Each bar is a stage; the outlined one is where the item is now.',
+    title: 'Now: the next three months',
+    meta: compact ? html`<a href="${hrefFor(ctx, '/roadmap')}">The roadmap</a>` : 'Each bar is a stage; the outlined one is where the item is now.',
     body: html`<div class="pf-roadmap${compact ? ' pf-roadmap--compact' : ''}">
       <div class="pf-roadmap__months" aria-hidden="true">${monthsOf(roadmap.from, roadmap.to).map((m) => html`<span>${m}</span>`)}</div>
       <ul class="pf-roadmap__rows" role="list">${rows}</ul>

@@ -1,6 +1,6 @@
 # Phase 25b — Objectives, roadmaps and capacity: requirements
 
-> **Status: in progress (started 2026-10-22).** Root `roadmap.md` Phase 25b; Phase 25a reviewed 2026-10-22.
+> **Status: built (2026-10-22), waiting for your review.** Summary: `.claude/phases/phase-25b-summary.md`. Root `roadmap.md` Phase 25b; Phase 25a reviewed 2026-10-22.
 
 > Asked 2026-10-22: "start phase 25b". Answers: "Now is 3 months, Next is the 3 months after that and later is after
 > 6 months"; capacity: sample numbers; 25a: reviewed.

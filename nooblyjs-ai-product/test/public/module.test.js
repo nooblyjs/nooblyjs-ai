@@ -49,7 +49,8 @@ test('register() describes the app for the rail and the sidebar', async () => {
     assert.deepEqual(hosted.ui, { entry: 'js/module.js', styles: ['css/product.css'] });
     // Architecture's row is the Design app's (CHG-009); this app's /architecture addresses move on to it.
     // Phase 25a: Feedback and the ideas portal, under Customers.
-    assert.deepEqual(hosted.nav.map((n) => n.key), ['overview', 'portfolios', 'feedback', 'portal', 'board', 'specs', 'ux', 'ui', 'reviews', 'handoffs', 'settings']);
+    // Phase 25b: Objectives and the Roadmap, under Strategy.
+    assert.deepEqual(hosted.nav.map((n) => n.key), ['overview', 'portfolios', 'objectives', 'roadmap', 'feedback', 'portal', 'board', 'specs', 'ux', 'ui', 'reviews', 'handoffs', 'settings']);
     assert.deepEqual([...new Set(hosted.nav.map((n) => n.group).filter(Boolean))], ['Strategy', 'Customers', 'Stages', 'Flow', 'Setup']);
   } finally {
     await t.close();

@@ -70,7 +70,9 @@ export function homeRoutes({ express, shell, services, activity, metrics, forYou
   router.get('/api/v1/home/metrics', ...read, async (req, res, next) => {
     try {
       const range = req.query.range === undefined || req.query.range === '' ? '30d' : String(req.query.range);
-      res.json({ ...await metrics.get(range), ranges: metrics.ranges });
+      // Phase 25b: the Product reports (feedback, planned days, key results), from the Product app when it runs here.
+      const product = await Promise.resolve(services.get('product')?.reports?.()).catch(() => null);
+      res.json({ ...await metrics.get(range), ranges: metrics.ranges, product });
     } catch (err) {
       next(err);
     }
@@ -171,6 +173,19 @@ export function homeRoutes({ express, shell, services, activity, metrics, forYou
         members: { ...members, rows: members.rows.map((r) => (r.kind === 'agent' ? { ...named(r), kindText: modelOf(r.id) ? `Agent · ${modelOf(r.id)}` : r.kindText } : r)) },
         rules: rules?.rules ?? null,
       });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Phase 25b: a team's people-days in Product's Now, for the roadmap's capacity. Budgets are an Owner's (set-budgets).
+  router.patch('/api/v1/home/teams/:id', requireSignIn, requireRole('set-budgets'), async (req, res, next) => {
+    try {
+      const value = req.body?.capacityDays ?? null;
+      res.locals.audit = { action: 'team.capacity_set', target: req.params.id, capacityDays: value };
+      const team = await teams.setCapacity(req.params.id, value);
+      await events.emit('team.capacity_set', { teamId: team.id, capacityDays: team.capacityDays, summary: `set ${team.name}'s capacity in Now to ${team.capacityText.toLowerCase()}` }, { actor: req.person.id });
+      res.json(team);
     } catch (err) {
       next(err);
     }

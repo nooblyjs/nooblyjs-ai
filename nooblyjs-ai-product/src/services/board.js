@@ -3,7 +3,6 @@
 // of files, read through the store's cache) that is cheap, and it can never be stale when someone edits a file
 // by hand. If it gets slow, cache it here and drop the cache on the engine's own events.
 import { ideaView, signalView, specSummary } from './views.js';
-import { roadmapView } from './roadmap.js';
 
 export const COLUMNS = [
   { key: 'signals', label: 'Signals' },
@@ -64,8 +63,9 @@ export function topSignals(signals) {
  * @param {{ portfolio?: string, valueStream?: string, product?: string, mine?: boolean }} filter
  * @param {{ view: (counts: Map<string, number>) => Promise<object> }} catalogue   where work sits (catalogue.js)
  */
-export async function buildBoard(ctx, repos, { portfolio = null, valueStream = null, product = null, mine = false, epic = null, feature = null } = {}, catalogue = null) {
-  const [{ cards, signals }, roadmap] = await Promise.all([allCards(ctx, repos), repos.roadmap.get()]);
+export async function buildBoard(ctx, repos, { portfolio = null, valueStream = null, product = null, mine = false, epic = null, feature = null } = {}, catalogue = null, planning = null) {
+  // Since Phase 25b the roadmap card is the Now timeline, from the specs placed in Now (planning.js).
+  const [{ cards, signals }, roadmap] = await Promise.all([allCards(ctx, repos), planning ? planning.timeline(ctx) : null]);
   const is = (a, b) => String(a ?? '').toLowerCase() === String(b ?? '').toLowerCase();
 
   // Counts are over the whole board, so every label says what choosing it would show.
@@ -119,6 +119,6 @@ export async function buildBoard(ctx, repos, { portfolio = null, valueStream = n
     catalogue: { ...labels, unfiledCards },
     columns,
     topSignals: topSignals(signals),
-    roadmap: roadmap ? await roadmapView(ctx, repos, roadmap) : null,
+    roadmap,
   };
 }

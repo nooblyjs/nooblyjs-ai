@@ -13,7 +13,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
  * @param {object|null} person   req.person
  */
 export async function viewContext({ people, repos }, person) {
-  const [everyone, drafts, catalogue, notes, ideas, specs] = await Promise.all([people.list().catch(() => []), repos.drafts.list(), repos.catalogue.get(), repos.notes?.list() ?? [], repos.ideas.list(), repos.specs.list()]);
+  const [everyone, drafts, catalogue, notes, ideas, specs, objectives] = await Promise.all([people.list().catch(() => []), repos.drafts.list(), repos.catalogue.get(), repos.notes?.list() ?? [], repos.ideas.list(), repos.specs.list(), repos.objectives?.list() ?? []]);
   // product name (lower case) → the portfolio it sits in, and the value stream, so a view can say all three.
   const filed = (catalogue?.products ?? []).filter((p) => p?.name);
   const products = new Map(filed.map((p) => [String(p.name).toLowerCase(), p.portfolio ?? null]));
@@ -23,7 +23,11 @@ export async function viewContext({ people, repos }, person) {
   const features = new Map((catalogue?.features ?? []).map((f) => [f.id, { id: f.id, name: f.name, epic: epics.has(f.epic) ? { id: f.epic, name: epics.get(f.epic).name } : null }]));
   // NooblyJS Phase 25a: customer importance by id, and how many feedback notes each signal has.
   const evidence = importanceIndex({ notes, ideas, specs, features: catalogue?.features ?? [], portfolioOf: (name) => products.get(String(name).toLowerCase()) ?? null });
-  return { me: person ?? null, people: new Map(everyone.map((p) => [p.id, p])), drafts, products, valueStreams, features, evidence, signalNotes: signalNoteCounts(notes) };
+  // NooblyJS Phase 25b: the objective each item serves (an item, its idea or its feature is in the objective's links).
+  const serves = new Map();
+  for (const o of objectives) for (const id of o.links ?? []) if (!serves.has(id)) serves.set(id, { id: o.id, title: o.title, horizon: o.horizon });
+  const records = new Map([...ideas, ...specs].map((r) => [r.id, r]));
+  return { me: person ?? null, people: new Map(everyone.map((p) => [p.id, p])), drafts, products, valueStreams, features, evidence, signalNotes: signalNoteCounts(notes), serves, records };
 }
 
 /** The feature of the work hierarchy a record is for, and its epic (Phase 17): { feature, epic } or nulls. */
@@ -103,6 +107,7 @@ export function ideaView(ctx, opp) {
     text: [opp.product, score == null ? 'RICE not scored' : `RICE ${score}`].filter(Boolean).join(' · '),
     // NooblyJS Phase 25a: who asked for it, beside the score (it never changes the score).
     evidence: evidenceView(ctx, opp.id),
+    ...whyView(ctx, opp, score),
     stage: stageFor('idea'),
     createdAt: opp.createdAt ?? null,
   };
@@ -187,7 +192,26 @@ export function specSummary(ctx, spec) {
     stage: stageFor('spec', spec.status),
     updatedAt: spec.updatedAt ?? null,
     evidence: evidenceView(ctx, spec.id),
+    ...whyView(ctx, spec, riceScore(ctx?.records?.get(spec.idea)?.rice)),
     ...whereBuilt(spec),
+  };
+}
+
+const HORIZON_WORDS = { now: 'Now', next: 'Next', later: 'Later' };
+
+/**
+ * Why it is there (NooblyJS Phase 25b), on every card: { objective, horizon, why: "RICE 42 · serves OBJ-04 (Now) · 3
+ * colleagues asked" }. A spec's RICE is its idea's.
+ */
+export function whyView(ctx, record, score) {
+  const o = ctx?.serves?.get(record.id) ?? ctx?.serves?.get(record.idea) ?? ctx?.serves?.get(record.feature) ?? null;
+  const e = ctx?.evidence?.get(record.id);
+  const asked = e ? [e.colleagues ? `${e.colleagues} colleague${e.colleagues === 1 ? '' : 's'} asked` : null, e.formNotes ? `${e.formNotes} form note${e.formNotes === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ') : null;
+  const parts = [score == null ? null : `RICE ${score}`, o ? `serves ${o.id} (${HORIZON_WORDS[o.horizon] ?? o.horizon})` : null, asked].filter(Boolean);
+  return {
+    objective: o ? { id: o.id, title: o.title, horizon: o.horizon } : null,
+    horizon: record.horizon ?? null,
+    why: parts.length ? parts.join(' · ') : null,
   };
 }
 

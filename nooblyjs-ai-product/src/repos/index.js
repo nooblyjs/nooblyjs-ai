@@ -65,7 +65,7 @@ function docs(store, folder, log) {
 /** The templates (templates/<kind>.md) that portfolios' and value streams' documents start from. */
 function templates(store) {
   const path = (kind) => {
-    if (!['portfolio', 'value-stream', 'portfolio-epic', 'epic', 'feature'].includes(kind)) throw new Error(`not a template: ${kind}`);
+    if (!['portfolio', 'value-stream', 'portfolio-epic', 'epic', 'feature', 'vision', 'positioning', 'persona', 'competitor'].includes(kind)) throw new Error(`not a template: ${kind}`);
     return ['templates', `${kind}.md`];
   };
   const read = async (kind) => {
@@ -100,6 +100,18 @@ export function createRepos(store, { log }) {
     businessCases: docs(store, 'business-cases', log),
     /** NooblyJS Phase 18: each spec's elicitation (stakeholders, sessions, candidates, requirements, the NFR walk, questions). */
     elicitation: docs(store, 'elicitation', log),
+    /** NooblyJS Phase 25b: objectives (OBJ-04) with their key results, and the strategy documents (strategy/<id>.md). */
+    objectives: docs(store, 'objectives', log),
+    strategyDocs: docs(store, 'strategy', log),
+    /** NooblyJS Phase 25b: the roadmap's saved views (roadmap-views.yaml). `update(fn)`: fn(views) returns { views, answer }. */
+    roadmapViews: {
+      list: async () => (await store.readYaml(['roadmap-views.yaml']))?.views ?? [],
+      update: (fn) => store.withLock(['roadmap-views.yaml'], async () => {
+        const { views, answer } = await fn((await store.readYaml(['roadmap-views.yaml']))?.views ?? []);
+        await store.writeYaml(['roadmap-views.yaml'], { views });
+        return answer;
+      }),
+    },
     /** NooblyJS Phase 25a: feedback notes (NOTE-0412), each with its insights and Ada's suggestions. */
     notes: docs(store, 'notes', log),
     /** NooblyJS Phase 25a: the feedback form's links (feedback-links.yaml). `update(fn)`: fn(links) returns { links, answer }. */
@@ -135,8 +147,10 @@ export function createRepos(store, { log }) {
         await store.writeDoc(['specs', id, 'versions', `v${version}.md`], { version, by, at, note: note ?? null }, body ?? '');
       },
     },
+    // The roadmap file the seed wrote before Phase 25b; planning.js moves it onto the items once, then renames it.
     roadmap: {
       get: async () => (await store.readYaml(['roadmap.yaml'])) ?? null,
+      retire: () => store.move(['roadmap.yaml'], ['roadmap.yaml.moved']),
     },
     /** Strategic themes, portfolios, value streams and products (catalogue.yaml), one file. `update(fn)`: fn(doc) returns { doc, answer } under its lock. */
     catalogue: {

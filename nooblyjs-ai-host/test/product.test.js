@@ -26,8 +26,8 @@ test('the rail has Product, then Design, then the Factory after Home: each its o
   const by = Object.fromEntries(apps.map((a) => [a.name, a]));
   for (const name of ['product', 'design', 'factory']) assert.equal(by[name].state, 'ready', name);
   assert.deepEqual([by.product.label, by.product.mountPath, by.product.ui.styles], ['Product', '/product', ['css/product.css']]);
-  // Phase 25a: Feedback and the ideas portal, under Customers.
-  assert.deepEqual(by.product.nav.map((n) => n.key), ['overview', 'portfolios', 'feedback', 'portal', 'board', 'specs', 'ux', 'ui', 'reviews', 'handoffs', 'settings']);
+  // Phase 25a: Feedback and the ideas portal, under Customers; Phase 25b: Objectives and the Roadmap, under Strategy.
+  assert.deepEqual(by.product.nav.map((n) => n.key), ['overview', 'portfolios', 'objectives', 'roadmap', 'feedback', 'portal', 'board', 'specs', 'ux', 'ui', 'reviews', 'handoffs', 'settings']);
   // Architecture is Design's row (Phase 16b): Product's pages, drawn with Product's stylesheet, before Design's own five.
   assert.deepEqual(by.design.nav.map((n) => [n.key, n.path]), [
     ['architecture', '/architecture'], ['requirements', '/requirements'], ['solution', '/solution'],
