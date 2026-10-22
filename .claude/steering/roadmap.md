@@ -113,7 +113,7 @@ inclusion: always
 | 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ✅ (reviewed 2026-10-21) |
 | 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ✅ (reviewed 2026-10-22) |
 | 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ✅ (reviewed 2026-10-22) |
-| 26 | Open work in the apps: Infrastructure's drafting agent, Teammates' red-team cases and docs, Product's live tests | ◐ in progress (spec `nooblyjs-ai-host/.claude/specs/phase-26-open-work/`, 2026-10-22) |
+| 26 | Open work in the apps: Infrastructure's drafting agent, Teammates' red-team cases and docs, Product's live tests | ✅ built 2026-10-22, waiting for your review (`nooblyjs-ai-host/.claude/phases/phase-26-summary.md`) |
 
 Open bugs and changes: none. BUG-001 to BUG-007 and CHG-001 to CHG-009 are verified (2026-10-21); the next IDs are BUG-008 and CHG-010 (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 
@@ -1591,8 +1591,8 @@ and whether the teams can do what is in Now, and a roadmap is something people e
   drafts by itself. `agent.action` with the cost; agents can't ask for a draft.
 - **Teammates:** prompt-injection cases for the outside task endpoint and a teammate's memory; an OpenAPI description
   of `POST /teammates/api/v1/teammates/:slug/tasks`; an admin guide; how to write skills (`.claude/guides/`).
-- **Product:** opt-in live tests (`*.live.test.js`), one draft per stage (spec, architecture, UX, UI), skipped unless
-  a model is configured.
+- **Product:** opt-in live tests, one draft per stage (spec, architecture, UX, UI), skipped unless a model key is set
+  (`npm run test:live:product` in NooblyJS: Product's drafts reach a model only through Teammates).
 
 **Not in this phase, and why:** which stages draft automatically (D3) is your decision; an agent's spec edit from a
 chat thread waits on `[CONFIRM]`; CI needs a choice (the code is on GitHub here, the roadmap said Bitbucket
@@ -1607,7 +1607,7 @@ Pipelines); the accessibility audit needs a browser this codespace doesn't have;
 3. An agent asking for a draft is refused (403).
 4. Teammates' red-team cases pass: instructions inside a task's input or a memory don't change what the teammate may do.
 5. The OpenAPI file validates as OpenAPI 3.1 and matches the endpoint's routes.
-6. `npm run test:live` in Product, with a model configured, drafts one artefact per stage; without one it skips.
+6. `npm run test:live:product`, with a model key, drafts one artefact per stage; without one it skips.
 
 **Done when:** steps 1–6 pass.
 
@@ -1625,15 +1625,15 @@ cite `knowledge.contextFor()`, and model routes are Platform's (Phases 6, 8 and 
 - [ ] Decide which stages draft automatically, now that real costs are known (D3).
 - [ ] An agent's edit of a spec from a chat thread, kept as a new spec version. A person's "Apply to spec" exists
       (`product.updateSpec`) `[CONFIRM]`.
-- [ ] Opt-in live tests (`*.live.test.js`) for one draft per stage.
+- [x] Opt-in live tests for one draft per stage (built in Phase 26, 2026-10-22: `npm run test:live:product` in NooblyJS).
 
 **Digital Teammates (`nooblyjs-ai-teammate`, its Phase 7 and backlog).** Backups, a security review and a performance
 check are in Phase 13 for all of NooblyJS.
 - [ ] CI: the tests on every push (Bitbucket Pipelines).
-- [ ] An accessibility audit of the Teammates screens (WCAG 2.2 AA; axe already runs in NooblyJS's e2e suite) and
-      prompt-injection cases.
-- [ ] Docs: an OpenAPI spec for the outside task endpoint (`POST /teammates/api/v1/teammates/:slug/tasks`), an admin
-      guide, and how to write skills.
+- [ ] An accessibility audit of the Teammates screens (WCAG 2.2 AA; axe already runs in NooblyJS's e2e suite): needs a
+      browser. The prompt-injection cases are built (Phase 26, `test/controllers/red-team.test.js`).
+- [x] Docs (built in Phase 26, 2026-10-22, in `nooblyjs-ai-teammate/.claude/guides/`): an OpenAPI description of the
+      outside task endpoint (`task-api.openapi.yaml`, checked by a test), an admin guide, and how to write skills.
 - Backlog: teammate templates and "save as template"; export and import a teammate; model A/B tests (rating against
   cost); ratings on work items feeding memory and reviews.
 
@@ -1641,7 +1641,7 @@ check are in Phase 13 for all of NooblyJS.
 - [ ] I2: a side-by-side check against the mockups at 1440px.
 - [ ] I3: confirm which access role is the "platform owner" (today `change-repo-access`, so Owner) `[CONFIRM]`.
 - [ ] I5: ask design for the screens with no mockup (`Infra-EnvDetail` is linked from both mockups), then match them.
-- [ ] I7, the drafting agent: hire Ines Tau in Digital Teammates; `POST /designs/:id/drafts` as a teammate task that
+- [x] I7 (built in Phase 26, 2026-10-22: `src/services/drafts.js`), the drafting agent: hire Ines Tau in Digital Teammates; `POST /designs/:id/drafts` as a teammate task that
       reads the architecture through `host.service('product')` and saves a new design version; a scripted draft for
       the seed story; offer a new draft on `adr.accepted` or `architecture.updated`; `agent.action` with cost.
 - [x] I8 (built in Phase 21, 2026-10-21: `pr.recorded` → a preview, `pr.merged` → destroyed, the Test section's suites recorded on the environment, promotion only when they pass), previews and tests from the Software Factory: `pr.opened` → a preview environment, `pr.merged` → destroy it;

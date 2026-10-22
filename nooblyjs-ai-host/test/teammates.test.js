@@ -128,7 +128,7 @@ test('other apps reach teammates through host.service: the team, who can work, a
   assert.equal(agents.running(), true);
   assert.equal(agents.provider(), 'mock');
   const roster = await agents.roster();
-  assert.equal(roster.length, 9);
+  assert.equal(roster.length, 10); // with Ines Tau (Phase 26)
   const rhea = roster.find((a) => a.id === 'rhea-voss');
   assert.deepEqual([rhea.name, rhea.role, rhea.rate, rhea.model.name, rhea.canWork], ['Rhea Voss', 'Architect', 52, 'Claude Opus', true]);
   assert.equal((await agents.availability('sable-reyes')).code, 'teammate_paused');

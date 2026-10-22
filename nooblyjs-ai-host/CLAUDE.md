@@ -70,7 +70,10 @@ NooblyJS's `notify.tell` onto For you and Teams) is done (reviewed 2026-10-22)**
 are dated: the next three months, the three after, and beyond; why on every card; the roadmap made from the items,
 replacing roadmap.yaml, with capacity in Now from each team's `capacityDays` on Teams & roles; saved views; strategy
 documents the drafting agents read; Product reports in Metrics) is done (reviewed 2026-10-22)**
-(`.claude/specs/phase-25b-objectives-roadmaps/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
+(`.claude/specs/phase-25b-objectives-roadmaps/`). **Phase 26 (open work in the apps: Ines Tau hired in Teammates and
+drafting Infrastructure designs from the architecture as her teammate task, with a new draft offered on an accepted ADR
+or changed architecture; Teammates' prompt-injection cases, task API OpenAPI and guides; `npm run test:live:product`) is
+built (2026-10-22), waiting for review** (`.claude/specs/phase-26-open-work/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed
 2026-10-20)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent

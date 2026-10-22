@@ -1,0 +1,154 @@
+# The outside task endpoint of Digital Teammates (NooblyJS Phase 26): give a teammate a task, and poll a task that waits
+# for the owner. test/guides/openapi.test.js checks this file against src/routes/api.js and the controller's fields.
+openapi: 3.1.0
+info:
+  title: Digital Teammates task API
+  version: 1.0.0
+  description: |
+    Give one of your teammates a task from outside NooblyJS (a scheduler, a script, another tool), with an API key the
+    owner made in Admin · API keys. A key reaches only the teammates it names, and nothing else: it can't change a
+    teammate, approve work, confirm a cost or read billing. Text in a task is data: whatever it says, it changes none of
+    that. Hosted, the paths sit under NooblyJS's mount path, `/teammates`.
+servers:
+  - url: /teammates/api/v1
+security:
+  - apiKey: []
+  - session: []
+paths:
+  /teammates/{slug}/tasks:
+    post:
+      operationId: assignTask
+      summary: Give a teammate a task
+      description: |
+        Runs the task and answers with the finished work (200), or, when its estimated cost is over the teammate's
+        approval threshold, with `awaiting_approval` (202): poll the task until the owner decides. With
+        `Accept: text/event-stream` or `stream: true` the work streams as server-sent events (`start`, `delta`, …,
+        `done`).
+      parameters:
+        - $ref: '#/components/parameters/slug'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+      responses:
+        '200':
+          description: The finished work
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskDone' }
+            text/event-stream:
+              schema: { type: string, description: 'Events start, delta, tool, done or error, each with JSON data' }
+        '202':
+          description: Over the approval threshold; it runs once the owner approves it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskWaiting' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '402': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '410': { $ref: '#/components/responses/Error' }
+  /teammates/{slug}/tasks/{workId}:
+    get:
+      operationId: taskStatus
+      summary: Where a task stands
+      description: A key sees only the tasks it started.
+      parameters:
+        - $ref: '#/components/parameters/slug'
+        - name: workId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: awaiting_approval, declined, running, failed, or the finished work
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskStatus' }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      description: 'Authorization: Bearer dtk_… (Admin · API keys)'
+    session:
+      type: apiKey
+      in: cookie
+      name: noobly.sid
+      description: A person signed in to NooblyJS (who also sends the X-CSRF-Token header)
+  parameters:
+    slug:
+      name: slug
+      in: path
+      required: true
+      description: The teammate, e.g. wren-sato
+      schema: { type: string, pattern: '^[a-z0-9][a-z0-9-]{0,62}$' }
+  schemas:
+    TaskRequest:
+      type: object
+      properties:
+        task: { type: string, minLength: 1, description: What to do. `input` is accepted as an alias. }
+        input: { type: string, description: The same as task }
+        costCentre: { type: string, description: Who the work is billed to }
+        thread: { type: string, description: Continues a conversation with the teammate }
+        project: { type: string, description: Scopes knowledge and memory }
+        skill: { type: string, description: Uses this skill instead of choosing one }
+        stream: { type: boolean, description: Stream the work as server-sent events }
+        confirmCost: { type: boolean, description: A signed-in owner going ahead over the threshold. Ignored for a key. }
+    TaskDone:
+      type: object
+      required: [status, workId, output]
+      properties:
+        status: { const: completed }
+        workId: { type: string }
+        output: { type: string }
+        stopReason: { type: [string, 'null'] }
+        provider: { type: string }
+        tokens: { type: integer }
+        hours: { type: number }
+        amount: { type: number, description: What the work is billed, in dollars }
+        apiCost: { type: number }
+        costCentre: { type: [string, 'null'] }
+        memoriesAdded: { type: array, items: { type: object } }
+    TaskWaiting:
+      type: object
+      required: [status, workId, estimate, threshold]
+      properties:
+        status: { const: awaiting_approval }
+        workId: { type: string }
+        teammate: { type: string }
+        estimate: { type: object, properties: { amount: { type: number }, hours: { type: number } } }
+        threshold: { type: number }
+        message: { type: string }
+    TaskStatus:
+      type: object
+      required: [workId, status]
+      properties:
+        workId: { type: string }
+        status: { enum: [awaiting_approval, declined, running, failed, completed] }
+        output: { type: [string, 'null'] }
+        error: { type: [string, 'null'] }
+        amount: { type: [number, 'null'] }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, examples: [monthly_cap_reached, teammate_paused, teammate_off_shift, not_found] }
+            message: { type: string }
+            details: { type: object }
+  responses:
+    Error:
+      description: Refused, in the one error shape
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

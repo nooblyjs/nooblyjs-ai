@@ -94,16 +94,16 @@ test('step 4: @NooblyJS gets the pick-a-teammate card: each teammate with role, 
   assert.ok(lines.includes("Hi, I'm NooblyJS."));
   assert.ok(lines.includes('Which teammate would you like to add to this meeting?'));
   // The meeting's own team first, then everyone else.
-  const names = lines.filter((l) => /^(Ada|Rhea|Juno|Otis|Milo|Sable|Pip|Rook|Wren) /.test(l));
+  const names = lines.filter((l) => /^(Ada|Rhea|Ines|Juno|Otis|Milo|Sable|Pip|Rook|Wren) /.test(l));
   assert.deepEqual(names.slice(0, 2), ['Ada Quill', 'Rhea Voss']);
-  assert.equal(names.length, 9);
+  assert.equal(names.length, 10);
   assert.ok(lines.includes('Research Analyst · On a task · $48/hr'));
   assert.ok(lines.includes('Architect · On a task · $52/hr'));
   assert.ok(lines.includes('Copywriter · Paused · $16/hr'));
   assert.ok(lines.includes('The teammate sees messages from the moment they join, not before. Time is billed to Delivery squad.'));
   // Add only where the teammate can take work: not Sable (paused) or Rook (off shift).
   const adds = actionsIn(out.card).filter((a) => a.type === 'Action.Submit').map((a) => a.data);
-  assert.equal(adds.length, 7);
+  assert.equal(adds.length, 8); // with Ines Tau (Phase 26)
   assert.ok(adds.every((d) => d.noobly === 'add'));
   assert.ok(!adds.some((d) => ['sable-reyes', 'rook-vale'].includes(d.teammateId)));
 });

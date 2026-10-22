@@ -3,12 +3,13 @@
 // change what depends on the apply rules, so the services check that and record every refusal.
 import { KINDS, isKind } from '../util/ids.js';
 import { apiNotFound, apiErrors, forbidden, badRequest } from '../util/errors.js';
+import { peopleOnly } from '../util/http.js';
 
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 /** Other apps this one talks to. Any may be missing (standalone, or not started), so /about says which. */
 const PARTNERS = ['workflows', 'product', 'factory', 'teammates'];
 
-export function createApi({ host, log, about, seed, designs, environments, runs, drift, policies, cost, summary, releases }) {
+export function createApi({ host, log, about, seed, designs, environments, runs, drift, policies, cost, summary, releases, drafts = null }) {
   const api = host.express.Router();
   api.use(host.auth);
   // NooblyJS audits every write app-wide and its host.audit passes through; the stand-in host records here.
@@ -64,6 +65,11 @@ export function createApi({ host, log, about, seed, designs, environments, runs,
     res.set('ETag', design.etag).json(design);
   });
   api.get('/designs/:id/versions', async (req, res) => res.json({ versions: await designs.versions(req.params.id) }));
+  // NooblyJS Phase 26 (I7): a person asks Ines Tau for a new draft from the item's architecture (draft, people only).
+  api.post('/designs/:id/drafts', host.requireRole('draft'), async (req, res) => {
+    await peopleOnly(host, req.person, `ask for a new draft of ${req.params.id}`);
+    res.status(201).json(await drafts.draft(req.params.id, req.person));
+  });
   api.post('/designs/:id/decision', async (req, res) => {
     res.json(await designs.decide(req.params.id, req.body ?? {}, req.person, req.get('if-match')));
   });

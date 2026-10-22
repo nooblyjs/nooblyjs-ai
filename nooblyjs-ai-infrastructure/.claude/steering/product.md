@@ -73,7 +73,11 @@ my PR deployed, which tests ran there) and **Engineering leads** (cost).
 
 1. **Design from architecture.** The agent drafts an infrastructure design from the item's
    architecture, with provenance ("Built from": ADRs, container view, quality attributes, rollout
-   plan, blueprint) and a version.
+   plan, blueprint) and a version. Since NooblyJS Phase 26 (I7) a person with `draft` asks Ines Tau for a new draft
+   (`POST /designs/:id/drafts`, "Ask Ines for a new draft"): her teammate task `infrastructure-design` reads Product's
+   `designInputs`; the new version waits for its approvals again (the Architect's through an ADR stays) and the one it
+   replaces is kept. An accepted ADR or a changed architecture shows "A new draft is suggested: <why>"; nothing drafts
+   by itself.
 2. **Resources per environment**, grouped by layer (Edge, Compute, Data, Messaging, Security,
    Observe), each marked **New / Changed / Existing, shared**, with where it came from ("from ADR-014").
 3. **Infrastructure code** generated from the design, shown read-only, delivered as a pull request.
@@ -233,7 +237,8 @@ agent is **Ines Tau**. Budget $6,000 a month, $2,140 spent in October. All sampl
   ("container app", "managed identity") are illustrative, not a decision.
 - **Infrastructure-as-code tool.** The mockup's code is HCL-style `module` blocks; Terraform,
   OpenTofu or something else is `[DECIDE]`. Which repository holds `infra/…` and receives PR #91?
-- **Ines Tau** is not in the Digital Teammates seed. Hire her there, or draft from scripts until then.
+- **Ines Tau** is in the Digital Teammates seed since NooblyJS Phase 26; without Teammates (standalone, tests) the
+  stand-in name in `agent.yaml` drafts from the script.
 - **Design ids.** INF-031 shares its number with PRD-031: is the number always the item's?
 - **Sample-data mismatch**: the status card says 9 live environments and 3 previews; the table lists
   six, two of them previews.

@@ -42,7 +42,8 @@ nooblyjs-ai-infrastructure/
     routes/index.js         the whole API router, mounted under /infrastructure/api/v1: auth, audit, the routes
                             by area, 404 and errors. Split it into one file per area when it outgrows one screen
     services/               business rules, one file per concern:
-                            designs.js (read, decide, automatic applies) · policy-checks.js · code.js (design →
+                            designs.js (read, decide, automatic applies) · drafts.js (Ines Tau's new version from
+                            the architecture, and the offer of one; NooblyJS Phase 26) · policy-checks.js · code.js (design →
                             infrastructure code, from blueprints) · environments.js (read, promotion path, create
                             under the apply rules) · runs.js (the queue, progress, resume) · drift.js (check,
                             restore, keep) · cost.js (the ledger against the budget) · policies.js (policies and

@@ -10,6 +10,7 @@ const WORDS = {
   'infra_design.approved': (p) => `approved infrastructure design ${design(p)} for ${kind(p)}`,
   'infra_design.changes_requested': (p) => `asked for changes to infrastructure design ${design(p)}${p.comment ? `: ${p.comment}` : ''}`,
   'infra_design.updated': (p) => `updated infrastructure design ${design(p)}${p.reason ? ` (${p.reason})` : ''}`,
+  'infra_design.redraft_offered': (p) => `suggested a new draft of infrastructure design ${p.designId}: ${p.reason}`,
   'environment.plan_ready': (p) => `planned ${p.environment} from ${design(p)}: +${p.plan?.add ?? 0} to add, ~${p.plan?.change ?? 0} to change`,
   'environment.provisioning_started': (p) => `started provisioning ${p.environment} from ${design(p)}`,
   'environment.provisioned': (p) => `provisioned ${p.environment} from ${design(p)}`,

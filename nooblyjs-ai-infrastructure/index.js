@@ -14,6 +14,7 @@ import { createProvisioner } from './src/provisioners/index.js';
 import { createCost } from './src/services/cost.js';
 import { createRuns } from './src/services/runs.js';
 import { createDesigns } from './src/services/designs.js';
+import { createDrafts } from './src/services/drafts.js';
 import { createInfraChecks } from './src/services/checks-trace.js';
 import { createEnvironments } from './src/services/environments.js';
 import { createDrift } from './src/services/drift.js';
@@ -80,6 +81,8 @@ export async function register(app, serverManager, { mountPath = '/infrastructur
   const runs = createRuns({ ...deps, cost });
   const approvals = createApprovals(deps);
   const designs = createDesigns({ ...deps, cost, runs, approvals });
+  // NooblyJS Phase 26 (I7): Ines Tau drafts a new version of a design from the item's architecture, when a person asks.
+  const drafts = createDrafts({ ...deps, approvals });
   // NooblyJS Phase 16f: the designs' policy checks in the one shape, and the designs in the trace.
   const infraChecks = createInfraChecks({ repos, designs, mountPath });
   const environments = createEnvironments({ ...deps, designs, runs });
@@ -97,10 +100,13 @@ export async function register(app, serverManager, { mountPath = '/infrastructur
   const offPreviews = [
     host.events.on?.('pr.recorded', (event) => previews.onPrRecorded(event?.payload ?? event).catch((err) => log.warn(`preview: ${err.message}`))),
     host.events.on?.('pr.merged', (event) => previews.onPrMerged(event?.payload ?? event).catch((err) => log.warn(`preview: ${err.message}`))),
+    // NooblyJS Phase 26 (I7): an accepted ADR or a changed architecture offers a new draft of the item's designs.
+    host.events.on?.('adr.accepted', (event) => drafts.offer(event).catch((err) => log.warn(`redraft: ${err.message}`))),
+    host.events.on?.('architecture.updated', (event) => drafts.offer(event).catch((err) => log.warn(`redraft: ${err.message}`))),
   ];
 
   const router = host.express.Router();
-  router.use('/api/v1', createApi({ host, log, seed, designs, environments, runs, drift, policies, cost, summary, releases, about: { name: NAME, version: VERSION, mountPath, provisioner: provisioner.name } }));
+  router.use('/api/v1', createApi({ host, log, seed, designs, environments, runs, drift, policies, cost, summary, releases, drafts, about: { name: NAME, version: VERSION, mountPath, provisioner: provisioner.name } }));
   // The browser files (module, pages, CSS). redirect: false, or /infrastructure would 301 to /infrastructure/.
   router.use(host.express.static(PUBLIC_DIR, { index: false, redirect: false }));
   // Every other GET without a file extension is a page: the host's frame answers it, so deep links and refresh

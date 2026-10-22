@@ -132,6 +132,9 @@ export const SKILLS = [
   skill('Research', 'Quick, well-sourced answers to questions', 'Answer the question directly, then give the supporting evidence with sources.', true),
   skill('Spreadsheet work', 'Formulas, pivots and tidy sheets', 'Explain the formulas you use, keep raw data separate from analysis, and label everything.', true),
   skill('Architecture decision records', 'Writes ADRs that capture context and trade-offs', 'Use the ADR format: context, decision, options considered, consequences. Be explicit about trade-offs.'),
+  // NooblyJS Phase 26: Ines Tau's, for Infrastructure's designs.
+  skill('Infrastructure as code', 'Turns an architecture into infrastructure resources and code', 'Map each container, store and quality attribute to a resource. Reuse the approved blueprints, say what each resource costs a day, and never apply anything yourself.'),
+  skill('Cost estimation', 'Estimates what infrastructure costs to run', 'Give a cost per day for each environment kind, show the assumptions, and flag anything above the cloud budget.'),
   skill('Spec drafting', 'Drafts product specs from signals and research', 'Write the problem, goals, user stories and acceptance criteria. Tie each goal to a measure, list what is out of scope, and mark every assumption that still needs a person to confirm it.'),
   skill('Plain-language explanation', 'Explains complex topics clearly and warmly', 'Explain for a smart reader who is new to the topic. Use one concrete example, short paragraphs, and define each term the first time it appears.'),
 ];
@@ -271,6 +274,19 @@ export const TEAMMATES = [
     hours30d: 18,
     explicit: [{ daysAgo: 2, task: 'ADR-014 · slot availability cache', hours: 4, tokens: 1200000 }],
     tasks: ['Container view · same-day slots', 'Standards check'],
+  },
+  // NooblyJS Phase 26 (Infrastructure's I7): she drafts infrastructure designs from the architecture.
+  {
+    name: 'Ines Tau', role: 'Infrastructure agent', status: 'available', currentTask: 'Ready for work',
+    model: 'sonnet', rate: 38, monthlyCap: 1200, costCentre: 'Delivery squad', hiredAt: '2026-09-01',
+    avatar: { type: 'generated', bg: '#E4E8F6', deep: '#2E3F8F', hair: 'short' },
+    about: 'Ines writes the infrastructure code from approved designs and runs plans. Applying to Staging or Production always needs a person.',
+    traits: ['Tone: precise', 'Names the cost of every resource'],
+    skills: [sk('Infrastructure as code', 3), sk('Cost estimation', 2)],
+    memory: [{ kind: 'fact', text: 'Preview and Dev apply automatically; Test and Staging need the platform owner.', daysAgo: 12 }],
+    hours30d: 6,
+    explicit: [{ daysAgo: 1, task: 'INF-031 v2 · slot cache', hours: 2, tokens: 400000 }],
+    tasks: ['INF-031 · same-day slots'],
   },
 ];
 

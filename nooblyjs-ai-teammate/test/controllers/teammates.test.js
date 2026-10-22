@@ -19,11 +19,12 @@ const call = (method, url, body) => app.send(method, url, body);
 
 test('roster totals are derived from seeded timesheets and match the design', async () => {
   const { body } = await get('/api/v1/teammates');
-  // The mockup's eight ($6,814 over 312 hours, four on a task) plus Rhea Voss: 18 hours at $52, and on a task.
-  assert.equal(body.teammates.length, 9);
+  // The mockup's eight ($6,814 over 312 hours, four on a task) plus Rhea Voss: 18 hours at $52, and on a task; plus
+  // Ines Tau (NooblyJS Phase 26): 6 hours at $38, available.
+  assert.equal(body.teammates.length, 10);
   assert.equal(body.summary.onTask, 5);
-  assert.deepEqual(body.summary.billed30d, { amount: 6814 + 936, hours: 312 + 18, teammates: 9 });
-  assert.deepEqual(body.teammates.map((t) => t.name.split(' ')[0]), ['Ada', 'Milo', 'Juno', 'Otis', 'Sable', 'Pip', 'Rook', 'Wren', 'Rhea']);
+  assert.deepEqual(body.summary.billed30d, { amount: 6814 + 936 + 228, hours: 312 + 18 + 6, teammates: 10 });
+  assert.deepEqual(body.teammates.map((t) => t.name.split(' ')[0]), ['Ada', 'Milo', 'Juno', 'Otis', 'Sable', 'Pip', 'Rook', 'Wren', 'Rhea', 'Ines']);
   const ada = body.teammates.find((t) => t.id === 'ada-quill');
   assert.deepEqual(ada.billed30d, { hours: 42, amount: 2016 });
 });

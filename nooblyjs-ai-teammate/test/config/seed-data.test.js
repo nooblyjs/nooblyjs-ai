@@ -6,9 +6,11 @@ import { slugify } from '../../src/utils/ids.js';
 
 const slugs = TEAMMATES.map((t) => slugify(t.name));
 
-test("the roster is the mockup's eight teammates and Rhea Voss, each with a unique name", () => {
-  assert.equal(TEAMMATES.length, 9);
-  assert.equal(new Set(slugs).size, 9);
+test("the roster is the mockup's eight teammates, Rhea Voss and Ines Tau, each with a unique name", () => {
+  // NooblyJS Phase 26: Ines Tau, Infrastructure's drafting agent (I7).
+  assert.equal(TEAMMATES.length, 10);
+  assert.equal(new Set(slugs).size, 10);
+  assert.ok(slugs.includes('ines-tau'));
   assert.ok(slugs.includes('ada-quill'));
   // The PRD-031 story's architect (NooblyJS Phase 6), billed to the NooblyJS team she works for.
   const rhea = TEAMMATES.find((t) => t.name === 'Rhea Voss');

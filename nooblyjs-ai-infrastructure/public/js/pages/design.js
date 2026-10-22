@@ -1,7 +1,8 @@
 // One infrastructure design (mockup: .claude/steering/ui/noobly-infrastructure-design-from-architecture): what it is
 // built from, its resources per kind of environment, the generated code, the plan, the cost estimate, the policy
 // checks and the approvals, with the decision only the platform owner can take.
-// Data: GET /designs/:id?kind=, POST /designs/:id/decision (If-Match).
+// Data: GET /designs/:id?kind=, POST /designs/:id/decision (If-Match), POST /designs/:id/drafts (NooblyJS Phase 26: Ines
+// Tau drafts a new version from the architecture, when a person with draft asks).
 import { html } from '/ui/js/html.js';
 import { icon } from '/ui/js/icons.js';
 import { button, card, chips, statusPill } from '/ui/js/components/index.js';
@@ -44,11 +45,13 @@ export async function render(view, { params, query, ctx }) {
         <p class="inf-meta"><span class="pill inf-mono">${d.id} · v${d.version}</span>${statusPill({ text: d.statusText, tone: d.tone, dot: false })}<span class="inf-muted">${d.draftedText}</span></p>
       </div>
       <div class="actions">
+        ${ctx.can('draft') && d.itemId ? button({ label: 'Ask Ines for a new draft', kind: 'secondary', attrs: { 'data-action': 'redraft', 'aria-label': `Ask Ines Tau for a new draft of ${d.id} from the architecture` } }) : ''}
         ${d.decision.canRequestChanges ? button({ label: 'Request changes', kind: 'secondary', attrs: { 'data-action': 'ask' } }) : ''}
         ${button({ label: d.decision.label, disabled: !d.decision.allowed, attrs: { 'data-action': 'approve' } })}
       </div>
     </header>
     ${d.decision.allowed ? '' : html`<p class="inf-muted inf-why">${d.decision.reason}</p>`}
+    ${d.redraft ? html`<p class="inf-why" role="note">${icon('info', { size: 16 })} ${d.redraft.text} Nothing drafts by itself: ask Ines when you want one.</p>` : ''}
     ${messageRegion()}
     <form class="card inf-form" data-form="changes"${asking ? '' : html` hidden`}>
       <label>What should change?<textarea name="comment" rows="3" required maxlength="2000"></textarea></label>
@@ -98,6 +101,16 @@ export async function render(view, { params, query, ctx }) {
       const form = view.querySelector('[data-form="changes"]');
       form.hidden = !asking;
       if (asking) form.querySelector('textarea').focus();
+    }
+    if (action === 'redraft') {
+      try {
+        const r = await ctx.api.post(`designs/${encodeURIComponent(params.id)}/drafts`, {});
+        await redraw();
+        say(view, r.text, 'success');
+      } catch (err) {
+        if (!isAbort(err)) say(view, err.message, 'error');
+      }
+      return;
     }
     if (action === 'approve') decide({ decision: 'approve', kind }, (r) => `Approved. ${r.runs.length} run${r.runs.length === 1 ? ' has' : 's have'} started: ${r.runs.map((run) => run.environment).join(', ') || 'no environment of this kind exists yet'}.`);
   }, { signal: ctx.signal });

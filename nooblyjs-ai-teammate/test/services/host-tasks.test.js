@@ -22,7 +22,7 @@ const hostEvents = (type) => app.host.eventLog.filter((e) => e.type === type).ma
 
 test('the team as other apps see it: who they are, their status, model and rate', async () => {
   const roster = await tasks.roster();
-  assert.equal(roster.length, 9);
+  assert.equal(roster.length, 10); // with Ines Tau (NooblyJS Phase 26)
   const rhea = roster.find((t) => t.id === 'rhea-voss');
   assert.deepEqual(
     { name: rhea.name, role: rhea.role, statusText: rhea.statusText, canWork: rhea.canWork, model: rhea.model, rate: rhea.rate },

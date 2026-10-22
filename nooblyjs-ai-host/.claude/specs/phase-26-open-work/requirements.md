@@ -1,6 +1,6 @@
 # Phase 26 — Open work in the apps: requirements
 
-> **Status: in progress (started 2026-10-22).** Root `roadmap.md` Phase 26 ("Hosted apps: open work").
+> **Status: built (2026-10-22), waiting for your review.** Summary: `.claude/phases/phase-26-summary.md`. Root `roadmap.md` Phase 26 ("Hosted apps: open work").
 
 > Asked 2026-10-22: "Yes please push and start the next phase"; chosen: "26: Open work in the apps"; 25b reviewed.
 
@@ -16,7 +16,9 @@ Goal: close the hosted apps' open work that needs no outside decision.
 - **The scripted draft** (no model) keeps the design's resources and adds what the architecture has that the design
   lacks: a compute resource per new container, a data resource per new database or cache, alarms for latency and
   availability quality attributes. A model's draft is used only when it is a list of resources in the design's shape.
-- **Live tests** are opt-in: `npm run test:live` in Product, skipped without a configured model.
+- **Live tests** are opt-in: `npm run test:live:product` in NooblyJS (`test/live/product-drafts.live.js`): Product's
+  drafts reach a real model only through Teammates, so they run on the real app, not Product's stand-in host. Skipped
+  without a model key.
 
 ## R1 — Infrastructure's drafting agent (I7)
 - `POST /designs/:id/drafts` (draft, people only): Ines Tau's teammate task `infrastructure-design`, reading
@@ -29,12 +31,12 @@ Goal: close the hosted apps' open work that needs no outside decision.
 ## R2 — Teammates: red-team cases and docs
 - Prompt-injection cases: instructions inside an outside task's input, and inside a memory, never change the
   teammate's permissions, budget, tools or what it may decide.
-- `.claude/guides/teammates-task-api.openapi.yaml` (OpenAPI 3.1) for the outside task endpoint, checked against the
-  routes by a test; `.claude/guides/teammates-admin.md`; `.claude/guides/writing-skills.md`.
+- In `nooblyjs-ai-teammate/.claude/guides/`: `task-api.openapi.yaml` (OpenAPI 3.1) for the outside task endpoint,
+  checked against the routes by `test/guides/openapi.test.js`; `admin.md`; `writing-skills.md`.
 
 ## R3 — Product: opt-in live tests
-- `test/drafts.live.test.js`: one draft per stage (a spec section, the container view, a journey, a screen) through a
-  real model, skipped unless one is configured.
+- `nooblyjs-ai-host/test/live/product-drafts.live.js` (`npm run test:live:product`): one draft per stage (a spec's
+  rollout plan, a container view, a UX flow, a UI screen) through a real model, skipped unless a key is configured.
 
 ## Test script (roadmap Phase 26)
 
@@ -44,6 +46,6 @@ Goal: close the hosted apps' open work that needs no outside decision.
 3. An agent asking for a draft is refused (403).
 4. Teammates' red-team cases pass.
 5. The OpenAPI file validates and matches the endpoint's routes.
-6. `npm run test:live` in Product, with a model configured, drafts one artefact per stage; without one it skips.
+6. `npm run test:live:product` in NooblyJS, with a model key, drafts one artefact per stage; without one it skips.
 
 **Done when:** steps 1–6 pass.

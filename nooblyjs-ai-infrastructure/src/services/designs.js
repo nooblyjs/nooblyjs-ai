@@ -49,6 +49,8 @@ export function createDesigns({ repos, host, provisioner, cost, runs, approvals 
       approvedVersion: design.approvedVersion ?? null,
       draftedBy: design.draftedBy ?? null,
       draftedText: design.draftedBy ? `Drafted by ${design.draftedBy.name} from the architecture · ${ago(design.draftedAt, now())}` : '',
+      // NooblyJS Phase 26 (I7): an accepted ADR or a changed architecture offers a new draft; nothing drafts by itself.
+      redraft: design.redraftOffered ? { reason: design.redraftOffered.reason, at: design.redraftOffered.at, text: `A new draft is suggested: ${design.redraftOffered.reason}.` } : null,
       href: `${mountPath}/designs/${design.id}`,
     };
   }
