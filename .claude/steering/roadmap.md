@@ -111,7 +111,7 @@ inclusion: always
 | 22 | Release (new app: Operations, part 1) | ✅ (reviewed 2026-10-21) |
 | 23 | Operate and learn (Operations, part 2) | ✅ (reviewed 2026-10-21) |
 | 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ✅ (reviewed 2026-10-21) |
-| 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ☐ planned (from the Productboard and Aha! comparison; decisions settled 2026-10-22) |
+| 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ◐ in progress (spec `nooblyjs-ai-host/.claude/specs/phase-25a-customer-evidence/`, 2026-10-22) |
 | 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ☐ planned |
 
 Open bugs and changes: none. BUG-001 to BUG-007 and CHG-001 to CHG-009 are verified (2026-10-21); the next IDs are BUG-008 and CHG-010 (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
@@ -1486,10 +1486,10 @@ ideas forward and vote; and everyone who asked hears when it ships and whether i
   suggests links and clusters notes into **signals**, which now count real notes instead of a typed number (the
   seeded counts stay sample data).
 - **The feedback form on a link**: a person with `draft` makes a link for a portfolio, value stream and product
-  (`/feedback/f/<token>`, a long random token), and can switch it off or replace it, audited. The page is outside
-  sign-in (no session, no CSRF token; no limit on submissions, only the host's general limit on signed-out
-  requests that guards the whole server; 2,000 characters a message, a hidden spam field, no uploads) and shows
-  only the product's name, one text box and an optional name. Each submission is a note with the source
+  (`/product/f/<token>`, a long random token), and can switch it off or replace it, audited. The page is outside
+  sign-in (no session; the host's CSRF check, which works signed out; no limit on submissions and no rate limit,
+  since the host's general limit covers `/api/…` only; 2,000 characters a message, a hidden spam field, no
+  uploads) and shows only the product's name, one text box and an optional name. Each submission is a note with the source
   "Feedback form", tagged from its link, redacted on the way in, audited as from an anonymous sender; the sender sees
   "Thanks, we've got it" and nothing of NooblyJS. A form note can be linked into an insight like any other, but
   it counts as "form feedback", not as a colleague who asked, and closing the loop never tells its sender. Ada treats
@@ -1513,13 +1513,13 @@ ideas forward and vote; and everyone who asked hears when it ships and whether i
    a customer who wants to edit an order. Ada suggests linking the three to PRD-031 and the fourth to IDEA-019 "Edit
    order until picking starts"; Lerato accepts with "critical" and "important": PRD-031 shows "3 colleagues across 1
    portfolio; 1 says critical". The phone number in one note is redacted.
-1a. Lerato makes a feedback link for the Checkout product and opens it in a private window, signed out: she submits
-   "Slots were gone by 9am again". It lands in the inbox as a note from "Feedback form", tagged Checkout, and PRD-031
+1a. Lerato makes a feedback link for the Delivery product and opens it in a private window, signed out: she submits
+   "Slots were gone by 9am again". It lands in the inbox as a note from "Feedback form", tagged Delivery, and PRD-031
    shows "3 colleagues across 1 portfolio; 1 says critical · 1 form note" once she links it. She submits five more
    in a row and all are taken; a message carrying instructions to Ada is kept as plain text.
    After she switches the link off, it says the form is closed.
 2. Signals: "Slots sell out before 10:00" counts the notes behind it; a click shows them. The board filtered by the
-   Checkout product shows PRD-031's evidence and not IDEA-019's (Delivery).
+   Delivery product shows PRD-031's evidence and not IDEA-019's (Checkout).
 3. Naledi (Viewer) submits "Let me add to my order after paying" in the portal and votes; past the limit she is told
    why. Thabo votes on behalf of a store manager. An agent's vote is refused (403) and audited.
 4. Lerato merges Naledi's idea into IDEA-019 (votes and followers carried over) and promotes it to the board.
