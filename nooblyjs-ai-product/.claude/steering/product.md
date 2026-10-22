@@ -240,8 +240,11 @@ Build these in the same patterns.
 - **Portfolios** (`/product/portfolios`): the **Strategic themes** (each with the portfolios that work towards it;
   add one, and an Approver renames, describes or removes one); then a card per **portfolio** with the themes it works
   towards (**Change themes**, Approver), its **value streams** (each a link to its document, with its products), the
-  products in no value stream, and **Add a value stream**; then **Add a portfolio**. Products are still added on the
-  Product board's **Portfolios & products** panel, where an Approver can also put a product in a value stream.
+  products in no value stream, and **Add a value stream**; then **Add a portfolio**. Since CHG-010 (2026-10-22) the
+  products are set up here, not in a panel on the Product board: each value stream (and "In no value stream") lists
+  its products as labels with **Add a product**; pressing one says where it is built (draft) or renames, moves or
+  removes it (approve); an Approver renames or removes a portfolio with **Rename or remove**. The board's
+  **Portfolios & products** is a link here.
 - **A portfolio's or value stream's document** (`/product/portfolios/:id`, `/product/value-streams/:id`): "n of m
   sections filled in · Version v · who, when"; each section of the template with its text, or "Not filled in yet"
   and the hint; **Edit** (a text box per section, saved with `If-Match`). Side rail: the strategic themes; a

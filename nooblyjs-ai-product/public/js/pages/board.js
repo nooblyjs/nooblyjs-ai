@@ -1,5 +1,5 @@
 // The Product board (Stage 1, product.md §5.1): tabs Board / Roadmap / Insights, New idea, filters by
-// portfolio, value stream and product (labels, set up in the Portfolios & products panel: pages/portfolios.js), the kanban (Signals → Ideas → Spec drafting → In review → To architecture), Top signals this week
+// portfolio, value stream and product (labels, set up on the Portfolios page since CHG-010: pages/strategy.js), the kanban (Signals → Ideas → Spec drafting → In review → To architecture), Top signals this week
 // and the quarter's roadmap. Since NooblyJS Phase 17 it also filters by the work hierarchy's epic and feature, an idea
 // says its feature and links to its business case, and a new idea can be filed under a feature.
 // Data: GET /board. Writes: POST /signals/:id/idea, POST /ideas,
@@ -7,7 +7,7 @@
 import { html } from '/ui/js/html.js';
 import { pageHead, card, button, statusPill } from '/ui/js/components/index.js';
 import { hrefFor, specPill, errorCard, isAbort, reloadable, say } from '../lib.js';
-import { filtersView, labelFields, portfoliosPanel, wirePortfolios } from './portfolios.js';
+import { filtersView, labelFields, wirePortfolios } from './portfolios.js';
 
 const TABS = [['board', 'Board'], ['roadmap', 'Roadmap'], ['insights', 'Insights']];
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -145,8 +145,8 @@ export async function render(view, { query, ctx }) {
   let tab = TABS.some(([k]) => k === query.get('tab')) ? query.get('tab') : 'board';
   const filter = { portfolio: query.get('portfolio') ?? undefined, valueStream: query.get('valueStream') ?? undefined, product: query.get('product') ?? undefined, mine: query.get('mine') ? '1' : undefined, epic: query.get('epic') ?? undefined, feature: query.get('feature') ?? undefined };
   let board = null;
-  // The Portfolios & products panel: open or not, and the label an Approver is changing.
-  const labels = { open: false, editing: null };
+  // The New idea form's portfolio and product pickers (portfolios and products are set up on the Portfolios page).
+  const labels = { editing: null };
   let scoring = null; // the id of the idea whose RICE form is open
 
   const idea = (id) => board?.columns.flatMap((col) => col.cards).find((c) => c.kind === 'idea' && c.id === id);
@@ -161,7 +161,7 @@ export async function render(view, { query, ctx }) {
       return;
     }
     if (!ctx.isCurrent()) return;
-    const actions = html`${button({ label: 'Portfolios & products', kind: 'secondary', attrs: { 'data-action': 'portfolios', 'aria-expanded': labels.open || board.catalogue.empty ? 'true' : 'false' } })}${ctx.can('draft') ? button({ label: 'New idea', icon: 'plus', attrs: { 'data-action': 'new-idea' } }) : ''}`;
+    const actions = html`${button({ label: 'Portfolios & products', kind: 'secondary', href: hrefFor(ctx, '/portfolios') })}${ctx.can('draft') ? button({ label: 'New idea', icon: 'plus', attrs: { 'data-action': 'new-idea' } }) : ''}`;
     const tabs = html`<div class="pf-tabs" role="tablist" aria-label="Product views">${TABS.map(([k, l]) => html`<button type="button" role="tab" class="pf-tab" id="pf-tab-${k}" aria-selected="${k === tab}" aria-controls="pf-panel" data-tab="${k}">${l}</button>`)}</div>`;
     let panel;
     if (tab === 'board') {
@@ -182,7 +182,7 @@ export async function render(view, { query, ctx }) {
     view.innerHTML = String(html`${pageHead({ eyebrow: 'Product Factory · Stage 1', title: 'Product', lead: 'Signals become ideas, ideas become specs.', actions })}
       ${tabs}
       <p class="pf-message" role="status" aria-live="polite" data-message></p>
-      ${portfoliosPanel(board, ctx, labels)}
+      ${board.catalogue.empty ? card({ title: 'Start with your portfolios', body: html`<p class="muted">A portfolio is a large area of the business (Digital, Buying, Banking). Add yours, their value streams and the products in each on the <a href="${hrefFor(ctx, '/portfolios')}">Portfolios</a> page. Ideas and specs then sit in a product, and the board filters by them.</p>` }) : ''}
       ${ctx.can('draft') ? newIdeaForm(board) : ''}
       ${ctx.can('draft') && scoring && idea(scoring) ? riceForm(idea(scoring)) : ''}
       <div id="pf-panel" role="tabpanel" aria-labelledby="pf-tab-${tab}" class="pf-stack">${panel}</div>`);
@@ -294,7 +294,7 @@ export async function render(view, { query, ctx }) {
     }
   }, { signal: ctx.signal });
 
-  wirePortfolios(view, ctx, { state: labels, redraw: draw, board: () => board, message });
+  wirePortfolios(view, ctx, { state: labels, redraw: draw, catalogue: () => board.catalogue, message });
   await reloadable(view, ctx, draw);
 }
 

@@ -1,6 +1,6 @@
-// Portfolios and products on the Product board, in a real browser: the board filters by portfolio, then value stream,
-// then product; a portfolio and a product are labels a person types and adds (no drop-downs); a new idea is
-// filed by pressing labels; an Approver renames a product and everything under it follows. The Portfolios page shows
+// Portfolios and products, in a real browser: the board filters by portfolio, then value stream, then product; on the
+// Portfolios page (CHG-010) a portfolio and a product are labels a person types and adds (no drop-downs); a new idea is
+// filed on the board by pressing labels; an Approver renames a product and everything under it follows. The Portfolios page shows
 // the strategic themes, portfolios and value streams, and each one's document made from its template (Settings).
 // With axe and phone width. the Product section's product/test/routes/catalogue.test.js and strategy.test.js cover the rules
 // through the API.
@@ -42,25 +42,27 @@ test('the board filters by portfolio, then by value stream and product within it
 
 test('labels are typed and added: a portfolio, a product in it, and a new idea filed by pressing them', async ({ page }) => {
   await signIn(page, 'priya-s');
+  // The board's Portfolios & products is a link to the Portfolios page (CHG-010).
   await page.goto('/product/board');
-  await content(page).getByRole('button', { name: 'Portfolios & products' }).click();
-  const panel = content(page).getByRole('region', { name: 'Portfolios & products' });
-  await expect(panel).toContainText('3 portfolios · 8 products');
-  // No drop-down anywhere in the panel.
-  await expect(panel.locator('select')).toHaveCount(0);
-  await panel.getByLabel('Add a portfolio', { exact: true }).fill('Pharmacy');
-  await panel.getByRole('button', { name: 'Add portfolio' }).click();
-  await expect(content(page).getByRole('status')).toContainText('Pharmacy is a portfolio now. Add its products.');
+  await content(page).getByRole('link', { name: 'Portfolios & products' }).click();
+  await expect(content(page).locator('h1')).toHaveText('Portfolios');
+  await content(page).getByLabel('Add a portfolio', { exact: true }).fill('Pharmacy');
+  await content(page).getByRole('button', { name: 'Add portfolio' }).click();
+  await expect(content(page).getByRole('status')).toContainText('Pharmacy is a portfolio now, with its document.');
   const box = content(page).getByLabel('Add a product to Pharmacy');
-  await expect(box).toBeFocused();
   await box.fill('Prescriptions');
   await box.press('Enter');
   await expect(content(page).getByRole('status')).toContainText('Prescriptions is a product in Pharmacy now.');
-  await expectNoAxeViolations(page, 'Portfolios & products panel');
+  // A product added to a value stream sits in it.
+  await content(page).getByLabel('Add a product to Rewards').fill('Vouchers');
+  await content(page).getByLabel('Add a product to Rewards').press('Enter');
+  await expect(content(page).getByRole('status')).toContainText('Vouchers is a product in Rewards now.');
+  await expectNoAxeViolations(page, 'Portfolios with products');
   await page.setViewportSize({ width: 375, height: 800 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   await page.setViewportSize({ width: 1280, height: 720 });
 
+  await page.goto('/product/board');
   await content(page).getByRole('button', { name: 'New idea' }).click();
   const form = content(page).locator('[data-form="new-idea"]');
   await expect(form.locator('select')).toHaveCount(0);
@@ -78,10 +80,8 @@ test('labels are typed and added: a portfolio, a product in it, and a new idea f
 
 test('an Approver renames a product and its work follows; a Contributor cannot', async ({ page }) => {
   await signIn(page, 'lerato-m');
-  await page.goto('/product/board');
-  await content(page).getByRole('button', { name: 'Portfolios & products' }).click();
-  const panel = content(page).getByRole('region', { name: 'Portfolios & products' });
-  await panel.getByRole('button', { name: /^Search/ }).click();
+  await page.goto('/product/portfolios');
+  await content(page).getByRole('button', { name: /^Search/ }).click();
   const edit = content(page).getByRole('form', { name: 'Change Search' });
   await edit.getByLabel('Name').fill('Search & browse');
   await edit.getByRole('button', { name: 'Save' }).click();
@@ -92,9 +92,8 @@ test('an Approver renames a product and its work follows; a Contributor cannot',
 
 test('a Contributor says where a product is built: repositories from Platform and a Jira project, as labels; a new idea starts with them', async ({ page }) => {
   await signIn(page, 'priya-s');
-  await page.goto('/product/board');
-  await content(page).getByRole('button', { name: 'Portfolios & products' }).click();
-  const panel = content(page).getByRole('region', { name: 'Portfolios & products' });
+  await page.goto('/product/portfolios');
+  const panel = content(page);
   await panel.getByRole('button', { name: /^Checkout/ }).click();
   const form = content(page).getByRole('form', { name: 'Change Checkout' });
   // A Contributor cannot rename, move or remove, only say where it is built.

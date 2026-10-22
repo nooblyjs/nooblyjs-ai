@@ -1,12 +1,16 @@
 // Portfolios (product.md §5.7): the strategic themes; each portfolio with the themes it works towards, its value
 // streams and its products; and links to each portfolio's and value stream's document. Since NooblyJS Phase 17, each
 // portfolio's work hierarchy too: its portfolio epics, epics and features, each with its document and (an epic) its
-// business case, and forms to add them (draft). Data: GET /catalogue, /hierarchy; POST /catalogue/epics, /catalogue/features.
-// Writes: POST /catalogue/themes, /catalogue/portfolios, /catalogue/value-streams (draft); PATCH and DELETE
-// /catalogue/themes/:name, and PATCH /catalogue/portfolios/:name { themes } (approve).
+// business case, and forms to add them (draft). Since CHG-010 the products are set up here too, in their value streams
+// (they were in a panel on the Product board): add one (draft), press one to say where it is built (draft) or to rename,
+// move or remove it (approve); an Approver renames or removes a portfolio the same way (pages/portfolios.js).
+// Data: GET /catalogue, /hierarchy; POST /catalogue/epics, /catalogue/features.
+// Writes: POST /catalogue/themes, /catalogue/portfolios, /catalogue/value-streams, /catalogue/products (draft); PATCH
+// and DELETE /catalogue/themes/:name, /catalogue/portfolios/:name, /catalogue/products/:name (approve).
 import { html } from '/ui/js/html.js';
 import { pageHead, card, button, listRow } from '/ui/js/components/index.js';
 import { hrefFor, errorCard, isAbort, reloadable, say } from '../lib.js';
+import { catalogueLabel, productAdder, labelEditForm, wirePortfolios } from './portfolios.js';
 
 const enc = encodeURIComponent;
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -43,9 +47,13 @@ function themesView(c, ctx, editing) {
   });
 }
 
-function portfolioView(p, c, ctx, editingThemes) {
+function portfolioView(p, c, ctx, editingThemes, editing) {
   const canChange = ctx.can('approve');
+  const canAdd = ctx.can('draft');
   const looseProducts = p.products.filter((x) => !x.valueStream || !p.valueStreams.some((v) => v.name === x.valueStream));
+  // The label being changed is this portfolio, or one of its products: its form shows in this card.
+  const editingHere = editing && (editing.kind === 'portfolio' ? editing.name === p.name : p.products.some((x) => x.name === editing.name));
+  const productRow = (list, valueStream) => html`<div class="pf-labels__row">${list.length ? list.map((x) => catalogueLabel('product', x, ctx, editing)) : html`<span class="muted">No products yet.</span>`}${canAdd ? productAdder(p.name, valueStream) : ''}</div>`;
   const themes = editingThemes
     ? html`<fieldset class="pf-labels" data-themes-of="${p.name}"><legend>Strategic themes <span class="muted">press the ones ${p.name} works towards</span></legend>
         <div class="pf-labels__row">${c.themes.map((t) => html`<button type="button" class="pf-chip pf-label${p.themes.includes(t.name) ? ' pf-chip--on' : ''}" data-pick-theme="${t.name}" aria-pressed="${p.themes.includes(t.name) ? 'true' : 'false'}">${t.name}</button>`)}</div>
@@ -55,12 +63,20 @@ function portfolioView(p, c, ctx, editingThemes) {
         ${canChange && c.themes.length ? button({ label: 'Change themes', kind: 'secondary', small: true, attrs: { 'data-action': 'edit-themes', 'data-portfolio': p.name, 'aria-label': `Change the themes ${p.name} works towards` } }) : ''}</p>`;
   return html`<section class="card pf-stack" aria-labelledby="pf-p-${p.id}">
     <div class="card__head"><h2 class="card__title" id="pf-p-${p.id}"><a href="${hrefFor(ctx, `/portfolios/${p.id}`)}">${p.name}</a></h2>
-      <span class="card__meta">${plural(p.valueStreams.length, 'value stream')} · ${plural(p.products.length, 'product')}</span></div>
+      <span class="card__meta">${plural(p.valueStreams.length, 'value stream')} · ${plural(p.products.length, 'product')}${canChange ? html` ${button({ label: 'Rename or remove', kind: 'secondary', small: true, attrs: { 'data-edit': 'portfolio', 'data-value': p.name, 'aria-expanded': editing?.kind === 'portfolio' && editing.name === p.name ? 'true' : 'false', 'aria-label': `Rename or remove ${p.name}` } })}` : ''}</span></div>
     ${themes}
-    <div class="rows">${p.valueStreams.map((v) => listRow({ title: v.name, href: hrefFor(ctx, `/value-streams/${v.id}`), meta: `Value stream · ${v.products.length ? v.products.join(', ') : 'no products yet'}` }))}</div>
+    ${p.valueStreams.map((v) => html`<div class="pf-stream" aria-label="${v.name}">
+      <h3 class="pf-stream__name"><a href="${hrefFor(ctx, `/value-streams/${v.id}`)}">${v.name}</a> <span class="muted">value stream · ${plural(v.products.length, 'product')}</span></h3>
+      ${productRow(p.products.filter((x) => x.valueStream === v.name), v.name)}
+    </div>`)}
     ${p.valueStreams.length ? '' : html`<p class="muted">No value streams. A portfolio can have none.</p>`}
-    ${looseProducts.length ? html`<p class="muted">${p.valueStreams.length ? 'In no value stream' : 'Products'}: ${looseProducts.map((x) => x.name).join(', ')}</p>` : ''}
-    ${ctx.can('draft') ? adder(`vs:${p.name}`, `Add a value stream to ${p.name}`) : ''}
+    ${looseProducts.length || !p.valueStreams.length ? html`<div class="pf-stream" aria-label="${p.name}'s products in no value stream">
+      <h3 class="pf-stream__name">${p.valueStreams.length ? 'In no value stream' : 'Products'}</h3>
+      ${productRow(looseProducts, null)}
+    </div>` : ''}
+    ${editingHere ? labelEditForm(c, ctx, editing) : ''}
+    ${canAdd ? adder(`vs:${p.name}`, `Add a value stream to ${p.name}`) : ''}
+    ${canChange || canAdd ? html`<p class="muted">${canChange ? 'Press a product to rename it, move it to another value stream or portfolio, remove it, or say where it is built.' : 'Press a product to say where it is built.'}</p>` : ''}
   </section>`;
 }
 
@@ -95,6 +111,7 @@ export async function render(view, { ctx }) {
   let hierarchy = { epics: [], features: [] };
   let editingTheme = null;    // the theme an Approver is changing
   let editingThemesOf = null; // the portfolio whose themes an Approver is choosing
+  const labels = { editing: null }; // the portfolio or product whose form is open (pages/portfolios.js)
   const message = () => view.querySelector('[data-message]');
 
   async function draw() {
@@ -114,10 +131,10 @@ export async function render(view, { ctx }) {
     })}
       <p class="pf-message" role="status" aria-live="polite" data-message></p>
       ${themesView(c, ctx, editingTheme)}
-      ${c.portfolios.map((p) => html`${portfolioView(p, c, ctx, editingThemesOf === p.name)}${card({ body: workView(p, hierarchy, ctx), label: `${p.name}'s work` })}`)}
+      ${c.portfolios.map((p) => html`${portfolioView(p, c, ctx, editingThemesOf === p.name, labels.editing)}${card({ body: workView(p, hierarchy, ctx), label: `${p.name}'s work` })}`)}
+      ${c.unfiled.length ? card({ title: 'Products in no portfolio', body: html`<div class="pf-labels__row">${c.unfiled.map((x) => catalogueLabel('product', x, ctx, labels.editing))}</div>${labels.editing?.kind === 'product' && c.unfiled.some((x) => x.name === labels.editing.name) ? labelEditForm(c, ctx, labels.editing) : ''}<p class="muted">${ctx.can('approve') ? 'Press a product to put it in a portfolio.' : 'An Approver can put these in a portfolio.'}</p>` }) : ''}
       ${c.portfolios.length ? '' : card({ title: 'Start with your portfolios', body: html`<p class="muted">A portfolio is a large area of the business, such as Buying or Banking. Add yours, then their value streams and products.</p>` })}
-      ${ctx.can('draft') ? card({ title: 'Add a portfolio', body: html`<p class="muted">It starts with a document made from the portfolio template.</p>${adder('portfolio', 'Add a portfolio', 'Add portfolio')}` }) : html`<p class="muted">Adding a portfolio, value stream or theme needs the draft permission.</p>`}
-      <p class="muted">Products are added and moved on the <a href="${hrefFor(ctx, '/board')}">Product board</a> (Portfolios &amp; products).</p>`);
+      ${ctx.can('draft') ? card({ title: 'Add a portfolio', body: html`<p class="muted">It starts with a document made from the portfolio template. Then add its value streams and products.</p>${adder('portfolio', 'Add a portfolio', 'Add portfolio')}` }) : html`<p class="muted">Adding a portfolio, value stream, product or theme needs the draft permission.</p>`}`);
   }
 
   async function act(fn, text, focus) {
@@ -125,6 +142,7 @@ export async function render(view, { ctx }) {
       const result = await fn();
       editingTheme = null;
       editingThemesOf = null;
+      labels.editing = null;
       await draw();
       say(message(), typeof text === 'function' ? text(result) : text, 'success');
       if (focus) view.querySelector(focus)?.focus();
@@ -151,6 +169,7 @@ export async function render(view, { ctx }) {
     if (editTheme) {
       editingTheme = editTheme.dataset.name;
       editingThemesOf = null;
+      labels.editing = null;
       await draw();
       view.querySelector('[data-form="theme"] input')?.focus();
       return undefined;
@@ -210,6 +229,9 @@ export async function render(view, { ctx }) {
       act(() => ctx.api.patch(`catalogue/themes/${enc(was)}`, body), (r) => `${r.theme} was saved.`);
     }
   }, { signal: ctx.signal });
+
+  // Products and a portfolio's name: their labels, adders and form (pages/portfolios.js).
+  wirePortfolios(view, ctx, { state: labels, redraw: draw, catalogue: () => catalogue, message });
 
   await reloadable(view, ctx, draw);
 }

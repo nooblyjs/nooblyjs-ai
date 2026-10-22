@@ -276,8 +276,9 @@ portfolios and value streams, and opens each document.
 7. **Product board** (Stage 1 · Product): tabs Board / Roadmap / Insights, a **New
    idea** action, and filters by **portfolio** (Digital, Buying, Banking), then its **value streams**, then
    **product** (Delivery, Checkout, Search, …), which replaced "domain" on 2026-10-10. A product sits in one portfolio
-   and may sit in one of its value streams. Portfolios and products are labels a person types and adds, set up in
-   the board's **Portfolios & products** panel (first run: "Start with your portfolios"), and
+   and may sit in one of its value streams. Portfolios and products are labels a person types and adds, set up on
+   the **Portfolios** page with the value streams (CHG-010; the board's **Portfolios & products** links there, and
+   on a first run the board says "Start with your portfolios"), and
    Mine. Kanban columns: **Signals** (clustered from Zendesk tickets, app reviews, app logs,
    with counts) → **Ideas** (product, RICE score) → **Spec drafting** (agent progress,
    or "Awaiting your brief") → **In review** (reviewer progress) → **To architecture**.

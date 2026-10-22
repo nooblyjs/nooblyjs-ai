@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-008, CHG-010.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-008, CHG-011.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -31,7 +31,15 @@ None open.
 
 ## Changes
 
-None open.
+- [ ] CHG-010 — Products are set up on the Portfolios page, with the value streams, not in a panel on the board · Product · nooblyjs-ai-product · Phase 25a
+  - Asked: 2026-10-22 ("can you combine the values stream management into the main portfolio screen") · Status: fixed
+  - What and why: the board's Portfolios & products panel set up portfolios and products, while value streams and
+    themes were on the Portfolios page. Now each portfolio card there lists its value streams with their products as
+    labels (add, say where built, rename, move, remove) and products in no value stream; an Approver renames or
+    removes a portfolio there. The board's button is a link to the page; with nothing set up, the board says to start
+    there. `public/js/pages/strategy.js`, `portfolios.js` (the panel's pieces, reused), `board.js`.
+  - Steering: nooblyjs-ai-product product.md §5.7; nooblyjs-ai-host product.md §5 (Product board)
+  - Tests: Product 171/171; the e2e `test/e2e/portfolios.spec.js` moved to the Portfolios page, not run (no browser here)
 
 ## Closed
 

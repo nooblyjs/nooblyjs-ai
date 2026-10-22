@@ -1,9 +1,9 @@
-// Portfolios and products on the Product board: the filter labels (portfolio, then its value streams, then its
-// products), the label pickers in a form (no drop-downs: a label is chosen by pressing it, or typed and added), and
-// the panel where they are set up. With nothing set up yet the panel opens by itself as "Start with your portfolios".
-// Strategic themes, value streams and the documents are on the Portfolios page (strategy.js). Data: the board's
-// `catalogue`, `portfolios`, `valueStreams` and `products`. Writes: POST /catalogue/portfolios and
-// /catalogue/products (draft); PATCH and DELETE (approve), including a product's value stream.
+// Portfolios and products: the Product board's filter labels (portfolio, then its value streams, then its products)
+// and the label pickers in a form (no drop-downs: a label is chosen by pressing it, or typed and added); and, for the
+// Portfolios page (strategy.js), the product labels, their adders and the form that changes a label. Since CHG-010
+// products are set up on the Portfolios page with the themes and value streams, not in a panel on the board. Data: the
+// `catalogue` (GET /catalogue, or the board's). Writes: POST /catalogue/portfolios and /catalogue/products (draft);
+// PATCH and DELETE (approve), including a product's value stream.
 // A product also says where it is built (NooblyJS Phase 11): its repositories, chosen from Platform's list, and its Jira
 // project, from the ones NooblyJS reads. Anyone who may draft sets them: PUT /catalogue/products/:name/tools.
 import { html } from '/ui/js/html.js';
@@ -11,7 +11,6 @@ import { button } from '/ui/js/components/index.js';
 import { hrefFor, isAbort, say } from '../lib.js';
 
 const enc = encodeURIComponent;
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /**
  * The board's filters: All and Mine, a label per portfolio; under a chosen portfolio a label per value stream (when it
@@ -65,18 +64,36 @@ export function labelFields(board, { product = null } = {}) {
   </div>`;
 }
 
-/** The panel where portfolios and products are set up. `editing` is the label an Approver is changing, or null. */
-export function portfoliosPanel(board, ctx, { open, editing }) {
-  const c = board.catalogue;
-  if (!open && !c.empty) return '';
-  const canAdd = ctx.can('draft');
+/** What a product's label says about where it is built: its repositories' short names and its Jira project. */
+const where = (item) => [...(item.repositories ?? []).map((r) => r.split('/').pop()), ...(item.jiraProject ? [`Jira ${item.jiraProject}`] : [])].join(' · ');
+
+/**
+ * A portfolio's or product's label on the Portfolios page (CHG-010): pressed, it opens the form that renames, moves or
+ * removes it (an Approver) or says where a product is built (anyone who may draft). `editing` is { kind, name } or null.
+ */
+export function catalogueLabel(kind, item, ctx, editing) {
   const canChange = ctx.can('approve');
-  // An Approver changes any label; anyone who may draft says where a product is built.
-  const editable = (kind) => canChange || (canAdd && kind === 'product');
-  const where = (item) => [...(item.repositories ?? []).map((r) => r.split('/').pop()), ...(item.jiraProject ? [`Jira ${item.jiraProject}`] : [])].join(' · ');
-  const label = (kind, item) => (editable(kind)
-    ? html`<button type="button" class="pf-chip pf-label" data-edit="${kind}" data-value="${item.name}" aria-expanded="${editing?.kind === kind && editing.name === item.name ? 'true' : 'false'}">${item.name} <span class="pf-chip__count">${item.count}</span>${kind === 'product' && where(item) ? html`<span class="pf-label__where">${where(item)}</span>` : ''}<span class="visually-hidden">: ${canChange ? 'rename, move, remove or say where it is built' : 'say where it is built'}</span></button>`
-    : html`<span class="pf-chip pf-label">${item.name} <span class="pf-chip__count">${item.count}</span>${kind === 'product' && where(item) ? html`<span class="pf-label__where">${where(item)}</span>` : ''}</span>`);
+  const editable = canChange || (ctx.can('draft') && kind === 'product');
+  const count = item.count == null ? '' : html` <span class="pf-chip__count">${item.count}</span>`;
+  const built = kind === 'product' && where(item) ? html`<span class="pf-label__where">${where(item)}</span>` : '';
+  return editable
+    ? html`<button type="button" class="pf-chip pf-label" data-edit="${kind}" data-value="${item.name}" aria-expanded="${editing?.kind === kind && editing.name === item.name ? 'true' : 'false'}">${item.name}${count}${built}<span class="visually-hidden">: ${canChange ? 'rename, move, remove or say where it is built' : 'say where it is built'}</span></button>`
+    : html`<span class="pf-chip pf-label">${item.name}${count}${built}</span>`;
+}
+
+/** A box that adds a product to a portfolio, or to one of its value streams. */
+export function productAdder(portfolio, valueStream = null) {
+  const key = `${portfolio}::${valueStream ?? ''}`;
+  const placeholder = `Add a product to ${valueStream ?? portfolio}`;
+  return html`<span class="pf-label-add"><input data-new-product-in="${key}" maxlength="40" autocomplete="off" placeholder="${placeholder}" aria-label="${placeholder}">${button({ label: 'Add', kind: 'secondary', small: true, attrs: { 'data-add-product-in': key } })}</span>`;
+}
+
+/** The form that changes the label being edited (`editing` from wirePortfolios' state), or '' when none is. */
+export function labelEditForm(c, ctx, editing) {
+  if (!editing) return '';
+  const canChange = ctx.can('approve');
+  const isProduct = editing.kind === 'product';
+  const streams = c.portfolios.flatMap((p) => p.valueStreams ?? []);
   const tools = () => {
     const choices = editing.choices;
     if (!choices) return '';
@@ -94,42 +111,23 @@ export function portfoliosPanel(board, ctx, { open, editing }) {
         <input type="hidden" name="jiraProject" value="${editing.jiraProject ?? ''}">
       </fieldset>`;
   };
-  const streams = c.portfolios.flatMap((p) => p.valueStreams ?? []);
-  const editForm = () => {
-    if (!editing) return '';
-    const isProduct = editing.kind === 'product';
-    return html`<form class="pf-form pf-edit" data-form="edit-label" aria-label="Change ${editing.name}">
-      ${canChange ? html`<label>Name <input name="name" required maxlength="40" value="${editing.name}" autocomplete="off"></label>` : html`<h3 class="pf-portfolio__name">${editing.name}</h3>`}
-      ${isProduct && canChange ? html`<fieldset class="pf-labels"><legend>Portfolio</legend><div class="pf-labels__row">${c.portfolios.map((p) => pick('move', p.name, { pressed: p.name === editing.portfolio }))}</div><input type="hidden" name="portfolio" value="${editing.portfolio ?? ''}"></fieldset>
-      <fieldset class="pf-labels"><legend>Value stream <span class="muted">optional; one in the product's portfolio</span></legend><div class="pf-labels__row">${streams.length ? streams.map((v) => pick('stream', v.name, { pressed: v.name === editing.valueStream, portfolio: v.portfolio, hidden: v.portfolio !== editing.portfolio })) : ''}<span class="muted" data-no-streams${streams.some((v) => v.portfolio === editing.portfolio) ? html` hidden` : ''}>No value streams in this portfolio.</span></div><input type="hidden" name="valueStream" value="${editing.valueStream ?? ''}"></fieldset>` : ''}
-      ${isProduct ? tools() : ''}
-      <div class="actions">${button({ label: 'Save', type: 'submit', small: true })}${canChange ? button({ label: `Remove ${editing.name}`, kind: 'danger', small: true, attrs: { 'data-action': 'remove-label' } }) : ''}${button({ label: 'Cancel', kind: 'secondary', small: true, attrs: { 'data-action': 'cancel-edit' } })}</div>
-      <p class="muted">${isProduct ? `New ideas and specs in ${editing.name} start with these repositories and this Jira project; an item's Architecture can narrow them.${canChange ? ' Renaming a product refiles everything under it. One with items filed under it cannot be removed.' : ''}` : 'A portfolio with products in it cannot be removed.'}</p>
-    </form>`;
-  };
-  return html`<section class="card pf-portfolios" aria-labelledby="pf-portfolios-title" data-panel="portfolios">
-    <div class="card__head"><h2 class="card__title" id="pf-portfolios-title">${c.empty ? 'Start with your portfolios' : 'Portfolios & products'}</h2>
-      ${c.empty ? '' : html`<span class="card__meta">${plural(c.portfolios.length, 'portfolio')} · ${plural(c.portfolios.reduce((n, p) => n + p.products.length, 0) + c.unfiled.length, 'product')}</span>`}</div>
-    <p class="muted">${c.empty
-      ? 'A portfolio is a large area of the business (Digital, Buying, Banking). Add yours, then the products in each (Registration, Payments). Ideas and specs then sit in a product, and the board filters by both.'
-      : 'Type a name to add a label. Ideas and specs sit in a product; a product sits in one portfolio, and may sit in one of its value streams.'}${canChange && !c.empty ? ' Press a label to rename, move or remove it.' : ''} Strategic themes, value streams and each portfolio's document are on the <a href="${hrefFor(ctx, '/portfolios')}">Portfolios</a> page.</p>
-    ${c.portfolios.map((p) => html`<div class="pf-portfolio" data-portfolio="${p.name}">
-      <h3 class="pf-portfolio__name">${label('portfolio', p)}</h3>
-      <div class="pf-labels__row">${p.products.length ? p.products.map((x) => label('product', x)) : html`<span class="muted">No products yet.</span>`}${canAdd ? html`<span class="pf-label-add"><input data-new-product-in="${p.name}" maxlength="40" autocomplete="off" placeholder="Add a product to ${p.name}" aria-label="Add a product to ${p.name}">${button({ label: 'Add', kind: 'secondary', small: true, attrs: { 'data-add-product-in': p.name } })}</span>` : ''}</div>
-    </div>`)}
-    ${c.unfiled.length ? html`<div class="pf-portfolio"><h3 class="pf-portfolio__name">In no portfolio yet</h3><div class="pf-labels__row">${c.unfiled.map((x) => label('product', x))}</div><p class="muted">${canChange ? 'Press a product to put it in a portfolio.' : 'An Approver can put these in a portfolio.'}</p></div>` : ''}
-    ${canAdd ? html`<div class="pf-portfolio"><span class="pf-label-add"><input data-new-portfolio maxlength="40" autocomplete="off" placeholder="Add a portfolio" aria-label="Add a portfolio">${button({ label: 'Add portfolio', small: true, attrs: { 'data-add-portfolio': '1' } })}</span></div>` : html`<p class="muted">Adding a label needs the draft permission.</p>`}
-    ${editForm()}
-  </section>`;
+  return html`<form class="pf-form pf-edit" data-form="edit-label" aria-label="Change ${editing.name}">
+    ${canChange ? html`<label>Name <input name="name" required maxlength="40" value="${editing.name}" autocomplete="off"></label>` : html`<h3 class="pf-portfolio__name">${editing.name}</h3>`}
+    ${isProduct && canChange ? html`<fieldset class="pf-labels"><legend>Portfolio</legend><div class="pf-labels__row">${c.portfolios.map((p) => pick('move', p.name, { pressed: p.name === editing.portfolio }))}</div><input type="hidden" name="portfolio" value="${editing.portfolio ?? ''}"></fieldset>
+    <fieldset class="pf-labels"><legend>Value stream <span class="muted">optional; one in the product's portfolio</span></legend><div class="pf-labels__row">${streams.length ? streams.map((v) => pick('stream', v.name, { pressed: v.name === editing.valueStream, portfolio: v.portfolio, hidden: v.portfolio !== editing.portfolio })) : ''}<span class="muted" data-no-streams${streams.some((v) => v.portfolio === editing.portfolio) ? html` hidden` : ''}>No value streams in this portfolio.</span></div><input type="hidden" name="valueStream" value="${editing.valueStream ?? ''}"></fieldset>` : ''}
+    ${isProduct ? tools() : ''}
+    <div class="actions">${button({ label: 'Save', type: 'submit', small: true })}${canChange ? button({ label: `Remove ${editing.name}`, kind: 'danger', small: true, attrs: { 'data-action': 'remove-label' } }) : ''}${button({ label: 'Cancel', kind: 'secondary', small: true, attrs: { 'data-action': 'cancel-edit' } })}</div>
+    <p class="muted">${isProduct ? `New ideas and specs in ${editing.name} start with these repositories and this Jira project; an item's Architecture can narrow them.${canChange ? ' Renaming a product refiles everything under it. One with items filed under it cannot be removed.' : ''}` : 'Renaming a portfolio refiles everything under it. A portfolio with products in it cannot be removed.'}</p>
+  </form>`;
 }
 
 /**
- * Wires the labels: the pickers in forms, and the panel's adds and changes. `state` is { open, editing }; `redraw`
- * draws the board again; `message()` is the page's live region.
+ * Wires the labels: the pickers in forms, and the Portfolios page's adds and changes. `state` is { editing }; `redraw`
+ * draws the page again; `catalogue()` is the catalogue it drew; `message()` is the page's live region.
  */
-export function wirePortfolios(view, ctx, { state, redraw, board, message }) {
+export function wirePortfolios(view, ctx, { state, redraw, catalogue, message }) {
   const find = (kind, name) => {
-    const c = board().catalogue;
+    const c = catalogue();
     if (kind === 'portfolio') return c.portfolios.find((p) => p.name === name) ?? null;
     return [...c.portfolios.flatMap((p) => p.products), ...c.unfiled].find((p) => p.name === name) ?? null;
   };
@@ -245,38 +243,22 @@ export function wirePortfolios(view, ctx, { state, redraw, board, message }) {
 
   view.addEventListener('click', async (e) => {
     const t = e.target;
-    if (t.closest('[data-action="portfolios"]')) {
-      state.open = !state.open;
-      state.editing = null;
-      await redraw();
-      view.querySelector('[data-panel="portfolios"] input')?.focus();
-      return;
-    }
     const picked = t.closest('[data-pick]');
     if (picked) return choose(picked.closest('[data-labels], [data-form="edit-label"]'), picked.dataset.pick, picked.dataset.value);
-    const add = t.closest('[data-add]');
+    // A label typed into a form's picker (the board's New idea). The Portfolios page's own adders aren't in one.
+    const add = t.closest('[data-labels] [data-add]');
     if (add) return addInForm(add.closest('[data-labels]'), add.dataset.add);
 
-    if (t.closest('[data-add-portfolio]')) {
-      const input = view.querySelector('[data-new-portfolio]');
-      if (!input.value.trim()) return input.focus();
-      try {
-        const { portfolio, added } = await ctx.api.post('catalogue/portfolios', { name: input.value });
-        state.open = true;
-        await done(added ? `${portfolio} is a portfolio now. Add its products.` : `${portfolio} is already a portfolio.`, `[data-new-product-in="${CSS.escape(portfolio)}"]`);
-      } catch (err) {
-        fail(err);
-      }
-      return;
-    }
     const addIn = t.closest('[data-add-product-in]');
     if (addIn) {
-      const portfolio = addIn.dataset.addProductIn;
-      const input = view.querySelector(`[data-new-product-in="${CSS.escape(portfolio)}"]`);
+      const key = addIn.dataset.addProductIn;
+      const [portfolio, valueStream] = key.split('::');
+      const input = view.querySelector(`[data-new-product-in="${CSS.escape(key)}"]`);
       if (!input.value.trim()) return input.focus();
       try {
-        const result = await ctx.api.post('catalogue/products', { name: input.value, portfolio });
-        await done(result.added ? `${result.product} is a product in ${portfolio} now.` : `${result.product} is already a product${result.portfolio ? ` in ${result.portfolio}` : ''}.`, `[data-new-product-in="${CSS.escape(portfolio)}"]`);
+        const result = await ctx.api.post('catalogue/products', { name: input.value, portfolio, ...(valueStream ? { valueStream } : {}) });
+        const into = valueStream || portfolio;
+        await done(result.added ? `${result.product} is a product in ${into} now.` : `${result.product} is already a product${result.portfolio ? ` in ${result.portfolio}` : ''}.`, `[data-new-product-in="${CSS.escape(key)}"]`);
       } catch (err) {
         fail(err);
       }
@@ -313,7 +295,7 @@ export function wirePortfolios(view, ctx, { state, redraw, board, message }) {
   // Enter in an "add a label" box adds the label; it must not send the form around it.
   view.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
-    const input = e.target.closest('[data-new], [data-new-portfolio], [data-new-product-in]');
+    const input = e.target.closest('[data-labels] [data-new], [data-new-product-in]');
     if (!input) return;
     e.preventDefault();
     input.parentElement.querySelector('button')?.click();
