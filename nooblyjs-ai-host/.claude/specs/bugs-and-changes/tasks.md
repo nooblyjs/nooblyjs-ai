@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-008, CHG-011.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-012, CHG-011.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -27,7 +27,30 @@ know; "steps" can be one line.
 
 ## Bugs
 
-None open.
+- [ ] BUG-008 — Linking an item to an objective sent an empty id · S2 · Product · Objectives · nooblyjs-ai-product · Phase 25b
+  - Found: 2026-10-22 (the first browser run) · Status: fixed
+  - Steps: 1. Product · Objectives, an objective, Link, choose PRD-031, Link.
+  - Expected: "PRD-031 serves OBJ-04." Actual: "There is no idea, spec, feature or epic ." The select was named `item`,
+    and `form.elements.item` is the form collection's own method. Renamed `target`.
+  - Test: `nooblyjs-ai-host/test/e2e/customers.story.js` (Objectives).
+- [ ] BUG-009 — Screen readers misread filter links and five buttons · S3 · Product, Infrastructure · Phases 5, 17, 25a–26
+  - Found: 2026-10-22 (axe, WCAG 2.2 AA) · Status: fixed
+  - Actual: the Feedback and board filter chips were links with `aria-pressed` (now `aria-current` on the chosen one);
+    "Make it an idea", "Score it", "Change themes", "Read again" and "Ask Ines for a new draft" had accessible names that
+    didn't contain their visible words (now they start with them).
+  - Test: `customers.story.js` (axe on every page); `product-factory.story.js` follows the new name.
+- [ ] BUG-010 — The Feedback page scrolled sideways at phone width · S3 · Product · Feedback · Phase 25a
+  - Found: 2026-10-22 · Status: fixed
+  - Actual: a feedback link's address (and the message that shows it) didn't wrap: 81–174 px of sideways scroll at 375 px.
+  - Test: `customers.story.js` (phone width on every page).
+- [ ] BUG-011 — Most of the browser suite expects the product as it was before lifecycle v3 · S2 · NooblyJS · e2e
+  - Found: 2026-10-22, the first run of `npm run test:e2e` since the migration (2026-10-18) · Status: open
+  - Actual: 26 failures across five configs (Infrastructure's story passes). The specs expect 12 items in flight (15
+    now), the Architecture stage and "Approve & send to Architecture", 6 work roles (14), 7 matrix rows (14), the old
+    rail order, `apr_slotpickerui`, the Specify stage; others then time out on sidebar rows that moved. Wiki · Sources
+    and some Product pages fail axe.
+  - Notes: results in `.temp/test-results/e2e*`. Needs each spec brought up to Phases 16–26, not code changes, except
+    the axe failures, which are real.
 
 ## Changes
 
