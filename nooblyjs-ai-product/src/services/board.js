@@ -29,7 +29,8 @@ async function allCards(ctx, repos) {
   for (const s of signals.filter((s) => (s.status ?? 'new') === 'new').sort((a, b) => (b.count ?? 0) - (a.count ?? 0))) {
     cards.push({ column: 'signals', mine: false, card: signalView(s, ctx) });
   }
-  const opps = ideas.filter((o) => !specced.has(o.id) && (o.status ?? 'open') !== 'closed').map((o) => ({ o, view: ideaView(ctx, o) }));
+  // NooblyJS Phase 25a: an idea put forward in the portal is on the board once a person promotes it; a merged one never.
+  const opps = ideas.filter((o) => !specced.has(o.id) && !['closed', 'suggested', 'merged'].includes(o.status ?? 'open')).map((o) => ({ o, view: ideaView(ctx, o) }));
   for (const { o, view } of opps.sort((a, b) => (b.view.rice.score ?? -1) - (a.view.rice.score ?? -1))) {
     cards.push({ column: 'ideas', mine: mine(o), card: view });
   }

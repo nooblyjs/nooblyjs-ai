@@ -49,7 +49,8 @@ test('the person gets their permissions for ctx.can(); an Owner has more than a 
   const o = (await owner.json('/api/v1/shell')).body.permissions;
   const v = (await viewer.json('/api/v1/shell')).body.permissions;
   assert.ok(o.includes('change-guardrails'));
-  assert.deepEqual(v, ['read']);
+  // A Viewer reads, and puts ideas forward in Product's ideas portal (Phase 25a).
+  assert.deepEqual([...v].sort(), ['read', 'suggest']);
 });
 
 test('status cards come in the mockup shape', async () => {

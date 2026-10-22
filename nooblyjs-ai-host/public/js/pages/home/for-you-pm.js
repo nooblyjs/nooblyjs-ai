@@ -33,10 +33,17 @@ const agent = (a) => (a ? html`<section class="agent-card" aria-label="Your agen
     <a class="agent-card__action" href="${a.action.href}">${a.action.label}</a>
   </section>` : '');
 
+/** Phase 25a: what is waiting in Feedback and the Ideas portal, and who will be told when the next item ships. */
+const evidence = (e) => (e ? html`<section class="card card--side" aria-label="Customer evidence">
+    <div class="card__head"><h2 class="card__title card__title--small">Customer evidence</h2><a href="/product/feedback">Feedback</a></div>
+    <ul class="rows" role="list">${e.rows.map((r) => html`<li class="row"><div class="row__main"><a class="row__title" href="${r.href}">${r.label}</a></div><span class="row__meta">${r.value}</span></li>`)}</ul>
+    ${e.toTell.length ? html`<p class="row__meta">Who will be told when it ships:</p><ul class="rows" role="list">${e.toTell.map((t) => html`<li class="row"><div class="row__main"><span class="row__title">${t.itemId} ${t.title}</span><span class="row__meta">${t.people} ${t.people === 1 ? 'person' : 'people'} asked</span></div></li>`)}</ul>` : ''}
+  </section>` : '');
+
 export function panels(data) {
   return {
     main: html`${waiting(data.panels.waiting)}${items(data.panels.items)}`,
-    side: html`<section class="card card--side" aria-label="Top signals" data-signals><div class="card__head"><h2 class="card__title card__title--small">Top signals this week</h2><a href="/product/board">Board</a></div><p class="row__meta" role="status">Loading…</p></section>${agent(data.panels.agent)}`,
+    side: html`${evidence(data.panels.evidence)}<section class="card card--side" aria-label="Top signals" data-signals><div class="card__head"><h2 class="card__title card__title--small">Top signals this week</h2><a href="/product/board">Board</a></div><p class="row__meta" role="status">Loading…</p></section>${agent(data.panels.agent)}`,
   };
 }
 

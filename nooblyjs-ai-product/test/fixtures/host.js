@@ -36,6 +36,8 @@ export const MATRIX = {
   'set-budgets': ['Owner'],
   'change-guardrails': ['Owner'],
   'change-repo-access': ['Owner'],
+  // NooblyJS Phase 25a: the ideas portal. Every access role.
+  suggest: ['Viewer', 'Contributor', 'Approver', 'Architect', 'Owner'],
 };
 
 export const PERSON_HEADER = 'x-dev-person';

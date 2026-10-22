@@ -12,11 +12,14 @@ import { filtersView, labelFields, portfoliosPanel, wirePortfolios } from './por
 const TABS = [['board', 'Board'], ['roadmap', 'Roadmap'], ['insights', 'Insights']];
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** Who asked for it (NooblyJS Phase 25a): beside the RICE score, never part of it. */
+const evidenceLine = (c) => (c.evidence ? html`<span class="kanban__meta pf-evidence">${c.evidence.text}</span>` : '');
+
 /** One kanban card. Specs link to their page; signals offer "Make it an idea" to those who may draft. */
 function boardCard(c, ctx) {
   const canDraft = ctx.can('draft');
   if (c.kind === 'signal') {
-    return html`<li class="kanban__card"><span class="kanban__title">${c.title}</span><span class="kanban__meta">${c.text}</span>${canDraft
+    return html`<li class="kanban__card"><span class="kanban__title">${c.title}</span><span class="kanban__meta">${c.text}</span>${c.notes ? html`<a class="pf-card-link" href="${hrefFor(ctx, `/feedback?signal=${encodeURIComponent(c.id)}`)}">Show its notes</a>` : ''}${canDraft
       ? button({ label: 'Make it an idea', kind: 'secondary', small: true, attrs: { 'data-action': 'to-idea', 'data-id': c.id, 'aria-label': `Make "${c.title}" an idea` } })
       : ''}</li>`;
   }
@@ -27,12 +30,12 @@ function boardCard(c, ctx) {
         ? button({ label: 'Draft a spec', kind: 'secondary', small: true, attrs: { 'data-action': 'spec-from', 'data-id': c.id, 'aria-label': `Draft a spec for "${c.title}"` } })
         : ''}</span>`
       : '';
-    return html`<li class="kanban__card"><span class="kanban__title">${c.id} ${c.title}</span><span class="kanban__meta">${c.text}${c.feature ? ` · ${c.feature.id} ${c.feature.name}` : ''}</span>${scored ? '' : statusPill({ text: 'Not scored yet', tone: 'warning' })}${c.status === 'accepted' ? statusPill({ text: 'Accepted', tone: 'success' }) : ''}${actions}<a class="pf-card-link" href="${hrefFor(ctx, `/business-cases/${c.id}`)}">Business case</a></li>`;
+    return html`<li class="kanban__card"><span class="kanban__title">${c.id} ${c.title}</span><span class="kanban__meta">${c.text}${c.feature ? ` · ${c.feature.id} ${c.feature.name}` : ''}</span>${evidenceLine(c)}${scored ? '' : statusPill({ text: 'Not scored yet', tone: 'warning' })}${c.status === 'accepted' ? statusPill({ text: 'Accepted', tone: 'success' }) : ''}${actions}<a class="pf-card-link" href="${hrefFor(ctx, `/business-cases/${c.id}`)}">Business case</a></li>`;
   }
   const progress = c.progress != null
     ? html`<span class="pf-progress" role="progressbar" aria-label="${c.statusText}" aria-valuenow="${c.progress}" aria-valuemin="0" aria-valuemax="100"><span style="width:${Math.max(0, Math.min(100, c.progress))}%"></span></span>`
     : '';
-  return html`<li class="kanban__card"><a class="kanban__title" href="${hrefFor(ctx, `/specs/${c.id}`)}">${c.id} ${c.title}</a><span class="kanban__meta">${c.product ?? ''}</span>${specPill(c)}${progress}</li>`;
+  return html`<li class="kanban__card"><a class="kanban__title" href="${hrefFor(ctx, `/specs/${c.id}`)}">${c.id} ${c.title}</a><span class="kanban__meta">${c.product ?? ''}</span>${evidenceLine(c)}${specPill(c)}${progress}</li>`;
 }
 
 /** NooblyJS Phase 17: the work hierarchy's epics and features in the chosen value stream, as filters with counts. */

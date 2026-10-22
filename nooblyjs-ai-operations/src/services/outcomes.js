@@ -97,7 +97,7 @@ export function createOutcomes({ repos, host, log, policies, monitor, now, mount
     const status = payload.outcome === 'approved' ? 'closed' : 'changes-requested';
     await repos.outcomes.update(shown.id, (cur) => ({ ...cur, status, decidedAt: at, decidedBy: payload.by ?? null, goals: shown.goals, reason: payload.reason ?? null }));
     if (status === 'closed') {
-      await emit('outcome_review.closed', { outcomeId: shown.id, itemId: shown.itemId, met: shown.goals.filter((g) => g.met === true).length, goals: shown.goals.length, summary: `closed ${shown.itemId} with its outcome review: ${shown.text}` }, payload.by);
+      await emit('outcome_review.closed', { outcomeId: shown.id, itemId: shown.itemId, met: shown.goals.filter((g) => g.met === true).length, goals: shown.goals.length, text: shown.text, href: `${mountPath}/outcome-reviews/${shown.id}`, summary: `closed ${shown.itemId} with its outcome review: ${shown.text}` }, payload.by);
     }
     return status;
   }

@@ -11,11 +11,12 @@ import { flowRoutes } from './flow.js';
 import { strategyRoutes } from './strategy.js';
 import { businessRoutes } from './business.js';
 import { elicitationRoutes } from './elicitation.js';
+import { feedbackRoutes } from './feedback.js';
 import { apiNotFound, apiErrors } from '../util/errors.js';
 
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-export function createApi({ host, log, about, seed, repos, people, catalogue, documents, templates, ideas, hierarchy = null, businessCases = null, elicitation = null, specWrites, drafting, summary, architecture, ux, ui, flow, kindKeys, mountPath, stageAgents = null }) {
+export function createApi({ host, log, about, seed, repos, people, catalogue, documents, templates, ideas, hierarchy = null, businessCases = null, elicitation = null, specWrites, drafting, summary, architecture, ux, ui, flow, kindKeys, mountPath, stageAgents = null, feedback = null, portal = null }) {
   const api = host.express.Router();
   api.use(host.auth);
   // NooblyJS audits every write app-wide and its host.audit passes through; the stand-in host records here.
@@ -28,6 +29,8 @@ export function createApi({ host, log, about, seed, repos, people, catalogue, do
   if (hierarchy && businessCases) api.use(businessRoutes({ host, hierarchy, businessCases, ideas, repos }));
   // NooblyJS Phase 18: requirements elicitation.
   if (elicitation) api.use(elicitationRoutes({ host, elicitation }));
+  // NooblyJS Phase 25a: feedback notes, the feedback form's links, and the ideas portal.
+  if (feedback && portal) api.use(feedbackRoutes({ host, repos, people, feedback, portal, mountPath }));
   api.use(specRoutes({ host, repos, people, specWrites, stageAgents, elicitation }));
   // Who drafts each stage: a hired teammate. GET for the screens; PUT /drafters/:stage { teammateId } (draft).
   if (stageAgents) {

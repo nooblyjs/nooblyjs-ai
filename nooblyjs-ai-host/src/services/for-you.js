@@ -29,6 +29,8 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const allTeams = await teams.list();
     const myTeams = allTeams.filter((t) => (profile?.teams ?? []).includes(t.id));
     const firstWeek = await profiles.firstWeek(person.id);
+    // Phase 25a: what NooblyJS told this person (a feature they asked for shipped), on every layout.
+    const notices = (await Promise.resolve(services.get('notify')?.notices?.(person.id)).catch(() => null)) ?? [];
     const base = {
       scope: scope === 'all' ? 'all' : 'mine',
       role: role ? { key: role.key, name: role.name, layout: role.layout ?? 'none', home: role.home ?? '/' } : null,
@@ -36,6 +38,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
       eyebrow: ['For you', role?.name, teamsText(myTeams)].filter(Boolean).join(' · '),
       teams: myTeams.map((t) => ({ id: t.id, name: t.name })),
       firstWeek,
+      notices,
       onboarding: { completed: profile?.onboarding.completed === true },
     };
     if (!role || (role.layout ?? 'none') === 'none') return { ...base, layout: 'none' };
@@ -104,16 +107,18 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     }
     // The Security engineer's home (Phase 19): from the Security app.
     const security = role.layout === 'security-engineer' ? await Promise.resolve(services.get('security')?.home?.()).catch(() => null) : null;
+    // The PM's customer evidence (Phase 25a): the Product app's feedback inbox and ideas portal.
+    const evidence = role.layout === 'product-manager' ? await Promise.resolve(services.get('product')?.evidence?.()).catch(() => null) : null;
     // The SRE's home (Phase 23): from Operations.
     const operations = role.layout === 'sre' ? await Promise.resolve(services.get('operations')?.home?.()).catch(() => null) : null;
-    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business, elicitation, security, quality, operations };
+    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business, elicitation, security, quality, operations, evidence };
     const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst, 'business-owner': businessOwner, 'business-analyst': businessAnalyst, 'security-engineer': securityEngineer, sre }[role.layout](ctx);
     return { ...base, layout: role.layout, engine: true, now: snapshot.at, ...shaped };
   }
 
   // ---------------------------------------------------------------------------- Product manager
 
-  function productManager({ person, role, listed, snapshot, items, active, mine, at, nameFor }) {
+  function productManager({ person, role, listed, snapshot, items, active, mine, at, nameFor, evidence }) {
     const specs = mine.filter((a) => a.type === 'spec');
     // Items, not their stories (Phase 16c): a PM follows the item; its stories are Design's and Engineering's unit.
     const work = active.filter((i) => i.type !== 'pr' && i.type !== 'story');
@@ -156,6 +161,15 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
         waiting,
         items: work.map(({ id, ref, title, cells, href, age, late: isLate }) => ({ id, ref, title, cells, href, age, late: isLate })),
         signals: { source: 'product', domain: person.teams?.[0] ?? null },
+        // Phase 25a: what is waiting in Feedback and the Ideas portal, and who will be told when the next item ships.
+        evidence: evidence ? {
+          rows: [
+            { key: 'notes', label: 'Notes not linked yet', value: evidence.newNotes, href: '/product/feedback?unlinked=1' },
+            { key: 'suggestions', label: 'Suggestions from Ada to decide', value: evidence.suggestions, href: '/product/feedback?unlinked=1' },
+            { key: 'portal', label: 'Portal ideas to merge or promote', value: evidence.portalWaiting, href: '/product/portal' },
+          ],
+          toTell: evidence.toTell ?? [],
+        } : null,
         agent: role.teammate ? {
           id: role.teammate.id, name: role.teammate.name,
           title: agentItem ? `${role.teammate.name} is working for you` : `${role.teammate.name} is available`,

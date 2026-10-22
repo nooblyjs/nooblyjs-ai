@@ -195,7 +195,7 @@ test('Teams & roles: the teams, the matrix from roles.yaml, the members, and Inv
   const { body } = await stevie.json('/api/v1/home/teams');
   assert.deepEqual(body.teams.map((t) => t.name), ['Checkout squad', 'Delivery squad', 'Platform team']);
   assert.deepEqual(body.matrix.roles, ['Viewer', 'Contributor', 'Approver', 'Architect', 'Owner']);
-  assert.equal(body.matrix.rows.length, 13); // product.md §6, the nine stages (16a) and lifecycle v3 (16b)
+  assert.equal(body.matrix.rows.length, 14); // product.md §6, the nine stages (16a), lifecycle v3 (16b) and the ideas portal (25a)
   const row = (label) => body.matrix.rows.find((r) => r.label === label).allowed;
   assert.deepEqual(row('Accept architecture decisions and the Design handoff'), { Viewer: false, Contributor: false, Approver: false, Architect: true, Owner: true });
   assert.deepEqual(row('Hire teammates, set budgets'), { Viewer: false, Contributor: false, Approver: false, Architect: false, Owner: true });

@@ -15,6 +15,9 @@ export const routes = [
   { path: '/epics/:id', nav: 'portfolios', title: 'Epic', page: page(() => import('./pages/document.js')), meta: { kind: 'epic' } },
   { path: '/features/:id', nav: 'portfolios', title: 'Feature', page: page(() => import('./pages/document.js')), meta: { kind: 'feature' } },
   { path: '/business-cases/:id', nav: 'board', title: 'Business case', page: page(() => import('./pages/business-case.js')) },
+  // NooblyJS Phase 25a: what colleagues say, and the ideas they put forward.
+  { path: '/feedback', nav: 'feedback', title: 'Feedback', page: page(() => import('./pages/feedback.js')) },
+  { path: '/portal', nav: 'portal', title: 'Ideas portal', page: page(() => import('./pages/portal.js')) },
   { path: '/board', nav: 'board', title: 'Product', page: page(() => import('./pages/board.js')) },
   { path: '/specs', nav: 'specs', title: 'Specs', page: page(() => import('./pages/specs.js')) },
   { path: '/specs/:id', nav: 'specs', title: 'Spec', page: page(() => import('./pages/spec.js')) },

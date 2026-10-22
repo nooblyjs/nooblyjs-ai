@@ -1,6 +1,6 @@
 # Phase 25a — Customer evidence, the ideas portal, the feedback form, closing the loop: requirements
 
-> **Status: in progress (started 2026-10-22).** Root `roadmap.md` Phase 25a; the comparison it came from is
+> **Status: built (2026-10-22), waiting for your review.** Root `roadmap.md` Phase 25a; the comparison it came from is
 > `.claude/audits/2026-10-21-product-tools-comparison.md`.
 
 > Asked 2026-10-22: "Lets make the feedback tool just a feedback from on a link ... no need to log in", "the link can
@@ -84,7 +84,7 @@ From 2026-10-21 (roadmap Phase 25) and 2026-10-22 (above):
 - When a release first reaches production (Operations' `release.deployed` to Production), everyone to be told about its
   item gets "<feature or item> shipped" with the release notes and a link (NooblyJS's new `notify.tell`).
 - When its outcome review closes (`outcome_review.closed`), they are told again: "0 of 3 goals met", with a link.
-- Each message is told once per person per event (kept in Product's `feedback/told.yaml`), audited by the host.
+- Each message is told once per person per event (NooblyJS keeps each notice's key), audited by the host.
 
 ## R7 — The PM's home
 - For you · Product manager gains "Customer evidence": new notes not linked yet, Ada's suggestions waiting, portal

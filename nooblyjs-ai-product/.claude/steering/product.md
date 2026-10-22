@@ -254,6 +254,25 @@ Build these in the same patterns.
 The **Portfolio template** and **Value stream template**: each section listed with its hint, and for an Approver the
 template as Markdown with **Save**. Everyone signed in can read them.
 
+### 5.9 Feedback and the ideas portal (Customers; NooblyJS Phase 25a, no mockup)
+
+- **Feedback** (`/product/feedback`): notes (`NOTE-0412`) from colleagues, typed in, pasted from Teams, read from a Jira
+  issue by its key, or sent through the **feedback form on a link** (`/product/f/<token>`, no sign-in, anyone with the
+  link; no limit on submissions). Every note's text is redacted on the way in. A person with `draft` links a snippet to
+  an idea, feature or spec with an importance (nice to have, important, critical): an insight. Ada suggests links and
+  signals (a teammate task, `feedback-triage`); a person accepts or declines each. A signal counts its notes. The form's
+  links are made, switched off and replaced here.
+- **Customer importance** on every idea, feature and spec, in words ("3 colleagues across 1 portfolio; 1 says critical
+  · 1 form note"), beside the RICE score on the board; it never changes the score. Form notes count apart, never as
+  colleagues. The customer is the portfolio: no customer records, no revenue.
+- **Ideas portal** (`/product/portal`), for everyone signed in (`suggest`, every access role; agents never): put an
+  idea forward (status suggested, off the board), vote (10 open votes each; a vote comes back when its idea ships or
+  closes), vote on behalf of a colleague, comment, follow. A person with `draft` merges one into another (votes,
+  followers and comments carried over) or puts it on the board.
+- **Closing the loop**: when an item's release reaches production, and again when its outcome review closes, the
+  people who voted for, follow, or whose notes are linked to it are told on their For you page and in Teams (NooblyJS's
+  `notify.tell`). Form senders and names with no NooblyJS record are never told.
+
 ## 6. Where Product Factory work surfaces elsewhere in NooblyJS
 
 | Screen | What it shows |

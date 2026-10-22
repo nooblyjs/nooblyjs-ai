@@ -31,6 +31,10 @@ import { createProductChecks } from './src/services/checks-trace.js';
 import { createHierarchy } from './src/services/hierarchy.js';
 import { createBusinessCases } from './src/services/business-cases.js';
 import { createElicitation } from './src/services/elicitation.js';
+import { createFeedback } from './src/services/feedback.js';
+import { createPortal } from './src/services/portal.js';
+import { createLoop } from './src/services/loop.js';
+import { formRoutes } from './src/routes/form.js';
 
 const NAME = 'product';
 // One or more path segments (/product, or deeper for a host that nests it).
@@ -49,6 +53,9 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 export const NAV = [
   { key: 'overview', label: 'Overview', path: '/', icon: 'grid' },
   { key: 'portfolios', label: 'Portfolios', path: '/portfolios', icon: 'layers', group: 'Strategy' },
+  // NooblyJS Phase 25a: what colleagues say (and the feedback form's links), and the ideas they put forward.
+  { key: 'feedback', label: 'Feedback', path: '/feedback', icon: 'chat', group: 'Customers' },
+  { key: 'portal', label: 'Ideas portal', path: '/portal', icon: 'spark', group: 'Customers' },
   { key: 'board', label: 'Product', path: '/board', icon: 'product', group: 'Stages' },
   { key: 'specs', label: 'Specs', path: '/specs', icon: 'doc', group: 'Stages' },
   { key: 'ux', label: 'UX Design', path: '/ux', icon: 'pen', group: 'Stages' },
@@ -92,6 +99,10 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   const catalogue = createCatalogue({ repos, host, log, documents, hierarchy });
   await catalogue.migrate();
   const ideas = createIdeaService({ repos, host, catalogue, hierarchy });
+  // NooblyJS Phase 25a: feedback notes and their insights, the ideas portal, and telling the people who asked.
+  const feedback = createFeedback({ repos, host, log });
+  const portal = createPortal({ repos, host, ideas });
+  const loop = createLoop({ repos, host, log, feedback });
   const businessCases = createBusinessCases({ repos, host, hierarchy, log });
   const specWrites = createSpecWriteService({ repos, host, log, flow, catalogue });
   const architecture = createArchitectureService({ repos, host, log });
@@ -122,7 +133,9 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   const summary = createSummaryService({ repos, people, host, budget: drafting.budget, architecture, stageAgents, mountPath });
 
   const router = host.express.Router();
-  router.use('/api/v1', createApi({ host, log, seed, repos, people, catalogue, documents, templates, ideas, hierarchy, businessCases, elicitation, specWrites, drafting, summary, architecture, ux, ui, flow, stageAgents, kindKeys: Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.keys(v)])), mountPath, about: { name: NAME, version: VERSION, mountPath } }));
+  // The feedback form on a link (Phase 25a): anyone with the link, signed in or not, so before the API's sign-in.
+  router.use(formRoutes({ host, feedback }));
+  router.use('/api/v1', createApi({ host, log, seed, repos, people, catalogue, documents, templates, ideas, hierarchy, businessCases, elicitation, specWrites, drafting, summary, architecture, ux, ui, flow, stageAgents, feedback, portal, kindKeys: Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, Object.keys(v)])), mountPath, about: { name: NAME, version: VERSION, mountPath } }));
   // The browser files (module, pages, CSS). redirect: false, or /product would 301 to /product/ (public/ is a folder).
   router.use(host.express.static(PUBLIC_DIR, { index: false, redirect: false }));
   // Every other GET without a file extension is a page: the host's frame answers it, so deep links and refresh land
@@ -140,6 +153,9 @@ export async function register(app, serverManager, { mountPath = '/product', dat
     host.events.on('handoff.created', (event) => ui.onHandoffCreated(event)),
     host.events.on('item.sent_back', (event) => flow.onSentBack(event)),
     host.events.on('knowledge.answer_flagged', (event) => flow.onKnowledgeFlagged(event)),
+    // NooblyJS Phase 25a: everyone who asked hears when it ships (Operations' release) and whether it worked.
+    host.events.on('release.deployed', (event) => loop.onReleaseDeployed(event).catch((err) => log.warn(`product: telling who asked about ${event?.payload?.itemId}: ${err.message}`))),
+    host.events.on('outcome_review.closed', (event) => loop.onOutcomeReviewed(event).catch((err) => log.warn(`product: telling who asked about ${event?.payload?.itemId}: ${err.message}`))),
     // NooblyJS Phase 18: meeting notes a person had a teammate post to a spec become one of its elicitation sessions.
     host.events.on('teams.meeting_notes_posted', (event) => {
       const p = event?.payload ?? {};
@@ -200,6 +216,12 @@ export async function register(app, serverManager, { mountPath = '/product', dat
         await host.events.emit('signal.raised', { signalId: id, title: record.title, product: record.product, release, itemId, count: record.count, summary: `raised the signal "${record.title}" from production${release ? ` (${release})` : ''}` }, { actor: by.id });
         return record;
       },
+      /** NooblyJS Phase 25a: the PM's home: notes not linked yet, Ada's suggestions waiting, portal ideas waiting, who will be told. */
+      evidence: () => feedback.home(),
+      /** NooblyJS Phase 25a: customer importance of ideas, features and specs, by id ("3 colleagues across 1 portfolio; …"). */
+      importance: (ids) => feedback.importance(Array.isArray(ids) ? ids : [ids]),
+      /** NooblyJS Phase 25a: the people who asked for an item (voted, follow, or whose notes are linked). */
+      peopleToTell: (itemId, options) => feedback.peopleToTell(itemId, options).then((r) => r.people),
       /** NooblyJS Phase 23: an idea another app opens (an incident's follow-up, an outcome review's goal missed). */
       createIdea: ({ title, product = null, problem = '', signals = [], actor }) => ideas.createFromBody({ title: String(title ?? '').slice(0, 200), ...(product ? { product } : {}), problem, signals }, actor),
       artefactsFor: (itemId, options) => summary.artefactsFor(itemId, options),

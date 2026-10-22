@@ -6,9 +6,10 @@ const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
 
 /** The numbered artefacts and their prefixes. */
 // NooblyJS Phase 17: the work hierarchy's portfolio epics, epics and features (catalogue.yaml, hierarchy.js).
-export const NUMBERED = { idea: 'IDEA', spec: 'PRD', adr: 'ADR', portfolioEpic: 'PEPIC', epic: 'EPIC', feature: 'FEAT' };
+// NooblyJS Phase 25a: feedback notes (NOTE-0412), four digits.
+export const NUMBERED = { idea: 'IDEA', spec: 'PRD', adr: 'ADR', portfolioEpic: 'PEPIC', epic: 'EPIC', feature: 'FEAT', note: 'NOTE' };
 
-const NUMBERED_ID = /^(IDEA|PRD|ADR|PEPIC|EPIC|FEAT)-(\d{3,})$/;
+const NUMBERED_ID = /^(IDEA|PRD|ADR|PEPIC|EPIC|FEAT|NOTE)-(\d{3,})$/;
 const GENERATED_ID = /^[a-z]{2,8}_[a-z0-9]{6,32}$/;
 
 /** A generated id, e.g. newId('drf') → 'drf_8f3k2q9a1b'. */
@@ -21,14 +22,14 @@ export function newId(prefix, length = 10) {
 }
 
 /** The next numbered id after the ones in use: nextNumbered('PRD', ['PRD-031', 'PRD-029']) → 'PRD-032'. */
-export function nextNumbered(prefix, existing = []) {
+export function nextNumbered(prefix, existing = [], width = 3) {
   if (!Object.values(NUMBERED).includes(prefix)) throw new Error(`unknown id prefix ${JSON.stringify(prefix)}`);
   let max = 0;
   for (const id of existing) {
     const match = NUMBERED_ID.exec(id);
     if (match?.[1] === prefix) max = Math.max(max, Number(match[2]));
   }
-  return `${prefix}-${String(max + 1).padStart(3, '0')}`;
+  return `${prefix}-${String(max + 1).padStart(width, '0')}`;
 }
 
 /** True for an id this engine issues: numbered or generated. Used to validate route params before they reach the store. */

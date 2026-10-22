@@ -195,6 +195,8 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   const notify = createNotify({ store, people, profiles, connector, cards, events, auditLog, config, fetch: graphFetch, clock, log, onCallSimulator: simulator ? 'sim-on-call' : null });
   // Phase 23: on-call alerts in Teams, for the hosted apps (Operations' SLOs).
   services.set('oncall', { alert: (input) => notify.alert(input) });
+  // Phase 25a: telling people what they asked to hear about (Product's closing the loop), on For you and in Teams.
+  services.set('notify', { tell: (input) => notify.tell(input), notices: (personId, options) => notify.notices(personId, options) });
   const bot = createBot({
     agents, teams, people, roles, sessions, cards, connector, notify,
     chat, events, auditLog, store, publicBaseUrl: config.publicBaseUrl, log,

@@ -699,11 +699,13 @@ How it sits in NooblyJS:
 | Accept a security risk (`accept-risk`) | — | — | — | ✓ | ✓ |
 | Approve a production deploy, one of two (`deploy-production`) | — | — | ✓ | ✓ | ✓ |
 | Declare an incident (`declare-incident`) | — | ✓ | ✓ | ✓ | ✓ |
+| Put ideas forward, vote and comment in the ideas portal (`suggest`) | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 The last five rows were added in Phase 16a, `sign-off-tests` in Phase 16b; a data folder from before gets them built in
 (`src/middleware/roles.js` `BUILT_IN_PERMISSIONS`), and a row its `roles.yaml` lists wins. `accept-release-candidate`
 went with Verify (Phase 16b) and is no longer shown. Since Phase 18 `accept-requirement` decides candidate requirements
-(and Design's business requirements); nothing uses `declare-incident` yet (Phase 23).
+(and Design's business requirements); nothing uses `declare-incident` yet (Phase 23). `suggest` (Phase 25a) is every
+access role's, Viewer included, and an agent is refused it whatever its role: Product's ideas portal.
 
 **Since Phase 16b an approval's permission says whom it waits on**: any person but a Viewer may give any approval on
 behalf of one of them, and who gave it, for whom, is recorded (§4). The matrix still decides everything else (drafting,

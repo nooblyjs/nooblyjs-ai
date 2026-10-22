@@ -111,6 +111,8 @@ data/product/
   ux/<PRD-ID>/            journey.md · flows/<flow>.md · research/<study>.md · questions.md
   ui/<PRD-ID>/            screens/<screen>.md · handoff.md
   drafts/<draft-id>.md                     a drafting job: who asked, teammate, stage, status, cost
+  notes/NOTE-0412.md                       a feedback note (Phase 25a): source, from, through, product, signal, insights, Ada's suggestions; body = the redacted text
+  feedback-links.yaml                      the feedback form's links: token, product, active, replacedBy
   standards.yaml · accessibility.yaml      the check rules people can change `[CONFIRM location]`
 ```
 
@@ -141,7 +143,7 @@ the Factory, or edit after a person has approved a version.
 | --- | --- |
 | Emits | `catalogue.theme_added` · `_changed` · `_removed`, `catalogue.portfolio_added` · `_renamed` · `_themes_changed` · `_removed`, `catalogue.value_stream_added` · `_renamed` · `_moved` · `_removed`, `catalogue.product_added` · `_renamed` · `_moved` · `_tools_changed` · `_removed`, `portfolio.updated`, `value_stream.updated`, `settings.template_updated`, `signal.clustered`, `idea.created`, `idea.updated`, `idea.scored`, `spec.created`, `spec.updated`, `spec.drafted`, `spec.drafted`, `draft.requested`, `draft.progressed`, `budget.reached`, `architecture.diagram_updated`, `architecture.updated`, `adr.proposed`, `adr.accepted`, `adr.discussed`, `ux.updated`, `ux.journey_drafted`, `ux.flow_drafted`, `ux.quick_test_ran`, `ui.screen_updated`, `ui.handoff_requested`, `ui.screen_updated`, `draft.failed`, `agent.action` |
 | Listens to | `item.stage_changed`, `approval.decided`, `handoff.created`, `item.sent_back` (from the lifecycle engine (part of `noobly`, `src/lifecycle/`)), `knowledge.answer_flagged` (flags the specs that cite it) |
-| `services` it exposes | `linkKnowledge({ itemId, links, actor })` (the Knowledge Repository's "Add to item": a person only), `adrFor(adrId)`, `artefactsFor(itemId)` (for Home and the item page), `readinessFacts(itemId)` (what the lifecycle engine's readiness rules check), `summary(person)` (agents on duty and monthly spend), `gatesFor(itemId)` (quality attributes as Factory gates), `waitingFor(person)` (Home · Waiting on you, For you), `metrics()` (NooblyJS Metrics) |
+| `services` it exposes | `linkKnowledge({ itemId, links, actor })` (the Knowledge Repository's "Add to item": a person only), `adrFor(adrId)`, `artefactsFor(itemId)` (for Home and the item page), `readinessFacts(itemId)` (what the lifecycle engine's readiness rules check), `summary(person)` (agents on duty and monthly spend), `gatesFor(itemId)` (quality attributes as Factory gates), `waitingFor(person)` (Home · Waiting on you, For you), `metrics()` (NooblyJS Metrics); NooblyJS Phase 25a: `evidence()` (the PM's home), `importance(ids)`, `peopleToTell(itemId)`. The full list is NooblyJS's tech.md §8b. It listens to Operations' `release.deployed` and `outcome_review.closed` to tell the people who asked (`src/services/loop.js`, through NooblyJS's `notify.tell`) |
 | Services it uses | `workflows` (decisions, items, handoffs), `teammates` (drafting tasks), `knowledge` (context and citations). Any of them may be missing when standalone, so degrade gracefully |
 
 ## 7. Seed

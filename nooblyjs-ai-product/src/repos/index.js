@@ -100,6 +100,17 @@ export function createRepos(store, { log }) {
     businessCases: docs(store, 'business-cases', log),
     /** NooblyJS Phase 18: each spec's elicitation (stakeholders, sessions, candidates, requirements, the NFR walk, questions). */
     elicitation: docs(store, 'elicitation', log),
+    /** NooblyJS Phase 25a: feedback notes (NOTE-0412), each with its insights and Ada's suggestions. */
+    notes: docs(store, 'notes', log),
+    /** NooblyJS Phase 25a: the feedback form's links (feedback-links.yaml). `update(fn)`: fn(links) returns { links, answer }. */
+    feedbackLinks: {
+      list: async () => (await store.readYaml(['feedback-links.yaml']))?.links ?? [],
+      update: (fn) => store.withLock(['feedback-links.yaml'], async () => {
+        const { links, answer } = await fn((await store.readYaml(['feedback-links.yaml']))?.links ?? []);
+        await store.writeYaml(['feedback-links.yaml'], { links });
+        return answer;
+      }),
+    },
     templates: templates(store),
     specs: {
       ...specs,

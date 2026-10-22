@@ -22,6 +22,8 @@ export const MATRIX_ROWS = [
   { label: 'Accept a security risk', permissions: ['accept-risk'] },
   { label: 'Approve a production deploy (one of two)', permissions: ['deploy-production'] },
   { label: 'Declare an incident', permissions: ['declare-incident'] },
+  // Phase 25a: Product's ideas portal.
+  { label: 'Put ideas forward, vote and comment in the ideas portal', permissions: ['suggest'] },
 ];
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

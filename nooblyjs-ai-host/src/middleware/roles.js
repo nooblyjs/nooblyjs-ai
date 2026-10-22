@@ -16,6 +16,8 @@ export const BUILT_IN_PERMISSIONS = {
   'declare-incident': ['Contributor', 'Approver', 'Architect', 'Owner'],
   // The testers and test leads the Test approval and the Engineering sign-off's test part wait on (Phase 16b).
   'sign-off-tests': ['Approver', 'Architect', 'Owner'],
+  // Phase 25a: putting an idea forward in Product's ideas portal, voting, commenting and following. Everyone, never agents.
+  suggest: ['Viewer', 'Contributor', 'Approver', 'Architect', 'Owner'],
 };
 
 export function createRoles({ store }) {

@@ -111,7 +111,7 @@ inclusion: always
 | 22 | Release (new app: Operations, part 1) | ✅ (reviewed 2026-10-21) |
 | 23 | Operate and learn (Operations, part 2) | ✅ (reviewed 2026-10-21) |
 | 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ✅ (reviewed 2026-10-21) |
-| 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ◐ in progress (spec `nooblyjs-ai-host/.claude/specs/phase-25a-customer-evidence/`, 2026-10-22) |
+| 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ✅ built 2026-10-22, waiting for your review (`nooblyjs-ai-host/.claude/phases/phase-25a-summary.md`) |
 | 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ☐ planned |
 
 Open bugs and changes: none. BUG-001 to BUG-007 and CHG-001 to CHG-009 are verified (2026-10-21); the next IDs are BUG-008 and CHG-010 (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).

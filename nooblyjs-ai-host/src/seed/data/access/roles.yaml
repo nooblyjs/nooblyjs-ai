@@ -26,3 +26,5 @@ permissions:
   declare-incident: [Contributor, Approver, Architect, Owner]
   # Lifecycle v3 (Phase 16b): whom the Test approval and the Engineering sign-off's test part wait on.
   sign-off-tests: [Approver, Architect, Owner]
+  # Phase 25a: the ideas portal (put an idea forward, vote, comment, follow). Every access role; agents never.
+  suggest: [Viewer, Contributor, Approver, Architect, Owner]

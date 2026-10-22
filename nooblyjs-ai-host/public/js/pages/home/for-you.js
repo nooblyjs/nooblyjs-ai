@@ -58,6 +58,15 @@ export function firstWeek(fw) {
   </section>`;
 }
 
+/** What NooblyJS told this person (Phase 25a): a feature they asked for shipped, its outcome review. Newest first. */
+export function noticesCard(list) {
+  if (!list?.length) return '';
+  return html`<section class="card card--side" aria-label="Told you">
+    <h2 class="card__title card__title--small">News for you</h2>
+    <ul class="rows" role="list">${list.map((n) => html`<li class="row"><div class="row__main">${n.href ? html`<a class="row__title" href="${n.href}">${n.title}</a>` : html`<span class="row__title">${n.title}</span>`}${n.text ? html`<span class="row__meta">${n.text.split('\n')[0]}</span>` : ''}<span class="row__meta">${new Date(n.at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}</span></div></li>`)}</ul>
+  </section>`;
+}
+
 /** A panel whose source isn't built yet: it says what will be there and which phase brings it. */
 export const comingPanel = (title, { phase, text }) => html`<section class="card card--side" aria-label="${title}">
     <h2 class="card__title card__title--small">${title}</h2>
@@ -84,7 +93,7 @@ export async function render(view, { ctx, query }) {
       const why = data.role
         ? html`<p class="for-you-note">${icon('info', { size: 16 })}<span>A For you page for the ${data.role.name.toLowerCase()} role isn't designed yet, so this is the Overview. <a href="/onboarding" data-reload>Change role</a></span></p>`
         : '';
-      return overview.render(view, { ctx, note: html`${setUp}${why}` });
+      return overview.render(view, { ctx, note: html`${setUp}${why}${noticesCard(data.notices)}` });
     }
 
     const head = pageHead({
@@ -104,7 +113,7 @@ export async function render(view, { ctx, query }) {
     view.innerHTML = String(html`${head}${setUp}${filterRow(data)}
       ${message ? html`<p class="flash flash--${message.tone}" role="${message.tone === 'error' ? 'alert' : 'status'}">${message.text}</p>` : ''}
       ${tiles(data.tiles)}
-      <div class="for-you"><div class="for-you__main">${main}</div><div class="for-you__side">${firstWeek(data.firstWeek)}${side}</div></div>`);
+      <div class="for-you"><div class="for-you__main">${main}</div><div class="for-you__side">${noticesCard(data.notices)}${firstWeek(data.firstWeek)}${side}</div></div>`);
     for (const [id, value] of typed) { const t = view.querySelector(`#${CSS.escape(id)}`); if (t) t.value = value; }
     if (focused && typed.has(focused)) view.querySelector(`#${CSS.escape(focused)}`)?.focus();
     await layout.after?.(view, { ctx, data });
@@ -137,5 +146,5 @@ export async function render(view, { ctx, query }) {
   }, { signal: ctx.signal });
 
   await draw();
-  onChange(ctx, draw, { types: ['item.', 'approval.', 'handoff.', 'profile.', 'clock.', 'run.', 'pr.', 'design.', 'engineering.', 'quality.'] });
+  onChange(ctx, draw, { types: ['item.', 'approval.', 'handoff.', 'profile.', 'clock.', 'run.', 'pr.', 'design.', 'engineering.', 'quality.', 'notify.', 'feedback.', 'portal.'] });
 }

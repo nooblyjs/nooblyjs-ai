@@ -181,7 +181,7 @@ export function createReleases({ repos, host, log, policies, evidence, notes, de
       deployments: [...(cur.deployments ?? []), { at, step: index, label: step.label, percent: done.percent, environment: done.environment, deployed: done.deployed, by: who(person), deployer: deployer.name }],
       history: [...(cur.history ?? []), { at, what: `Deployed to ${done.environment}: ${step.label} (${done.percent}%), ${versionsText(done.deployed)}, by the ${deployer.name} deployer` }],
     }));
-    await emit('release.deployed', { releaseId: id, itemId: release.itemId, featureId: release.featureId, percent: done.percent, environment: done.environment, summary: `deployed ${id} · ${release.name} to ${done.environment}: ${step.label}` }, person);
+    await emit('release.deployed', { releaseId: id, itemId: release.itemId, featureId: release.featureId, percent: done.percent, environment: done.environment, environmentKind: done.kind ?? 'production', summary: `deployed ${id} · ${release.name} to ${done.environment}: ${step.label}` }, person);
     // The feature is in production: its stories go to Operate (the lifecycle), once.
     if (index === 0) {
       await svc('workflows')?.featureDeployed?.({ itemId: release.itemId, featureId: release.featureId, releaseId: id }).catch((err) => log.warn(`release ${id}: ${err.message}`));
@@ -227,10 +227,13 @@ export function createReleases({ repos, host, log, policies, evidence, notes, de
     for (const r of await repos.releases.list()) for (const d of r.deployments ?? []) out.push({ ...d, releaseId: r.id, release: r.name, version: r.version, href: `${mountPath}/releases/${r.id}` });
     return out.sort((a, b) => String(b.at).localeCompare(String(a.at)));
   }
-  /** What the write gate asks: is this a release two people approved? */
+  /**
+   * What the write gate asks: is this a release two people approved? Product (Phase 25a) also reads what it is and its
+   * notes, to tell the people who asked for it.
+   */
   async function releaseFor(id) {
     const r = await repos.releases.get(id);
-    return r ? { id: r.id, status: r.status, approved: Boolean(r.approvedAt) } : null;
+    return r ? { id: r.id, status: r.status, approved: Boolean(r.approvedAt), name: r.name ?? null, version: r.version ?? null, itemId: r.itemId ?? null, featureId: r.featureId ?? null, notes: r.notes?.text ?? null, href: `${mountPath}/releases/${r.id}` } : null;
   }
 
   return { create, requestApproval, decideApproval, onApprovalDecided, advance, rollback, list, get, deployments, releaseFor };

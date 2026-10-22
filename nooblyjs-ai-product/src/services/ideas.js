@@ -4,7 +4,7 @@ import { validator, invalid } from '../util/validate.js';
 import { riceErrors, riceScore } from './rice.js';
 import { nextNumbered, isId } from '../util/ids.js';
 import { checkIfMatch } from '../util/http.js';
-import { conflict, notFound } from '../util/errors.js';
+import { conflict, notFound, HttpError } from '../util/errors.js';
 
 // What a person may set. "accepted" (NooblyJS Phase 17) is set only by accepting the idea at the Discover exit (the
 // lifecycle engine's decision: markAccepted); it stays on the board until it has a spec.
@@ -80,8 +80,11 @@ export function createIdeaService({ repos, host, catalogue, hierarchy = null }) 
   const now = () => new Date().toISOString();
   const emit = (type, payload, actor) => host.events.emit(type, payload, { actor: actor.id });
 
-  /** Creates IDEA-<next>. The folder lock keeps two creates from taking the same number. */
-  async function create(fields, actor) {
+  /**
+   * Creates IDEA-<next>. The folder lock keeps two creates from taking the same number. `extra` is what the ideas
+   * portal (Phase 25a) adds: status "suggested", who put it forward, its followers.
+   */
+  async function create(fields, actor, extra = {}) {
     return repos.ideas.withFolderLock(async () => {
       const id = nextNumbered('IDEA', (await repos.ideas.list()).map((o) => o.id));
       const at = now();
@@ -100,19 +103,28 @@ export function createIdeaService({ repos, host, catalogue, hierarchy = null }) 
         signals: fields.signals ?? [],
         rice: fields.rice ?? null,
         ...(fields.feature ? { feature: fields.feature } : {}),
+        ...extra,
         createdAt: at,
         createdBy: actor.id,
         updatedAt: at,
         body: fields.problem ?? '',
       };
       await repos.ideas.write(record);
-      await emit('idea.created', { ideaId: id, title: record.title, product: record.product, signals: record.signals }, actor);
+      await emit('idea.created', { ideaId: id, title: record.title, product: record.product, signals: record.signals, ...(record.status !== 'open' ? { status: record.status } : {}) }, actor);
       if (record.rice) await emit('idea.scored', { ideaId: id, rice: record.rice, score: riceScore(record.rice) }, actor);
       return record;
     });
   }
 
   return {
+    /** NooblyJS Phase 25a: an idea a colleague puts forward in the portal: status "suggested", off the board until promoted. */
+    async createSuggested(body, actor) {
+      const fields = validator(body).only(['title', 'product', 'problem']).string('title', { required: true, max: 120 }).string('product', { required: true, max: 40 }).string('problem', { max: 4000 }).result();
+      const known = ((await repos.catalogue.get())?.products ?? []).find((p) => String(p.name).toLowerCase() === fields.product.toLowerCase());
+      if (!known) throw new HttpError(422, 'invalid', `There is no product ${fields.product}: choose one from the list.`, { product: 'one of the products' });
+      return create({ ...fields, product: known.name }, actor, { status: 'suggested', submittedBy: actor.id, owner: null, followers: [actor.id], votes: [], comments: [] });
+    },
+
     /** POST /ideas */
     async createFromBody(body, actor) {
       const fields = ideaFields(body, { creating: true });

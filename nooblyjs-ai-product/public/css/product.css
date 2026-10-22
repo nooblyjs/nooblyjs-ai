@@ -220,3 +220,20 @@
 [data-module="product"] .pf-know__fields .pf-search { flex: 1 1 280px; }
 [data-module="product"] .pf-know__group { margin: 12px 0 0; font-size: var(--text-caption); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
 [data-module="product"] .pf-know .actions { flex-wrap: nowrap; }
+
+/* NooblyJS Phase 25a: Feedback and the ideas portal. */
+[data-module="product"] ul.pf-stack { list-style: none; margin: 0 0 var(--gap-grid); padding: 0; }
+[data-module="product"] .pf-inline { display: inline-flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+[data-module="product"] .pf-inline label { display: flex; flex-direction: column; gap: 4px; font-size: var(--text-small); }
+[data-module="product"] .pf-inline select { font: inherit; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-row); background: var(--surface-card); color: var(--text); min-height: var(--control-min); }
+[data-module="product"] .pf-note__head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+[data-module="product"] .pf-note__text { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 6px; }
+[data-module="product"] .pf-suggestion { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; margin: 8px 0; border: 1px dashed var(--border-strong); border-radius: var(--radius-row); }
+[data-module="product"] .pf-suggestion select { font: inherit; padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: var(--radius-row); background: var(--surface-card); color: var(--text); min-height: var(--control-min); }
+[data-module="product"] .pf-evidence { color: var(--text); font-weight: 500; }
+[data-module="product"] .pf-portal__votes { display: flex; flex-direction: column; align-items: center; min-width: 64px; font-size: var(--text-small); color: var(--text-muted); }
+[data-module="product"] .pf-portal__votes strong { font-size: 1.4rem; color: var(--text); }
+[data-module="product"] .pf-portal__idea { display: flex; gap: 16px; align-items: flex-start; }
+[data-module="product"] .pf-portal__body { flex: 1; min-width: 0; }
+[data-module="product"] .pf-comments { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: var(--text-small); }
+@media (max-width: 640px) { [data-module="product"] .pf-portal__idea { flex-direction: column; } [data-module="product"] .pf-portal__votes { flex-direction: row; gap: 6px; } }

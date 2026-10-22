@@ -2,6 +2,7 @@
 // both numberings (D4). Views are built per request for one person, because "you" and "mine" depend on who asks.
 import { stageFor } from './stages.js';
 import { riceScore } from './rice.js';
+import { importanceIndex, signalNoteCounts } from './evidence.js';
 
 const money = (usd) => `$${usd.toFixed(2)}`;
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -12,7 +13,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
  * @param {object|null} person   req.person
  */
 export async function viewContext({ people, repos }, person) {
-  const [everyone, drafts, catalogue] = await Promise.all([people.list().catch(() => []), repos.drafts.list(), repos.catalogue.get()]);
+  const [everyone, drafts, catalogue, notes, ideas, specs] = await Promise.all([people.list().catch(() => []), repos.drafts.list(), repos.catalogue.get(), repos.notes?.list() ?? [], repos.ideas.list(), repos.specs.list()]);
   // product name (lower case) → the portfolio it sits in, and the value stream, so a view can say all three.
   const filed = (catalogue?.products ?? []).filter((p) => p?.name);
   const products = new Map(filed.map((p) => [String(p.name).toLowerCase(), p.portfolio ?? null]));
@@ -20,7 +21,9 @@ export async function viewContext({ people, repos }, person) {
   // NooblyJS Phase 17: feature id → { id, name, epic: { id, name } }, so a card can say which feature it is for.
   const epics = new Map((catalogue?.epics ?? []).map((e) => [e.id, e]));
   const features = new Map((catalogue?.features ?? []).map((f) => [f.id, { id: f.id, name: f.name, epic: epics.has(f.epic) ? { id: f.epic, name: epics.get(f.epic).name } : null }]));
-  return { me: person ?? null, people: new Map(everyone.map((p) => [p.id, p])), drafts, products, valueStreams, features };
+  // NooblyJS Phase 25a: customer importance by id, and how many feedback notes each signal has.
+  const evidence = importanceIndex({ notes, ideas, specs, features: catalogue?.features ?? [], portfolioOf: (name) => products.get(String(name).toLowerCase()) ?? null });
+  return { me: person ?? null, people: new Map(everyone.map((p) => [p.id, p])), drafts, products, valueStreams, features, evidence, signalNotes: signalNoteCounts(notes) };
 }
 
 /** The feature of the work hierarchy a record is for, and its epic (Phase 17): { feature, epic } or nulls. */
@@ -51,6 +54,9 @@ export function signalView(signal, ctx = null) {
   const unit = signal.unit ?? 'signals';
   // "188 app reviews" already names its source; "412 tickets" needs "· Zendesk".
   const names = signal.sourceLabel && !unit.toLowerCase().includes(signal.sourceLabel.toLowerCase());
+  // NooblyJS Phase 25a: a signal counts the feedback notes behind it; a seeded one keeps its sample count beside them.
+  const notes = ctx?.signalNotes?.get(signal.id) ?? 0;
+  const typed = `${signal.count ?? 0} ${unit}${names ? ` · ${signal.sourceLabel}` : ''}`;
   return {
     kind: 'signal',
     id: signal.id,
@@ -66,7 +72,8 @@ export function signalView(signal, ctx = null) {
     idea: signal.idea ?? null,
     // NooblyJS Phase 23: a signal from production names the release and item it came from.
     ...(signal.release || signal.itemId ? { release: signal.release ?? null, itemId: signal.itemId ?? null } : {}),
-    text: `${signal.count ?? 0} ${unit}${names ? ` · ${signal.sourceLabel}` : ''}${signal.release ? ` · ${signal.release}` : ''}`,
+    notes,
+    text: `${notes ? `${notes} note${notes === 1 ? '' : 's'}${signal.source === 'feedback' ? '' : ` · ${typed}${signal.sampleData ? ' (sample data)' : ''}`}` : typed}${signal.release ? ` · ${signal.release}` : ''}`,
     stage: stageFor('signal'),
     detail: signal.body?.trim() || null,
   };
@@ -94,6 +101,8 @@ export function ideaView(ctx, opp) {
     signals: opp.signals ?? [],
     ...whereBuilt(opp),
     text: [opp.product, score == null ? 'RICE not scored' : `RICE ${score}`].filter(Boolean).join(' · '),
+    // NooblyJS Phase 25a: who asked for it, beside the score (it never changes the score).
+    evidence: evidenceView(ctx, opp.id),
     stage: stageFor('idea'),
     createdAt: opp.createdAt ?? null,
   };
@@ -177,8 +186,15 @@ export function specSummary(ctx, spec) {
     owner: actorRef(ctx, spec.owner),
     stage: stageFor('spec', spec.status),
     updatedAt: spec.updatedAt ?? null,
+    evidence: evidenceView(ctx, spec.id),
     ...whereBuilt(spec),
   };
+}
+
+/** Customer importance (Phase 25a) for a card: { text, colleagues, portfolios, critical, formNotes }, or null. */
+export function evidenceView(ctx, id) {
+  const e = ctx?.evidence?.get(id);
+  return e ? { text: e.text, colleagues: e.colleagues, portfolios: e.portfolios, critical: e.critical, formNotes: e.formNotes } : null;
 }
 
 /** The money spent by agents in a month ("2026-10"), from the drafting jobs. */
