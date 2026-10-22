@@ -1,6 +1,6 @@
 # Phase 25b — Objectives, roadmaps and capacity: summary
 
-**Status:** built (2026-10-22), waiting for your review. Spec: `.claude/specs/phase-25b-objectives-roadmaps/` (tasks
+**Status:** done (built and reviewed 2026-10-22). Spec: `.claude/specs/phase-25b-objectives-roadmaps/` (tasks
 1–10 done). Your answers on 2026-10-22: Now is the next three months, Next the three after, Later beyond six; sample
 team capacity. The work is in `nooblyjs-ai-product`, `nooblyjs-ai-host` and `nooblyjs-ai-operations`.
 

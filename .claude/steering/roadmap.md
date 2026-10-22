@@ -112,7 +112,8 @@ inclusion: always
 | 23 | Operate and learn (Operations, part 2) | ✅ (reviewed 2026-10-21) |
 | 24 | Housekeeping: the wiki's agents as teammate tasks, Teammates on `host.store` | ✅ (reviewed 2026-10-21) |
 | 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ✅ (reviewed 2026-10-22) |
-| 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ✅ built 2026-10-22, waiting for your review (`nooblyjs-ai-host/.claude/phases/phase-25b-summary.md`) |
+| 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ✅ (reviewed 2026-10-22) |
+| 26 | Open work in the apps: Infrastructure's drafting agent, Teammates' red-team cases and docs, Product's live tests | ◐ in progress (spec `nooblyjs-ai-host/.claude/specs/phase-26-open-work/`, 2026-10-22) |
 
 Open bugs and changes: none. BUG-001 to BUG-007 and CHG-001 to CHG-009 are verified (2026-10-21); the next IDs are BUG-008 and CHG-010 (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 
@@ -1572,6 +1573,43 @@ and whether the teams can do what is in Now, and a roadmap is something people e
 **Guide points:** Is three months the right length for Now?
 
 ---
+
+---
+
+## Phase 26 — Open work in the apps
+
+**Where it came from:** "Hosted apps: open work" below, the items that need no outside decision (chosen 2026-10-22).
+**Repos:** `nooblyjs-ai-infrastructure`, `nooblyjs-ai-teammate`, `nooblyjs-ai-product`, `nooblyjs-ai-host`.
+
+**Build**
+- **I7, Infrastructure's drafting agent:** Ines Tau is hired in Digital Teammates (sample data). `POST
+  /infrastructure/api/v1/designs/:id/drafts` (a person with `draft` asks) is her teammate task
+  (`infrastructure-design`): she reads the item's architecture through `host.service('product').designInputs` (the
+  container view, ADRs, quality attributes) and saves a new design version, which waits for its approvals again. The
+  scripted draft (no model) adds what the architecture has that the design lacks. When an ADR is accepted or the item's
+  architecture changes (`adr.accepted`, `architecture.updated`) the design offers a new draft, saying why; nothing
+  drafts by itself. `agent.action` with the cost; agents can't ask for a draft.
+- **Teammates:** prompt-injection cases for the outside task endpoint and a teammate's memory; an OpenAPI description
+  of `POST /teammates/api/v1/teammates/:slug/tasks`; an admin guide; how to write skills (`.claude/guides/`).
+- **Product:** opt-in live tests (`*.live.test.js`), one draft per stage (spec, architecture, UX, UI), skipped unless
+  a model is configured.
+
+**Not in this phase, and why:** which stages draft automatically (D3) is your decision; an agent's spec edit from a
+chat thread waits on `[CONFIRM]`; CI needs a choice (the code is on GitHub here, the roadmap said Bitbucket
+Pipelines); the accessibility audit needs a browser this codespace doesn't have; I2 and I5 need mockups; I3 is
+`[CONFIRM]`; I9 is blocked on the cloud.
+
+**How you test it**
+1. Thabo asks Ines Tau for a new draft of INF-031: version 3 is saved, drafted by Ines from the architecture, waiting
+   for its approvals; version 2 is kept; Ines's task and its cost are on her timesheet and in Activity.
+2. Thabo accepts ADR-014 for PRD-031 (or PRD-031's quality attributes change): INF-031 says a new draft is suggested,
+   and why; nothing drafted by itself.
+3. An agent asking for a draft is refused (403).
+4. Teammates' red-team cases pass: instructions inside a task's input or a memory don't change what the teammate may do.
+5. The OpenAPI file validates as OpenAPI 3.1 and matches the endpoint's routes.
+6. `npm run test:live` in Product, with a model configured, drafts one artefact per stage; without one it skips.
+
+**Done when:** steps 1–6 pass.
 
 ---
 

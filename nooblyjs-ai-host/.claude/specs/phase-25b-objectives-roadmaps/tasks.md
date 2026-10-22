@@ -1,6 +1,6 @@
 # Phase 25b — Objectives, roadmaps and capacity: tasks
 
-> **Status: built (2026-10-22), waiting for your review.** Summary: `.claude/phases/phase-25b-summary.md`.
+> **Status: done (built and reviewed 2026-10-22).** Summary: `.claude/phases/phase-25b-summary.md`.
 
 - [x] 1. Horizons with dates; roadmap.yaml moved onto the items. _R3_
 - [x] 2. Objectives and key results (monitor, typed); horizon moves by a Product lead; outcome reviews move them. _R1_

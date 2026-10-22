@@ -1,6 +1,6 @@
 # Phase 25b — Objectives, roadmaps and capacity: design
 
-> **Status: built (2026-10-22), waiting for your review.** Summary: `.claude/phases/phase-25b-summary.md`. Requirements: `requirements.md`.
+> **Status: done (built and reviewed 2026-10-22).** Summary: `.claude/phases/phase-25b-summary.md`. Requirements: `requirements.md`.
 
 ## Where it lives
 
