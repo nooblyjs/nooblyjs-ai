@@ -1,0 +1,14 @@
+{
+  "name": "typetest",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A typing game: see your keys, type sentences, track WPM, errors and improvement",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": { "express": "^4.21.0" }
+}

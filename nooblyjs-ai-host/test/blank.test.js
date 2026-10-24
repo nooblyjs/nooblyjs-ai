@@ -139,7 +139,7 @@ test('a blank folder stays blank on a later start, and work done in it is real',
   assert.equal((before.teams ?? []).length, 0);
 });
 
-test('the script never deletes: a folder with something in it is refused, and --reset moves it aside', async () => {
+test('without --delete the script never deletes: a folder with something in it is refused, and --reset moves it aside', async () => {
   const dir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), 'noobly-blank2-')), 'data');
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, 'mine.md'), 'keep me');
@@ -158,4 +158,24 @@ test('the script never deletes: a folder with something in it is refused, and --
   const written = await seedFiles(new FsStore(full));
   assert.ok(written.includes('people/stevie/PERSON.md') && written.some((f) => f.startsWith('events/')));
   assert.equal(await isBlank(new FsStore(full)), false);
+});
+
+test('--delete (npm run seed:clear) deletes the sample story instead of moving it aside, and leaves the system files', async () => {
+  const dir = path.join(await fs.mkdtemp(path.join(os.tmpdir(), 'noobly-clear-')), 'data');
+  await fs.mkdir(dir, { recursive: true });
+  await seedFiles(new FsStore(dir));
+  const out = execFileSync(process.execPath, ['scripts/seed.js', '--blank', '--delete'], { env: { ...process.env, DATA_DIR: dir }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  assert.match(out, /Deleted everything that was in/);
+  assert.deepEqual(await fs.readdir(path.dirname(dir)), ['data'], 'nothing is moved aside');
+  assert.equal(await isBlank(new FsStore(dir)), true);
+  // Exactly what a blank folder made from nothing has (the test above shows that holds no sample content).
+  const fresh = path.join(await fs.mkdtemp(path.join(os.tmpdir(), 'noobly-fresh-')), 'data');
+  await fs.mkdir(fresh, { recursive: true });
+  await seedFiles(new FsStore(fresh), { content: false });
+  const files = await filesOf(dir);
+  assert.deepEqual(files.sort(), (await filesOf(fresh)).sort());
+  // config/seed.yaml differs only in when it was made.
+  for (const f of files.filter((x) => x !== 'config/seed.yaml')) {
+    assert.equal(await fs.readFile(path.join(dir, f), 'utf8'), await fs.readFile(path.join(fresh, f), 'utf8'), `${f} is not the blank copy`);
+  }
 });

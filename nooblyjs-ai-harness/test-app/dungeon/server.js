@@ -18,7 +18,7 @@ app.use((_req, res, next) => {
   next();
 });
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
-// Only public/ is served, so server.js, .noobly/ and node_modules stay private.
+// Only public/ is served, so server.js, noobly/ and node_modules stay private.
 app.use(express.static(path.join(root, 'public')));
 
 // Start listening only when run directly (`node server.js`), not when a test imports this file.

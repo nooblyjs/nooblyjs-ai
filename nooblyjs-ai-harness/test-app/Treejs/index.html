@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Space Miner</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #070a14; font-family: system-ui, sans-serif; color: #e8eefc; }
+    #scene { position: fixed; inset: 0; }
+    #scene canvas { display: block; }
+    #hud {
+      position: fixed; top: 12px; left: 12px; padding: 10px 14px;
+      background: rgba(10, 14, 28, 0.8); border: 1px solid #2a3760; border-radius: 8px;
+      line-height: 1.6; pointer-events: none;
+    }
+    #hud .label { color: #8fa3d6; }
+    #hud .bar { width: 200px; height: 8px; margin: 2px 0 6px; background: #1b2545; border-radius: 4px; overflow: hidden; }
+    #holdFill { height: 100%; width: 0; background: linear-gradient(90deg, #4fd1ff, #7ff7ff); transition: width 0.3s; }
+    #minimap {
+      position: fixed; top: 12px; right: 12px; width: 192px; height: 192px;
+      border: 1px solid #2a3760; border-radius: 8px; background: #050812; cursor: pointer;
+    }
+    #message {
+      position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%);
+      padding: 8px 16px; background: rgba(10, 14, 28, 0.8); border-radius: 8px;
+      pointer-events: none; white-space: nowrap;
+    }
+    #hint { position: fixed; bottom: 12px; left: 0; right: 0; text-align: center; color: #6f80b3; font-size: 13px; pointer-events: none; }
+    .float {
+      position: fixed; left: 0; top: 0; font-weight: 700; font-size: 20px; white-space: nowrap;
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.9); pointer-events: none; will-change: transform;
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="scene"></div>
+
+  <div id="hud">
+    <div><span class="label">Carrying</span> <span id="cargo">0</span> / <span id="capacity">10</span></div>
+    <div><span class="label">Ship hold</span> <span id="hold">0</span> / <span id="holdCap">30</span></div>
+    <div class="bar"><div id="holdFill"></div></div>
+    <div><span class="label">Ship</span> <span id="shipStatus">on its pad</span></div>
+    <div><span class="label">Credits</span> <span id="credits">0</span></div>
+    <div><span class="label">Quota</span> <span id="delivered">0</span> / <span id="quota">40</span></div>
+    <div><span class="label">Sound</span> <span id="sound">on</span> <span class="label">(press M)</span></div>
+  </div>
+
+  <canvas id="minimap" width="192" height="192" title="Click to jump the view"></canvas>
+
+  <div id="message">Loading the asteroid field...</div>
+  <div id="hint">Click the ground to walk &middot; click a crystal to mine it &middot; click your ship to load it &middot; when it is full, click the depot &middot; arrows or WASD to scroll &middot; F follows the astronaut &middot; M toggles sound</div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

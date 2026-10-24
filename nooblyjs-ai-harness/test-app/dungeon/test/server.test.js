@@ -43,7 +43,7 @@ test('the page has the game canvas', async (t) => {
 
 test('files outside public/ are not served', async (t) => {
   const base = await start(t);
-  for (const file of ['/server.js', '/package.json', '/.noobly/ui/License.txt', '/missing-file']) {
+  for (const file of ['/server.js', '/package.json', '/noobly/ui/License.txt', '/missing-file']) {
     const response = await fetch(`${base}${file}`);
     assert.equal(response.status, 404, file);
   }

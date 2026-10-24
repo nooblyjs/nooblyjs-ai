@@ -4,6 +4,8 @@
 //                                 guardrails, model routes, approval rules). No people, teams, items or history.
 //   -- --owner you@example.com    the first Owner, so someone can sign in and set the rest up (--name "Your Name")
 //   -- --reset                    DATA_DIR already has something in it: move it aside (never deleted), then start blank
+// npm run seed:clear              deletes everything in DATA_DIR (the sample story and anything made since), then
+//                                 starts blank as seed:blank does (--blank --delete). Takes --owner and --name too.
 // Stop NooblyJS first. Sign-in accounts are created the next time NooblyJS starts.
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -31,17 +33,18 @@ try {
   const config = loadConfig();
   const reset = args.includes('--reset');
   const blank = args.includes('--blank');
+  const remove = args.includes('--delete');
   await fs.mkdir(config.dataDir, { recursive: true });
 
   if (!blank) {
     const written = await seedFiles(new FsStore(config.dataDir), { reset });
     console.log(`${reset ? 'Wiped and re-seeded' : 'Seeded'} ${config.dataDir}: ${written.length} file${written.length === 1 ? '' : 's'} written.`);
   } else {
-    if (!(await isEmptyDir(config.dataDir))) {
+    if (!remove && !(await isEmptyDir(config.dataDir))) {
       if (!reset) {
-        throw new ConfigError(`${config.dataDir} is not empty. To start blank, stop NooblyJS and run: npm run seed:blank -- --reset\n(the folder is moved aside, not deleted), or point DATA_DIR at a new folder.`);
+        throw new ConfigError(`${config.dataDir} is not empty. To start blank, stop NooblyJS and run: npm run seed:blank -- --reset\n(the folder is moved aside, not deleted), npm run seed:clear (it is deleted), or point DATA_DIR at a new folder.`);
       }
-      // Never deleted: the whole folder is moved next to itself, with the time in its name.
+      // Without --delete, never deleted: the whole folder is moved next to itself, with the time in its name.
       const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
       const aside = `${config.dataDir}.before-blank-${stamp}`;
       try {
@@ -53,7 +56,9 @@ try {
       console.log(`Moved what was there to ${aside}.`);
     }
     const store = new FsStore(config.dataDir);
-    const written = await seedFiles(store, { content: false });
+    // --delete (npm run seed:clear): seedFiles' reset empties the folder first, keeping the folder itself.
+    const written = await seedFiles(store, { content: false, reset: remove });
+    if (remove) console.log(`Deleted everything that was in ${config.dataDir}.`);
     console.log(`Blank data folder ${config.dataDir}: ${written.length} system files, no sample content.`);
     for (const f of written) console.log(`  ${f}`);
     const owner = value('--owner');

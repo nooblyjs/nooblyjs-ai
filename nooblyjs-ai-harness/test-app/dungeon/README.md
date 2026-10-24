@@ -2,7 +2,7 @@
 
 A small, turn-based dungeon game for the browser. Guide an adventurer through sandstone dungeon floors: open chests, find keys, unlock doors, avoid pits and patrolling guards, and reach the stairs down. It runs locally with Node.js and needs no account, API key or internet connection.
 
-**Status: Phase 3 (level files and the exit).** Floor 1, "The Cellar", loads from a level file. Walk through the cellar and down the corridor to the stairs, and the floor is complete. Keys, doors, pits and guards come in later phases. See `.noobly/specification/product.md` for the full design and `.noobly/specification/roadmap.md` for the build plan.
+**Status: Phase 3 (level files and the exit).** Floor 1, "The Cellar", loads from a level file. Walk through the cellar and down the corridor to the stairs, and the floor is complete. Keys, doors, pits and guards come in later phases. See `noobly/specification/product.md` for the full design and `noobly/specification/roadmap.md` for the build plan.
 
 ## Run
 
@@ -14,7 +14,7 @@ npm start
 
 Open **http://localhost:3000**. If that port is busy, use `PORT=3001 npm start`. The server listens only on your own computer (`127.0.0.1`).
 
-`npm start` first runs `npm run assets`, which copies the sprites the game uses from `.noobly/ui` into `public/assets/`. You can also run it on its own. Files already copied are skipped.
+`npm start` first runs `npm run assets`, which copies the sprites the game uses from `noobly/ui` into `public/assets/`. You can also run it on its own. Files already copied are skipped.
 
 ## Play
 
@@ -53,10 +53,10 @@ public/                 Everything the browser loads
   sprites.js            Image loading with progress; tile and character sprite names
   room.js               A hard-coded test room, kept for the draw-order and movement tests
   assets/               Copied sprites (not committed; made by `npm run assets`)
-scripts/copy-assets.js  Copies the sprites from .noobly/ui
+scripts/copy-assets.js  Copies the sprites from noobly/ui
 test/                   node --test tests
-.noobly/ui/             The original Kenney asset pack (left untouched)
-.noobly/specification/  Product requirements and roadmap
+noobly/ui/             The original Kenney asset pack (left untouched)
+noobly/specification/  Product requirements and roadmap
 ```
 
 ## How the drawing works
@@ -93,7 +93,7 @@ Each floor is a JSON file in `public/levels/`. Here is a small example:
 
 - **`floor`** is an ASCII map with one line per row and one character per column. `.` means nothing is there, and the `legend` says which floor tile each other character is. A legend entry without a `facing` turns the tile from square to square to break up the pattern.
 - **Walls are added for you** along the back edges of the floor (the upper edges on screen). The front edges stay open so you can see in. To use a different wall piece somewhere, such as a window, put it in `objects`. That tile then gets no automatic wall.
-- **`objects`** are props and wall pieces, given by name and facing from `.noobly/ui/Isometric`. Props such as barrels block their tile.
+- **`objects`** are props and wall pieces, given by name and facing from `noobly/ui/Isometric`. Props such as barrels block their tile.
 - **`exit`** is the stairs. Stepping onto them ends the floor once everything in `requires` (keys such as `"key:brass"`, from Phase 4) is in your pockets.
 - **`par`** is the turn count for a good route. A test finds the shortest route and checks that it is within par.
 

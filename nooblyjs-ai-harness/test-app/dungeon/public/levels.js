@@ -1,10 +1,14 @@
 // Phase 3: level files. Each floor is stored as JSON in public/levels/ (see product.md §5.3), so it is
 // easy to edit by hand and to test. loadLevel checks a file and turns it into the level object that
 // game.js plays and render.js draws: a size, a start, an exit and a list of drawables.
+// Phase 4: chests (an object with "contains") and locked doors (the "doors" list).
 import { LAYER } from './render.js';
-import { buildMap, isWalkable, DIRECTIONS } from './game.js';
+import {
+  buildMap, isWalkable, DIRECTIONS, WALL_SIDE, CORNER_SIDES, CORNER_TILES, LOCKED_DOORS, CHEST_CLOSED, CHEST_OPEN,
+  edgeKey, sceneItems,
+} from './game.js';
 
-/** Every tile sprite name in the Kenney pack (.noobly/ui/Isometric). A test checks this list against the files. */
+/** Every tile sprite name in the Kenney pack (noobly/ui/Isometric). A test checks this list against the files. */
 export const TILE_NAMES = new Set([
   'barrel', 'barrels', 'barrelsStacked', 'bridge', 'bridgeBroken', 'chair', 'chestClosed', 'chestOpen',
   'dirt', 'dirtTiles', 'planks', 'planksBroken', 'planksHole', 'stairs', 'stairsAged', 'stairsCorner',
@@ -33,7 +37,7 @@ export const KEY_COLOURS = ['brass', 'iron', 'silver'];
 export const VOID = '.';
 
 /** How many level files there are in public/levels/ (1.json, 2.json, …). */
-export const LEVEL_COUNT = 1;
+export const LEVEL_COUNT = 2;
 
 /**
  * The facing of a wall sprite for each edge of its tile (see WALL_SIDE in game.js for the reverse).
@@ -68,6 +72,13 @@ export function levelUrl(id) {
 
 const isWhole = (value) => Number.isInteger(value) && value > 0;
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/** The problem with one thing a chest holds ("key:brass" or "gold:10"), or null if it is fine. */
+function contentProblem(item) {
+  if (typeof item === 'string' && item.startsWith('key:') && KEY_COLOURS.includes(item.slice(4))) return null;
+  if (typeof item === 'string' && /^gold:[1-9]\d*$/.test(item)) return null;
+  return `${JSON.stringify(item)} should be a key (${KEY_COLOURS.map((c) => `key:${c}`).join(', ')}) or gold (like gold:10)`;
+}
 
 /** A floor tile's facing when the legend does not give one: turning the same tile breaks up the pattern. */
 export function floorFacing(col, row) {
@@ -139,10 +150,35 @@ export function loadLevel(data) {
   if (!Array.isArray(objects)) problems.push('"objects" should be a list');
   else objects.forEach((thing, index) => {
     const problem = placement(thing, `object ${index + 1}`);
-    if (problem) problems.push(problem);
+    if (problem) return problems.push(problem);
+    // A closed chest may hold things. Anything else (even an open chest) holds nothing.
+    if (thing.contains === undefined) return;
+    const what = `object ${index + 1} at ${thing.col}, ${thing.row}`;
+    if (thing.tile !== CHEST_CLOSED) problems.push(`${what} is a ${thing.tile}, so it cannot contain anything (only ${CHEST_CLOSED} can)`);
+    else if (!Array.isArray(thing.contains)) problems.push(`${what}: "contains" should be a list`);
+    else for (const item of thing.contains) {
+      const problem = contentProblem(item);
+      if (problem) problems.push(`${what} contains ${problem}`);
+    }
   });
-  // Doors and guards have rules of their own, which arrive in later phases.
-  if (data.doors?.length) problems.push('doors are not supported yet (they arrive in Phase 4)');
+
+  const doors = data.doors ?? [];
+  const doorEdges = new Set();
+  if (!Array.isArray(doors)) problems.push('"doors" should be a list');
+  else doors.forEach((door, index) => {
+    const what = `door ${index + 1}`;
+    const problem = placement(door, what, new Set(Object.keys(LOCKED_DOORS)));
+    if (problem) return problems.push(problem.replace('an unknown tile', `a tile that is not a locked door (${Object.keys(LOCKED_DOORS).join(', ')})`));
+    const at = `${what} at ${door.col}, ${door.row}`;
+    if (!KEY_COLOURS.includes(door.key)) problems.push(`${at} needs a "key" colour: ${KEY_COLOURS.join(', ')}`);
+    // A door stands on an edge, so there must be floor on the far side too, or it leads nowhere.
+    const side = WALL_SIDE[door.facing];
+    if (!hasFloor(door.col + side.dc, door.row + side.dr)) problems.push(`${at} faces ${door.facing}, but there is no floor on the other side of it`);
+    const edge = edgeKey(door.col, door.row, side);
+    if (doorEdges.has(edge)) problems.push(`${at} is on the same edge as another door`);
+    doorEdges.add(edge);
+  });
+  // Guards have rules of their own, which arrive in a later phase.
   if (data.guards?.length) problems.push('guards are not supported yet (they arrive in Phase 6)');
 
   const exit = data.exit;
@@ -159,10 +195,18 @@ export function loadLevel(data) {
   }
   if (problems.length) throw fail();
 
-  const items = buildItems({ width, height, floor, legend, objects, exit, hasFloor });
+  // Closed chests leave the static drawables: they change when opened, so game.js keeps them in its state.
+  const isChest = (thing) => thing.tile === CHEST_CLOSED;
+  const chests = objects.filter(isChest).map(({ col, row, facing, contains = [] }) => (
+    Object.freeze({ col, row, facing, contains: Object.freeze([...contains]) })
+  ));
+  const lockedDoors = doors.map(({ col, row, tile, facing, key }) => Object.freeze({ col, row, tile, facing, key }));
+  const items = buildItems({
+    width, height, floor, legend, objects: objects.filter((thing) => !isChest(thing)), doors: lockedDoors, exit, hasFloor,
+  });
 
-  // With the drawables built, the rules can say which tiles are walkable.
-  const map = buildMap({ width, height, items });
+  // With the drawables built, the rules can say which tiles are walkable (chests fill their tile).
+  const map = buildMap({ width, height, items: [...items, ...chests.map((chest) => ({ ...chest, tile: CHEST_CLOSED, layer: LAYER.object }))] });
   const start = data.start;
   const facing = start?.facing ?? 0;
   if (!isObject(start)) problems.push('the level has no start');
@@ -182,20 +226,39 @@ export function loadLevel(data) {
     start: Object.freeze({ col: start.col, row: start.row, facing }),
     exit: Object.freeze({ col: exit.col, row: exit.row, requires: Object.freeze([...(exit.requires ?? [])]) }),
     items: Object.freeze(items),
+    chests: Object.freeze(chests),
+    doors: Object.freeze(lockedDoors),
   });
+}
+
+/**
+ * Every drawable a level can ever show: its static items, plus its chests and doors both closed and open.
+ * Use it to know which sprites to load or copy.
+ */
+export function spriteItems(level) {
+  const closed = { chests: (level.chests ?? []).map((c) => ({ ...c, open: false })), doors: (level.doors ?? []).map((d) => ({ ...d, open: false })) };
+  const opened = { chests: closed.chests.map((c) => ({ ...c, open: true })), doors: closed.doors.map((d) => ({ ...d, open: true })) };
+  return [...sceneItems(level.items, closed), ...sceneItems([], opened)];
 }
 
 /** Wall sprites, which stand on a tile's edges (used to decide where to add automatic walls). */
 const isWallPiece = (tile) => tile.startsWith('stoneWall');
 
+/** The edges a wall piece (or door) covers, as edgeKey names. */
+function coveredEdges({ col, row, tile, facing }) {
+  const sides = CORNER_TILES.has(tile) ? CORNER_SIDES[facing] : [WALL_SIDE[facing]];
+  return sides.map((side) => edgeKey(col, row, side));
+}
+
 /**
  * Turn the checked level data into drawables: { tile, facing, col, row, layer }.
  * The back walls are added automatically: a floor tile with no floor behind it (row − 1 or col − 1)
  * gets a wall on that edge, or a corner piece if both are open. The front edges stay open, so we can
- * see into the room (a cut-away view). A tile with its own wall pieces in `objects` gets no
- * automatic walls, so a level can swap in a window or a doorway.
+ * see into the room (a cut-away view). An edge that already has a wall piece in `objects` (or a door)
+ * gets no automatic wall, so a level can swap in a window or a doorway.
+ * Doors are not added here: game.js draws them from its state (see sceneItems).
  */
-function buildItems({ width, height, floor, legend, objects, exit, hasFloor }) {
+function buildItems({ width, height, floor, legend, objects, doors, exit, hasFloor }) {
   const items = [];
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
@@ -206,12 +269,12 @@ function buildItems({ width, height, floor, legend, objects, exit, hasFloor }) {
     }
   }
 
-  const ownWalls = new Set(objects.filter(({ tile }) => isWallPiece(tile)).map(({ col, row }) => `${col},${row}`));
+  const covered = new Set([...objects.filter(({ tile }) => isWallPiece(tile)), ...doors].flatMap(coveredEdges));
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
-      if (!hasFloor(col, row) || ownWalls.has(`${col},${row}`)) continue;
-      const openBehind = !hasFloor(col, row - 1);
-      const openLeft = !hasFloor(col - 1, row);
+      if (!hasFloor(col, row)) continue;
+      const openBehind = !hasFloor(col, row - 1) && !covered.has(edgeKey(col, row, WALL_SIDE[WALL_EDGE.backRow]));
+      const openLeft = !hasFloor(col - 1, row) && !covered.has(edgeKey(col, row, WALL_SIDE[WALL_EDGE.backCol]));
       if (openBehind && openLeft) items.push({ tile: 'stoneWallCorner', facing: BACK_CORNER, col, row, layer: LAYER.object });
       else if (openBehind) items.push({ tile: 'stoneWall', facing: WALL_EDGE.backRow, col, row, layer: LAYER.object });
       else if (openLeft) items.push({ tile: 'stoneWall', facing: WALL_EDGE.backCol, col, row, layer: LAYER.object });

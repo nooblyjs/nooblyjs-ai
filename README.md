@@ -27,6 +27,7 @@ git clone https://github.com/nooblyjs/nooblyjs-ai.git
 cd nooblyjs-ai
 npm install            # installs every project, in dependency order (scripts/each.js)
 npm run seed           # the host's sample story (the fictional Acme Retail)
+npm run seed:clear     # DELETES the host's data folder, leaving system files only (-- --owner you@x.com to sign in)
 npm start              # the host, with every app on the rail: http://127.0.0.1:11001
 npm test               # every project's tests, offline
 npm run start:teammate # one app on its own (also :infrastructure, :desktop, :knowledge, :factory, :harness)

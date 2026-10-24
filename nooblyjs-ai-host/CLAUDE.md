@@ -234,6 +234,7 @@ node --test test/services/onboarding.test.js   # a single test file
 node --test --test-name-pattern="refuses" "test/**/*.test.js"   # tests matching a name
 npm run seed -- --reset                     # wipe data/ and rewrite the seed story
 npm run seed:blank -- --owner you@x.com     # start from scratch: system files only, no sample content (--reset moves data/ aside, never deletes)
+npm run seed:clear -- --owner you@x.com     # the same, but DELETES everything in data/ first (also from the monorepo root)
 npm run metrics:reconcile                   # recompute Metrics from the raw events; exit 1 on any difference
 npm run trace:rebuild                       # build the trace again from every app; diff with data/trace/index.yaml, exit 1 on a difference
 npm run test:e2e                            # Playwright + axe (specs, then five stories, each on its own NooblyJS; ~15 min); failures in .temp/test-results/e2e*

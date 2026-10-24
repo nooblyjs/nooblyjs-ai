@@ -1,0 +1,14 @@
+{
+  "name": "moonlander",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An SVG Apollo moon lander game: hop between landing platforms in lunar gravity",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": { "express": "4.22.3" }
+}

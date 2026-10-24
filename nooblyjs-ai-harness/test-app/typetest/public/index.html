@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TypeTest</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>TypeTest</h1>
+    <p class="tagline">Type the sentence. Watch your keys light up. Beat your own record.</p>
+  </header>
+
+  <main>
+    <section class="panel typing-panel">
+      <div class="stats">
+        <div><span class="label">Time</span><span id="time">0.0s</span></div>
+        <div><span class="label">WPM</span><span id="wpm">0</span></div>
+        <div><span class="label">Accuracy</span><span id="accuracy">100%</span></div>
+        <div><span class="label">Errors</span><span id="errors">0</span></div>
+      </div>
+
+      <p id="sentence" class="sentence" aria-live="polite"></p>
+      <p id="next-hint" class="hint"></p>
+
+      <input id="typed" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+             aria-label="Type the sentence here" placeholder="Start typing here...">
+
+      <div class="actions">
+        <button id="next" type="button">New sentence</button>
+        <span id="result" class="result" role="status"></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Keyboard</h2>
+      <p class="hint">Keys light up as you press them. Colours show which finger to use; the key you need next glows.</p>
+      <div id="keyboard" class="keyboard" aria-label="Keyboard"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Which finger does what</h2>
+      <p class="hint">Rest your fingers on the home row (A S D F and J K L ;). Each finger goes back there after every key.</p>
+      <div id="fingers" class="fingers"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Your progress</h2>
+      <p id="summary" class="summary"></p>
+      <table>
+        <thead>
+          <tr><th>When</th><th>WPM</th><th>Accuracy</th><th>Errors</th><th>Score</th></tr>
+        </thead>
+        <tbody id="history"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

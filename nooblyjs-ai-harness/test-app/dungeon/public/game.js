@@ -1,5 +1,6 @@
 // Phase 2: the game rules. Pure functions with no DOM or canvas, so they can be tested in Node.
 // Phase 3: the level exit (stairs), its exit condition, and the game status.
+// Phase 4: the interact action, chests (keys and gold), and locked doors and gates.
 // The state is never changed in place: `step` returns a new state. That makes undo (Phase 5) easy
 // and lets the screen compare the old and new state to decide what to animate.
 
@@ -60,8 +61,38 @@ export const OBSTACLE_TILES = new Set([
 /** The `layer` value of floor tiles in a level's drawables (the same as LAYER.floor in render.js). */
 export const FLOOR_LAYER = 0;
 
+/** The `layer` value of objects: walls, props, chests and doors (the same as LAYER.object in render.js). */
+export const OBJECT_LAYER = 1;
+
+/**
+ * Locked doors and gates, and the sprite each one turns into once unlocked.
+ * They are not in WALL_TILES: whether they block depends on the game state, not just the map.
+ */
+export const LOCKED_DOORS = Object.freeze({
+  stoneWallDoorClosed: 'stoneWallDoorOpen',
+  stoneWallDoorBars: 'stoneWallDoorOpen',
+  stoneWallGateClosed: 'stoneWallGateOpen',
+  stoneWallGateBars: 'stoneWallGateOpen',
+});
+
+/** The chest sprites before and after opening. */
+export const CHEST_CLOSED = 'chestClosed';
+export const CHEST_OPEN = 'chestOpen';
+
 const key = (col, row) => `${col},${row}`;
 const sideKey = ({ dc, dr }) => `${dc},${dr}`;
+
+/**
+ * One name for the edge between a tile and its neighbour in direction { dc, dr }.
+ * The same edge can be described from either side (a W wall on 1, 1 is an E wall on 2, 1),
+ * so we always name it from the tile with the smaller col or row.
+ */
+export function edgeKey(col, row, { dc, dr }) {
+  if (dc === 1) return `${col},${row}|col`;
+  if (dc === -1) return `${col - 1},${row}|col`;
+  if (dr === 1) return `${col},${row}|row`;
+  return `${col},${row - 1}|row`;
+}
 
 /**
  * Work out the rules-side map of a level from its list of drawables.
@@ -103,6 +134,8 @@ export function isWalkable(map, col, row) {
 /**
  * A fresh game state for a level: the player at the start, on turn 0, with empty pockets.
  * `level.exit` ({ col, row, requires }) is optional, so small test levels can leave it out.
+ * `level.chests` ([{ col, row, facing, contains }]) and `level.doors` ([{ col, row, tile, facing, key }])
+ * are optional too. They live in the state, not the map, because opening them changes them.
  */
 export function createState(level) {
   const map = buildMap(level);
@@ -111,14 +144,109 @@ export function createState(level) {
   const exit = level.exit
     ? Object.freeze({ col: level.exit.col, row: level.exit.row, requires: Object.freeze([...(level.exit.requires ?? [])]) })
     : null;
+  // Chests fill their tile whether open or not, so they are obstacles on the map.
+  for (const chest of level.chests ?? []) map.obstacles.add(key(chest.col, chest.row));
+  const chests = (level.chests ?? []).map((chest) => Object.freeze({
+    col: chest.col, row: chest.row, facing: chest.facing, contains: Object.freeze([...(chest.contains ?? [])]), open: false,
+  }));
+  const doors = (level.doors ?? []).map((door) => {
+    if (!LOCKED_DOORS[door.tile]) throw new Error(`${door.tile} is not a locked door or gate`);
+    return Object.freeze({
+      col: door.col, row: door.row, tile: door.tile, facing: door.facing, key: door.key,
+      edge: edgeKey(door.col, door.row, WALL_SIDE[door.facing]), open: false,
+    });
+  });
   return Object.freeze({
     map,
     exit,
     player: Object.freeze({ col, row, facing }),
     inventory: Object.freeze([]),
+    gold: 0,
+    chests: Object.freeze(chests),
+    doors: Object.freeze(doors),
     turn: 0,
     status: 'playing',
     event: 'start',
+    found: Object.freeze([]),
+  });
+}
+
+/** The locked (still closed) door on the edge between a tile and its neighbour in direction { dc, dr }, or null. */
+export function lockedDoorBetween(state, col, row, side) {
+  const edge = edgeKey(col, row, side);
+  return state.doors.find((door) => !door.open && door.edge === edge) ?? null;
+}
+
+/**
+ * What the player is facing and could use with the interact action:
+ * { kind: 'door', index, door } for a locked door on the edge in front,
+ * { kind: 'chest', index, chest } for a closed chest on the tile in front, or null.
+ * A wall between the player and a chest gets in the way.
+ */
+export function facingTarget(state) {
+  const { col, row, facing } = state.player;
+  const side = DIRECTIONS[facing];
+  const door = lockedDoorBetween(state, col, row, side);
+  if (door) return { kind: 'door', index: state.doors.indexOf(door), door };
+  if (wallBetween(state.map, col, row, side)) return null;
+  const index = state.chests.findIndex((chest) => !chest.open && chest.col === col + side.dc && chest.row === row + side.dr);
+  return index === -1 ? null : { kind: 'chest', index, chest: state.chests[index] };
+}
+
+/** The colour of each key in an inventory, e.g. ['brass', 'brass', 'iron'] (one entry per key held). */
+export function keysHeld(state) {
+  return state.inventory.filter((item) => item.startsWith('key:')).map((item) => item.slice(4));
+}
+
+/**
+ * The drawables that come from the game state: chests (open or closed) and doors (locked or open).
+ * Put them together with a level's static `items` for drawing. Doors go first and chests last,
+ * so on a shared tile a door is drawn like a wall (behind) and a chest like a prop (in front).
+ */
+export function sceneItems(items, state) {
+  const doors = state.doors.map(({ col, row, tile, facing, open }) => ({
+    tile: open ? LOCKED_DOORS[tile] : tile, facing, col, row, layer: OBJECT_LAYER,
+  }));
+  const chests = state.chests.map(({ col, row, facing, open }) => ({
+    tile: open ? CHEST_OPEN : CHEST_CLOSED, facing, col, row, layer: OBJECT_LAYER,
+  }));
+  return [...doors, ...items, ...chests];
+}
+
+/** A new state with some changes. `found` (what a chest held) only lasts for the turn it was found. */
+const next = (state, changes) => Object.freeze({ ...state, found: Object.freeze([]), ...changes });
+
+/** Replace one entry of a frozen list. */
+const replaceAt = (list, index, value) => Object.freeze(list.map((item, i) => (i === index ? value : item)));
+
+/** The interact action: open the chest or unlock the door in front of the player. */
+function interact(state) {
+  const target = facingTarget(state);
+  if (!target) return next(state, { event: 'nothing' });
+  if (target.kind === 'chest') {
+    const { chest, index } = target;
+    const keys = chest.contains.filter((item) => item.startsWith('key:'));
+    const gold = chest.contains
+      .filter((item) => item.startsWith('gold:'))
+      .reduce((sum, item) => sum + Number(item.slice(5)), 0);
+    return next(state, {
+      chests: replaceAt(state.chests, index, Object.freeze({ ...chest, open: true })),
+      inventory: Object.freeze([...state.inventory, ...keys]),
+      gold: state.gold + gold,
+      turn: state.turn + 1,
+      event: 'opened',
+      found: chest.contains,
+    });
+  }
+  const { door, index } = target;
+  const keyIndex = state.inventory.indexOf(`key:${door.key}`);
+  // No matching key: like walking into a wall, trying costs no turn.
+  if (keyIndex === -1) return next(state, { event: 'locked' });
+  return next(state, {
+    doors: replaceAt(state.doors, index, Object.freeze({ ...door, open: true })),
+    inventory: Object.freeze(state.inventory.filter((_, i) => i !== keyIndex)), // the key is used up
+    turn: state.turn + 1,
+    event: 'unlocked',
   });
 }
 
@@ -140,28 +268,28 @@ export function onExit(state) {
 
 /**
  * Apply one player action and return the new state.
- * Actions: { type: 'move', direction: 0 | 2 | 4 | 6 } and { type: 'wait' }.
- * A move into a wall, prop or the map edge turns the player to face it, but costs no turn.
- * `event` says what happened ('moved', 'blocked' or 'waited'), so the screen knows what to animate.
+ * Actions: { type: 'move', direction: 0 | 2 | 4 | 6 }, { type: 'wait' } and { type: 'interact' }.
+ * A move into a wall, prop, locked door or the map edge turns the player to face it, but costs no turn.
+ * Interact opens the chest or unlocks the door in front (with a key of the same colour, which is used up).
+ * `event` says what happened ('moved', 'blocked', 'waited', 'opened', 'unlocked', 'locked' or 'nothing'),
+ * so the screen knows what to animate. After 'opened', `found` lists what was in the chest.
  * Stepping onto the exit with nothing missing ends the floor: the status becomes 'complete'.
  * Once the floor is over, actions are ignored and the same state comes back.
  */
 export function step(state, action) {
   if (state.status !== 'playing') return state;
-  if (action.type === 'wait') {
-    return Object.freeze({ ...state, turn: state.turn + 1, event: 'waited' });
-  }
+  if (action.type === 'wait') return next(state, { turn: state.turn + 1, event: 'waited' });
+  if (action.type === 'interact') return interact(state);
   if (action.type === 'move') {
     const delta = DIRECTIONS[action.direction];
     if (!delta) throw new Error(`Unknown direction: ${action.direction}`);
     const { col, row } = state.player;
     const to = { col: col + delta.dc, row: row + delta.dr };
-    const blocked = wallBetween(state.map, col, row, delta) || !isWalkable(state.map, to.col, to.row);
-    if (blocked) {
-      return Object.freeze({ ...state, player: Object.freeze({ col, row, facing: action.direction }), event: 'blocked' });
-    }
-    const moved = Object.freeze({
-      ...state,
+    const blocked = wallBetween(state.map, col, row, delta)
+      || lockedDoorBetween(state, col, row, delta)
+      || !isWalkable(state.map, to.col, to.row);
+    if (blocked) return next(state, { player: Object.freeze({ col, row, facing: action.direction }), event: 'blocked' });
+    const moved = next(state, {
       player: Object.freeze({ ...to, facing: action.direction }),
       turn: state.turn + 1,
       event: 'moved',

@@ -1,7 +1,7 @@
 # Bugs and changes: tasks
 
 > The log. Rules: `requirements.md`; how a fix is made: `design.md`.
-> **Next IDs: BUG-012, CHG-011.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
+> **Next IDs: BUG-012, CHG-012.** Status: open → fixing → fixed → verified. Only you tick a box, once it is
 > verified.
 
 ## How to log one
@@ -53,6 +53,16 @@ know; "steps" can be one line.
     the axe failures, which are real.
 
 ## Changes
+
+- [ ] CHG-011 — `npm run seed:clear` deletes the seeded data, leaving a blank data folder · Seed · nooblyjs-ai-host, monorepo root
+  - Asked: 2026-10-22 ("make me an npm command that deletes all the seeded data") · Status: fixed
+  - What and why: `seed:blank -- --reset` moves the old folder aside and never deletes it, so those folders pile up.
+    `seed:clear` (`scripts/seed.js --blank --delete`) deletes everything in DATA_DIR (the sample story and anything
+    made since; the folder itself stays, as it may be a mount point), then writes the system files and the blank marker,
+    so no app adds the sample story on the next start. It takes `--owner` and `--name` like `seed:blank`; the root's
+    `npm run seed:clear` runs the host's.
+  - Steering: tech.md §10 (commands); CLAUDE.md, the root README
+  - Tests: `test/blank.test.js` 6/6 (new: `--delete` leaves exactly a fresh blank folder, nothing moved aside)
 
 - [ ] CHG-010 — Products are set up on the Portfolios page, with the value streams, not in a panel on the board · Product · nooblyjs-ai-product · Phase 25a
   - Asked: 2026-10-22 ("can you combine the values stream management into the main portfolio screen") · Status: fixed

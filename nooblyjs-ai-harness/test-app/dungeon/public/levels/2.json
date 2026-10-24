@@ -1,0 +1,49 @@
+{
+  "id": 2,
+  "name": "The Storeroom",
+  "par": 40,
+  "size": [13, 11],
+  "legend": { "s": "stone", "p": "planks", "t": "stoneTile" },
+  "floor": [
+    "ssssss.pppppp",
+    "ssssss.pppppp",
+    "ssssssspppppp",
+    "ssssss.pppppp",
+    "ssssss.pppppp",
+    "..........s..",
+    "........ttttt",
+    "........ttttt",
+    "........ttttt",
+    "........ttttt",
+    "........ttttt"
+  ],
+  "start": { "col": 1, "row": 3, "facing": 2 },
+  "objects": [
+    { "col": 4, "row": 0, "tile": "chestClosed", "facing": "S", "contains": ["gold:10"] },
+    { "col": 0, "row": 2, "tile": "chestClosed", "facing": "E", "contains": ["key:iron"] },
+    { "col": 0, "row": 0, "tile": "barrels", "facing": "S" },
+    { "col": 3, "row": 2, "tile": "tableRoundChairs", "facing": "N" },
+    { "col": 0, "row": 4, "tile": "barrelsStacked", "facing": "E" },
+    { "col": 5, "row": 4, "tile": "woodenCrates", "facing": "W" },
+
+    { "col": 12, "row": 0, "tile": "chestClosed", "facing": "S", "contains": ["key:brass", "gold:15"] },
+    { "col": 7, "row": 4, "tile": "chestClosed", "facing": "W", "contains": ["gold:5"] },
+    { "col": 9, "row": 0, "tile": "woodenCrates", "facing": "S" },
+    { "col": 9, "row": 1, "tile": "woodenCrate", "facing": "E" },
+    { "col": 9, "row": 3, "tile": "woodenCrates", "facing": "N" },
+    { "col": 9, "row": 4, "tile": "woodenCrate", "facing": "S" },
+    { "col": 11, "row": 1, "tile": "woodenCrate", "facing": "W" },
+    { "col": 11, "row": 2, "tile": "woodenCrates", "facing": "E" },
+    { "col": 12, "row": 4, "tile": "barrelsStacked", "facing": "S" },
+    { "col": 7, "row": 0, "tile": "barrels", "facing": "S" },
+
+    { "col": 12, "row": 6, "tile": "woodenCrate", "facing": "N" },
+    { "col": 9, "row": 8, "tile": "tableShortChairs", "facing": "N" },
+    { "col": 8, "row": 10, "tile": "barrel", "facing": "E" }
+  ],
+  "doors": [
+    { "col": 5, "row": 2, "tile": "stoneWallDoorClosed", "facing": "W", "key": "iron" },
+    { "col": 10, "row": 4, "tile": "stoneWallGateBars", "facing": "N", "key": "brass" }
+  ],
+  "exit": { "col": 11, "row": 9, "tile": "stairs", "facing": "N", "requires": [] }
+}

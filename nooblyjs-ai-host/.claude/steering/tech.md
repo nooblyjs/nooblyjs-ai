@@ -689,6 +689,7 @@ npm start            # node --env-file-if-exists=.env app.js
 npm run dev          # the same, restarting on changes (nodemon, a development dependency: not installed with --omit=dev)
 npm run electron     # NooblyJS in a desktop window (apps/electron/main.js); test:electron loads the first page and quits
 npm run seed:blank   # a data folder with the system files and NO sample content (-- --owner you@… --name "…"; --reset moves an existing folder aside)
+npm run seed:clear   # the same, but DELETES everything in DATA_DIR first instead of moving it aside (also from the monorepo root)
 npm run backup       # a dated, verified copy of data/ in BACKUP_DIR (--list, --verify <name>); npm run restore -- <name>
 npm run perf         # NooblyJS on 10x the seed volume: how long the key pages' APIs take (target 1 s)
 npm run test:edge    # the Edge extension (apps/edge) loaded into Playwright's Chromium (§7.4)

@@ -1,0 +1,12 @@
+{
+  "name": "space-miner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A point-and-click space mining game in three.js, using Kenney's Space Kit (CC0)",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node --test test/logic.test.js test/animation.test.js test/sound.test.js test/view.test.js"
+  },
+  "engines": { "node": ">=20" }
+}

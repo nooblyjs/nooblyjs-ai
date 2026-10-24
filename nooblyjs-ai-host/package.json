@@ -30,6 +30,7 @@
     "coverage": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=.temp/test-results/coverage.txt --experimental-test-coverage \"test/**/*.test.js\"",
     "seed": "node --env-file-if-exists=.env scripts/seed.js",
     "seed:blank": "node --env-file-if-exists=.env scripts/seed.js --blank",
+    "seed:clear": "node --env-file-if-exists=.env scripts/seed.js --blank --delete",
     "metrics:reconcile": "node --env-file-if-exists=.env scripts/metrics-reconcile.js",
     "trace:rebuild": "node --env-file-if-exists=.env scripts/trace-rebuild.js",
     "steering:sync": "node scripts/sync-steering.js",

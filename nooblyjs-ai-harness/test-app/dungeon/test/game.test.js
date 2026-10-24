@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createState, step, buildMap, wallBetween, isWalkable, DIRECTIONS, WALL_SIDE, FLOOR_LAYER,
-  status, missingForExit, onExit,
+  status, missingForExit, onExit, OBJECT_LAYER, facingTarget, keysHeld, sceneItems, edgeKey,
 } from '../public/game.js';
 import { LAYER, gridToScreen } from '../public/render.js';
 import { testLevel } from '../public/room.js';
@@ -14,12 +14,12 @@ const LEFT = { type: 'move', direction: 6 }; // up-left, col − 1
 const WAIT = { type: 'wait' };
 
 /** A small open level: a floor of `width` × `height`, plus any extra drawables. */
-function openLevel({ width = 4, height = 4, start = { col: 1, row: 1, facing: 0 }, items = [], exit } = {}) {
+function openLevel({ width = 4, height = 4, start = { col: 1, row: 1, facing: 0 }, items = [], exit, chests, doors } = {}) {
   const floor = [];
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) floor.push({ tile: 'stone', facing: 'N', col, row, layer: FLOOR_LAYER });
   }
-  return { width, height, start, items: [...floor, ...items], exit };
+  return { width, height, start, items: [...floor, ...items], exit, chests, doors };
 }
 
 const object = (tile, facing, col, row) => ({ tile, facing, col, row, layer: LAYER.object });
@@ -30,7 +30,7 @@ test('the rules and the renderer agree on which layer is the floor', () => {
 });
 
 test('each direction moves the way its sprite faces on screen', () => {
-  // Direction 0 faces up-right, 2 down-right, 4 down-left, 6 up-left (see .noobly/ui/Information.png).
+  // Direction 0 faces up-right, 2 down-right, 4 down-left, 6 up-left (see noobly/ui/Information.png).
   const screen = (direction) => gridToScreen(DIRECTIONS[direction].dc, DIRECTIONS[direction].dr);
   assert.ok(screen(0).x > 0 && screen(0).y < 0, 'up-right');
   assert.ok(screen(2).x > 0 && screen(2).y > 0, 'down-right');
@@ -184,4 +184,117 @@ test('an exit that needs a key lets you stand on it but does not end the floor',
   // With the key in the inventory (Phase 4 adds a way to get it), stepping back on finishes.
   const withKey = Object.freeze({ ...play(state, [LEFT]), inventory: Object.freeze(['key:brass']) });
   assert.equal(status(step(withKey, RIGHT)), 'complete');
+});
+
+// Phase 4: chests, keys and locked doors.
+
+const USE = { type: 'interact' };
+const chest = (col, row, contains) => ({ col, row, facing: 'S', contains });
+const door = (col, row, colour, { tile = 'stoneWallDoorClosed', facing = 'W' } = {}) => ({ col, row, tile, facing, key: colour });
+
+test('the object layer matches the renderer', () => {
+  assert.equal(OBJECT_LAYER, LAYER.object);
+});
+
+test('opening the chest in front puts its keys and gold in your pockets and takes a turn', () => {
+  const state = createState(openLevel({ chests: [chest(2, 1, ['key:brass', 'gold:10', 'gold:5'])], start: { col: 1, row: 1, facing: 2 } }));
+  const opened = step(state, USE);
+  assert.equal(opened.event, 'opened');
+  assert.deepEqual(opened.found, ['key:brass', 'gold:10', 'gold:5']);
+  assert.deepEqual(opened.inventory, ['key:brass']);
+  assert.deepEqual(keysHeld(opened), ['brass']);
+  assert.equal(opened.gold, 15);
+  assert.equal(opened.turn, 1);
+  assert.equal(opened.chests[0].open, true);
+  assert.equal(state.chests[0].open, false, 'the old state is unchanged');
+  // What was found only lasts one turn.
+  assert.deepEqual(step(opened, WAIT).found, []);
+});
+
+test('a chest can only be opened once, and blocks its tile', () => {
+  const state = createState(openLevel({ chests: [chest(2, 1, ['gold:3'])], start: { col: 1, row: 1, facing: 2 } }));
+  assert.equal(step(state, RIGHT).event, 'blocked');
+  const again = step(step(state, USE), USE);
+  assert.equal(again.event, 'nothing');
+  assert.equal(again.gold, 3);
+  assert.equal(again.turn, 1, 'trying again costs no turn');
+});
+
+test('interact only reaches the tile you are facing, and not through a wall', () => {
+  const level = openLevel({ chests: [chest(2, 1, ['gold:1'])], start: { col: 1, row: 1, facing: 4 } });
+  assert.equal(step(createState(level), USE).event, 'nothing');
+  assert.equal(facingTarget(createState(level)), null);
+  const walled = createState({ ...level, start: { col: 1, row: 1, facing: 2 }, items: [...level.items, object('stoneWall', 'W', 1, 1)] });
+  assert.equal(step(walled, USE).event, 'nothing');
+});
+
+test('a locked door blocks the edge it stands on, from both sides', () => {
+  const state = createState(openLevel({ doors: [door(1, 1, 'brass')] })); // between 1, 1 and 2, 1
+  assert.equal(step(state, RIGHT).event, 'blocked');
+  const otherSide = play(state, [UP, RIGHT, DOWN]);
+  assert.deepEqual(otherSide.player, { col: 2, row: 1, facing: 4 });
+  assert.equal(step(otherSide, LEFT).event, 'blocked');
+  assert.equal(facingTarget(step(otherSide, LEFT)).kind, 'door');
+});
+
+test('the wrong key does not open a door, and trying costs no turn', () => {
+  const state = createState(openLevel({
+    chests: [chest(1, 2, ['key:iron'])], doors: [door(1, 1, 'brass')], start: { col: 1, row: 1, facing: 4 },
+  }));
+  const withIron = step(state, USE);
+  assert.deepEqual(keysHeld(withIron), ['iron']);
+  const tried = play(withIron, [RIGHT, USE]); // bump into the door to face it, then try the key
+  assert.equal(tried.event, 'locked');
+  assert.equal(tried.turn, 1);
+  assert.deepEqual(keysHeld(tried), ['iron'], 'the iron key is kept');
+  assert.equal(step(tried, RIGHT).event, 'blocked');
+});
+
+test('the matching key unlocks the door, is used up, and the doorway opens', () => {
+  const state = createState(openLevel({
+    chests: [chest(1, 2, ['key:brass', 'key:brass'])], doors: [door(1, 1, 'brass', { tile: 'stoneWallGateBars' })],
+    start: { col: 1, row: 1, facing: 4 },
+  }));
+  const unlocked = play(state, [USE, RIGHT, USE]);
+  assert.equal(unlocked.event, 'unlocked');
+  assert.equal(unlocked.turn, 2);
+  assert.deepEqual(keysHeld(unlocked), ['brass'], 'one key used, one kept');
+  assert.equal(unlocked.doors[0].open, true);
+  assert.equal(facingTarget(unlocked), null);
+  assert.deepEqual(step(unlocked, RIGHT).player, { col: 2, row: 1, facing: 2 });
+});
+
+test('a door works from either side, whichever tile it is placed on', () => {
+  // A W door on 1, 1 and an E door on 2, 1 stand on the same edge.
+  const fromLeft = createState(openLevel({ doors: [door(2, 1, 'iron', { facing: 'E' })], start: { col: 1, row: 1, facing: 2 } }));
+  assert.equal(facingTarget(fromLeft).kind, 'door');
+  assert.equal(edgeKey(1, 1, DIRECTIONS[2]), edgeKey(2, 1, DIRECTIONS[6]));
+  assert.equal(edgeKey(1, 1, DIRECTIONS[4]), edgeKey(1, 2, DIRECTIONS[0]));
+  assert.notEqual(edgeKey(1, 1, DIRECTIONS[2]), edgeKey(1, 1, DIRECTIONS[4]));
+});
+
+test('the scene shows chests and doors as they are now', () => {
+  const state = createState(openLevel({
+    chests: [chest(1, 2, ['key:brass'])], doors: [door(1, 1, 'brass')], start: { col: 1, row: 1, facing: 4 },
+  }));
+  const tiles = (s) => sceneItems([], s).map(({ tile }) => tile);
+  assert.deepEqual(tiles(state), ['stoneWallDoorClosed', 'chestClosed']);
+  assert.deepEqual(tiles(play(state, [USE, RIGHT, USE])), ['stoneWallDoorOpen', 'chestOpen']);
+  assert.ok(sceneItems([], state).every((item) => item.layer === LAYER.object));
+});
+
+test('an exit that needs a key opens once a chest gives you that key', () => {
+  const state = createState(openLevel({
+    chests: [chest(1, 2, ['key:silver'])], exit: { col: 3, row: 1, requires: ['key:silver'] }, start: { col: 1, row: 1, facing: 2 },
+  }));
+  assert.equal(status(play(state, [RIGHT, RIGHT])), 'playing');
+  const done = play(state, [DOWN, USE, RIGHT, RIGHT]); // face the chest (blocked), open it, walk to the stairs
+  assert.equal(status(done), 'complete');
+  assert.equal(done.turn, 3);
+});
+
+test('interacting after the floor is over is ignored, and a bad door tile is an error', () => {
+  const done = play(createState(openLevel({ exit: { col: 2, row: 1 } })), [RIGHT]);
+  assert.equal(step(done, USE), done);
+  assert.throws(() => createState(openLevel({ doors: [door(1, 1, 'brass', { tile: 'stoneWall' })] })), /not a locked door/);
 });

@@ -21,6 +21,7 @@
     "clean": "node scripts/each.js clean",
     "install": "node scripts/each.js install",
     "seed": "npm run seed --prefix nooblyjs-ai-host",
+    "seed:clear": "npm run seed:clear --prefix nooblyjs-ai-host --",
     "steering:sync": "npm run steering:sync --prefix nooblyjs-ai-host",
     "start:host": "npm start --prefix nooblyjs-ai-host",
     "start:desktop": "npm start --prefix nooblyjs-ai-desktop",
