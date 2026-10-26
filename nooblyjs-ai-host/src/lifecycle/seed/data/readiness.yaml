@@ -1,33 +1,6 @@
-# The readiness checks per stage (product.md §4). An item can't request approval until its stage's checks pass,
-# unless a person overrides with a reason. The Product Factory works out each check's result from the spec.
+# How long an item may wait on a person before Lifecycle calls it "waiting too long" (product.md §4).
+#
+# Since Phase 27 the checks each stage needs are in lifecycle.yaml (each stage's `checks`). A stage listed under
+# `stages` here is used only when lifecycle.yaml gives that stage no `checks` of its own, as a data folder from before
+# Phase 27 does: { key, passed, failed }, worked out by the evaluator its stage's kind has for that key.
 waitingTooLongDays: 3
-stages:
-  # Before an idea is accepted (Phase 17). The Product section works it out from the idea's business case; an item in
-  # Discover that is not an idea has none.
-  discover:
-    - { key: business-case-complete, passed: Business case complete, failed: Business case not complete }
-  product:
-    - { key: problem-evidence, passed: Problem backed by evidence, failed: Problem needs evidence }
-    - { key: goals-measurable, passed: Goals are measurable, failed: Goals need measures }
-    - { key: criteria-testable, passed: Criteria are testable, failed: Criteria need to be testable }
-    - { key: dependencies-named, passed: Dependencies named, failed: Dependencies not named }
-    - { key: performance-targets, passed: Performance targets set, failed: Performance targets missing }
-    - { key: privacy-reviewed, passed: Privacy reviewed, failed: Privacy not reviewed }
-    - { key: rollout-plan, passed: Rollout plan ready, failed: Rollout plan missing }
-  # Before each story's Design handoff (Phase 16c). The Design section works them out from the item's design; an item
-  # with no Design work (handed off before 16c) has none.
-  design:
-    - { key: requirements-covered, passed: Every business requirement is covered by a story, failed: A business requirement has no story }
-    - { key: decisions-decided, passed: No decision is still proposed, failed: A decision is still proposed }
-    - { key: interfaces-complete, passed: Every interface has both sides named, failed: An interface has a side missing }
-  # Before each story's Engineering sign-off (Phase 16d). The Software Factory works them out from the story's
-  # application architecture and its test analysis; an item with no Engineering work (from before 16d) has none.
-  engineer:
-    - { key: architecture-accepted, passed: The application architecture is accepted and current, failed: The application architecture is not accepted }
-    - { key: criteria-ready, passed: Every criterion has a ready test case, failed: A criterion has no ready test case }
-    - { key: interfaces-tested, passed: Every interface has an integration test, failed: An interface has no integration test }
-  # Before a pull request's Test approval (Phase 16e). Not a stage: the checks of a pull request the Software Factory
-  # delivered, worked out from the evidence it recorded for the pull request's commit.
-  pull-request:
-    - { key: required-tests, passed: Every required test is present and passing, failed: A required test is missing or not passing }
-    - { key: gates-passed, passed: The checks passed on this commit, failed: The checks did not pass on this commit }

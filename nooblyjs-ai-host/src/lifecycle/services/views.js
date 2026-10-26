@@ -1,9 +1,8 @@
 // What the Home screens show (NooblyJS product.md §5.2), computed from the item and approval files on every call:
 // Overview's stage strip and Waiting on you, Lifecycle's swimlane, stage health, Where work waits and Handoffs this
 // week, and the Approvals queue and detail panel. No number is stored; every one is counted here.
-import { STAGES, stageLabel, stageIndex, handoffLabel } from '../stages.js';
+import { STAGES, stageLabel, stageIndex, handoffLabel, stageOfKind, kindOf, isKind } from '../stages.js';
 import { daysBetween } from '../working-days.js';
-import { loadThresholds } from '../config.js';
 import { notFound } from '../errors.js';
 
 const DAY = 86_400_000;
@@ -28,6 +27,7 @@ const HISTORY_WORDS = {
   'new-commit': 'A new commit cleared its approvals: back in', 'pull-requests': 'Followed its pull requests to', feature: 'Its feature went to',
 };
 
+// By the kind of the stage, when it is left by its usual gate (Phase 27: else the rule's own words).
 const ADVANCE_LABELS = {
   discover: 'Accept the idea',
   product: 'Approve & hand off to Design',
@@ -37,6 +37,9 @@ const ADVANCE_LABELS = {
   test: 'Give the Test approval',
   release: 'Approve the production deploy',
   operate: 'Close with the outcome review',
+};
+const USUAL_EXITS = {
+  discover: 'idea', product: 'spec', design: 'design-handoff', engineer: 'engineering-signoff', build: 'build-approval', test: 'test-approval', release: 'deploy', operate: 'outcome-review',
 };
 const NUMBER_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
 
@@ -70,8 +73,21 @@ export function createViews({ repos, host, engine }) {
   }
 
   async function load() {
-    const [items, approvals, rules, thresholds] = await Promise.all([repos.items.list(), repos.approvals.list(), engine.rules(), loadThresholds(repos)]);
-    return { items, approvals, rules, thresholds, at: engine.now() };
+    const wf = await engine.workflow.current();
+    const [items, approvals] = await Promise.all([repos.items.list(), repos.approvals.list()]);
+    return { items, approvals, rules: wf.rules, thresholds: wf.thresholds, wf, at: engine.now() };
+  }
+
+  /** The stages in use, in order, as the pages draw them (the item page's tracker, the swimlanes). */
+  const stageList = () => STAGES.map((s) => ({ key: s.key, number: s.number, label: s.label, kind: s.kind }));
+
+  /** What "Approve & move" says on an item in this stage: the usual words of its kind, else its rule's, else the move. */
+  function advanceLabel(stage, wf) {
+    const exit = wf.exitOf(stage);
+    const kind = kindOf(stage);
+    if (kind && USUAL_EXITS[kind] === exit.rule && ADVANCE_LABELS[kind]) return ADVANCE_LABELS[kind];
+    if (exit.rule !== 'stage' && wf.rules.get(exit.rule)?.transition) return wf.rules.get(exit.rule).transition;
+    return exit.to && exit.to !== 'complete' ? `Approve & move to ${stageLabel(exit.to)}` : 'Approve & close';
   }
 
   const isOpen = (a) => a.status === 'open';
@@ -117,7 +133,7 @@ export function createViews({ repos, host, engine }) {
     const ageDays = daysBetween(item.createdAt, ctx.at);
     return {
       id: item.id, ref: item.ref ?? item.id, title: item.title, type: item.type, system: item.system,
-      stage: item.stage, stageLabel: stageLabel(item.stage), owner: item.owner, ownerName: nameOf(item.owner),
+      stage: item.stage, stageKind: kindOf(item.stage), stageLabel: stageLabel(item.stage), owner: item.owner, ownerName: nameOf(item.owner),
       cells, now: label, late: w.late, waitingDays: w.longestDays, age: `${ageDays} d`, ageDays,
       mine: item.owner === personId || w.open.some((a) => waitingOn(a, personId)),
       href: `/home/lifecycle/${encodeURIComponent(item.id)}`,
@@ -139,7 +155,7 @@ export function createViews({ repos, host, engine }) {
         }
       }
       const m = median(durations);
-      return { key: s.key, number: s.number, label: s.label, count: active.filter((i) => i.stage === s.key).length, medianDays: m === null ? null : round1(m) };
+      return { key: s.key, number: s.number, label: s.label, kind: s.kind, count: active.filter((i) => i.stage === s.key).length, medianDays: m === null ? null : round1(m) };
     });
     const slowest = stages.filter((s) => s.medianDays !== null).sort((a, b) => b.medianDays - a.medianDays)[0];
     for (const s of stages) s.slowest = Boolean(slowest && s.key === slowest.key);
@@ -155,6 +171,7 @@ export function createViews({ repos, host, engine }) {
     const open = ctx.approvals.filter(isOpen);
     const mine = open.filter((a) => waitingOn(a, person.id));
     const count = (type) => open.filter((a) => a.type === type).length;
+    // What each stage's card says, by kind; a stage of no kind counts the approvals that leave it.
     const notes = {
       discover: () => 'ideas',
       product: () => `specs, UX and UI · ${count('spec')} in review`,
@@ -165,7 +182,8 @@ export function createViews({ repos, host, engine }) {
       release: () => `${plural(count('deploy'), 'deploy')} awaiting approval`,
       operate: () => `${plural(count('outcome-review'), 'outcome review')} due`,
     };
-    const stages = STAGES.map((s) => ({ key: s.key, number: s.number, label: s.label, count: active.filter((i) => i.stage === s.key).length, note: notes[s.key](), href: '/home/lifecycle' }));
+    const noteOf = (s) => (s.kind && notes[s.kind] ? notes[s.kind]() : `${plural(count(ctx.wf.exitOf(s.key).rule), 'approval')} waiting`);
+    const stages = STAGES.map((s) => ({ key: s.key, number: s.number, label: s.label, count: active.filter((i) => i.stage === s.key).length, note: noteOf(s), href: '/home/lifecycle' }));
     const busiest = [...stages].sort((a, b) => b.count - a.count)[0];
     const oldestHours = mine.length ? Math.max(...mine.map((a) => (ms(ctx.at) - ms(a.requestedAt)) / HOUR)) : 0;
     const waitingRows = await Promise.all(mine.sort((a, b) => ms(a.requestedAt) - ms(b.requestedAt)).map((a) => queueRow(a, ctx, nameOf)));
@@ -179,7 +197,7 @@ export function createViews({ repos, host, engine }) {
       waiting: waitingRows.map((r) => ({ ...r, context: r.context })),
       productStats: {
         // The Product Factory's items: stories (Phase 16c) are the Design section's, not the Product card's.
-        inDesign: active.filter((i) => i.type !== 'story' && ['discover', 'product', 'design'].includes(i.stage)).length,
+        inDesign: active.filter((i) => i.type !== 'story' && stageIndex(i.stage) >= 0 && stageIndex(i.stage) <= stageIndex(stageOfKind('design'))).length,
         approvalsPending: open.filter((a) => ['spec', 'adr', 'design-handoff'].includes(a.type)).length,
       },
     };
@@ -256,15 +274,15 @@ export function createViews({ repos, host, engine }) {
     const r = row(found, ctx, person.id, nameOf);
     const approvals = ctx.approvals.filter((a) => a.itemId === id).sort((a, b) => ms(b.requestedAt) - ms(a.requestedAt));
     const readiness = await engine.readinessOf(found);
-    const canApprove = await host.can(person.accessRole, 'approve');
+    // Phase 27: Send back is the action send-back, whose permission access/roles.yaml may change.
+    const canApprove = await host.can(person.accessRole, await engine.permissionFor('send-back', 'approve'));
     // Any person but a Viewer may give an approval, on their own behalf or another's (Phase 16b).
     const mayApprove = person.accessRole !== 'Viewer';
     const blocking = approvals.filter((a) => isOpen(a) && a.from === found.stage);
-    const next = STAGES[stageIndex(found.stage) + 1] ?? null;
     // Phase 16c: an item's stories (from Design on it goes story by story), and a story's item and feature.
     const stories = ctx.items.filter((i) => i.type === 'story' && i.parentId === found.id && i.status !== 'withdrawn')
       .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
-    const handedOff = stories.filter((st) => stageIndex(st.stage) > stageIndex('design') || st.status === 'completed').length;
+    const handedOff = stories.filter((st) => stageIndex(st.stage) > stageIndex(stageOfKind('design')) || st.status === 'completed').length;
     const parent = found.parentId ? ctx.items.find((i) => i.id === found.parentId) : null;
     // Phase 16e: a story's pull requests (each a lifecycle item with its Build and Test approvals), and an item's features.
     const pulls = ctx.items.filter((i) => i.type === 'pr' && i.parentId === found.id && i.pr && i.status !== 'withdrawn')
@@ -275,6 +293,7 @@ export function createViews({ repos, host, engine }) {
     const prLink = (id) => `/factory/pull-requests/${encodeURIComponent(id)}`;
     return {
       at: ctx.at,
+      stages: stageList(),
       item: {
         ...r, status: found.status, team: found.team, createdAt: found.createdAt, stageEnteredAt: found.stageEnteredAt,
         work: found.work ?? null, waitingSince: found.waitingSince ?? null, body: found.body ?? '',
@@ -320,11 +339,11 @@ export function createViews({ repos, host, engine }) {
         sendBackTo: STAGES.slice(0, Math.max(0, stageIndex(found.stage))).map((s) => ({ key: s.key, label: s.label })),
         // An item with stories goes on story by story (Phase 16c); a story with pull requests, and a pull request, pull
         // request by pull request (Phase 16e).
-        canAdvance: mayApprove && found.type !== 'defect' && found.status === 'active' && !blocking.length && !stories.length && !(found.type === 'pr' && found.pr) && !(pulls.length && ['build', 'test'].includes(found.stage)),
+        canAdvance: mayApprove && found.type !== 'defect' && found.status === 'active' && !blocking.length && !stories.length && !(found.type === 'pr' && found.pr) && !(pulls.length && (isKind(found.stage, 'build') || isKind(found.stage, 'test'))),
         ...(stories.length ? { perStory: `${found.ref ?? found.id} goes on story by story: hand each one off in Design.` } : {}),
         ...(found.type === 'pr' && found.pr ? { perPullRequest: `${found.ref ?? found.id} moves on with its own Build and Test approvals: decide them on its page or in Approvals.` }
-          : pulls.length && ['build', 'test'].includes(found.stage) ? { perPullRequest: `${found.ref ?? found.id} goes on pull request by pull request: decide each one's Build and Test approvals.` } : {}),
-        advanceLabel: ADVANCE_LABELS[found.stage] ?? `Approve & move to ${next?.label}`,
+          : pulls.length && (isKind(found.stage, 'build') || isKind(found.stage, 'test')) ? { perPullRequest: `${found.ref ?? found.id} goes on pull request by pull request: decide each one's Build and Test approvals.` } : {}),
+        advanceLabel: advanceLabel(found.stage, ctx.wf),
         blockedBy: blocking.map((a) => a.id),
       },
     };
@@ -419,7 +438,7 @@ export function createViews({ repos, host, engine }) {
         requestedBy: a.requestedBy ?? null, requestedByName: a.requestedBy?.name ?? nameOf(a.requestedBy?.id), requestedAt: a.requestedAt, age: hoursText((ms(ctx.at) - ms(a.requestedAt)) / HOUR),
         dueAt: a.dueAt ?? null, version: a.artefactVersion ?? null,
         from: a.from ? (a.type === 'adr' ? 'Proposed' : rule.fromLabel ?? stageLabel(a.from)) : null,
-        to: a.type === 'adr' ? 'Accepted' : a.type === 'merge' ? 'Merged' : rule.toLabel ?? next,
+        to: a.type === 'adr' ? 'Accepted' : a.type === 'merge' ? 'Merged' : a.to && a.to !== 'complete' ? next : rule.toLabel ?? next,
         summary: a.body || null, next: a.next ?? null, cost: a.cost ?? null,
         readiness,
         others: { approved: others.filter((r) => r.status === 'approved').length, total: others.length, names: others.map((r) => `${nameOf(r.id)}${r.status === 'waiting' ? ' (waiting)' : r.status === 'changes-requested' ? ' (asked for changes)' : ''}`) },
@@ -501,7 +520,7 @@ export function createViews({ repos, host, engine }) {
         team: ctx.items.find((i) => i.id === a.itemId)?.team ?? null,
       });
     }
-    return { at: ctx.at, items, approvals, stages: stageHealth(ctx), waitingTooLongDays: ctx.thresholds.waitingTooLongDays, weekStart: weekStart(ctx.at) };
+    return { at: ctx.at, items, approvals, stages: stageHealth(ctx), stageList: stageList(), waitingTooLongDays: ctx.thresholds.waitingTooLongDays, weekStart: weekStart(ctx.at) };
   }
 
   /** Waiting-on-you rows for other apps' homes. */

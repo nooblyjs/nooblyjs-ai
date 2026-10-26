@@ -1,10 +1,11 @@
 // Flow across the stages: GET /handoffs (the history), GET /metrics, GET /waiting (what is waiting on you), and
 // POST /specs/:id/send-back (people only, passed to the NooblyJS lifecycle engine).
 import { peopleOnly } from '../util/http.js';
+import { action } from '../util/actions.js';
 
 export function flowRoutes({ host, flow }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
+  const read = action(host, 'product.read', 'read');
 
   router.get('/handoffs', read, async (req, res) => {
     const kind = ['handoff', 'sent-back'].includes(req.query.kind) ? req.query.kind : undefined;
@@ -19,7 +20,7 @@ export function flowRoutes({ host, flow }) {
     res.json({ rows: await flow.waitingFor(req.person) });
   });
 
-  router.post('/specs/:id/send-back', host.requireRole('approve'), peopleOnly(host, 'send an item back'), async (req, res) => {
+  router.post('/specs/:id/send-back', action(host, 'product.spec.send-back', 'approve'), peopleOnly(host, 'send an item back'), async (req, res) => {
     res.status(202).json(await flow.sendBack(req.params.id, req.body, req.person));
   });
 

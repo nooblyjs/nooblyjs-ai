@@ -9,11 +9,12 @@
 //                                         the business case ("Business case complete") and the person
 import { HttpError } from '../util/errors.js';
 import { isAgent } from '../util/http.js';
+import { action } from '../util/actions.js';
 
 export function businessRoutes({ host, hierarchy, businessCases, ideas, repos }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.business-case.write', 'draft');
 
   router.get('/hierarchy', read, async (req, res) => res.json(await hierarchy.view()));
 

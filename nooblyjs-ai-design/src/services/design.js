@@ -11,6 +11,11 @@ import { HttpError, badRequest, notFound, conflict } from '../util/errors.js';
 import { ITEM, blankDesign } from '../repo.js';
 import { PARTS } from './drafter.js';
 import { draftRequirements, draftSolution, draftFunctional, draftStories, criterionText } from './drafts.js';
+import { permissionFor } from '../util/actions.js';
+
+// NooblyJS Phase 27: an item's stage is compared by its KIND ('design'), which the lifecycle says (stageKind); a stage's
+// key and label are the workflow's (data/workflows/lifecycle.yaml). On a host from before, the key is the kind.
+const kindOf = (item) => item?.stageKind ?? item?.stage ?? null;
 
 const CHANGES = new Set(['new', 'changed', 'retired']);
 const KINDS = new Set(['api', 'event', 'file']);
@@ -66,8 +71,8 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
   /** Writing in Design: only while the item is in Design. */
   async function inDesign(itemId) {
     const item = await itemOr404(itemId);
-    if (item.status !== 'active' || item.stage !== 'design') {
-      throw conflict('wrong_stage', `${item.ref ?? item.id} is ${item.status !== 'active' ? item.status : `in ${stageWord(item.stage)}`}, so its design can't change: Design ${item.stage === 'product' || item.stage === 'discover' ? 'starts with the Product handoff' : 'is done'}.`);
+    if (item.status !== 'active' || kindOf(item) !== 'design') {
+      throw conflict('wrong_stage', `${item.ref ?? item.id} is ${item.status !== 'active' ? item.status : `in ${item.stageLabel ?? stageWord(item.stage)}`}, so its design can't change: Design ${['product', 'discover'].includes(kindOf(item)) ? 'starts with the Product handoff' : 'is done'}.`);
     }
     return item;
   }
@@ -85,7 +90,7 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
     const list = (await workflows()?.storiesOf?.({ itemId }).catch(() => [])) ?? [];
     return new Map(list.map((s) => [s.id, s]));
   }
-  const handedOff = (lifecycle) => Boolean(lifecycle && lifecycle.stage !== 'design');
+  const handedOff = (lifecycle) => Boolean(lifecycle && kindOf(lifecycle) !== 'design');
 
   // ---------------------------------------------------------------------------- readiness
 
@@ -135,15 +140,19 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
     const design = (await repo.get(itemId)) ?? blankDesign(itemId);
     const stories = await storyStages(itemId);
     const facts = (await readinessFacts(itemId))?.facts ?? null;
-    const CHECKS = { 'requirements-covered': 'Every business requirement is covered by a story', 'decisions-decided': 'No decision is still proposed', 'interfaces-complete': 'Every interface has both sides named' };
+    // NooblyJS Phase 27: which of Design's checks the Design stage needs, and their words, are the lifecycle's.
+    const listed = await Promise.resolve(workflows()?.checksOf?.({ kind: 'design' })).catch(() => null);
+    const CHECKS = Array.isArray(listed)
+      ? Object.fromEntries(listed.filter((c) => String(c.evaluator ?? '').startsWith('design.') && facts?.[c.key]).map((c) => [c.key, c.passed]))
+      : { 'requirements-covered': 'Every business requirement is covered by a story', 'decisions-decided': 'No decision is still proposed', 'interfaces-complete': 'Every interface has both sides named' };
     const checks = facts ? Object.entries(CHECKS).map(([key, words]) => ({ key, passed: facts[key].value === true, text: facts[key].value ? words : `${words}: no, ${facts[key].detail}` })) : [];
     const featureTitle = (id) => design.features.find((f) => f.id === id)?.title ?? id;
     // NooblyJS Phase 19: the item's threat model is Security's; Solution architecture shows it and asks for one.
     const security = host.service?.('security');
     const tm = typeof security?.threatModelFor === 'function' ? await Promise.resolve(security.threatModelFor(itemId)).catch(() => null) : null;
     return {
-      itemId, ref: item.ref ?? item.id, title: item.title, stage: item.stage, stageLabel: stageWord(item.stage), status: item.status,
-      writable: item.status === 'active' && item.stage === 'design',
+      itemId, ref: item.ref ?? item.id, title: item.title, stage: item.stage, stageKind: kindOf(item), stageLabel: item.stageLabel ?? stageWord(item.stage), status: item.status,
+      writable: item.status === 'active' && kindOf(item) === 'design',
       version: design.version,
       parts: partsText(design, stories),
       requirements: design.requirements.map((r) => ({ ...r, statusText: r.status === 'accepted' ? 'Accepted' : 'Proposed' })),
@@ -176,7 +185,7 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
   /** The items in Design, and those whose stories have gone on, each part in words. */
   async function items() {
     const w = workflows();
-    const inDesignNow = (await w?.items?.({ stage: 'design' }).catch(() => [])) ?? [];
+    const inDesignNow = ((await w?.items?.({ kind: 'design' }).catch(() => [])) ?? []).filter((i) => kindOf(i) === 'design');
     const withDesign = await repo.itemIds();
     const ids = [...new Set([...inDesignNow.filter((i) => i.type !== 'story' && i.status === 'active').map((i) => i.id), ...withDesign])].sort();
     const out = [];
@@ -184,7 +193,7 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
       const item = await w?.item?.({ itemId: id }).catch(() => null);
       if (!item || item.type === 'story') continue;
       const design = (await repo.get(id)) ?? blankDesign(id);
-      out.push({ itemId: id, ref: item.ref ?? id, title: item.title, stage: item.stage, stageLabel: stageWord(item.stage), parts: partsText(design, await storyStages(id)), started: design.version > 0 });
+      out.push({ itemId: id, ref: item.ref ?? id, title: item.title, stage: item.stage, stageKind: kindOf(item), stageLabel: item.stageLabel ?? stageWord(item.stage), parts: partsText(design, await storyStages(id)), started: design.version > 0 });
     }
     return out;
   }
@@ -300,9 +309,10 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
     await peopleOnly(actor, 'accept a business requirement');
     // The route checks the permission; a call from another app (a person's decision relayed) is checked here.
     const person = await host.people.get(actor.id);
-    if (!person || !(await host.can(person.accessRole, 'accept-requirement'))) {
-      await host.audit.record({ actor: actor.id, action: 'access.refused', target: `${itemId} ${brId}`, permission: 'accept-requirement' });
-      throw new HttpError(403, 'forbidden', `Accepting a business requirement needs the "accept-requirement" permission, and your access role is ${person?.accessRole ?? 'none'}.`);
+    const needs = await permissionFor(host, 'design.requirement.accept', 'accept-requirement');
+    if (!person || !(await host.can(person.accessRole, needs))) {
+      await host.audit.record({ actor: actor.id, action: 'access.refused', target: `${itemId} ${brId}`, permission: needs });
+      throw new HttpError(403, 'forbidden', `Accepting a business requirement needs the "${needs}" permission, and your access role is ${person?.accessRole ?? 'none'}.`);
     }
     await inDesign(itemId);
     await changeRequirement(itemId, brId, (r) => Object.assign(r, { status: 'accepted', acceptedBy: { id: actor.id, name: actor.name ?? null }, acceptedAt: now() }));
@@ -588,7 +598,7 @@ export function createDesignService({ host, repo, catalogue, drafter, log, mount
   /** For the Factory's status card: how much is in Design. */
   async function status() {
     const list = await items();
-    const inDesignNow = list.filter((i) => i.stage === 'design').length;
+    const inDesignNow = list.filter((i) => kindOf(i) === 'design').length;
     let gone = 0;
     for (const i of list) {
       const d = await repo.get(i.itemId);

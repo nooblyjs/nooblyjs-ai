@@ -17,7 +17,7 @@ import { createLocalForge } from '../forge/local.js';
 import { git } from '../exec/workspace/git.js';
 import { ensureMirror } from '../exec/workspace/mirror.js';
 import { requeueFrom } from '../../controllers/api.js';
-import { loadLine } from '../../models/line.js';
+import { lineForRequest } from '../../models/line.js';
 import { KINDS } from '../line/executor.js';
 
 const ACTIVE = ['queued', 'running', 'parked', 'paused'];
@@ -29,7 +29,7 @@ const httpError = (status, code, message, details) => Object.assign(new Error(me
  */
 export function createBridge({ store, env, host, mountPath = '/factory', log = console }) {
   const workflows = () => host.service?.('workflows') ?? null;
-  const stationsOf = (run) => loadLine(run.request?.line ?? 'default', KINDS()).stations.map((s) => ({ id: s.id, kind: s.kind }));
+  const stationsOf = (run) => lineForRequest(run.request, KINDS()).stations.map((s) => ({ id: s.id, kind: s.kind }));
 
   /** What the lifecycle keeps of a delivered run's pull request. */
   function factsOf(run) {

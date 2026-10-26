@@ -22,7 +22,7 @@ const CRITERION = /^\*\*given\*\*\s+(.+?),?\s+\*\*when\*\*\s+(.+?),?\s+\*\*then\
 const listItems = (text) => text.split(/\r?\n/).filter((l) => /^\s*[-*]\s+/.test(l)).map((l) => l.replace(/^\s*[-*]\s+/, '').trim());
 
 /** Splits a body into its `## ` sections, in order. Text before the first heading is the section ''. */
-function sections(body) {
+export function sections(body) {
   const out = [];
   let current = { heading: '', lines: [] };
   for (const line of String(body ?? '').split(/\r?\n/)) {
@@ -76,4 +76,18 @@ export function renderSpec(spec) {
   add(KNOWN.rolloutPlan, spec.rolloutPlan?.trim());
   for (const s of spec.other ?? []) add(s.heading, s.text);
   return parts.join('\n\n');
+}
+
+/**
+ * NooblyJS Phase 27: the body's `## ` sections by name, for the lifecycle's `when` checks: { 'rollout-plan': '…', owner:
+ * null }. A heading's name is in lower case with dashes; an empty section is null, so `spec.sections.owner != null`
+ * reads "the spec has an Owner section with something in it".
+ */
+export function specSections(body) {
+  const out = {};
+  for (const { heading, text } of sections(body)) {
+    const name = heading.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (name) out[name] = text.trim() ? text.trim() : null;
+  }
+  return out;
 }

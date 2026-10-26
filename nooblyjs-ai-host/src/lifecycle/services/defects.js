@@ -24,7 +24,7 @@ const SYSTEM = { id: 'quality', name: 'Test section', kind: 'app' };
 const clean = (value, max) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '');
 const number = (id) => (String(id ?? '').match(/-(\d+)(?:-|$)/) ?? [])[1] ?? 'X';
 
-export function createDefects({ repos, host, now, emit, audit, personFor, itemOr404 }) {
+export function createDefects({ repos, host, now, emit, audit, personFor, itemOr404, permissionFor = async (a, p) => p }) {
   const isDefect = (i) => i?.type === 'defect' && i.defect;
 
   /** Defects of a story, of an item (its stories'), or all; optionally in one state. */
@@ -56,9 +56,10 @@ export function createDefects({ repos, host, now, emit, audit, personFor, itemOr
     if (story.type !== 'story') throw badRequest(`${story.ref ?? story.id} is not a story: a defect breaks a story (and its requirements).`);
     const raiser = actor.kind === 'agent' ? { id: actor.id, name: actor.name ?? actor.id, kind: 'agent' } : await host.people.get(actor.id).then((p) => (p ? { id: p.id, name: p.name, kind: 'person', accessRole: p.accessRole } : null));
     if (!raiser) throw forbidden('unknown_person', 'Only people and agents with a NooblyJS record can raise a defect.');
-    if (raiser.kind === 'person' && !(await host.can(raiser.accessRole, 'draft'))) {
-      await audit({ actor: raiser.id, action: 'access.refused', target: storyId, reason: 'raising a defect needs draft' });
-      throw forbidden('forbidden', `You can't raise a defect: it needs the "draft" permission, and your access role is ${raiser.accessRole}.`, { permission: 'draft' });
+    const raise = await permissionFor('defect.raise', 'draft');
+    if (raiser.kind === 'person' && !(await host.can(raiser.accessRole, raise))) {
+      await audit({ actor: raiser.id, action: 'access.refused', target: storyId, reason: `raising a defect needs ${raise}` });
+      throw forbidden('forbidden', `You can't raise a defect: it needs the "${raise}" permission, and your access role is ${raiser.accessRole}.`, { permission: raise });
     }
     const reqs = [...new Set((Array.isArray(requirements) ? requirements : []).map(String))].slice(0, 20);
     const at = now();
@@ -94,9 +95,10 @@ export function createDefects({ repos, host, now, emit, audit, personFor, itemOr
     if (!isDefect(item)) throw notFound(`${defectId} is not a defect.`);
     const byRun = decision === 'fixed' && proof?.testRunId;
     const who = byRun ? SYSTEM : await personFor(actor, { what: `${decision} a defect`, target: defectId });
-    if (!byRun && !(await host.can(who.accessRole, 'draft'))) {
-      await audit({ actor: who.id, action: 'access.refused', target: defectId, reason: `deciding a defect needs draft (${who.accessRole})` });
-      throw forbidden('forbidden', `You can't ${decision} a defect: it needs the "draft" permission, and your access role is ${who.accessRole}.`, { permission: 'draft' });
+    const decide = await permissionFor('defect.decide', 'draft');
+    if (!byRun && !(await host.can(who.accessRole, decide))) {
+      await audit({ actor: who.id, action: 'access.refused', target: defectId, reason: `deciding a defect needs ${decide} (${who.accessRole})` });
+      throw forbidden('forbidden', `You can't ${decision} a defect: it needs the "${decide}" permission, and your access role is ${who.accessRole}.`, { permission: decide });
     }
     const why = clean(reason, 500);
     if (!byRun && ['reject', 'reopen', 'fixed'].includes(decision) && !why) throw badRequest('Say why.', { reason: 'required' });

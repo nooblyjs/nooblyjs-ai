@@ -25,6 +25,9 @@ import { loadReposMap } from '../../config/repos-map.js';
 import { factoryHome } from '../../utils/paths.js';
 import { slugify } from '../../utils/ids.js';
 import { submitJob } from '../job/run-job.js';
+import { loadLineChoice, lineFor } from '../../config/lines-choice.js';
+import { loadLine } from '../../models/line.js';
+import { KINDS } from '../line/executor.js';
 
 const clip = (text, max) => { const s = String(text ?? ''); return s.length > max ? `${s.slice(0, max - 1)}…` : s; };
 
@@ -105,6 +108,14 @@ export function createIntake({ store, env, host, development = false, log = cons
   async function takeIn(handoff) {
     if (!handoff?.workItems?.length) return [];
     const repos = loadReposMap(env);
+    // NooblyJS Phase 27: which line each run takes is the operator's (lines.yaml), by repository and by item type.
+    let choice;
+    try {
+      choice = loadLineChoice(env);
+    } catch (error) {
+      return handoff.workItems.map((w) => wait(handoff, w, error instanceof Error ? error.message : String(error)));
+    }
+    const itemType = handoff.itemType ?? (handoff.itemId ? (await Promise.resolve(host.service?.('workflows')?.item?.({ itemId: handoff.itemId })).catch(() => null))?.type ?? null : null);
     // The operator's config may ask for agent merges (autonomy L3). Hosted in NooblyJS that is refused, and said so.
     const asked = String(/** @type {any} */ (loadFactoryConfig(env)).autonomy ?? '').toUpperCase();
     const product = host.service?.('product');
@@ -139,6 +150,14 @@ export function createIntake({ store, env, host, development = false, log = cons
         // through NooblyJS's write gate. Any other repository keeps the local forge.
         fromBitbucket = check.repository?.source === 'bitbucket' && typeof host.service?.('devtools')?.forge?.pushBranch === 'function';
       }
+      const lineName = lineFor(choice, { repo: short, itemType: workItem.findingId ? 'finding' : itemType });
+      let line;
+      try {
+        line = loadLine(lineName, KINDS(), env);
+      } catch (error) {
+        out.push(wait(handoff, workItem, `the line "${lineName}" can't be used: ${(error instanceof Error ? error.message : String(error)).split('\n').join(' ')}`));
+        continue;
+      }
       const script = scriptFor(env, workItem.title);
       const hasScript = fs.existsSync(script);
       if (!hasScript && !modelConfigured(env)) { out.push(wait(handoff, workItem, 'no model is configured, and there is no script for this work item')); continue; }
@@ -147,7 +166,8 @@ export function createIntake({ store, env, host, development = false, log = cons
       const runId = submitJob(store, {
         issueFile: issueFile(handoff, workItem, spec, knowledge, context),
         repo,
-        line: 'default',
+        line: lineName,
+        lineDef: line.raw,
         autonomy: 'L2', // no plan approval for a small item; never L3: hosted runs don't merge
         driver: 'in-process',
         allowUnsandboxed: development === true,

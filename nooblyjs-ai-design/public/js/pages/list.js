@@ -26,12 +26,13 @@ export async function render(view, { route, ctx }) {
       return;
     }
     if (!ctx.isCurrent()) return;
-    const inDesign = items.filter((i) => i.stage === 'design');
-    const gone = items.filter((i) => i.stage !== 'design');
+    // NooblyJS Phase 27: by the stage's kind (the lifecycle says it), not its key.
+    const inDesign = items.filter((i) => (i.stageKind ?? i.stage) === 'design');
+    const gone = items.filter((i) => (i.stageKind ?? i.stage) !== 'design');
     const rows = (list) => html`<div class="rows">${list.map((i) => listRow({
       title: `${i.ref} · ${i.title}`,
       meta: i.parts[part],
-      pill: { text: i.stage === 'design' ? (i.started ? 'In Design' : 'Not started') : `In ${i.stageLabel}`, tone: i.stage === 'design' ? (i.started ? 'info' : 'warning') : 'success' },
+      pill: { text: (i.stageKind ?? i.stage) === 'design' ? (i.started ? `In ${i.stageLabel ?? 'Design'}` : 'Not started') : `In ${i.stageLabel}`, tone: (i.stageKind ?? i.stage) === 'design' ? (i.started ? 'info' : 'warning') : 'success' },
       href: href(ctx, `/${part}/${encodeURIComponent(i.itemId)}`),
     }))}</div>`;
     view.innerHTML = String(html`<div class="dz">${pageHead({ eyebrow: 'Software Factory · Design', title, lead: LEADS[part] })}

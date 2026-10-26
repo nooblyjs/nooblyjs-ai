@@ -30,8 +30,9 @@ export function createSummary({ host, findings, threatModels, now }) {
     const waiting = tms.filter((tm) => tm.status === 'waiting');
     const risks = (await findings.risks()).filter((r) => r.current && new Date(r.expiresAt).getTime() - at < 14 * DAY_MS);
     const w = host.service('workflows');
+    // By the kind of the item's stage (NooblyJS Phase 27: the lifecycle says it; before, the key was the kind).
     const later = new Set(['design', 'engineer', 'build', 'test', 'release', 'operate']);
-    const items = ((await Promise.resolve(w?.items?.({})).catch(() => [])) ?? []).filter((i) => i.status === 'active' && later.has(i.stage) && !['story', 'pr', 'idea'].includes(i.type));
+    const items = ((await Promise.resolve(w?.items?.({})).catch(() => [])) ?? []).filter((i) => i.status === 'active' && later.has(i.stageKind ?? i.stage) && !['story', 'pr', 'idea'].includes(i.type));
     const covered = new Set(tms.map((tm) => tm.itemId));
     const without = items.filter((i) => !covered.has(i.id));
     return { open, late, soon, waiting, risks, without: without.map((i) => ({ id: i.id, title: i.title, stage: i.stage })) };

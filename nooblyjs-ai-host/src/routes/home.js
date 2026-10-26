@@ -22,9 +22,9 @@ function cardLines(card) {
   ].filter(Boolean).slice(0, 2);
 }
 
-export function homeRoutes({ express, shell, services, activity, metrics, forYou, checks, trace, teams, agents, events, onInvited, clock, requireSignIn, requireRole }) {
+export function homeRoutes({ express, shell, services, activity, metrics, forYou, checks, trace, teams, agents, events, onInvited, clock, requireSignIn, requireAction }) {
   const router = express.Router();
-  const read = [requireSignIn, requireRole('read')];
+  const read = [requireSignIn, requireAction('home.read', 'read')];
 
   router.get('/api/v1/home/overview', ...read, async (req, res, next) => {
     try {
@@ -114,7 +114,7 @@ export function homeRoutes({ express, shell, services, activity, metrics, forYou
   });
 
   // A person overrides one failing readiness check with a reason (the lifecycle engine records it, refuses an agent).
-  router.post('/api/v1/home/items/:id/checks/:checkId/override', requireSignIn, requireRole('draft'), async (req, res, next) => {
+  router.post('/api/v1/home/items/:id/checks/:checkId/override', requireSignIn, requireAction('checks.override', 'draft'), async (req, res, next) => {
     try {
       res.locals.audit = { action: 'check.override_asked', target: req.params.id, checkId: req.params.checkId };
       res.json(await checks.override({ itemId: req.params.id, checkId: req.params.checkId, reason: req.body?.reason, actor: req.person }));
@@ -179,7 +179,7 @@ export function homeRoutes({ express, shell, services, activity, metrics, forYou
   });
 
   // Phase 25b: a team's people-days in Product's Now, for the roadmap's capacity. Budgets are an Owner's (set-budgets).
-  router.patch('/api/v1/home/teams/:id', requireSignIn, requireRole('set-budgets'), async (req, res, next) => {
+  router.patch('/api/v1/home/teams/:id', requireSignIn, requireAction('teams.edit', 'set-budgets'), async (req, res, next) => {
     try {
       const value = req.body?.capacityDays ?? null;
       res.locals.audit = { action: 'team.capacity_set', target: req.params.id, capacityDays: value };
@@ -193,7 +193,7 @@ export function homeRoutes({ express, shell, services, activity, metrics, forYou
 
   // Invite a person: their record, their team and their sign-in account. Owners only (the closest permission in
   // the matrix is hire-teammates), and the access role is the inviter's choice, never the invitee's.
-  router.post('/api/v1/home/people', requireSignIn, requireRole('hire-teammates'), async (req, res, next) => {
+  router.post('/api/v1/home/people', requireSignIn, requireAction('people.invite', 'hire-teammates'), async (req, res, next) => {
     try {
       const body = req.body ?? {};
       res.locals.audit = { action: 'person.invited', target: String(body.email ?? '').toLowerCase(), accessRole: body.accessRole ?? null, team: body.team ?? null };

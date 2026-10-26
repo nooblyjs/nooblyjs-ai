@@ -50,7 +50,7 @@ export function createThreatModels({ repos, host, log, policies, approvals, now,
   async function draft(itemId, person) {
     if (!isItemId(itemId)) throw badRequest('Name the item, like PRD-031.');
     if (!person?.id) throw new HttpError(401, 'unauthenticated', 'Sign in to continue.');
-    await needs(host, person, 'draft', `ask for a threat model of ${itemId}`);
+    await needs(host, person, 'draft', `ask for a threat model of ${itemId}`, 'security.threat-model.ask');
     const inputs = await Promise.resolve(host.service('product')?.designInputs?.(itemId)).catch(() => null);
     if (!inputs) throw new HttpError(409, 'no_container_view', `${itemId} has no container view to draw a threat model from (the Product section's Architecture page), or the Product section is not running here.`);
     if (!inputs.relations?.length) throw new HttpError(409, 'no_container_view', `${itemId}'s container view has no relations, so it crosses no trust boundary yet.`);
@@ -91,7 +91,7 @@ export function createThreatModels({ repos, host, log, policies, approvals, now,
     const what = `accept threat model ${id}`;
     if (!person?.id) throw new HttpError(401, 'unauthenticated', 'Sign in to continue.');
     await peopleOnly(host, person, what);
-    await needs(host, person, 'accept-threat-model', what);
+    await needs(host, person, 'accept-threat-model', what, 'security.threat-model.accept');
     const decision = body.decision;
     if (!['approve', 'request-changes'].includes(decision)) throw badRequest('decision must be "approve" or "request-changes".', { decision: 'approve | request-changes' });
     const comment = typeof body.comment === 'string' && body.comment.trim() ? body.comment.trim().slice(0, 2000) : null;

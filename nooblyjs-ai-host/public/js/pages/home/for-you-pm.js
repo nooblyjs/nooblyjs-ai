@@ -5,7 +5,10 @@ import { createApi } from '/ui/js/api.js';
 import { button, statusPill, swimlane, meter } from '/ui/js/components/index.js';
 import { initials } from '/ui/js/format.js';
 
+// Short names for the swimlane's columns, by the kind of stage; the stages themselves come with the page (Phase 27).
+const SHORT = { discover: 'Disc.', engineer: 'Eng.', release: 'Rel.', operate: 'Ops' };
 const STAGES = [['discover', 'Disc.'], ['product', 'Product'], ['design', 'Design'], ['engineer', 'Eng.'], ['build', 'Build'], ['test', 'Test'], ['release', 'Rel.'], ['operate', 'Ops']].map(([key, label]) => ({ key, label }));
+const columns = (stages) => (stages?.length ? stages.map((s) => ({ key: s.key, label: (s.kind && s.label === s.kind[0].toUpperCase() + s.kind.slice(1) && SHORT[s.kind]) || s.label })) : STAGES);
 
 function waiting(rows) {
   const row = (w) => {
@@ -20,10 +23,10 @@ function waiting(rows) {
   </section>`;
 }
 
-const items = (rows) => html`<section class="card card--flush" aria-label="Your items">
+const items = (rows, stages) => html`<section class="card card--flush" aria-label="Your items">
     <div class="card__head"><h2 class="card__title">Your items</h2><a href="/home/lifecycle?filter=mine">Open Lifecycle</a></div>
     ${rows.length
-    ? swimlane({ rows: rows.map((r) => ({ title: r.title, id: r.ref, href: r.href, age: r.age, late: r.late, cells: r.cells })), stages: STAGES, caption: 'Your items, by stage' })
+    ? swimlane({ rows: rows.map((r) => ({ title: r.title, id: r.ref, href: r.href, age: r.age, late: r.late, cells: r.cells })), stages: columns(stages), caption: 'Your items, by stage' })
     : html`<p class="row__meta card__pad">You have no items in flight. Start one from the Product board.</p>`}
   </section>`;
 
@@ -42,7 +45,7 @@ const evidence = (e) => (e ? html`<section class="card card--side" aria-label="C
 
 export function panels(data) {
   return {
-    main: html`${waiting(data.panels.waiting)}${items(data.panels.items)}`,
+    main: html`${waiting(data.panels.waiting)}${items(data.panels.items, data.stages)}`,
     side: html`${evidence(data.panels.evidence)}<section class="card card--side" aria-label="Top signals" data-signals><div class="card__head"><h2 class="card__title card__title--small">Top signals this week</h2><a href="/product/board">Board</a></div><p class="row__meta" role="status">Loading…</p></section>${agent(data.panels.agent)}`,
   };
 }

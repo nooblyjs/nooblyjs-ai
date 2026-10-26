@@ -34,15 +34,16 @@ function devtoolsRow(i, status) {
   };
 }
 
-export function platformRoutes({ express, platform, services = new Map(), devtools, notify = null, teamsConfig = null, members, auditQuery, events, store, clock, roles, requireSignIn, requireRole, env = process.env }) {
+export function platformRoutes({ express, platform, services = new Map(), devtools, notify = null, teamsConfig = null, members, auditQuery, events, store, clock, roles, requireSignIn, requireAction, env = process.env }) {
   const router = express.Router();
-  const read = [requireSignIn, requireRole('read')];
+  const read = [requireSignIn, requireAction('platform.read', 'read')];
   const at = () => nowIso(clock);
   // Agents never change Platform (product.md §3): refused before the permission check, whatever their role.
   const noAgents = (req, res, next) => (req.person?.kind === 'agent'
     ? next(new HttpError(403, 'agents_refused', 'Agents cannot change Platform settings. People decide.'))
     : next());
-  const write = (permission) => [requireSignIn, noAgents, requireRole(permission)];
+  // Phase 27: each write is an action whose permission access/roles.yaml may change.
+  const write = (action, permission) => [requireSignIn, noAgents, requireAction(action, permission)];
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch((err) => {
     if (err?.status === 403) res.locals.audit = { ...(res.locals.audit ?? {}), action: 'access.refused', attempted: res.locals.audit?.action ?? null, code: err.code, reason: err.message };
     // A change that was refused is recorded as refused, so a record named for the change always means it happened.
@@ -85,7 +86,7 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
 
   // Refreshes Platform's list from Bitbucket (the projects and repositories chosen in Settings · Integrations).
   // It reads Bitbucket and writes only NooblyJS's own files.
-  router.post('/api/v1/platform/repositories/import', ...write('change-repo-access'), wrap(async (req, res) => {
+  router.post('/api/v1/platform/repositories/import', ...write('platform.repositories.manage', 'change-repo-access'), wrap(async (req, res) => {
     res.locals.audit = { action: 'repo.imported', target: 'bitbucket' };
     const result = await platform.importRepositories({ fresh: true });
     if (!result.ok) throw new HttpError(result.reason === 'not-configured' ? 409 : 502, `bitbucket_${String(result.reason).replace(/-/g, '_')}`, result.message);
@@ -96,14 +97,14 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
     res.json(result);
   }));
 
-  router.post('/api/v1/platform/repositories', ...write('change-repo-access'), wrap(async (req, res) => {
+  router.post('/api/v1/platform/repositories', ...write('platform.repositories.manage', 'change-repo-access'), wrap(async (req, res) => {
     res.locals.audit = { action: 'repo.connected', target: String(req.body?.name ?? '') };
     const repository = await platform.repositories.connect(req.body ?? {}, { now: at() });
     await events.emit('repo.connected', { system: 'platform', repo: repository.name, access: repository.access, summary: `connected ${repository.name} (agents: ${repository.accessText.toLowerCase()})` }, { actor: req.person.id });
     res.status(201).json({ repository });
   }));
 
-  router.patch('/api/v1/platform/repositories/:id', ...write('change-repo-access'), wrap(async (req, res) => {
+  router.patch('/api/v1/platform/repositories/:id', ...write('platform.repositories.manage', 'change-repo-access'), wrap(async (req, res) => {
     res.locals.audit = { action: 'repo.access_changed', target: req.params.id };
     const { before, after } = await platform.repositories.update(req.params.id, req.body ?? {});
     const from = { access: before.access, ...before.may };
@@ -123,16 +124,28 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
     res.json({ id: req.params.id, lines: await platform.containers.logs(req.params.id) });
   }));
 
-  router.post('/api/v1/platform/containers/stop-all', ...write('change-guardrails'), wrap(async (req, res) => {
+  router.post('/api/v1/platform/containers/stop-all', ...write('platform.containers.stop', 'change-guardrails'), wrap(async (req, res) => {
     res.locals.audit = { action: 'containers.stopped_all', target: 'containers', reason: textOf(req.body?.reason) };
     const result = await platform.containers.stopAll({ by: by(req), reason: textOf(req.body?.reason) });
     res.locals.audit.stopped = result.stopped.map((w) => w.id);
     res.json(result);
   }));
 
-  router.post('/api/v1/platform/containers/:id/stop', ...write('change-guardrails'), wrap(async (req, res) => {
+  router.post('/api/v1/platform/containers/:id/stop', ...write('platform.containers.stop', 'change-guardrails'), wrap(async (req, res) => {
     res.locals.audit = { action: 'container.stopped', target: req.params.id, reason: textOf(req.body?.reason) };
     res.json(await platform.containers.stop(req.params.id, { by: by(req), reason: textOf(req.body?.reason) }));
+  }));
+
+  // ---------- Workflow (Phase 27) ----------
+
+  // The workflow as configuration, in words: the stages with their gates and checks (data/workflows/lifecycle.yaml,
+  // approval-rules.yaml, readiness.yaml), who may do what (access/roles.yaml's permissions and actions), and each file's
+  // state: applied, or refused with the reason while the last good version keeps running. Read-only.
+  router.get('/api/v1/platform/workflow', requireSignIn, requireAction('platform.workflow.read', 'read-audit'), wrap(async (req, res) => {
+    const lifecycle = services.get('workflows');
+    const view = typeof lifecycle?.workflow === 'function' ? await lifecycle.workflow() : { stages: [], rules: [], files: [], evaluators: [], whenFacts: [] };
+    const [actions, permissions, roleNames] = await Promise.all([roles.actions(), roles.matrix(), roles.roleNames()]);
+    res.json({ ...view, files: [...view.files, roles.status()], roles: roleNames, permissions, actions });
   }));
 
   // ---------- Settings ----------
@@ -191,7 +204,7 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
     });
   }));
 
-  router.patch('/api/v1/platform/settings/routes/:id', ...write('change-guardrails'), wrap(async (req, res) => {
+  router.patch('/api/v1/platform/settings/routes/:id', ...write('platform.models.change', 'change-guardrails'), wrap(async (req, res) => {
     res.locals.audit = { action: 'model_route.changed', target: `route:${req.params.id}` };
     const { model, fallback, provider } = req.body ?? {};
     const { before, after } = await platform.routes.update(req.params.id, { model, fallback, provider });
@@ -202,7 +215,7 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
   }));
 
   // A portfolio's monthly budget (Phase 17): { monthly } (null removes it). What Metrics sets its value streams' spend against.
-  router.put('/api/v1/platform/settings/budgets/portfolios/:name', ...write('set-budgets'), wrap(async (req, res) => {
+  router.put('/api/v1/platform/settings/budgets/portfolios/:name', ...write('platform.budgets.set', 'set-budgets'), wrap(async (req, res) => {
     res.locals.audit = { action: 'budget.changed', target: `portfolio ${req.params.name}`, reason: textOf(req.body?.reason) };
     const known = await services.get('product')?.portfolios?.().catch(() => null);
     if (known && !known.some((p) => p.name.toLowerCase() === String(req.params.name).toLowerCase())) throw new HttpError(404, 'portfolio_not_found', `There is no portfolio "${req.params.name}" in the Product section.`);
@@ -213,7 +226,7 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
     res.json({ budgets: await platform.budgets.status(at()) });
   }));
 
-  router.patch('/api/v1/platform/settings/budgets', ...write('set-budgets'), wrap(async (req, res) => {
+  router.patch('/api/v1/platform/settings/budgets', ...write('platform.budgets.set', 'set-budgets'), wrap(async (req, res) => {
     res.locals.audit = { action: 'budget.changed', target: 'budgets' };
     const { total, pauseOnLimit, systems } = req.body ?? {};
     const change = await platform.budgets.update({ total, pauseOnLimit, systems });
@@ -225,7 +238,7 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
     res.json({ budgets: await platform.budgets.status(at()), reached: reached.map((r) => ({ budget: r.key, text: `${r.label} has reached its ${money(r.limit)} ${r.period === 'day' ? 'daily cap' : 'budget'}` })) });
   }));
 
-  router.patch('/api/v1/platform/settings/guardrails/:key', ...write('change-guardrails'), wrap(async (req, res) => {
+  router.patch('/api/v1/platform/settings/guardrails/:key', ...write('platform.guardrails.change', 'change-guardrails'), wrap(async (req, res) => {
     res.locals.audit = { action: 'guardrail.changed', target: `guardrail:${req.params.key}`, reason: textOf(req.body?.reason) };
     const result = await platform.guardrails.set(req.params.key, { on: req.body?.on, reason: req.body?.reason });
     if (result.unchanged) {
@@ -258,7 +271,7 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
 
   router.get('/api/v1/platform/secrets', ...read, wrap(async (req, res) => res.json({ secrets: await platform.secrets.list() })));
 
-  router.post('/api/v1/platform/secrets', ...write('change-repo-access'), wrap(async (req, res) => {
+  router.post('/api/v1/platform/secrets', ...write('platform.secrets.manage', 'change-repo-access'), wrap(async (req, res) => {
     res.locals.audit = { action: 'secret.mapped', target: `${req.body?.repo ?? ''}:${req.body?.name ?? ''}` };
     const secret = await platform.secrets.add(req.body ?? {});
     Object.assign(res.locals.audit, { target: `${secret.repo}:${secret.name}`, ref: secret.ref });
@@ -266,7 +279,7 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
     res.status(201).json({ secret });
   }));
 
-  router.delete('/api/v1/platform/secrets', ...write('change-repo-access'), wrap(async (req, res) => {
+  router.delete('/api/v1/platform/secrets', ...write('platform.secrets.manage', 'change-repo-access'), wrap(async (req, res) => {
     const repo = String(req.query.repo ?? '');
     const name = String(req.query.name ?? '');
     res.locals.audit = { action: 'secret.unmapped', target: `${repo}:${name}` };
@@ -281,7 +294,7 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
     res.json({ roles: await roles.roleNames(), members: await members.list() });
   }));
 
-  router.patch('/api/v1/platform/members/:id', ...write('manage-members'), wrap(async (req, res) => {
+  router.patch('/api/v1/platform/members/:id', ...write('platform.members.manage', 'manage-members'), wrap(async (req, res) => {
     res.locals.audit = { action: 'member.access_role_changed', target: req.params.id, reason: textOf(req.body?.reason) };
     const result = await members.setRole(req.params.id, req.body ?? {}, { roleNames: await roles.roleNames() });
     if (!result.unchanged) {
@@ -293,7 +306,7 @@ export function platformRoutes({ express, platform, services = new Map(), devtoo
 
   // ---------- Audit log ----------
 
-  router.get('/api/v1/platform/audit', requireSignIn, requireRole('read-audit'), wrap(async (req, res) => {
+  router.get('/api/v1/platform/audit', requireSignIn, requireAction('platform.audit.read', 'read-audit'), wrap(async (req, res) => {
     const q = req.query;
     res.json(await auditQuery({ actor: str(q.actor), action: str(q.action), text: str(q.text), from: str(q.from), to: str(q.to), cursor: str(q.cursor) }));
   }));

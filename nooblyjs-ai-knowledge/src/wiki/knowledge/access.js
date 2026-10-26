@@ -26,6 +26,9 @@ const ADMIN_STANDALONE = new Set(['approve', 'change-repo-access']);
  * @param {Object|null} host - the NooblyJS host when hosted, else null
  * @return {{ check: Function, actor: Function, record: Function }}
  */
+/** The action each permission stands for here (NooblyJS Phase 27). */
+const ACTIONS = { draft: 'knowledge.answer.act', approve: 'knowledge.flag.resolve', 'change-repo-access': 'knowledge.source.import' };
+
 function createAccess(host) {
   /**
    * @param {Object} req
@@ -38,8 +41,11 @@ function createAccess(host) {
       const person = req.person;
       if (!person) return { ok: false, status: 401, message: 'Not authenticated' };
       if (person.kind === 'agent') return { ok: false, status: 403, message: 'Agents propose and people decide: an agent cannot do this.' };
-      const allowed = typeof host.can === 'function' && await host.can(person.accessRole, permission);
-      return allowed ? { ok: true } : { ok: false, status: 403, message: `This needs the ${permission} permission. Your access role is ${person.accessRole || 'none'}.` };
+      // NooblyJS Phase 27: each check is the action knowledge.<what it guards>, whose permission NooblyJS's
+      // access/roles.yaml may change; the permission named here is its default.
+      const needs = typeof host.permissionFor === 'function' ? await host.permissionFor(ACTIONS[permission] ?? `knowledge.${permission}`, permission) : permission;
+      const allowed = typeof host.can === 'function' && await host.can(person.accessRole, needs);
+      return allowed ? { ok: true } : { ok: false, status: 403, message: `This needs the ${needs} permission. Your access role is ${person.accessRole || 'none'}.` };
     }
     if (ADMIN_STANDALONE.has(permission) && !rolesOf(req.user).includes('admin')) return { ok: false, status: 403, message: 'Admin role required' };
     return { ok: true };

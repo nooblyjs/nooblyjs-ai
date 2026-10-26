@@ -4,12 +4,13 @@ import { viewContext, specSummary } from '../services/views.js';
 import { specDetail, specEtag, versionsView } from '../services/specs.js';
 import { notFound } from '../util/errors.js';
 import { peopleOnly } from '../util/http.js';
+import { action } from '../util/actions.js';
 
 export function specRoutes({ host, repos, people, specWrites, stageAgents = null, elicitation = null }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
-  const ctxFor = (req) => viewContext({ people, repos }, req.person);
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.spec.write', 'draft');
+  const ctxFor = (req) => viewContext({ people, repos, host }, req.person);
 
   async function specOr404(id) {
     const spec = await repos.specs.get(id);
@@ -60,7 +61,7 @@ export function specRoutes({ host, repos, people, specWrites, stageAgents = null
     await sendSpec(req, res, 200, await specWrites.requestReview(req.params.id, req.person));
   });
 
-  router.post('/specs/:id/decision', host.requireRole('approve'), peopleOnly(host, 'approve a spec or request changes'), async (req, res) => {
+  router.post('/specs/:id/decision', action(host, 'product.spec.decide', 'approve'), peopleOnly(host, 'approve a spec or request changes'), async (req, res) => {
     res.status(202).json(await specWrites.decide(req.params.id, req.body, req.person));
   });
 

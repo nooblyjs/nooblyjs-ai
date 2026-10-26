@@ -229,7 +229,7 @@ test('activity filters by kind and system, pages back, and leaves out sign-ins',
 });
 
 test('it wrote only under data/workflows/, and the pages are served', async () => {
-  assert.deepEqual((await fs.readdir(path.join(env.dataDir, 'workflows'))).sort(), ['approval-rules.yaml', 'approvals', 'handoffs', 'items', 'readiness.yaml', 'seed.yaml'].filter((n) => n !== 'handoffs'));
+  assert.deepEqual((await fs.readdir(path.join(env.dataDir, 'workflows'))).sort(), ['applied', 'approval-rules.yaml', 'approvals', 'handoffs', 'items', 'lifecycle.yaml', 'readiness.yaml', 'seed.yaml'].filter((n) => n !== 'handoffs'));
   for (const page of ['/home/overview', '/home/lifecycle', '/home/lifecycle/PRD-031', '/home/approvals?id=apr_adr015', '/home/activity', '/dev/clock']) {
     assert.equal((await stevie.get(page)).status, 200, page);
   }

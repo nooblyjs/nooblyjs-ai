@@ -12,6 +12,7 @@
 //   POST /api/pull-requests/:id/merge          a person merges it, after both approvals (merge)
 //   GET  /api/test/approvals                   waiting on a tester, in Test, given
 import { readSamples } from '../engineering/samples.js';
+import { canDo } from '../actions.js';
 
 const TYPE = { build: 'build-approval', test: 'test-approval' };
 const LABEL = { 'build-approval': 'Build approval', 'test-approval': 'Test approval' };
@@ -75,7 +76,7 @@ export function pullRequestRoutes({ home, host, store, bridge, mountPath = '/fac
     const story = item.parentId ? await w.item({ itemId: item.parentId }) : null;
     const me = person(req);
     const mayApprove = Boolean(me && me.accessRole !== 'Viewer' && me.kind !== 'agent');
-    const mayMerge = Boolean(me && me.kind !== 'agent' && (await host.can?.(me.accessRole, 'merge')));
+    const mayMerge = Boolean(me && me.kind !== 'agent' && (await canDo(host, me.accessRole, 'merge-pull-request', 'merge')));
     const open = (type) => view.approvals.find((a) => a.type === type && a.status === 'open') ?? null;
     // NooblyJS Phase 21: the pull request's preview (Infrastructure) and the suites that ran there (the Test section).
     const preview = await Promise.resolve(host.service?.('infrastructure')?.previewForPr?.(item.id)).catch(() => null) ?? null;
@@ -159,7 +160,7 @@ export function pullRequestRoutes({ home, host, store, bridge, mountPath = '/fac
     const w = workflows();
     if (!w) return { json: { live: false, waiting: [], inTest: [], given: [] } };
     const samples = await readSamples(home);
-    const [given, inTest] = await Promise.all([w.approvals({ type: 'test-approval' }), w.items({ stage: 'test' })]);
+    const [given, inTest] = await Promise.all([w.approvals({ type: 'test-approval' }), w.items({ kind: 'test' }).then((list) => list.filter((i) => (i.stageKind ?? i.stage) === 'test'))]);
     const row = async (a) => {
       const item = await w.item({ itemId: a.itemId });
       const r = (a.reviewers ?? []).find((x) => x.status === 'approved' || x.status === 'changes-requested');

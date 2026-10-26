@@ -10,14 +10,15 @@
 //   GET  /reports                                            (read): feedback by month and portfolio, planned days, key results
 import { viewContext } from '../services/views.js';
 import { peopleOnly } from '../util/http.js';
+import { action } from '../util/actions.js';
 
 const one = (v, max = 80) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
 
 export function planningRoutes({ host, repos, people, objectives, planning }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
-  const approve = host.requireRole('approve');
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.objectives.write', 'draft');
+  const approve = action(host, 'product.objective.move', 'approve');
   const ctxFor = (req) => viewContext({ people, repos }, req.person);
   const filterOf = (q) => ({ portfolio: one(q.portfolio), theme: one(q.theme), objective: one(q.objective, 20), team: one(q.team) });
 

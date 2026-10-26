@@ -3,6 +3,7 @@
 // decision needs (accept-threat-model, accept-risk, people only) and record every refusal.
 import { apiNotFound, apiErrors, forbidden, badRequest } from '../util/errors.js';
 import { SEVERITIES } from '../util/ids.js';
+import { action } from '../util/actions.js';
 
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const STATES = ['open', 'fixing', 'closed', 'accepted'];
@@ -14,7 +15,7 @@ export function createApi({ host, log, about, seed, threatModels, findings, scan
   api.use(host.auth);
   // NooblyJS audits every write app-wide and its host.audit passes through; the stand-in host records here.
   api.use((req, res, next) => (READS.has(req.method) ? next() : host.audit(req, res, next)));
-  api.use(host.requireRole('read'));
+  api.use(action(host, 'security.read', 'read'));
 
   // ---------- system ----------
   api.get('/about', (req, res) => {
@@ -22,7 +23,7 @@ export function createApi({ host, log, about, seed, threatModels, findings, scan
   });
   api.get('/summary', async (req, res) => res.json(await summary.status()));
   // Rewrites data/security/ with the seed story. Owner only, and never in production.
-  api.post('/seed', host.requireRole('change-guardrails'), async (req, res) => {
+  api.post('/seed', action(host, 'security.seed', 'change-guardrails'), async (req, res) => {
     if (process.env.NODE_ENV === 'production') throw forbidden('Resetting to the seed story is not allowed in production.');
     const result = await seed({ reset: req.body?.reset === true });
     res.status(result.seeded ? 201 : 200).json(result);

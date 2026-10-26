@@ -57,5 +57,8 @@ export function createRepos(store) {
     approvals: entity(store, 'approvals', APPROVAL_ID),
     handoffs: entity(store, 'handoffs', HANDOFF_ID),
     readYaml: (name) => store.readYaml([name]),
+    // The workflow's files as written (Phase 27: checked before they are used, and copied to applied/ once they pass).
+    readText: (segments) => store.readText(segments),
+    writeText: (segments, text) => store.writeText(segments, text),
   };
 }

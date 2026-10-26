@@ -4,18 +4,18 @@
 //                       standards check of its container view, in NooblyJS's one shape (NooblyJS gives each its id)
 //   trace(itemId)       the spec, its goals (GOAL-031-1: a row of its Goals table), its decisions (ADR-014) and quality
 //                       attributes (QA-031-1), each linked to the item
-import { CHECKS } from './readiness.js';
+import { configuredChecks } from './readiness.js';
 import { parseSpec } from './spec-format.js';
 
 const num = (itemId) => String(itemId).replace(/^[A-Z]+-/, '');
 
-export function createProductChecks({ repos, architecture, specWrites, mountPath = '/product' }) {
+export function createProductChecks({ repos, architecture, specWrites, host = null, mountPath = '/product' }) {
   async function checksFor(itemId) {
     const spec = await repos.specs.get(itemId).catch(() => null);
     if (!spec) return [];
     const subject = { item: itemId, ref: `${itemId} v${spec.version ?? 0}` };
     const facts = (await specWrites.facts(itemId).catch(() => null))?.facts ?? {};
-    const readiness = CHECKS.map((c) => {
+    const readiness = (await configuredChecks(host)).map((c) => {
       const f = facts[c.key];
       const result = f?.value === true ? 'passed' : f?.value === false ? 'failed' : 'not-run';
       return {

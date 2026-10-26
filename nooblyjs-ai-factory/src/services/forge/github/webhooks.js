@@ -17,7 +17,7 @@
 //    a submission is keyed by the delivery id: the same delivery never makes two runs.
 import crypto from 'node:crypto';
 import { submitJob } from '../../job/run-job.js';
-import { loadLine } from '../../../models/line.js';
+import { loadLine, lineForRequest } from '../../../models/line.js';
 import { KINDS } from '../../line/executor.js';
 
 /** Is this body really from GitHub (signed with our secret)? */
@@ -89,7 +89,7 @@ export function handleWebhook(store, cmd, ctx) {
     const first = store.append(stream, 'pr.changes_requested', { runId: run.id, body: cmd.body, by: cmd.by }, { key: `github:delivery:${ctx.delivery}` });
     if (!first) return { handled: false, reason: 'already handled (a redelivery)' };
     // Back to the fixer (F13): repair, deliver and merge run again, with the person's review as the failure.
-    const ids = loadLine(run.request.line ?? 'default', KINDS()).stations.map((s) => s.id);
+    const ids = lineForRequest(run.request, KINDS()).stations.map((s) => s.id);
     const from = ids.includes('repair') ? 'repair' : 'build';
     store.append(stream, 'run.rewound', { runId: run.id, from, reset: ids.slice(ids.indexOf(from)), feedback: cmd.body });
     store.append(stream, 'run.requeued', { runId: run.id, reason: `changes requested by ${cmd.by}` });

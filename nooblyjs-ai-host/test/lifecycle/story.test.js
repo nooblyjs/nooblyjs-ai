@@ -366,7 +366,8 @@ test('the rules table is lifecycle v3\'s, with the app approvals, and the lifecy
 });
 
 test('it wrote only inside its own folder', async () => {
-  assert.deepEqual((await fs.readdir(dir)).sort(), ['approval-rules.yaml', 'approvals', 'handoffs', 'items', 'readiness.yaml', 'seed.yaml']);
+  // Phase 27: lifecycle.yaml is seeded, and applied/ keeps the version of each workflow file in use.
+  assert.deepEqual((await fs.readdir(dir)).sort(), ['applied', 'approval-rules.yaml', 'approvals', 'handoffs', 'items', 'lifecycle.yaml', 'readiness.yaml', 'seed.yaml']);
 });
 
 test('Phase 11: a handoff with the item\'s repositories refuses a work item outside them, and the handoff keeps the list', async () => {

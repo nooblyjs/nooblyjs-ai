@@ -65,6 +65,11 @@ export function createMetrics({ store, activity, clock = Date, log, services = n
     return perDay.flat();
   }
 
+  /** The lifecycle's stages (Phase 27: data/workflows/lifecycle.yaml), so a stage added there has its own row. */
+  async function stagesInUse() {
+    return Promise.resolve(services?.get?.('workflows')?.stages?.()).catch(() => null);
+  }
+
   function check(range) {
     if (!RANGES[range]) throw new HttpError(400, 'invalid_range', `A range is one of ${Object.keys(RANGES).join(', ')}.`, { range });
   }
@@ -75,13 +80,13 @@ export function createMetrics({ store, activity, clock = Date, log, services = n
     async get(range = '30d', { now = clock.now() } = {}) {
       check(range);
       const all = await facts(range, now, { raw: false });
-      return { ...compute(all, { range, now }), spendByValueStream: await places.byValueStream(all, now) };
+      return { ...compute(all, { range, now, stages: await stagesInUse() }), spendByValueStream: await places.byValueStream(all, now) };
     },
     /** The same, recomputed from the raw events without reading or writing a roll-up (npm run metrics:reconcile). */
     async fromEvents(range = '30d', { now = clock.now() } = {}) {
       check(range);
       const all = await facts(range, now, { raw: true });
-      return { ...compute(all, { range, now }), spendByValueStream: await places.byValueStream(all, now) };
+      return { ...compute(all, { range, now, stages: await stagesInUse() }), spendByValueStream: await places.byValueStream(all, now) };
     },
     /** Agent spend per item (its root item), over the last quarter and before it: { PRD-031: 41.2, … } (Phase 17). */
     async spendByItem({ now = clock.now() } = {}) {

@@ -13,6 +13,8 @@ import { createEngine } from './services/engine.js';
 import { createViews } from './services/views.js';
 import { createApi } from './routes.js';
 import { seed as seedStory } from './seed/index.js';
+import { STAGES, kindOf, stageLabel } from './stages.js';
+import { WHEN_FACTS } from './evaluators.js';
 
 const NAME = 'workflows';
 const MOUNT = /^\/[a-z0-9][a-z0-9-]{0,62}$/;
@@ -45,6 +47,42 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
   const engine = createEngine({ repos, host, log, clock });
   const views = createViews({ repos, host, engine });
   const about = { name: NAME, version: VERSION, mountPath };
+  // Phase 27: other apps compare an item's stage by its kind, and show its label: neither is a key they know.
+  const withKind = (item) => ({
+    ...item, stageKind: kindOf(item.stage), stageLabel: stageLabel(item.stage),
+    ...(Array.isArray(item.history) ? { history: item.history.map((h) => ({ ...h, kind: kindOf(h.stage) })) } : {}),
+  });
+
+  /** The workflow in words (Platform · Settings · Workflow). */
+  async function workflowView() {
+    const wf = await engine.workflow.current();
+    const label = (key) => STAGES.find((s) => s.key === key)?.label ?? key;
+    const gate = (ruleKey, to) => {
+      const r = wf.rules.get(ruleKey) ?? {};
+      return {
+        rule: ruleKey, label: ruleKey === 'stage' ? 'The plain stage approval' : r.label ?? ruleKey, decision: r.decision ?? null,
+        approver: r.approver ?? null, permission: r.permission ?? null, slots: r.slots ?? null, quorum: r.quorum ?? null,
+        target: r.targetText ?? null, ifLate: r.ifLate ?? null, needsReadiness: Boolean(r.needsReadiness),
+        to, toLabel: to === 'complete' ? 'Done' : label(to),
+      };
+    };
+    const words = ({ key, passed, failed, evaluator, when }) => ({ key, passed, failed, ...(evaluator ? { evaluator } : {}), ...(when ? { when } : {}) });
+    return {
+      stages: wf.stages.map((s) => {
+        const exit = wf.exitOf(s.key);
+        return {
+          key: s.key, number: STAGES.findIndex((x) => x.key === s.key) + 1, label: s.label, area: s.area, kind: s.kind,
+          exit: gate(exit.rule, exit.to), checks: wf.checksOf(s.key).map(words),
+          ...(s.kind === 'test' ? { pullRequestChecks: wf.pullRequestChecks.map(words) } : {}),
+        };
+      }),
+      rules: [...wf.rules.values()].filter((r) => !r.retired).map((r) => ({ key: r.key, label: r.label ?? r.key, decision: r.decision ?? null, permission: r.permission, approver: r.approver ?? null, target: r.targetText ?? null })),
+      disabledRules: [...wf.disabledRules],
+      files: engine.workflow.status(),
+      evaluators: engine.evaluators.list(),
+      whenFacts: WHEN_FACTS,
+    };
+  }
 
   // Lifecycle v3 (Phase 16b): items in a stage from before (Specify, UX, UI, Architect, Verify, Ship) move to where it
   // belongs now, once, on record. A failure here is logged and NooblyJS starts anyway; the next start tries again.
@@ -115,7 +153,10 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       /** Phase 22: a feature's release is in production: its stories go from Release to Operate ({ itemId, featureId, releaseId }). */
       featureDeployed: (input) => engine.pullRequests.featureDeployed(input),
       /** An item's features, each with its stories and where it is (Phase 16e). */
-      featuresOf: ({ itemId } = {}) => engine.pullRequests.featuresOf(itemId),
+      featuresOf: async ({ itemId } = {}) => {
+        await engine.workflow.current();
+        return engine.pullRequests.featuresOf(itemId);
+      },
       /** Accepting an idea (Phase 17): opens its item in Discover if needed, then the `idea` approval with its readiness. */
       acceptIdea: (input) => engine.acceptIdea(input),
       /** The checks of an item, its stories and their pull requests, in the one shape (Phase 16f; without ids). */
@@ -132,7 +173,10 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
         return item ? engine.readinessOf(item) : null;
       },
       /** An item's stories as the lifecycle sees them: [{ id, title, stage, status, feature }]. */
-      storiesOf: async ({ itemId } = {}) => (await engine.storiesOf(itemId)).map(({ id, ref, title, stage, status, feature, stageEnteredAt }) => ({ id, ref, title, stage, status, feature: feature ?? null, stageEnteredAt })),
+      storiesOf: async ({ itemId } = {}) => {
+        await engine.workflow.current();
+        return (await engine.storiesOf(itemId)).map(({ id, ref, title, stage, status, feature, stageEnteredAt }) => ({ id, ref, title, stage, stageKind: kindOf(stage), stageLabel: stageLabel(stage), status, feature: feature ?? null, stageEnteredAt }));
+      },
       /** One handoff with its work items ({ id, itemId, workItems: [{ id, repo, title, status }], … }), or null. The Software Factory reads it. */
       handoffOf: async ({ handoffId } = {}) => repos.handoffs.get(handoffId),
       /** A defect on a story (Phase 20): what it breaks and the test run it was found in. See defects.js. */
@@ -141,12 +185,39 @@ export async function register(app, serverManager, { mountPath = '/workflows', d
       decideDefect: (input) => engine.defects.decideDefect(input),
       /** Defects of a story, of an item, or all, as the pages show them; optionally in one state. */
       defects: async (input = {}) => Promise.all((await engine.defects.defectsOf(input)).map((d) => engine.defects.shape(d))),
-      /** One item, as the lifecycle sees it (null when unknown). */
-      item: async ({ itemId } = {}) => repos.items.get(itemId),
+      /** One item, as the lifecycle sees it (null when unknown), with its stage's kind (`stageKind`, Phase 27). */
+      item: async ({ itemId } = {}) => {
+        await engine.workflow.current();
+        const item = await repos.items.get(itemId);
+        return item ? withKind(item) : null;
+      },
       /** Approvals, optionally of one type (the Factory's Pull requests and Test approvals pages). */
       approvals: async ({ type = null } = {}) => (await repos.approvals.list()).filter((a) => !type || a.type === type),
-      /** Items, optionally those in one stage (the Design section's lists, Phase 16c). */
-      items: async ({ stage = null } = {}) => (await repos.items.list()).filter((i) => !stage || i.stage === stage),
+      /**
+       * Items, optionally those in one stage, or in the stage of one kind (Phase 27: apps ask by kind, never by a stage's
+       * key). Each says its stage's kind as `stageKind`.
+       */
+      items: async ({ stage = null, kind = null } = {}) => {
+        await engine.workflow.current();
+        return (await repos.items.list()).map(withKind).filter((i) => (!stage || i.stage === stage) && (!kind || i.stageKind === kind));
+      },
+      /** Phase 27: the key of the stage of a kind ('design' → the stage stories are written in), or null. */
+      stageOfKind: async ({ kind } = {}) => (await engine.workflow.current()).stageOfKind(kind),
+      /** Phase 27: the stages in order: [{ key, label, area, kind, exit: { rule, to } }]. */
+      stages: async () => (await engine.workflow.current()).stages.map(({ key, label, area, kind, exit }) => ({ key, label, area, kind, exit })),
+      /**
+       * Phase 27: the checks of a stage (by `stage` key or `kind`), in order and in their words:
+       * [{ key, passed, failed, evaluator?, when? }]. Product and Design show theirs with these words.
+       */
+      checksOf: async ({ stage = null, kind = null } = {}) => {
+        const wf = await engine.workflow.current();
+        const key = stage ?? wf.stageOfKind(kind);
+        return key ? wf.checksOf(key).map(({ key: k, passed, failed, evaluator, when }) => ({ key: k, passed, failed, ...(evaluator ? { evaluator } : {}), ...(when ? { when } : {}) })) : [];
+      },
+      /** Phase 27: an app's own evaluators ({ source, checks: [{ key, passed, failed }], facts: async (item) => ({ facts }) }). */
+      registerEvaluators: (input) => engine.evaluators.register(input),
+      /** Phase 27: the workflow as Platform · Settings · Workflow shows it: the stages, gates, checks, and each file's state. */
+      workflow: () => workflowView(),
       /** Approvals waiting on this person (Home, For you). */
       waitingFor: (person) => views.waitingFor(person),
       /** Items in flight, approvals waiting on the person, agents working. */

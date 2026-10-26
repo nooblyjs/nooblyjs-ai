@@ -59,10 +59,10 @@ export function createEnvironments({ repos, host, designs, runs, now, mountPath 
     if (rule === 'release') throw new HttpError(422, 'release_only', 'Production only changes through a release, with two approvers.');
     const why = String(reason ?? '').trim();
     if (rule === 'approval') {
-      await needs(host, person, rules.approval?.permission ?? 'change-repo-access', action);
+      await needs(host, person, rules.approval?.permission ?? 'change-repo-access', action, 'infrastructure.environment.approve');
       if (why.length < 3) throw badRequest(`Say why ${name} is being destroyed (it is a ${KIND_LABEL[env.kind]} environment).`, { reason: 'required' });
     } else {
-      await needs(host, person, 'draft', action);
+      await needs(host, person, 'draft', action, 'infrastructure.environment.change');
     }
     if (env.status === 'provisioning') throw conflict(`${name} is being provisioned. Cancel that run first.`);
     const at = new Date(now()).toISOString();
@@ -112,9 +112,9 @@ export function createEnvironments({ repos, host, designs, runs, now, mountPath 
     if (rule === 'release') throw new HttpError(422, 'release_only', 'Production only changes through a release, with two approvers.');
     if (rule === 'approval') {
       await peopleOnly(host, person, action);
-      await needs(host, person, rules.approval?.permission ?? 'change-repo-access', action);
+      await needs(host, person, rules.approval?.permission ?? 'change-repo-access', action, 'infrastructure.environment.approve');
     } else {
-      await needs(host, person, 'draft', action);
+      await needs(host, person, 'draft', action, 'infrastructure.environment.change');
     }
 
     const current = await designs.load(designId);
@@ -195,7 +195,7 @@ export function createEnvironments({ repos, host, designs, runs, now, mountPath 
     await peopleOnly(host, person, action);
     const rules = await repos.config.applyRules();
     if ((rules.kinds?.[to] ?? 'approval') === 'release') throw new HttpError(422, 'release_only', `${KIND_LABEL[to]} only changes through a release, with two approvers.`);
-    await needs(host, person, (rules.kinds?.[to] ?? 'approval') === 'approval' ? rules.approval?.permission ?? 'change-repo-access' : 'draft', action);
+    await ((rules.kinds?.[to] ?? 'approval') === 'approval' ? needs(host, person, rules.approval?.permission ?? 'change-repo-access', action, 'infrastructure.environment.approve') : needs(host, person, 'draft', action, 'infrastructure.environment.change'));
     const source = await repos.environments.get(path.environments[from]);
     const target = await repos.environments.get(path.environments[to]);
     if (!source || !target) throw notFound(`${product}'s path has no ${!source ? from : to} environment.`);

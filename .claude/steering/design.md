@@ -267,3 +267,82 @@ Kept short: each new app specifies its own screens in its `product.md` when its 
 | One check shape forces changes into four existing apps | Adopt it at the edge first: each app maps its own records to the shape in its `checksFor` service, then migrates storage later if worth it |
 | Scanners and test tools need outbound access (rules, databases) | Their images are built with what they need; registries and rule feeds are allow-listed like package registries |
 | Stage split breaks existing metrics history | `ship` maps to `release`; the "Build & ship" history is kept under its old name and labelled |
+| The process moves into configuration (§13) and a bad edit stops work | Every workflow file is validated when it loads (unknown stage, rule, evaluator or permission is refused with the line at fault) and the last good version keeps running; changes are audited like guardrails |
+
+## 13. The process as configuration
+
+> Reviewed 2026-10-26 (the code as of Phase 26). Direction set the same day: the steps, the validations and the roles
+> that do the work are configuration; the step *types* and the check *evaluators* stay code. Built in Phase 27
+> (`roadmap.md`).
+
+### 13.1 Where it stands
+
+Files under `data/` are re-read on every use, so an edit applies without a restart.
+
+| Concern | Configuration today | Still code |
+| --- | --- | --- |
+| **Gates** | `data/workflows/approval-rules.yaml`: whom each approval waits on (a permission), quorum (`all`, `any`, a number), reviewer `slots`, target, reminders, escalation, `needsReadiness`, every label | Which rule leaves which stage and where it goes: `MOVES` and `LEAVES_BY` in `src/lifecycle/services/engine.js` (`toLabel` is only words). `BUILT_IN_RULES` in `src/lifecycle/config.js` puts back any rule the file leaves out, so a built-in gate can't be switched off |
+| **Stages** | None | `STAGES` in `src/lifecycle/stages.js`; about 70 `stage === '…'` tests across the host, Design, the Factory, Quality and Operations (`engine.js` 18, `pull-requests.js` 12) |
+| **Validations** | `data/workflows/readiness.yaml`: which checks each stage needs and their words (`stage: []` turns a stage's off); `waitingTooLongDays`; the apps' policies (Security gates and fix-by days, Operations rollout and risk threshold, Quality `test-policy.yaml`, Infrastructure `apply-rules.yaml` and `policies.yaml`) | Whether a check passes: Product `readiness.js`, Design `design.js` `readinessFacts`, the Factory's `engineeringReadiness`, a pull request's in `engine.js`. The engine picks the evaluator by stage name. **A check key with no evaluator reads "not checked yet" and fails**, holding the gate until a person overrides it. Product and Design keep their own copies of the checks' words |
+| **Roles** | `data/access/roles.yaml`: the access roles, which role holds which permission, `newPersonRole`, `agentCap`. Work roles (`work-roles.yaml`, `job-title-roles.yaml`) shape homes only | Which permission each action needs: about 140 `requirePermission` / `can` calls with the name written in. A rule's `approver` and a slot's `role` are words; reviewers are found by permission and team, never by work role. Each home's layout is coded per key in `src/services/for-you.js` |
+| **Who does agent work** | `agent.teammates` in each app's policies; `platform/model-routes.yaml` by work type | — |
+| **Factory runs** | `nooblyjs-ai-factory/lines/*.json`: stations in order, `when` conditions (a safe expression language, `line/conditions.js`, never evaluated as code), retries, optional, human gate, agent role; validated when loaded | The station kinds (`line/stations/`). Lines live in the package, not `data/`; a lifecycle handoff always asks for `line: 'default'` (`intake/handoff.js`); a repository's own `.factory/lines/` is not built |
+
+Roughly: roles ~80% configuration, validations ~50%, steps ~15% in the lifecycle and ~90% in the Factory.
+
+### 13.2 The model: definitions are data, kinds are code
+
+The Factory's line is the pattern for the whole process.
+
+- **One workflow definition**, `data/workflows/lifecycle.yaml`: the stages in order, each with its exit gate (a rule
+  key), where approving it goes, the checks it needs and its properties (`stories: true`, `owner: design`). It replaces
+  `STAGES`, `MOVES` and `LEAVES_BY`; history's stage keys stay mapped in code (`LEGACY`).
+
+  ```yaml
+  stages:
+    - key: design
+      label: Design
+      owner: design            # the app told when an item enters (§3 Stage orchestration)
+      perStory: true
+      exit: { rule: design-handoff, to: engineer }
+      checks: [design.requirements-covered, design.decisions-decided, design.interfaces-complete]
+  ```
+
+- **A registry of check evaluators.** Each app registers named evaluators (`design.requirements-covered`,
+  `product.goals-measurable`) with the words they report; a check in the file names one. A check that needs no code
+  ("this section is filled in", "this count is 0") is a `when` expression in the Factory's condition language over the
+  item's facts. An unknown evaluator is refused when the file loads, never left failing.
+- **Actions name their permission in configuration**: `actions:` in `roles.yaml` (`send-back: approve`,
+  `change-stories: draft`), read through one helper. A route that names an action missing from the file is refused
+  and logged, as an unknown permission is today.
+- **Built-ins are defaults, not overrides**: a rule or stage the file lists with `enabled: false` stays off.
+- **Lines are chosen by configuration**: per repository in `factory/repos.yaml` or per item type, with lines loadable
+  from `data/factory/lines/` as well as the package's.
+- **Validated on load, last good kept**: a file that fails validation is reported (Platform · Settings and the log,
+  with the line at fault) and the last good version keeps running. Every change is audited.
+
+What stays code, on purpose: the station kinds, the evaluators, the engine's invariants (agents never decide; a
+Viewer never approves; two different people where a quorum is a number; "agents open PRs, people merge").
+
+### 13.3 As built (Phase 27, 2026-10-26)
+
+- **`data/workflows/lifecycle.yaml`** lists the stages; each has a `key`, `label`, `area`, `kind`, `exit` (a rule, or
+  `{ rule, to }`, `done` closing the item) and `checks` (`pullRequestChecks` on the test stage). The **kinds** are the
+  eight kinds of step the code knows (`discover … operate`): each is there once, in order; a stage with no kind is a plain
+  gate (a person's approval and its checks). The stages of the kinds engineer, build, test, release and operate keep the
+  gate the code acts on (`engineering-signoff`, `build-approval`, `test-approval`, `deploy`, `outcome-review`).
+  `src/lifecycle/workflow.js` reads it with `approval-rules.yaml` and `readiness.yaml`; `src/lifecycle/stages.js` holds
+  the stages in use and answers `stageOfKind`, `kindOf`, `isKind`. Apps get `stageKind` and `stageLabel` on every item.
+- **Evaluators**: `src/lifecycle/evaluators.js` (`product.*`, `design.*`, `engineering.*`, `pr.*`, and any an app adds
+  with `registerEvaluators`); `when` checks use the Factory's condition language over `item`, `spec.sections`,
+  `stories`, `pullRequests`, `defects`. Product and Design show the lifecycle's list and words (`checksOf`).
+- **Checked, last good kept**: each workflow file and `access/roles.yaml` is checked whenever it changes; a refused file
+  leaves the last good running (this process's, else `applied/`, else the built-in or the seed's), audited as
+  `workflow.refused`; an applied change is `workflow.changed` in Activity, in words. Platform · Settings · **Workflow**
+  shows it all, read-only (`GET /api/v1/platform/workflow`, `read-audit`).
+- **Actions**: `host.requireAction(action, default)`, `host.canDo`, `host.permissionFor`; 113 actions across NooblyJS and
+  the apps, listed in the seed's `access/roles.yaml` (`actions:`). The browser's `ctx.can()` hints still name
+  permissions; the API enforces the action's.
+- **Lines**: `data/factory/lines/*.json` (the operator's, winning over a built-in of the same name) and
+  `data/factory/lines.yaml` (which line by repository and item type); a run keeps the line it was queued with.
+- `test/stage-keys.test.js` fails the build when an item's stage is compared with a stage key in code.

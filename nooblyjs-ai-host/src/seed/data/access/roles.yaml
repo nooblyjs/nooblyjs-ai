@@ -28,3 +28,136 @@ permissions:
   sign-off-tests: [Approver, Architect, Owner]
   # Phase 25a: the ideas portal (put an idea forward, vote, comment, follow). Every access role; agents never.
   suggest: [Viewer, Contributor, Approver, Architect, Owner]
+
+# Phase 27: the permission each ACTION needs. The code names the action it is about to take; this says which permission
+# it needs (the roles above that have it may take it). An action not listed here needs its default, which is what is
+# written below; one listed with a permission that does not exist refuses the whole file (the last good version keeps
+# running, and Platform · Settings · Workflow says why). Agents are still capped at agentCap, and never decide.
+actions:
+  # The lifecycle (Home · Lifecycle and Approvals, and every app that moves an item)
+  change-stories: draft
+  checks.override: draft
+  defect.decide: draft
+  defect.raise: draft
+  lifecycle.read: read
+  merge-pull-request: merge
+  nudge: draft
+  request-review: draft
+  send-back: approve
+  # Home
+  home.read: read
+  people.invite: hire-teammates
+  # Team chat and Teams
+  chat.apply-to-spec: draft
+  chat.card.change-repo-access: change-repo-access
+  chat.post: draft
+  chat.read: read
+  teams.ask-teammate: draft
+  teams.edit: set-budgets
+  # Development tools (Jira and Bitbucket)
+  devtools.configure: change-repo-access
+  devtools.link: draft
+  devtools.read: read
+  devtools.sync: draft
+  devtools.writes.manage: change-guardrails
+  # Platform
+  platform.audit.read: read-audit
+  platform.budgets.set: set-budgets
+  platform.containers.stop: change-guardrails
+  platform.guardrails.change: change-guardrails
+  platform.members.manage: manage-members
+  platform.models.change: change-guardrails
+  platform.read: read
+  platform.repositories.manage: change-repo-access
+  platform.secrets.manage: change-repo-access
+  platform.workflow.read: read-audit
+  # Product
+  product.adr.accept: accept-decisions
+  product.architecture.write: draft
+  product.board.write: draft
+  product.business-case.write: draft
+  product.catalogue.manage: approve
+  product.drafters.write: draft
+  product.drafts.write: draft
+  product.elicitation.write: draft
+  product.feedback.write: draft
+  product.ideas.suggest: suggest
+  product.objective.move: approve
+  product.objectives.write: draft
+  product.read: read
+  product.requirement.accept: accept-requirement
+  product.seed: change-guardrails
+  product.spec.decide: approve
+  product.spec.send-back: approve
+  product.spec.write: draft
+  product.strategy.write: draft
+  product.template.change: approve
+  product.ui.handoff: approve
+  product.ui.write: draft
+  product.ux.write: draft
+  # Design
+  design.read: read
+  design.requirement.accept: accept-requirement
+  design.write: draft
+  # Software Factory
+  factory.engineering.architecture.systems.accept: accept-decisions
+  factory.engineering.architecture.systems.draft: draft
+  factory.engineering.architecture.systems.edit: draft
+  factory.engineering.sign-off: draft
+  factory.inbox: draft
+  factory.inbox.approve: approve
+  factory.pull-requests.decision: draft
+  factory.pull-requests.merge: merge
+  factory.read: read
+  factory.resume-all: approve
+  factory.runs: draft
+  factory.stop-all: approve
+  factory.test.defects.decision: draft
+  factory.test.runs.defects: draft
+  # Software Factory · Test
+  quality.read: read
+  quality.write: draft
+  # Infrastructure
+  infrastructure.design.decide: change-repo-access
+  infrastructure.design.draft: draft
+  infrastructure.drift.check: draft
+  infrastructure.environment.approve: change-repo-access
+  infrastructure.environment.change: draft
+  infrastructure.environment.test: draft
+  infrastructure.policies.change: change-guardrails
+  infrastructure.read: read
+  infrastructure.seed: change-guardrails
+  # Security
+  security.finding.ask-fix: draft
+  security.finding.change-owner: draft
+  security.read: read
+  security.risk.accept: accept-risk
+  security.seed: change-guardrails
+  security.threat-model.accept: accept-threat-model
+  security.threat-model.ask: draft
+  # Operations
+  operations.incident.accept-review: draft
+  operations.incident.declare: draft
+  operations.incident.follow-up: draft
+  operations.incident.resolve: draft
+  operations.incident.update: draft
+  operations.outcome.decide: approve
+  operations.outcome.open-idea: draft
+  operations.read: read
+  operations.release.ask-deploy: draft
+  operations.release.deploy: deploy-production
+  operations.release.make: draft
+  operations.release.roll-back: deploy-production
+  operations.release.rollout: deploy-production
+  operations.seed: change-guardrails
+  operations.slo.burn: draft
+  # Knowledge
+  knowledge.answer.act: draft
+  knowledge.flag.resolve: approve
+  knowledge.source.import: change-repo-access
+  # Digital Teammates
+  teammates.hire: hire-teammates
+  teammates.manager: approve
+  teammates.owner: set-budgets
+  teammates.post: draft
+  teammates.viewer: read

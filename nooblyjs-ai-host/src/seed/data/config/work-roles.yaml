@@ -8,6 +8,8 @@
 # done: { type, where: { <payload path>: value } } }]: the first three things, ticked by events (`next` is how the
 # Getting started card says it). They name the PRD-031 sample story's items; npm run seed:blank drops them.
 # The first-week tasks were rebuilt with the sample story on 2026-10-20 (BUG-006).
+# Phase 27: `stages` (stage keys from workflows/lifecycle.yaml) is what the Architect, Solution architect and Functional
+# analyst homes list; without it, the Design stage (the stage of the kind design).
 common:
   firstWeek:
     - { key: pick-role-and-teams, text: Pick your role and teams, short: Role and teams, next: pick your role and teams, done: { type: profile.onboarded } }

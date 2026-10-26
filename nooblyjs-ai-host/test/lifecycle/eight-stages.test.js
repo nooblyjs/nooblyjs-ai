@@ -368,6 +368,8 @@ test('a data folder from before gets the new rules, words and permissions; retir
   };
   const before16b = await start();
   try {
+    // A data folder from before Phase 27 has no lifecycle.yaml: readiness.yaml says each stage's checks.
+    await before16b.store.remove(['lifecycle.yaml']);
     await before16b.store.writeYaml(['approval-rules.yaml'], oldRules);
     await before16b.store.writeYaml(['readiness.yaml'], { stages: { specify: [{ key: 'goals', passed: 'Goals are measurable', failed: 'Goals need measures' }] } });
     const rules = (await before16b.call('stevie', 'GET', '/rules')).body.rules;

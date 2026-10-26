@@ -13,15 +13,16 @@
 //   GET  /portal/ideas, POST /portal/ideas, …/votes, …/comments, …/follow (suggest, people only); …/merge, …/promote (draft, people only)
 import { viewContext } from '../services/views.js';
 import { peopleOnly } from '../util/http.js';
+import { action } from '../util/actions.js';
 
 const one = (v, max = 64) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
 const truthy = (v) => ['1', 'true', 'yes'].includes(String(v ?? '').toLowerCase());
 
 export function feedbackRoutes({ host, repos, people, feedback, portal, mountPath }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
-  const suggest = host.requireRole('suggest');
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.feedback.write', 'draft');
+  const suggest = action(host, 'product.ideas.suggest', 'suggest');
   const person = (action) => peopleOnly(host, action);
 
   // ---------- the inbox ----------

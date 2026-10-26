@@ -112,7 +112,8 @@ test('nothing on disk is sample content, and each app wrote only its system file
     assert.doesNotMatch(data, SAMPLE, `${f} holds sample content`);
   }
   const top = (dir) => files.filter((f) => f.startsWith(`${dir}/`)).map((f) => f.slice(dir.length + 1).split('/')[0]);
-  assert.deepEqual([...new Set(top('workflows'))].sort(), ['approval-rules.yaml', 'readiness.yaml', 'seed.yaml']);
+  // Phase 27: lifecycle.yaml is a system file, and applied/ keeps the version of each workflow file in use.
+  assert.deepEqual([...new Set(top('workflows'))].sort(), ['applied', 'approval-rules.yaml', 'lifecycle.yaml', 'readiness.yaml', 'seed.yaml']);
   // Product and Design are apps of their own (CHG-009), each in its own folder: system files only.
   assert.deepEqual([...new Set(top('product'))].sort(), ['accessibility.yaml', 'budget.yaml', 'catalogue.yaml', 'seed.yaml', 'standards.yaml', 'templates']);
   assert.ok(top('design').includes('nfr-catalogue.yaml') && !top('design').includes('items'), 'Design wrote its catalogue, and no design');

@@ -15,6 +15,7 @@
 // open, the spec's readiness has a check that fails naming it.
 import { HttpError, badRequest, notFound } from '../util/errors.js';
 import { isAgent } from '../util/http.js';
+import { canDo, permissionFor } from '../util/actions.js';
 
 const KINDS = new Set(['interview', 'workshop', 'meeting']);
 const ROLES = new Set(['affected', 'decides', 'consulted']);
@@ -64,8 +65,9 @@ export function createElicitation({ repos, host, architecture, log }) {
       await audit({ actor: actor.id, action: 'access.refused', target: itemId, reason: `agents propose, people decide: an agent can't ${what}` });
       throw new HttpError(403, 'people_only', `Agents propose and people decide: ${actor.name ?? actor.id} can't ${what}.`);
     }
-    if (!(await host.can?.(actor.accessRole, 'accept-requirement'))) {
-      throw new HttpError(403, 'forbidden', `You can't ${what}: it needs the "accept-requirement" permission, and your access role is ${actor.accessRole ?? 'none'}.`, { permission: 'accept-requirement' });
+    const needs = await permissionFor(host, 'product.requirement.accept', 'accept-requirement');
+    if (!(await host.can?.(actor.accessRole, needs))) {
+      throw new HttpError(403, 'forbidden', `You can't ${what}: it needs the "${needs}" permission, and your access role is ${actor.accessRole ?? 'none'}.`, { permission: needs });
     }
   }
 
@@ -261,7 +263,7 @@ export function createElicitation({ repos, host, architecture, log }) {
   async function walk(itemId, category, body = {}, actor) {
     const cat = (await catalogue()).find((c) => c.key === category);
     if (!cat) throw notFound(`The NFR catalogue has no category "${category}".`);
-    const may = !isAgent(actor) && Boolean(await host.can?.(actor?.accessRole, 'accept-requirement'));
+    const may = !isAgent(actor) && Boolean(await canDo(host, actor?.accessRole, 'product.requirement.accept', 'accept-requirement'));
     const notApplicable = body.notApplicable === true;
     const answers = notApplicable ? [] : (Array.isArray(body.answers) ? body.answers : []).map((a, i) => ({ text: clean(a?.text, `answers[${i}].text`), target: clean(a?.target, `answers[${i}].target`, 200) }));
     if (!notApplicable && !answers.length) throw badRequest('Answer the category, or mark it not applicable with a reason.');

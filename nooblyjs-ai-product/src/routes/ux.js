@@ -2,11 +2,12 @@
 // design agent's drafts (journey, flow, quick test).
 import { etagOf } from '../util/http.js';
 import { draftHandler } from './drafts.js';
+import { action } from '../util/actions.js';
 
 export function uxRoutes({ host, ux, drafting, kindKeys, mountPath }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.ux.write', 'draft');
   const ifMatch = (req) => ({ ifMatch: req.get('if-match') });
 
   router.get('/ux', read, async (req, res) => {

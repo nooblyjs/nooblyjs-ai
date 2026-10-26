@@ -42,10 +42,15 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
       onboarding: { completed: profile?.onboarding.completed === true },
     };
     if (!role || (role.layout ?? 'none') === 'none') return { ...base, layout: 'none' };
+    // Phase 27: the stages a home lists are the work role's `stages` in work-roles.yaml (stage keys), else the stage of
+    // the kind the layout is about. So a home follows the workflow when a stage is added or renamed.
+    const inMyStages = (kind) => (i) => (role.stages?.length ? role.stages.includes(i.stage) : (i.stageKind ?? i.stage) === kind);
 
     const snapshot = await services.get('workflows')?.snapshot?.(person);
     if (!snapshot) return { ...base, layout: role.layout, engine: false };
 
+    // Phase 27: the stages are the workflow's; the pages draw their columns from these.
+    base.stages = snapshot.stageList ?? null;
     const teamIds = new Set(base.teams.map((t) => t.id));
     const inScope = (x) => base.scope === 'all' || x.owner === person.id || teamIds.has(x.team);
     const items = snapshot.items.filter(inScope);
@@ -93,7 +98,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
       const service = services.get('design');
       if (typeof service?.items === 'function') {
         try {
-          const list = (await service.items()).filter((i) => i.stage === 'design');
+          const list = (await service.items()).filter(inMyStages('design'));
           design = (await Promise.all(list.map((i) => service.designFor(i.itemId)))).filter(Boolean)
             .filter((d) => base.scope === 'all' || items.some((i) => i.id === d.itemId));
         } catch { /* the Design section is there but can't answer: the panels say it isn't running */ }
@@ -111,7 +116,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
     const evidence = role.layout === 'product-manager' ? await Promise.resolve(services.get('product')?.evidence?.()).catch(() => null) : null;
     // The SRE's home (Phase 23): from Operations.
     const operations = role.layout === 'sre' ? await Promise.resolve(services.get('operations')?.home?.()).catch(() => null) : null;
-    const ctx = { person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business, elicitation, security, quality, operations, evidence };
+    const ctx = { inMyStages, person, role, listed, snapshot, items, active, mine, base, at: snapshot.at, factory, nameFor, design, engineering, business, elicitation, security, quality, operations, evidence };
     const shaped = { 'product-manager': productManager, architect, developer, 'solution-architect': solutionArchitect, 'functional-analyst': functionalAnalyst, 'application-architect': applicationArchitect, 'test-analyst': testAnalyst, 'business-owner': businessOwner, 'business-analyst': businessAnalyst, 'security-engineer': securityEngineer, sre }[role.layout](ctx);
     return { ...base, layout: role.layout, engine: true, now: snapshot.at, ...shaped };
   }
@@ -183,15 +188,15 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
 
   // ---------------------------------------------------------------------------- Architect
 
-  function architect({ snapshot, active, mine, base, at, role }) {
+  function architect({ snapshot, active, mine, base, at, role, inMyStages }) {
     const all = snapshot.approvals.filter((a) => a.type === 'adr');
     const decisions = base.scope === 'all' ? all : all.filter((a) => a.mine);
     const yours = mine.filter((a) => a.type === 'adr');
     const past = yours.filter((a) => a.overdue).length;
     // Architecture is the Design stage's work since lifecycle v3 (Phase 16b); its pages are the Factory's Design section.
-    const inArch = active.filter((i) => i.stage === 'design');
-    const stage = snapshot.stages.find((s) => s.key === 'design');
-    const arriving = active.filter((i) => i.stage === 'product' && snapshot.approvals.some((a) => a.itemId === i.id && a.type === 'spec'));
+    const inArch = active.filter(inMyStages('design'));
+    const stage = snapshot.stages.find((s) => s.kind === 'design');
+    const arriving = active.filter((i) => i.stageKind === 'product' && snapshot.approvals.some((a) => a.itemId === i.id && a.type === 'spec'));
     const queue = [
       ...inArch.map((i) => (typeof i.work?.progress === 'number'
         ? { id: i.id, title: `${i.title} · ${i.ref}`, text: `${i.work.text}${i.work.task ? ` · ${i.work.task}` : ''} · ${Math.round(i.work.progress * 100)}%`, action: { label: 'Watch', href: `/design/architecture/${encodeURIComponent(i.id)}` } }
@@ -395,7 +400,7 @@ export function createForYou({ services, profiles, workRoles, teams, agents = nu
           {
             key: 'gaps', title: 'Coverage gaps', link: { label: 'Coverage', href: '/factory/test/coverage' },
             empty: quality === null ? 'The Test section is not running here, so there is no coverage to show.' : 'Every criterion in Build or Test has a passing test.',
-            rows: gaps.map((g) => ({ id: g.storyId, title: `${g.storyId} · ${g.title}`, text: `${g.text} · in ${g.stage === 'build' ? 'Build' : 'Test'}`, action: { label: 'Open', href: g.href } })),
+            rows: gaps.map((g) => ({ id: g.storyId, title: `${g.storyId} · ${g.title}`, text: `${g.text} · in ${g.stageLabel ?? g.stage}`, action: { label: 'Open', href: g.href } })),
           },
           {
             key: 'defects', title: 'Open defects', link: { label: 'Defects', href: '/factory/test/defects' }, empty: 'No defect is open.',

@@ -9,6 +9,10 @@
 // Phase 21. Nothing here is stored: it is read from the test analysis, the test runs and Design's stories.
 import { criterionRef } from './runs.js';
 
+// NooblyJS Phase 27: an item's stage is compared by its KIND ('design'), which the lifecycle says (stageKind); a stage's
+// key and label are the workflow's (data/workflows/lifecycle.yaml). On a host from before, the key is the kind.
+const kindOf = (item) => item?.stageKind ?? item?.stage ?? null;
+
 const PRESENT = new Set(['passing', 'failing', 'unproven']);
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const have = (n, total, what) => `${n} of ${plural(total, 'criterion', 'criteria')} ${n === 1 && total === 1 ? 'has' : 'have'} ${what}`;
@@ -84,7 +88,7 @@ export function createCoverage({ host, analysis, runs }) {
     const out = [];
     for (const item of items) {
       const stories = (await workflows()?.storiesOf?.({ itemId: item.id }).catch(() => [])) ?? [];
-      if (!stories.some((s) => ['engineer', 'build', 'test', 'release', 'operate'].includes(s.stage))) continue;
+      if (!stories.some((s) => ['engineer', 'build', 'test', 'release', 'operate'].includes(kindOf(s)))) continue;
       out.push(await coverageOf(item.id));
     }
     return out.filter(Boolean).sort((a, b) => a.itemId.localeCompare(b.itemId, 'en', { numeric: true }));
@@ -94,8 +98,8 @@ export function createCoverage({ host, analysis, runs }) {
   async function gaps() {
     const out = [];
     for (const c of await all()) {
-      for (const s of c.stories.filter((x) => ['build', 'test'].includes(x.stage) && x.passing < x.criteria)) {
-        out.push({ storyId: s.id, itemId: c.itemId, title: s.title, stage: s.stage, missing: s.criteria - s.passing, text: s.text, href: s.href });
+      for (const s of c.stories.filter((x) => ['build', 'test'].includes(kindOf(x)) && x.passing < x.criteria)) {
+        out.push({ storyId: s.id, itemId: c.itemId, title: s.title, stage: s.stage, stageLabel: s.stageLabel ?? null, missing: s.criteria - s.passing, text: s.text, href: s.href });
       }
     }
     return out;

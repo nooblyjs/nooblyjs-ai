@@ -40,7 +40,7 @@ after(async () => {
 test('readiness checks in the one shape; one overridden with a reason holds for its stage and is audited', async () => {
   const list = await s.checksFor({ itemId: 'PRD-070' });
   const ready = list.find((c) => c.subject.item === 'STORY-070-1' && c.key === 'criteria-ready');
-  assert.deepEqual([ready.kind, ready.result, ready.definedBy.ref, ready.verifiedBy, ready.overridable], ['readiness', 'failed', 'readiness.yaml#engineer.criteria-ready', 'factory facts', true]);
+  assert.deepEqual([ready.kind, ready.result, ready.definedBy.ref, ready.verifiedBy, ready.overridable], ['readiness', 'failed', 'lifecycle.yaml#engineer.criteria-ready', 'factory facts', true]);
   assert.match(ready.text, /^A criterion has no ready test case: "Given …" has no ready test case$/);
   // A Viewer, an agent, no reason, a passing check: refused.
   await assert.rejects(s.overrideCheck({ itemId: 'STORY-070-1', key: 'criteria-ready', reason: 'Because', actor: { id: 'naledi-k' } }), { code: 'viewers_cannot_approve' });

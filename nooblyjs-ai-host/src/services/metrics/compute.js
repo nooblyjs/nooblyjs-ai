@@ -28,6 +28,37 @@ export const GROUPS = [
   { key: 'ship', label: 'Ship (before nine stages)', stages: ['ship'], legacy: true },
 ];
 const GROUP_OF = Object.fromEntries(GROUPS.flatMap((g) => g.stages.map((s) => [s, g.key])));
+
+/**
+ * Phase 27: the groups for the workflow in use. `stages` ([{ key, label, kind }], in order, from the lifecycle) puts a
+ * renamed stage in the group of its kind, with its label, and gives a stage of no kind (a gate of its own) a group of
+ * its own after the one before it. Without `stages`, the built-in groups.
+ */
+export function groupsFor(stages) {
+  if (!stages?.length) return { groups: GROUPS, groupOf: GROUP_OF };
+  const kindGroup = (kind) => GROUP_OF[kind] ?? null;
+  const groups = GROUPS.map((g) => {
+    const named = stages.find((s) => s.kind && kindGroup(s.kind) === g.key && s.kind === g.key);
+    return { ...g, label: named?.label ?? g.label, stages: [...g.stages] };
+  });
+  const groupOf = { ...GROUP_OF };
+  let after = null;
+  for (const s of stages) {
+    const own = s.kind ? kindGroup(s.kind) : null;
+    if (own) {
+      groupOf[s.key] = own;
+      if (!groups.find((g) => g.key === own).stages.includes(s.key)) groups.find((g) => g.key === own).stages.push(s.key);
+      after = own;
+      continue;
+    }
+    if (groups.some((g) => g.key === s.key)) continue;
+    const at = after ? groups.findIndex((g) => g.key === after) + 1 : 0;
+    groups.splice(at, 0, { key: s.key, label: s.label, stages: [s.key] });
+    groupOf[s.key] = s.key;
+    after = s.key;
+  }
+  return { groups, groupOf };
+}
 // The chart's last part is Build and Test to release: the mean Build, Ship (history), Test and Release visits, added
 // up. Operate is the time after release, not lead time, so the chart leaves it out. The key stays `buildShip` (its
 // colour).
@@ -81,7 +112,7 @@ export const windowStart = (range, now) => now - (RANGES[range].days + LOOKBACK_
  * whether it was sent back from there), and when an approval was open. A visit whose beginning is not in the facts
  * is left out, because its length is unknown.
  */
-function stories(facts, now) {
+function stories(facts, now, GROUP_OF) {
   const items = new Map();
   const of = (id) => {
     if (!items.has(id)) items.set(id, { id, createdAt: null, cur: null, visits: [], asks: new Map(), waits: [] });
@@ -266,7 +297,7 @@ function spend(facts, { start, end }) {
  * Who does the work, by stage: over the visits that ended in the range, how long they took (median and p90), how
  * many had the item sent back from there, and how the events during them split between agents and people.
  */
-function stages(visits, { start, end }) {
+function stages(visits, { start, end }, GROUPS) {
   const rows = GROUPS.map((g) => {
     const own = visits.filter((v) => v.group === g.key && v.end >= start && v.end <= end);
     const days = own.map((v) => v.days);
@@ -311,7 +342,8 @@ function waitingNow(facts, now) {
 /**
  * The metrics of one range. `facts` are the facts from windowStart(range, now) on, in any order; `now` is ms.
  */
-export function compute(facts, { range = '30d', now }) {
+export function compute(facts, { range = '30d', now, stages: workflowStages = null }) {
+  const { groups, groupOf } = groupsFor(workflowStages);
   const r = RANGES[range];
   if (!r) throw new Error(`There is no range "${range}".`);
   const end = now;
@@ -322,7 +354,7 @@ export function compute(facts, { range = '30d', now }) {
     .filter(([f]) => f && Number.isFinite(f.t) && f.t <= end)
     .sort((a, b) => a[0].t - b[0].t || a[1] - b[1])
     .map(([f]) => f);
-  const items = stories(sorted, end);
+  const items = stories(sorted, end, groupOf);
   const visits = [...items.values()].flatMap((item) => item.visits);
   const period = { start, end, previousStart };
   return {
@@ -331,7 +363,7 @@ export function compute(facts, { range = '30d', now }) {
     tiles: tiles(pullRequests(sorted), items, period),
     weeks: weeks(visits, items, end),
     spend: spend(sorted, period),
-    stages: stages(visits, period),
+    stages: stages(visits, period, groups),
     waiting: waitingNow(sorted, end),
     production: production(sorted, items, period, r.days),
   };

@@ -3,14 +3,15 @@
 // host audits every write. Phase 20: test runs, coverage and defects (deciding a defect is a person's: the lifecycle
 // engine checks who).
 import { apiNotFound, apiErrors } from './util/errors.js';
+import { action } from './util/actions.js';
 
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 export function createApi({ host, log, analysis, runs, coverage, defects, envRuns, about }) {
   const api = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
+  const read = action(host, 'quality.read', 'read');
+  const draft = action(host, 'quality.write', 'draft');
   api.use(host.auth);
   api.use((req, res, next) => (READS.has(req.method) ? next() : host.audit(req, res, next)));
 

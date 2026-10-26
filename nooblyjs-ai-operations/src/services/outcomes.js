@@ -8,6 +8,10 @@ import { HttpError, notFound, conflict, badRequest } from '../util/errors.js';
 import { numberOf } from '../util/ids.js';
 import { needs, peopleOnly } from '../util/http.js';
 
+// NooblyJS Phase 27: an item's stage is compared by its KIND ('design'), which the lifecycle says (stageKind); a stage's
+// key and label are the workflow's (data/workflows/lifecycle.yaml). On a host from before, the key is the kind.
+const kindOf = (item) => item?.stageKind ?? item?.stage ?? null;
+
 const DAY = 86_400_000;
 const STATUS_TEXT = { scheduled: 'Scheduled', due: 'Due: a Product lead decides', closed: 'Closed: the item is done', 'changes-requested': 'Changes asked for' };
 const num = (text) => { const m = String(text ?? '').match(/-?\d+(?:\.\d+)?/); return m ? Number(m[0]) : null; };
@@ -66,7 +70,7 @@ export function createOutcomes({ repos, host, log, policies, monitor, now, mount
       const today = await monitor.measure(g);
       goals.push({ measure: g.measure, before: g.today, now: today, target: g.target, met: goalMet(g, today), text: `${g.measure}: ${today ?? 'not measured'} now (from ${g.today}; target ${g.target})` });
     }
-    const stories = ((await Promise.resolve(svc('workflows')?.storiesOf?.({ itemId: r.itemId })).catch(() => [])) ?? []).filter((s) => s.status === 'active' && s.stage !== 'operate');
+    const stories = ((await Promise.resolve(svc('workflows')?.storiesOf?.({ itemId: r.itemId })).catch(() => [])) ?? []).filter((s) => s.status === 'active' && kindOf(s) !== 'operate');
     const met = goals.filter((g) => g.met === true).length;
     return {
       ...r, statusText: STATUS_TEXT[r.status] ?? r.status, goals, monitor: { name: monitor.name, real: monitor.real },
@@ -81,7 +85,7 @@ export function createOutcomes({ repos, host, log, policies, monitor, now, mount
   async function decideApproval({ id, person }) {
     // Whoever decides it, for themselves or on someone's behalf, holds the rule's `approve` (people only).
     await peopleOnly(host, person, `decide ${id}`);
-    await needs(host, person, 'approve', `decide ${id}`);
+    await needs(host, person, 'approve', `decide ${id}`, 'operations.outcome.decide');
     const r = await repos.outcomes.get(id);
     if (!r) throw notFound(`There is no outcome review ${id}.`);
     if (r.status !== 'due') throw conflict(`${id} is ${STATUS_TEXT[r.status].toLowerCase()}: there is nothing to decide.`);
@@ -104,7 +108,7 @@ export function createOutcomes({ repos, host, log, policies, monitor, now, mount
 
   /** A goal was missed: an idea for Discover (the Product section), linked to the review. */
   async function openIdea(id, body = {}, person) {
-    await needs(host, person, 'draft', `open an idea from ${id}`);
+    await needs(host, person, 'draft', `open an idea from ${id}`, 'operations.outcome.open-idea');
     const r = await view(id);
     const missed = r.goals.filter((g) => g.met === false);
     const title = (typeof body.title === 'string' && body.title.trim()) || (missed[0] ? `${missed[0].measure}: reach ${missed[0].target}` : '');

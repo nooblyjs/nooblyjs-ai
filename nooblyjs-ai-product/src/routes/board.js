@@ -7,15 +7,16 @@ import { buildBoard } from '../services/board.js';
 import { viewContext, signalView, ideaView } from '../services/views.js';
 import { notFound } from '../util/errors.js';
 import { etagOf } from '../util/http.js';
+import { action } from '../util/actions.js';
 
 const truthy = (v) => ['1', 'true', 'yes'].includes(String(v ?? '').toLowerCase());
 const oneString = (v) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, 64) : null);
 
 export function boardRoutes({ host, repos, people, ideas, catalogue, planning = null }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
-  const approve = host.requireRole('approve');
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.board.write', 'draft');
+  const approve = action(host, 'product.catalogue.manage', 'approve');
   const ctxFor = (req) => viewContext({ people, repos }, req.person);
 
   router.get('/board', read, async (req, res) => {

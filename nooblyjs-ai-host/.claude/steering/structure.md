@@ -258,6 +258,11 @@ export async function register(app, serverManager, options = {}) { … }
 //   auth,           middleware: a signed-in person (req.person) or 401 / redirect to /login
 //   requireRole,    (permission) => middleware: 403 + audit record when the access role lacks it
 //   can,            (accessRole, permission) => Promise<boolean>: the same check, for a rule decided in a service
+//   requireAction,  (action, defaultPermission) => middleware (Phase 27): the permission access/roles.yaml's `actions:`
+//                   gives the action, else the default; name every check an action ('product.spec.write')
+//   canDo,          (accessRole, action, defaultPermission) => Promise<boolean>: the same, in a service
+//   permissionFor,  (action, defaultPermission) => Promise<string>: the permission an action needs now
+//   permissions, roleNames   () => Promise<string[]>: what exists (the lifecycle checks approval-rules.yaml against them)
 //   audit,          middleware for writes, and audit.record({ actor, action, target, … }) for anything else
 //   events,         events.emit(type, payload) → appended to data/events/ and published on the SSE stream;
 //                   events.on(type, fn) to react to other apps

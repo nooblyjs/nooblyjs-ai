@@ -23,7 +23,7 @@ import { loadFactoryConfig } from '../../config/factory-config.js';
 import { forgeFor } from '../forge/index.js';
 import { normalizeRepo } from '../exec/workspace/mirror.js';
 import { executeLine, KINDS } from '../line/executor.js';
-import { loadLine } from '../../models/line.js';
+import { loadLine, lineForRequest } from '../../models/line.js';
 import { acquireLease, getLease, workerName } from '../scheduler/leases.js';
 import { holdRun } from '../scheduler/worker.js';
 import { openStore } from '../../models/store/events.js';
@@ -62,7 +62,8 @@ import { parseIssue } from '../../models/issue.js';
 
 /** Create the item (once per issue) and return what a run needs. */
 function prepare(store, request, forge) {
-  loadLine(request.line ?? 'default', KINDS()); // a bad line fails NOW, not when the run starts
+  // A bad line fails NOW, not when the run starts; the line as it is now goes with the run (NooblyJS Phase 27).
+  const line = request.lineDef ? lineForRequest(request, KINDS()) : loadLine(request.line ?? 'default', KINDS());
   const repo = normalizeRepo(request.repo); // a path, or (Phase F15) a clone URL
   // Phase F15: a GitHub issue already exists (read by the webhook or the poller); a local one is filed from its file.
   const gh = request.forge?.kind === 'github' ? request.forge : null;
@@ -73,7 +74,7 @@ function prepare(store, request, forge) {
   // One item per issue: the key makes a second "item.created" for the same issue a no-op.
   const itemId = `${slug}#${issue.number}`;
   store.append(`item:${itemId}`, 'item.created', { itemId, ref: issue.ref, slug, repo, title: issue.title, number: issue.number }, { key: `item:${itemId}` });
-  const saved = { ...savableRequest(request), repo, issueFile: request.issueFile && path.resolve(request.issueFile) };
+  const saved = { ...savableRequest(request), repo, issueFile: request.issueFile && path.resolve(request.issueFile), lineDef: request.lineDef ?? line.raw };
   return { issue, itemId, slug, saved, priority: parsed.priority };
 }
 
@@ -128,7 +129,7 @@ export async function retryRun(store, runId, { live, forge, from } = {}) {
   if (run.status === 'queued') throw new Error(`Run ${runId} is queued: \`factory serve\` will run it.`);
   if (run.status === 'delivered' && !from) throw new Error(`Run ${runId} was delivered: nothing to retry. Use --from <station> to redo part of it.`);
   if (from) {
-    const ids = loadLine(run.request.line ?? 'default', KINDS()).stations.map((s) => s.id);
+    const ids = lineForRequest(run.request, KINDS()).stations.map((s) => s.id);
     if (!ids.includes(from)) throw new Error(`The line has no station "${from}" (it has: ${ids.join(', ')}).`);
     store.append(`run:${runId}`, 'run.rewound', { runId, from, reset: ids.slice(ids.indexOf(from)) });
   }

@@ -73,7 +73,14 @@ documents the drafting agents read; Product reports in Metrics) is done (reviewe
 (`.claude/specs/phase-25b-objectives-roadmaps/`). **Phase 26 (open work in the apps: Ines Tau hired in Teammates and
 drafting Infrastructure designs from the architecture as her teammate task, with a new draft offered on an accepted ADR
 or changed architecture; Teammates' prompt-injection cases, task API OpenAPI and guides; `npm run test:live:product`) is
-built (2026-10-22), waiting for review** (`.claude/specs/phase-26-open-work/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
+built (2026-10-22), waiting for review** (`.claude/specs/phase-26-open-work/`). **Phase 27 (the process as configuration:
+`data/workflows/lifecycle.yaml` says the stages, each of a **kind** the code knows, how each is left and what it checks,
+`src/lifecycle/workflow.js` and `evaluators.js`; every workflow file and `access/roles.yaml` checked whenever it changes,
+the last good kept, `workflow.changed` / `workflow.refused`; each permission check names an **action** whose permission
+`roles.yaml`'s `actions:` may change, `host.requireAction` / `canDo` / `permissionFor`; the Factory's lines from
+`data/factory/lines/` chosen by `data/factory/lines.yaml`; apps compare `item.stageKind`, never a stage key,
+`test/stage-keys.test.js`; Platform · Settings · Workflow) is built (2026-10-26), waiting for review**
+(`.claude/specs/phase-27-process-as-configuration/`). **Phase 12, Microsoft 365 (SSO, notifications, the real Teams bot), is built and reviewed (2026-10-20)**
 (`.claude/specs/phase-12-microsoft-365/`, tech.md §7.3; the Teams app project is `apps/msteams/noobly-bot`). Source control is **Bitbucket**, not
 GitHub. **Jira and Bitbucket are production systems.** NooblyJS reads them (Phase 11) and, since **Phase 13 (built, reviewed
 2026-10-20)**, writes to them only through the write gate (`src/services/devtools/writes.js`, tech.md §8a): nothing is sent

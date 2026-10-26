@@ -1,6 +1,7 @@
 // Optimistic concurrency and "people only" (noobly structure.md §2a; stack.md §3). A design has an ETag naming its version
 // ("INF-031@2"); a decision sends it back in If-Match, so nobody approves a version they haven't seen.
 import { HttpError, conflict } from './errors.js';
+import { permissionFor } from './actions.js';
 
 export const etagOf = (record) => `"${record.id}@${record.version ?? 0}"`;
 
@@ -39,8 +40,12 @@ export async function peopleOnly(host, person, action) {
   });
 }
 
-/** Throws unless the person's access role has the permission. */
-export async function needs(host, person, permission, action) {
+/**
+ * Throws unless the person's access role has the permission. NooblyJS Phase 27: `name` is the action
+ * (`operations.release.deploy`); NooblyJS's access/roles.yaml may give it another permission than `permission`.
+ */
+export async function needs(host, person, permission, action, name = null) {
+  if (name) permission = await permissionFor(host, name, permission);
   if (await host.can(person?.accessRole, permission)) return;
   await refuse(host, person, {
     action,

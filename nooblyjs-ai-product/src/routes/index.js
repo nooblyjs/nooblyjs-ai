@@ -14,6 +14,7 @@ import { elicitationRoutes } from './elicitation.js';
 import { feedbackRoutes } from './feedback.js';
 import { planningRoutes } from './planning.js';
 import { apiNotFound, apiErrors } from '../util/errors.js';
+import { action } from '../util/actions.js';
 
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -37,8 +38,8 @@ export function createApi({ host, log, about, seed, repos, people, catalogue, do
   api.use(specRoutes({ host, repos, people, specWrites, stageAgents, elicitation }));
   // Who drafts each stage: a hired teammate. GET for the screens; PUT /drafters/:stage { teammateId } (draft).
   if (stageAgents) {
-    api.get('/drafters', host.requireRole('read'), async (req, res) => res.json(await stageAgents.all()));
-    api.put('/drafters/:stage', host.requireRole('draft'), async (req, res) => {
+    api.get('/drafters', action(host, 'product.read', 'read'), async (req, res) => res.json(await stageAgents.all()));
+    api.put('/drafters/:stage', action(host, 'product.drafters.write', 'draft'), async (req, res) => {
       res.json(await stageAgents.assign(req.params.stage, req.body?.teammateId, req.person));
     });
   }

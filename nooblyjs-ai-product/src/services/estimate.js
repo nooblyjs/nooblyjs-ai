@@ -5,6 +5,7 @@
 //   agentUsd       the median agent spend of those items, from NooblyJS's event log (host.service('metrics'))
 //   cloudUsdMonth  the median month of running their infrastructure in production (host.service('infrastructure'))
 //   peopleDays     the median working days they spent in Product, Design and Engineer (the lifecycle's history)
+// The kinds of stage people work in (NooblyJS Phase 27: the lifecycle says each history entry's kind; before, its key).
 const PEOPLE_STAGES = new Set(['product', 'design', 'engineer']);
 const DAY = 86_400_000;
 const r2 = (n) => Math.round(n * 100) / 100;
@@ -67,7 +68,7 @@ export async function estimateFor({ host, repos, owner }) {
   const days = [];
   for (const id of items) {
     const item = lifecycle.find((i) => i.id === id);
-    const spent = (item?.history ?? []).filter((h) => PEOPLE_STAGES.has(h.stage)).reduce((n, h) => n + workingDays(h.enteredAt, h.leftAt ?? at), 0);
+    const spent = (item?.history ?? []).filter((h) => PEOPLE_STAGES.has(h.kind ?? h.stage)).reduce((n, h) => n + workingDays(h.enteredAt, h.leftAt ?? at), 0);
     if (spent > 0) days.push([id, r2(spent)]);
   }
   const peopleDays = days.length ? Math.round(median(days.map(([, d]) => d)) * 10) / 10 : 0;

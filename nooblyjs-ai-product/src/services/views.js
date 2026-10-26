@@ -1,5 +1,6 @@
 // How records read to the screens: names instead of ids, every status in words (product.md §1), and the stage in
 // both numberings (D4). Views are built per request for one person, because "you" and "mine" depend on who asks.
+import { configuredChecks } from './readiness.js';
 import { stageFor } from './stages.js';
 import { riceScore } from './rice.js';
 import { importanceIndex, signalNoteCounts } from './evidence.js';
@@ -12,7 +13,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
  * @param {{ people: object, repos: object }} deps
  * @param {object|null} person   req.person
  */
-export async function viewContext({ people, repos }, person) {
+export async function viewContext({ people, repos, host = null }, person) {
   const [everyone, drafts, catalogue, notes, ideas, specs, objectives] = await Promise.all([people.list().catch(() => []), repos.drafts.list(), repos.catalogue.get(), repos.notes?.list() ?? [], repos.ideas.list(), repos.specs.list(), repos.objectives?.list() ?? []]);
   // product name (lower case) → the portfolio it sits in, and the value stream, so a view can say all three.
   const filed = (catalogue?.products ?? []).filter((p) => p?.name);
@@ -27,7 +28,9 @@ export async function viewContext({ people, repos }, person) {
   const serves = new Map();
   for (const o of objectives) for (const id of o.links ?? []) if (!serves.has(id)) serves.set(id, { id: o.id, title: o.title, horizon: o.horizon });
   const records = new Map([...ideas, ...specs].map((r) => [r.id, r]));
-  return { me: person ?? null, people: new Map(everyone.map((p) => [p.id, p])), drafts, products, valueStreams, features, evidence, signalNotes: signalNoteCounts(notes), serves, records };
+  // NooblyJS Phase 27: the Product stage's checks as the lifecycle says them (when a host is given).
+  const readinessChecks = host ? await configuredChecks(host) : undefined;
+  return { readinessChecks, me: person ?? null, people: new Map(everyone.map((p) => [p.id, p])), drafts, products, valueStreams, features, evidence, signalNotes: signalNoteCounts(notes), serves, records };
 }
 
 /** The feature of the work hierarchy a record is for, and its epic (Phase 17): { feature, epic } or nulls. */

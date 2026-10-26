@@ -3,6 +3,7 @@
 // action needs (draft to make a release and ask for its approval; deploy-production, people only, to move or roll it;
 // draft, people only, to declare, resolve and review incidents).
 import { apiNotFound, apiErrors, forbidden } from '../util/errors.js';
+import { action } from '../util/actions.js';
 
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 /** Other apps this one talks to. Any may be missing (standalone, or not started), so /about says which. */
@@ -12,14 +13,14 @@ export function createApi({ host, log, about, seed, releases, policies, summary,
   const api = host.express.Router();
   api.use(host.auth);
   api.use((req, res, next) => (READS.has(req.method) ? next() : host.audit(req, res, next)));
-  api.use(host.requireRole('read'));
+  api.use(action(host, 'operations.read', 'read'));
 
   api.get('/about', (req, res) => {
     res.json({ ...about, connected: Object.fromEntries(PARTNERS.map((name) => [name, Boolean(host.service(name))])) });
   });
   api.get('/summary', async (req, res) => res.json(await summary.status()));
   // Rewrites data/operations/ with the seed. Owner only, and never in production.
-  api.post('/seed', host.requireRole('change-guardrails'), async (req, res) => {
+  api.post('/seed', action(host, 'operations.seed', 'change-guardrails'), async (req, res) => {
     if (process.env.NODE_ENV === 'production') throw forbidden('Resetting to the seed is not allowed in production.');
     const result = await seed({ reset: req.body?.reset === true });
     res.status(result.seeded ? 201 : 200).json(result);
@@ -37,7 +38,7 @@ export function createApi({ host, log, about, seed, releases, policies, summary,
   // Phase 23: SLOs (burning one by hand is the mock monitor's, for development), incidents, outcome reviews.
   api.get('/slos', async (req, res) => res.json({ slos: await slos.list({ itemId: req.query.itemId }) }));
   api.get('/slos/:id', async (req, res) => res.json(await slos.get(req.params.id)));
-  api.post('/slos/:id/burn', host.requireRole('draft'), async (req, res) => res.json(await slos.burn(req.params.id, req.body?.minutes)));
+  api.post('/slos/:id/burn', action(host, 'operations.slo.burn', 'draft'), async (req, res) => res.json(await slos.burn(req.params.id, req.body?.minutes)));
   api.post('/slos/:id/incident', async (req, res) => res.status(201).json(await incidents.declare({ ...(req.body ?? {}), sloId: req.params.id }, req.person)));
   api.get('/incidents', async (req, res) => res.json({ incidents: await incidents.list() }));
   api.post('/incidents', async (req, res) => res.status(201).json(await incidents.declare(req.body ?? {}, req.person)));

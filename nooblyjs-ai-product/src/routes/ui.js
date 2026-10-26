@@ -2,11 +2,12 @@
 // preview and plan, Send to Software Factory (people only, passed to the NooblyJS lifecycle engine), and the UI agent's drafts.
 import { peopleOnly, etagOf } from '../util/http.js';
 import { draftHandler } from './drafts.js';
+import { action } from '../util/actions.js';
 
 export function uiRoutes({ host, ui, drafting, kindKeys, mountPath }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.ui.write', 'draft');
   const ifMatch = (req) => ({ ifMatch: req.get('if-match') });
 
   router.get('/ui', read, async (req, res) => {
@@ -46,7 +47,7 @@ export function uiRoutes({ host, ui, drafting, kindKeys, mountPath }) {
   });
 
   // The UI handoff is an approval rule (Design lead): Approvers and up, people only.
-  router.post('/ui/:itemId/handoff', host.requireRole('approve'), peopleOnly(host, 'send work to the Software Factory'), async (req, res) => {
+  router.post('/ui/:itemId/handoff', action(host, 'product.ui.handoff', 'approve'), peopleOnly(host, 'send work to the Software Factory'), async (req, res) => {
     res.status(202).json(await ui.sendToFactory(req.params.itemId, req.body, req.person));
   });
 

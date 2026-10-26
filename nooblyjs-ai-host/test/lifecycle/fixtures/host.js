@@ -121,6 +121,9 @@ export function createHost({ dataDir, people = PEOPLE, services = {}, now } = {}
     },
     host: {
       express, auth, requireRole, can, audit, events, clock,
+      // Phase 27: what exists, so the lifecycle checks approval-rules.yaml against it, as NooblyJS does.
+      permissions: async () => Object.keys(MATRIX),
+      roleNames: async () => ['Viewer', 'Contributor', 'Approver', 'Architect', 'Owner'],
       store: new FsStore(dataDir),
       // Like NooblyJS's people service: no `kind`. An agent is known by the actor another app passes, or its sign-in.
       people: { list: async () => people.filter((p) => p.kind !== 'agent'), get: async (id) => people.find((p) => p.id === id && p.kind !== 'agent') ?? null },

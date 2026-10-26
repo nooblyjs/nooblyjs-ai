@@ -2,11 +2,12 @@
 // people only, with accept-decisions), the standards check, quality attributes, and Rhea Voss's drafts.
 import { peopleOnly, etagOf } from '../util/http.js';
 import { draftHandler } from './drafts.js';
+import { action } from '../util/actions.js';
 
 export function architectureRoutes({ host, architecture, drafting, kindKeys, mountPath }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.architecture.write', 'draft');
   const ifMatch = (req) => ({ ifMatch: req.get('if-match') });
 
   router.get('/architecture', read, async (req, res) => {
@@ -61,7 +62,7 @@ export function architectureRoutes({ host, architecture, drafting, kindKeys, mou
     res.status(201).json(await architecture.proposeAdr(req.params.itemId, req.body, req.person));
   });
 
-  router.post('/adrs/:id/accept', host.requireRole('accept-decisions'), peopleOnly(host, 'accept an architecture decision'), async (req, res) => {
+  router.post('/adrs/:id/accept', action(host, 'product.adr.accept', 'accept-decisions'), peopleOnly(host, 'accept an architecture decision'), async (req, res) => {
     res.json(await architecture.acceptAdr(req.params.id, req.person));
   });
 

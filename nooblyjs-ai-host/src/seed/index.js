@@ -11,6 +11,12 @@ import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { daySegments } from '../util/dates.js';
 import { seedMetricsHistory } from './metrics-history.js';
+import { builtInLifecycleDoc } from '../lifecycle/workflow.js';
+
+const LIFECYCLE_HEADER = `# The lifecycle (Phase 27): the stages in order, how each is left and what it checks. Written for this data folder
+# from the stages it had before Phase 27; the checks each stage needs are still in readiness.yaml until a stage here
+# lists its own \`checks\`. See nooblyjs-ai-host/src/lifecycle/seed/data/lifecycle.yaml for every field.
+`;
 
 export const SEED_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data');
 /** Where a data folder says what it was seeded with: { content: false } for a blank one (system files only). */
@@ -158,6 +164,12 @@ export async function seedMissing(store, { now } = {}) {
     added.push(...await seedSpend(store, { now }));
   }
   if (!blank) added.push(...await seedMetricsHistory(store, { now }));
+  // Phase 27: the lifecycle as a file people can edit. A folder from before gets today's eight stages with no checks of
+  // their own, so its readiness.yaml still says which checks each stage needs.
+  if (await store.exists(['workflows', 'approval-rules.yaml']) && !(await store.exists(['workflows', 'lifecycle.yaml']))) {
+    await store.writeText(['workflows', 'lifecycle.yaml'], `${LIFECYCLE_HEADER}${yaml.dump(builtInLifecycleDoc(), { lineWidth: 200, noRefs: true, flowLevel: 3 })}`);
+    added.push('workflows/lifecycle.yaml');
+  }
   const roles = await store.readYaml(['access', 'roles.yaml']);
   if (roles?.permissions) {
     const seed = yaml.load(await fs.readFile(path.join(SEED_DIR, 'access', 'roles.yaml'), 'utf8'), { schema: yaml.CORE_SCHEMA });

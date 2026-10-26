@@ -19,7 +19,7 @@ export function createPolicies({ repos, host }) {
     async set(id, { enabled } = {}, person) {
       const action = 'change an infrastructure policy';
       await peopleOnly(host, person, action);
-      await needs(host, person, 'change-guardrails', action);
+      await needs(host, person, 'change-guardrails', action, 'infrastructure.policies.change');
       if (typeof enabled !== 'boolean') throw badRequest('enabled must be true or false.');
       const policies = await repos.config.policies();
       const policy = policies.find((p) => p.id === id);

@@ -10,6 +10,7 @@ import { checkPolicies, blocking } from './policy-checks.js';
 import { codeFor } from './code.js';
 import { designStatus, approvalView, resourcesByLayer, money, ago } from './views.js';
 import { who } from './runs.js';
+import { canDo } from '../util/actions.js';
 
 export function createDesigns({ repos, host, provisioner, cost, runs, approvals = null, now, mountPath }) {
   const iso = () => new Date(now()).toISOString();
@@ -66,7 +67,7 @@ export function createDesigns({ repos, host, provisioner, cost, runs, approvals 
     ]);
     const rule = rules.kinds?.[kind] ?? 'approval';
     const alreadyApproved = design.approvedVersion === design.version && (design.approvedKinds ?? []).includes(kind);
-    const canDecide = Boolean(person) && person.kind !== 'agent' && await host.can(person.accessRole, rules.approval?.permission);
+    const canDecide = Boolean(person) && person.kind !== 'agent' && await canDo(host, person.accessRole, 'infrastructure.design.decide', rules.approval?.permission);
     const decidable = rule === 'approval' && !alreadyApproved && ['waiting-approval', 'approved'].includes(design.status);
     return {
       ...summary(design, person),
@@ -111,7 +112,7 @@ export function createDesigns({ repos, host, provisioner, cost, runs, approvals 
     const action = `${decision === 'approve' ? 'approve' : 'decide on'} infrastructure design ${id}`;
     await peopleOnly(host, person, action);
     const rules = await repos.config.applyRules();
-    await needs(host, person, rules.approval?.permission ?? 'change-repo-access', action);
+    await needs(host, person, rules.approval?.permission ?? 'change-repo-access', action, 'infrastructure.design.decide');
     if (!['approve', 'request-changes'].includes(decision)) throw badRequest('decision must be "approve" or "request-changes".');
     if (decision === 'request-changes' && !String(comment ?? '').trim()) throw badRequest('Say what should change.');
 

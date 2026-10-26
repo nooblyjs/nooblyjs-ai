@@ -13,6 +13,10 @@
 import { HttpError, badRequest, notFound, conflict } from '../util/errors.js';
 import { draftAnalysis } from './drafts.js';
 
+// NooblyJS Phase 27: an item's stage is compared by its KIND ('design'), which the lifecycle says (stageKind); a stage's
+// key and label are the workflow's (data/workflows/lifecycle.yaml). On a host from before, the key is the kind.
+const kindOf = (item) => item?.stageKind ?? item?.stage ?? null;
+
 const STORY = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const LEVELS = new Set(['unit', 'contract', 'integration', 'e2e', 'performance', 'manual']);
 const USUAL = { id: 'ada-quill', name: 'Ada Quill' };
@@ -21,6 +25,7 @@ const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const clip = (s, n = 80) => (String(s).length > n ? `${String(s).slice(0, n - 1)}…` : String(s));
 /** STORY-031-1 → TC-031-1-<n>. */
 const caseId = (storyId, n) => `TC-${String(storyId).replace(/^STORY-/, '')}-${n}`;
+// The kinds of stage after Engineer where a criterion change is still reviewed.
 const LATER = new Set(['build', 'test']);
 
 /** The words a case was written for, and whether its criterion has changed (or gone) since. */
@@ -101,9 +106,9 @@ export function createAnalysis({ host, log }) {
     const s = summary(doc, ctx);
     return {
       storyId, itemId: ctx.item.parentId ?? null, title: ctx.title, stage: ctx.item.stage,
-      writable: ctx.item.status === 'active' && ctx.item.stage === 'engineer',
+      writable: ctx.item.status === 'active' && kindOf(ctx.item) === 'engineer',
       // Phase 20: in Build and Test only a case whose criterion changed may be edited or marked ready again.
-      reviewable: ctx.item.status === 'active' && (ctx.item.stage === 'engineer' || LATER.has(ctx.item.stage)),
+      reviewable: ctx.item.status === 'active' && (kindOf(ctx.item) === 'engineer' || LATER.has(kindOf(ctx.item))),
       drafted: Boolean(doc), sample: doc?.sampleData === true,
       criteria: ctx.criteria.map((t, i) => ({ text: t, cases: (doc?.cases ?? []).filter((c) => c.criterion === i).map((c) => c.id), ready: (doc?.cases ?? []).some((c) => c.criterion === i && c.status === 'ready' && !criterionChange(c, ctx.criteria, doc)) })),
       interfaces: ctx.interfaces.map((i) => ({ id: i.id, name: i.name, cases: (doc?.cases ?? []).filter((c) => c.interface === i.id).map((c) => c.id), tested: !s.untestedInterfaces.includes(i.id) })),
@@ -120,7 +125,7 @@ export function createAnalysis({ host, log }) {
 
   /** The stories in Engineer, each with its coverage in words. */
   async function stories() {
-    const list = (await host.service?.('workflows')?.items?.({ stage: 'engineer' }).catch(() => [])) ?? [];
+    const list = ((await host.service?.('workflows')?.items?.({ kind: 'engineer' }).catch(() => [])) ?? []).filter((i) => kindOf(i) === 'engineer');
     const out = [];
     for (const item of list.filter((i) => i.type === 'story' && i.status === 'active')) {
       const ctx = await storyOf(item.id).catch(() => null);
@@ -132,7 +137,7 @@ export function createAnalysis({ host, log }) {
 
   async function writable(storyId) {
     const ctx = await storyOf(storyId);
-    if (ctx.item.status !== 'active' || ctx.item.stage !== 'engineer') throw conflict('wrong_stage', `${storyId} is ${ctx.item.status !== 'active' ? ctx.item.status : `in ${ctx.item.stage}`}: its test analysis is worked out in Engineer.`);
+    if (ctx.item.status !== 'active' || kindOf(ctx.item) !== 'engineer') throw conflict('wrong_stage', `${storyId} is ${ctx.item.status !== 'active' ? ctx.item.status : `in ${ctx.item.stage}`}: its test analysis is worked out in Engineer.`);
     return ctx;
   }
   async function peopleOnly(actor, what) {
@@ -220,7 +225,7 @@ export function createAnalysis({ host, log }) {
   async function change(storyId, fn, { caseId: only = null } = {}) {
     const ctx = await storyOf(storyId);
     const doc = await get(storyId);
-    const later = ctx.item.status === 'active' && LATER.has(ctx.item.stage);
+    const later = ctx.item.status === 'active' && LATER.has(kindOf(ctx.item));
     const flagged = later && only && doc?.cases?.some((c) => c.id === only && criterionChange(c, ctx.criteria, doc));
     if (!flagged) await writable(storyId);
     if (!doc) throw notFound(`${storyId} has no test analysis yet: ask for a draft first.`);

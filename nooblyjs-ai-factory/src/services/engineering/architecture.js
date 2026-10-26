@@ -12,6 +12,10 @@ import { createRequire } from 'node:module';
 import { createRepoReaders, readSources } from './repo-reader.js';
 import { mapModules, draftArchitecture } from './code-map.js';
 
+// NooblyJS Phase 27: an item's stage is compared by its KIND ('design'), which the lifecycle says (stageKind); a stage's
+// key and label are the workflow's (data/workflows/lifecycle.yaml). On a host from before, the key is the kind.
+const kindOf = (item) => item?.stageKind ?? item?.stage ?? null;
+
 const require = createRequire(import.meta.url);
 const { FsStore } = require('nooblyjs-core/src/store/fs-store.js');
 
@@ -96,7 +100,7 @@ export function createArchitecture({ home, env, host, log }) {
     const accepted = systems.filter((s) => s.status === 'accepted' && !s.currency.stale).length;
     return {
       storyId, itemId: doc.itemId ?? ctx.item.parentId ?? null, title: ctx.title, stage: ctx.item.stage, status: ctx.item.status,
-      writable: ctx.item.status === 'active' && ctx.item.stage === 'engineer',
+      writable: ctx.item.status === 'active' && kindOf(ctx.item) === 'engineer',
       systems, summary: { systems: systems.length, accepted, text: `${accepted} of ${systems.length} system${systems.length === 1 ? '' : 's'} accepted${systems.some((s) => s.currency.stale) ? ` · ${systems.filter((s) => s.currency.stale).length} stale` : ''}` },
       sample: doc.sampleData === true,
       href: `/home/lifecycle/${encodeURIComponent(storyId)}`,
@@ -106,7 +110,7 @@ export function createArchitecture({ home, env, host, log }) {
 
   async function writableStory(storyId) {
     const ctx = await storyOf(storyId);
-    if (ctx.item.status !== 'active' || ctx.item.stage !== 'engineer') throw fail(409, 'wrong_stage', `${storyId} is ${ctx.item.status !== 'active' ? ctx.item.status : `in ${ctx.item.stage}`}: its application architecture is worked out in Engineer.`);
+    if (ctx.item.status !== 'active' || kindOf(ctx.item) !== 'engineer') throw fail(409, 'wrong_stage', `${storyId} is ${ctx.item.status !== 'active' ? ctx.item.status : `in ${ctx.item.stage}`}: its application architecture is worked out in Engineer.`);
     return ctx;
   }
   async function peopleOnly(actor, what) {

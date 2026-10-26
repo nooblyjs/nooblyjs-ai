@@ -10,14 +10,15 @@ import { peopleOnly } from '../util/http.js';
 import { notFound, HttpError } from '../util/errors.js';
 import { newId } from '../util/ids.js';
 import { STRATEGY_KINDS, TEMPLATE_KINDS } from '../services/templates.js';
+import { action } from '../util/actions.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 export function strategyRoutes({ host, repos, people, catalogue, documents, templates }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
-  const approve = host.requireRole('approve');
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.strategy.write', 'draft');
+  const approve = action(host, 'product.template.change', 'approve');
 
   /** The catalogue entry for a document, or 404. */
   async function entryFor(kind, id) {

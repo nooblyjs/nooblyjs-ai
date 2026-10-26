@@ -108,8 +108,9 @@ export function createBot({ agents, teams, people, roles, sessions, cards, conne
 
   /** Refuses with a 403 the caller turns into a reply. Only a person with `draft` spends a team's money here. */
   async function mayDraft(person, doing) {
-    if (await roles.can(person.accessRole, 'draft')) return;
-    throw new HttpError(403, 'forbidden', `You can't ${doing}: it needs the "draft" permission (Contributor and up), and your access role is ${person.accessRole}.`, { permission: 'draft' });
+    const needs = await roles.permissionFor('teams.ask-teammate', 'draft');
+    if (await roles.can(person.accessRole, needs)) return;
+    throw new HttpError(403, 'forbidden', `You can't ${doing}: it needs the "${needs}" permission${needs === 'draft' ? ' (Contributor and up)' : ''}, and your access role is ${person.accessRole}.`, { permission: needs });
   }
 
   async function add(a, person, teammateId) {

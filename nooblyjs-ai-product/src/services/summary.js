@@ -5,7 +5,7 @@ import { readinessView } from './readiness.js';
 
 // mountPath: where the section's pages are (/product), for the links it hands out.
 export function createSummaryService({ repos, people, host = null, budget, architecture, stageAgents = null, now = () => new Date(), mountPath = '/product' }) {
-  const deps = { repos, people };
+  const deps = { repos, people, host };
 
   /** The Product Factory artefacts of one item (a spec or an idea), or null. */
   async function artefactsFor(itemId, { person = null } = {}) {
@@ -16,7 +16,7 @@ export function createSummaryService({ repos, people, host = null, budget, archi
         itemId,
         ...specSummary(ctx, spec),
         // Its readiness actions name who would draft now: a hired teammate, not the name the spec was created with.
-        readiness: readinessView(spec.readiness, stageAgents ? (await stageAgents.forStage('product')).teammate : spec.agent),
+        readiness: readinessView(spec.readiness, stageAgents ? (await stageAgents.forStage('product')).teammate : spec.agent, ctx.readinessChecks),
         agentCost: agentCost(ctx, itemId),
         // The quality attributes become Factory gates on every PR; open decisions and the standards check go with them.
         architecture: architecture ? await architecture.summaryFor(itemId) : null,

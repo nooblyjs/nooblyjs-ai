@@ -1,0 +1,81 @@
+# The lifecycle (Phase 27, root design.md §13): the stages in order, how each is left and what it checks. Read on every
+# use, so an edit applies without a restart. A file that fails its check is refused and the last good version keeps
+# running; Platform · Settings · Workflow says why. A change that applies is in Activity ("changed the workflow").
+#
+# Each stage:
+#   key        its name in the data (lower case with dashes). Never change the key of a stage items are in.
+#   label      what the screens call it; area: how a handoff is named ("Design → Engineering"), default the label.
+#   kind       which kind of step the code runs here: discover, product, design (stories are written), engineer (the
+#              sign-off sends the work to the Software Factory), build and test (pull requests), release (Operations'
+#              releases) or operate. Each kind once, in that order. A stage with no kind is a plain gate: a person's
+#              approval and its checks, nothing else.
+#   exit       the rule in approval-rules.yaml whose approval leaves the stage, or { rule, to } to go somewhere other
+#              than the next stage ("done" closes the item). No exit: the plain stage approval, to the next stage. The
+#              stages of the kinds engineer, build, test, release and operate keep their own gate: the code acts on it.
+#   checks     what must pass before the exit (unless a person overrides it with a reason): an evaluator's name, or
+#              { key, passed, failed, when } where `when` reads item.<field>, spec.sections.<heading> (null when
+#              empty), stories.count, stories.active, pullRequests.count, pullRequests.open and defects.open.
+#              No `checks`: readiness.yaml's for this stage, as before Phase 27.
+#   pullRequestChecks   (the test stage only) a pull request's checks before its Test approval.
+#   enabled    false switches a stage of no kind off (refused while an item is in it).
+#
+# The evaluators: product.business-case-complete, product.problem-evidence, product.goals-measurable,
+# product.criteria-testable, product.dependencies-named, product.performance-targets, product.privacy-reviewed,
+# product.rollout-plan, design.requirements-covered, design.decisions-decided, design.interfaces-complete,
+# engineering.architecture-accepted, engineering.criteria-ready, engineering.interfaces-tested, pr.required-tests,
+# pr.gates-passed.
+stages:
+  - key: discover
+    label: Discover
+    kind: discover
+    exit: idea
+    checks:
+      - product.business-case-complete
+  - key: product
+    label: Product
+    kind: product
+    exit: spec
+    checks:
+      - product.problem-evidence
+      - product.goals-measurable
+      - product.criteria-testable
+      - product.dependencies-named
+      - product.performance-targets
+      - product.privacy-reviewed
+      - product.rollout-plan
+  - key: design
+    label: Design
+    kind: design
+    exit: design-handoff
+    checks:
+      - design.requirements-covered
+      - design.decisions-decided
+      - design.interfaces-complete
+  - key: engineer
+    label: Engineer
+    area: Engineering
+    kind: engineer
+    exit: engineering-signoff
+    checks:
+      - engineering.architecture-accepted
+      - engineering.criteria-ready
+      - engineering.interfaces-tested
+  - key: build
+    label: Build
+    kind: build
+    exit: build-approval
+  - key: test
+    label: Test
+    kind: test
+    exit: test-approval
+    pullRequestChecks:
+      - pr.required-tests
+      - pr.gates-passed
+  - key: release
+    label: Release
+    kind: release
+    exit: deploy
+  - key: operate
+    label: Operate
+    kind: operate
+    exit: { rule: outcome-review, to: done }

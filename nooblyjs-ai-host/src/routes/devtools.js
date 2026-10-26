@@ -14,9 +14,9 @@ function fail(tool, r) {
   return new HttpError(STATUS[r.reason] ?? 502, `${tool.toLowerCase()}_${String(r.reason).replace(/-/g, '_')}`, message, { tool, reason: r.reason, ...(r.scope ? { scope: r.scope } : {}) });
 }
 
-export function devtoolsRoutes({ express, devtools, auditLog, events, requireSignIn, requireRole }) {
+export function devtoolsRoutes({ express, devtools, auditLog, events, requireSignIn, requireAction }) {
   const router = express.Router();
-  const read = [requireSignIn, requireRole('read')];
+  const read = [requireSignIn, requireAction('devtools.read', 'read')];
   const fresh = (req) => ({ fresh: req.query.fresh === '1' });
 
   router.get('/api/v1/devtools/status', ...read, wrap(async (req, res) => {
@@ -24,7 +24,7 @@ export function devtoolsRoutes({ express, devtools, auditLog, events, requireSig
   }));
 
   // Which Bitbucket projects and repositories are imported and which Jira projects are searched. Owners only.
-  router.patch('/api/v1/devtools/config', requireSignIn, requireRole('change-repo-access'), wrap(async (req, res) => {
+  router.patch('/api/v1/devtools/config', requireSignIn, requireAction('devtools.configure', 'change-repo-access'), wrap(async (req, res) => {
     res.locals.audit = { action: 'devtools.config_changed', target: 'config/devtools.yaml' };
     const { before, after } = await devtools.setConfig(req.body ?? {});
     Object.assign(res.locals.audit, { from: before, to: after });
@@ -36,7 +36,7 @@ export function devtoolsRoutes({ express, devtools, auditLog, events, requireSig
   }));
 
   // Jira projects the account can see, to choose from when configuring.
-  router.get('/api/v1/devtools/jira/projects', requireSignIn, requireRole('change-repo-access'), wrap(async (req, res) => {
+  router.get('/api/v1/devtools/jira/projects', requireSignIn, requireAction('devtools.configure', 'change-repo-access'), wrap(async (req, res) => {
     const r = await devtools.jira.projects({ q: String(req.query.q ?? ''), limit: 20 });
     if (!r.ok) throw fail('Jira', r);
     res.json({ total: r.total, projects: r.projects });
@@ -67,7 +67,7 @@ export function devtoolsRoutes({ express, devtools, auditLog, events, requireSig
     res.json(await devtools.links.linked(req.params.target, fresh(req)));
   }));
 
-  router.post('/api/v1/devtools/links/:target', requireSignIn, requireRole('draft'), wrap(async (req, res) => {
+  router.post('/api/v1/devtools/links/:target', requireSignIn, requireAction('devtools.link', 'draft'), wrap(async (req, res) => {
     res.locals.audit = { action: 'jira.issue_linked', target: req.params.target, issue: String(req.body?.key ?? '').toUpperCase() };
     const { added, issue } = await devtools.links.link(req.params.target, req.body?.key, req.person);
     if (added) {
@@ -76,7 +76,7 @@ export function devtoolsRoutes({ express, devtools, auditLog, events, requireSig
     res.status(added ? 201 : 200).json({ added, issue, ...(await devtools.links.linked(req.params.target)) });
   }));
 
-  router.delete('/api/v1/devtools/links/:target/:key', requireSignIn, requireRole('draft'), wrap(async (req, res) => {
+  router.delete('/api/v1/devtools/links/:target/:key', requireSignIn, requireAction('devtools.link', 'draft'), wrap(async (req, res) => {
     res.locals.audit = { action: 'jira.issue_unlinked', target: req.params.target, issue: String(req.params.key).toUpperCase() };
     const { removed } = await devtools.links.unlink(req.params.target, req.params.key);
     if (removed) await events.emit('jira.issue_unlinked', { itemId: req.params.target, issue: String(req.params.key).toUpperCase(), system: 'lifecycle', summary: `unlinked ${String(req.params.key).toUpperCase()} from ${req.params.target}` }, { actor: req.person.id });
@@ -84,7 +84,7 @@ export function devtoolsRoutes({ express, devtools, auditLog, events, requireSig
   }));
 
   // ---------- writes (Phase 13) ----------
-  const owner = [requireSignIn, requireRole('change-guardrails')];
+  const owner = [requireSignIn, requireAction('devtools.writes.manage', 'change-guardrails')];
 
   // How writing is set, and the outbox: ?state=recorded&system=jira&itemId=PRD-031
   router.get('/api/v1/devtools/writes', ...read, wrap(async (req, res) => {
@@ -123,7 +123,7 @@ export function devtoolsRoutes({ express, devtools, auditLog, events, requireSig
   }));
 
   // Read the linked Jira issues and the open pull requests now (the timer does this every few minutes).
-  router.post('/api/v1/devtools/sync', requireSignIn, requireRole('draft'), wrap(async (req, res) => {
+  router.post('/api/v1/devtools/sync', requireSignIn, requireAction('devtools.sync', 'draft'), wrap(async (req, res) => {
     res.locals.audit = { action: 'devtools.sync_requested', target: 'devtools' };
     devtools.forget();
     res.json(await devtools.sync.poll());

@@ -1,9 +1,9 @@
 // The rules people change at runtime, read from data/workflows/ on every use so an edit applies without a restart:
-// approval-rules.yaml ("Who approves what", product.md §4) and readiness.yaml (the checks per stage).
+// approval-rules.yaml ("Who approves what", product.md §4) and readiness.yaml (the checks per stage). Since Phase 27
+// workflow.js reads them with lifecycle.yaml, checks them and keeps the last good; this file has their built-ins.
 
 const QUORUMS = new Set(['all', 'any']);
 
-/** The approval rules by key. A rule that names an unknown quorum or no permission is left out (and logged). */
 /**
  * Rules added to the seed after a data folder was made. A folder from before keeps working: a rule it doesn't
  * have is used from here, and one it has (edited or not) wins.
@@ -91,27 +91,62 @@ export const RETIRED = new Set(['ui-handoff', 'merge', 'release-candidate']);
 const OLD_SPEC_WORDS = 'Spec → Architecture';
 const SPEC_WORDS = { decision: 'Product → Design (spec, UX and UI)', tag: 'Product', label: 'Product handoff', transition: 'Approve & hand off to Design', toLabel: 'Design' };
 
-export async function loadRules(repos, log) {
-  const doc = await repos.readYaml('approval-rules.yaml');
+/**
+ * The approval rules from approval-rules.yaml's parsed `doc`, checked (Phase 27): { rules, errors, warnings }. `rules` is
+ * a Map by key, the built-in rules filling in what the file doesn't mention; a rule listed with `enabled: false` is left
+ * out, built-in or not, and kept in `disabled`. `known` ({ permissions, roles }) names what exists, when the host can say.
+ * Any error means the file is refused (workflow.js keeps the last good rules).
+ */
+export function parseRules(doc, known = null) {
+  const errors = [];
+  const warnings = [];
   const rules = new Map();
-  for (const found of doc?.rules ?? []) {
-    let rule = found;
-    const quorumOk = QUORUMS.has(rule?.quorum) || (Number.isInteger(rule?.quorum) && rule.quorum > 0);
-    if (!rule?.key || !rule.permission || !quorumOk) {
-      log?.warn?.(`approval-rules.yaml: rule ${JSON.stringify(rule?.key)} is missing its key, permission or quorum; ignored`);
-      continue;
+  const disabled = new Set();
+  const listed = doc?.rules ?? [];
+  if (doc !== null && doc !== undefined && (typeof doc !== 'object' || Array.isArray(doc))) errors.push({ where: 'the file', message: 'it should have a "rules" list' });
+  else if (!Array.isArray(listed)) errors.push({ where: 'rules', message: 'it should be a list of rules' });
+  const permissionOk = (p) => !known?.permissions || known.permissions.includes(p);
+  const TARGET_KEYS = ['workingDays', 'hours', 'sameDay'];
+  for (const [i, found] of (Array.isArray(listed) ? listed : []).entries()) {
+    const where = `rule ${found?.key ?? `number ${i + 1}`}`;
+    if (!found || typeof found !== 'object') { errors.push({ where, message: 'a rule needs a key, a permission and a quorum' }); continue; }
+    if (!/^[a-z][a-z0-9-]{0,62}$/.test(String(found.key ?? ''))) { errors.push({ where, message: 'it needs a key in lower case with dashes' }); continue; }
+    if (rules.has(found.key) || disabled.has(found.key)) { errors.push({ where, message: 'the key is listed twice' }); continue; }
+    if (found.enabled === false && found.key === 'stage') { errors.push({ where, message: 'the plain stage approval can\'t be switched off: a stage with no rule of its own is left with it' }); continue; }
+    if (found.enabled === false) { disabled.add(found.key); continue; }
+    if (found.enabled !== undefined && found.enabled !== true) errors.push({ where, message: '"enabled" is true or false' });
+    const quorumOk = QUORUMS.has(found.quorum) || (Number.isInteger(found.quorum) && found.quorum > 0);
+    if (!found.permission) errors.push({ where, message: 'it needs a permission: whom the approval waits on' });
+    else if (!permissionOk(found.permission)) errors.push({ where, message: `there is no permission "${found.permission}" in access/roles.yaml` });
+    if (!quorumOk) errors.push({ where, message: `quorum is all, any or a number, not ${JSON.stringify(found.quorum)}` });
+    for (const slot of found.slots ?? []) {
+      if (!slot?.permission) errors.push({ where, message: 'each slot needs a permission' });
+      else if (!permissionOk(slot.permission)) errors.push({ where, message: `a slot names the permission "${slot.permission}", which access/roles.yaml doesn't have` });
     }
+    if (found.target !== undefined && (typeof found.target !== 'object' || !TARGET_KEYS.some((k) => found.target?.[k]))) {
+      errors.push({ where, message: 'target is { workingDays: n }, { hours: n } or { sameDay: true }' });
+    }
+    if (found.escalate?.to && known?.roles && !known.roles.includes(found.escalate.to)) errors.push({ where, message: `it escalates to "${found.escalate.to}", which is not an access role` });
+    let rule = found;
     // An unedited spec rule from before lifecycle v3 takes the new words; one a person edited is left as it is.
     if (rule.key === 'spec' && rule.decision === OLD_SPEC_WORDS) rule = { ...rule, ...SPEC_WORDS };
     if (RETIRED.has(rule.key)) rule = { ...rule, retired: true };
     rules.set(rule.key, rule);
   }
-  for (const rule of BUILT_IN_RULES) if (!rules.has(rule.key)) rules.set(rule.key, rule);
+  for (const rule of BUILT_IN_RULES) if (!rules.has(rule.key) && !disabled.has(rule.key)) rules.set(rule.key, rule);
+  return { rules, disabled, errors, warnings };
+}
+
+/** The approval rules, as the seed works out due times with them. The file's mistakes are logged; the rest is used. */
+export async function loadRules(repos, log) {
+  const { rules, errors } = parseRules(await repos.readYaml('approval-rules.yaml'));
+  for (const e of errors) log?.warn?.(`approval-rules.yaml: ${e.where}: ${e.message}`);
   return rules;
 }
 
-// Where a stage's checks were kept before lifecycle v3: used when readiness.yaml has nothing under the new key.
-const READINESS_BEFORE = { product: 'specify', design: 'architect', test: 'verify' };
+// Where a stage's checks were kept before lifecycle v3 (by the kind of the stage): used when readiness.yaml has nothing
+// under the new key.
+export const READINESS_BEFORE = { product: 'specify', design: 'architect', test: 'verify' };
 
 /**
  * Checks added after a data folder was made (Phase 16c: Design's, before each story's Design handoff; Phase 16d:
@@ -141,20 +176,3 @@ export const BUILT_IN_READINESS = {
   ],
 };
 
-/** The readiness checks a stage requires: [{ key, passed, failed }]. Empty when the stage has none. */
-export async function loadReadiness(repos, stage) {
-  const doc = await repos.readYaml('readiness.yaml');
-  return doc?.stages?.[stage] ?? doc?.stages?.[READINESS_BEFORE[stage]] ?? BUILT_IN_READINESS[stage] ?? [];
-}
-
-/** A pull request's Test checks (Phase 16e): readiness.yaml's `pull-request`, else the built-in ones. */
-export async function loadPullRequestReadiness(repos) {
-  const doc = await repos.readYaml('readiness.yaml');
-  return doc?.stages?.['pull-request'] ?? BUILT_IN_READINESS['pull-request'];
-}
-
-/** How many days an item may wait on a person before Lifecycle calls it "waiting too long". */
-export async function loadThresholds(repos) {
-  const doc = await repos.readYaml('readiness.yaml');
-  return { waitingTooLongDays: Number(doc?.waitingTooLongDays) || 3 };
-}

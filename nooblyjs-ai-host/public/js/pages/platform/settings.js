@@ -9,7 +9,7 @@ import { head, flash, errorText, money, toggle, syncToggle, reasonForm, onChange
 const LEAD = 'Models, budgets and guardrails that apply across every NooblyJS system.';
 const TABS = [
   { key: 'models', label: 'Models' }, { key: 'budgets', label: 'Budgets' }, { key: 'guardrails', label: 'Guardrails' },
-  { key: 'integrations', label: 'Integrations' }, { key: 'organisation', label: 'Organisation' },
+  { key: 'workflow', label: 'Workflow' }, { key: 'integrations', label: 'Integrations' }, { key: 'organisation', label: 'Organisation' },
 ];
 
 const options = (list, value, { none = null } = {}) => html`${none ? html`<option value=""${!value ? html` selected` : ''}>${none}</option>` : ''}${list.map((o) => html`<option value="${o.id}"${o.id === value ? html` selected` : ''}>${o.label}</option>`)}`;
@@ -165,6 +165,61 @@ function writing(writes, { canEdit, confirming }) {
   </section>`;
 }
 
+const FILE_STATE = { applied: ['In use', 'success'], refused: ['Refused: the last good version is running', 'danger'], 'built-in': ['Not in this data folder: the built-in one is used', 'neutral'] };
+const checkText = (c) => html`<li>${c.passed}${c.when ? html` <span class="muted">when <code>${c.when}</code></span>` : c.evaluator ? html` <span class="muted">(${c.evaluator})</span>` : ''}</li>`;
+const waitsOn = (g) => (g.slots?.length ? g.slots.map((x) => `${x.role ?? 'someone'} with "${x.permission}"`).join(' and ') : g.permission ? `${g.approver ?? 'someone'} with "${g.permission}"${Number.isInteger(g.quorum) ? `, ${g.quorum} different people` : g.quorum === 'all' ? ', all of them' : ''}` : 'an Approver');
+
+/**
+ * Phase 27: the workflow as configuration, read-only. The stages, how each is left and what it checks
+ * (data/workflows/lifecycle.yaml, approval-rules.yaml, readiness.yaml), who may do what (access/roles.yaml), and whether
+ * each file is in use or refused, and why.
+ */
+function workflow(w) {
+  if (!w) return html`<section class="card" aria-label="Workflow"><h2 class="card__title">Workflow</h2><p class="note">Reading the workflow needs the read-audit permission.</p></section>`;
+  const refused = w.files.filter((f) => f.status === 'refused');
+  return html`
+  ${refused.length ? html`<div class="note" role="alert"><p class="strong">${refused.length === 1 ? 'A workflow file is refused' : `${refused.length} workflow files are refused`}: the last good version keeps running until it is fixed.</p>
+    <ul>${refused.flatMap((f) => f.errors.map((e) => html`<li><code>${f.file}</code> · ${e.where}: ${e.message}</li>`))}</ul></div>` : ''}
+  <section class="card card--flush" aria-label="Workflow files">
+    <div class="card__head"><h2 class="card__title">Files</h2><span class="card__meta">In the data folder. An edit applies without a restart; this page only shows them.</span></div>
+    ${dataTable({
+      caption: 'Workflow files',
+      rows: w.files,
+      columns: [
+        { key: 'file', label: 'File', render: (f) => html`<code>${f.file.includes('/') ? f.file : `workflows/${f.file}`}</code>` },
+        { key: 'status', label: 'State', render: (f) => html`${statusPill({ text: (FILE_STATE[f.status] ?? [f.status])[0], tone: (FILE_STATE[f.status] ?? [null, 'neutral'])[1] })}${f.since ? html`<span class="repo-sub">since ${when(f.since)}</span>` : ''}${(f.warnings ?? []).map((x) => html`<span class="repo-sub">${x.where}: ${x.message}</span>`)}` },
+      ],
+    })}
+  </section>
+  <section class="card card--flush" aria-label="Stages">
+    <div class="card__head"><h2 class="card__title">Stages</h2><span class="card__meta">In order: how each is left, who decides, and what must pass first</span></div>
+    ${dataTable({
+      caption: 'The stages of the lifecycle',
+      rows: w.stages,
+      columns: [
+        { key: 'label', label: 'Stage', render: (s) => html`<span class="strong">${s.number}. ${s.label}</span><span class="repo-sub">${s.kind ? `kind ${s.kind}` : 'a gate of its own'} · <code>${s.key}</code></span>` },
+        { key: 'exit', label: 'Left by', render: (s) => html`<span>${s.exit.label} → ${s.exit.toLabel}</span><span class="repo-sub">Waits on ${waitsOn(s.exit)}${s.exit.target ? ` · target ${s.exit.target}` : ''}</span>` },
+        { key: 'checks', label: 'Checks first', render: (s) => (s.checks.length || s.pullRequestChecks?.length
+          ? html`${s.checks.length ? html`<ul class="plain">${s.checks.map(checkText)}</ul>` : ''}${s.pullRequestChecks?.length ? html`<span class="repo-sub">A pull request's:</span><ul class="plain">${s.pullRequestChecks.map(checkText)}</ul>` : ''}`
+          : html`<span class="muted">None</span>`) },
+      ],
+    })}
+  </section>
+  <section class="card card--flush" aria-label="Who may do what">
+    <div class="card__head"><h2 class="card__title">Who may do what</h2><span class="card__meta">Each action and the permission it needs (<code>access/roles.yaml</code>, actions); a permission comes only from the access role</span></div>
+    ${dataTable({
+      caption: 'Actions and the permission each needs',
+      empty: 'No action has been asked for yet.',
+      rows: w.actions,
+      columns: [
+        { key: 'action', label: 'Action', render: (a) => html`<code>${a.action}</code>` },
+        { key: 'permission', label: 'Needs', render: (a) => html`<span>${a.permission ?? '—'}</span><span class="repo-sub">${a.fromFile ? 'set in roles.yaml' : 'the default'}${a.fromFile && a.defaultPermission && a.defaultPermission !== a.permission ? ` (default ${a.defaultPermission})` : ''}</span>` },
+        { key: 'roles', label: 'Who has it', render: (a) => a.roles.join(', ') || 'Nobody' },
+      ],
+    })}
+  </section>`;
+}
+
 function organisation(data) {
   const o = data.organisation ?? {};
   const rows = Object.entries(o).filter(([, v]) => ['string', 'number', 'boolean'].includes(typeof v));
@@ -183,6 +238,7 @@ export async function render(view, { ctx }) {
   let pending = { routes: {}, budgets: {} };
   let data = null;
   let writes = null;     // devtools/writes: modes, rules and the outbox (Phase 13)
+  let flow = null;       // platform/workflow (Phase 27), read when the Workflow tab is opened
   let confirming = null; // the system an Owner is about to switch to Send
 
   const dirty = () => Object.keys(pending.routes).length > 0 || Object.keys(pending.budgets).length > 0;
@@ -200,6 +256,7 @@ export async function render(view, { ctx }) {
       models: () => models(data, pending, canRoute),
       budgets: () => html`${budgets(data, pending, canBudget)}${portfolioBudgets(data, canBudget)}`,
       guardrails: () => guardrails(data, { canEdit: canRoute, asking, history }),
+      workflow: () => workflow(flow),
       integrations: () => html`${integrations(data)}${writing(writes, { canEdit: canRoute, confirming })}`,
       organisation: () => organisation(data),
     }[tab]();
@@ -241,7 +298,14 @@ export async function render(view, { ctx }) {
   view.addEventListener('click', async (event) => {
     const t = event.target;
     const tabButton = t.closest('[data-tab]');
-    if (tabButton) { tab = tabButton.dataset.tab; asking = null; paint(); view.querySelector(`#tab-${tab}`)?.focus(); return; }
+    if (tabButton) {
+      tab = tabButton.dataset.tab;
+      asking = null;
+      if (tab === 'workflow') flow = ctx.can('read-audit') ? await api.get('platform/workflow').catch(() => null) : null;
+      paint();
+      view.querySelector(`#tab-${tab}`)?.focus();
+      return;
+    }
     if (t.closest('[data-action="save"]')) return save();
     if (t.closest('[data-action="cancel"]')) { asking = null; return paint(); }
     const write = t.closest('[data-action^="write-"]');

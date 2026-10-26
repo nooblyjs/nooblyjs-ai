@@ -123,7 +123,7 @@ export function createFindings({ repos, host, log, policies, now, mountPath }) {
   /** "Draft a fix as a PR": a Software Factory run made for the finding, on its repository. */
   async function fix(id, person) {
     if (!person?.id) throw new HttpError(401, 'unauthenticated', 'Sign in to continue.');
-    await needs(host, person, 'draft', `ask for a fix of ${id}`);
+    await needs(host, person, 'draft', `ask for a fix of ${id}`, 'security.finding.ask-fix');
     const f = await getOr404(id);
     if (f.state === 'closed') throw conflict(`${id} is closed already.`);
     if (f.state === 'fixing' && f.fix?.runId) throw conflict(`A fix for ${id} is under way already (run ${f.fix.runId}).`);
@@ -156,7 +156,7 @@ export function createFindings({ repos, host, log, policies, now, mountPath }) {
     await peopleOnly(host, person, what);
     const f = await getOr404(id);
     const p = await policies.read();
-    if (p.riskAcceptance.architectMay.includes(f.severity)) await needs(host, person, 'accept-risk', what);
+    if (p.riskAcceptance.architectMay.includes(f.severity)) await needs(host, person, 'accept-risk', what, 'security.risk.accept');
     else if (person.accessRole !== 'Owner') {
       await refuse(host, person, { action: what, permission: 'accept-risk', reason: `a ${f.severity} risk needs an Owner`, message: `A ${SEVERITY_LABEL[f.severity].toLowerCase()} risk needs an Owner to accept it. Your access role is ${person.accessRole ?? 'none'}.` });
     }
@@ -178,7 +178,7 @@ export function createFindings({ repos, host, log, policies, now, mountPath }) {
 
   /** Another person owns it now. */
   async function setOwner(id, body = {}, person) {
-    await needs(host, person, 'draft', `change who owns ${id}`);
+    await needs(host, person, 'draft', `change who owns ${id}`, 'security.finding.change-owner');
     const owner = await host.people.get(String(body.owner ?? '')).catch(() => null);
     if (!owner?.active || isAgent(owner)) throw badRequest('Name a person to own it.', { owner: 'a person' });
     await getOr404(id);

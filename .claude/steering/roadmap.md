@@ -114,6 +114,8 @@ inclusion: always
 | 25a | Product: customer evidence, the ideas portal, the feedback form, closing the loop | ✅ (reviewed 2026-10-22) |
 | 25b | Product: objectives, roadmaps and capacity (Now · Next · Later) | ✅ (reviewed 2026-10-22) |
 | 26 | Open work in the apps: Infrastructure's drafting agent, Teammates' red-team cases and docs, Product's live tests | ✅ built 2026-10-22, waiting for your review (`nooblyjs-ai-host/.claude/phases/phase-26-summary.md`) |
+| 27a | The process as configuration: the lifecycle from one file, checks by named evaluator | ✅ built 2026-10-26, waiting for your review (`nooblyjs-ai-host/.claude/phases/phase-27-summary.md`) |
+| 27b | The process as configuration: actions' permissions, the Factory's lines and stage kinds from files | ✅ built 2026-10-26, waiting for your review |
 
 Open bugs and changes: none. BUG-001 to BUG-007 and CHG-001 to CHG-009 are verified (2026-10-21); the next IDs are BUG-008 and CHG-010 (`nooblyjs-ai-host/.claude/specs/bugs-and-changes/tasks.md`).
 
@@ -136,6 +138,8 @@ Now ─► 16a Stages ─► 16b Eight stages ─► 16c Design ─► 16d Engin
 - **Mocks first, real later.** Phases 19–23 build on adapters with offline fakes (`design.md` §9), so they don't
   wait for the cloud decisions. Phase 15 then makes each adapter real.
 - **Each new app passes the hosted-app checklist** before its phase closes.
+- **Then the process becomes configuration (Phase 27, added 2026-10-26).** 27a (the lifecycle from one file) first, as it
+  is contained in `src/lifecycle/`; 27b (actions, lines, stage properties) touches every app and follows.
 
 ### Hosted-app checklist (used by Phases 2, 5, 6, 7 and 8)
 
@@ -1610,6 +1614,105 @@ Pipelines); the accessibility audit needs a browser this codespace doesn't have;
 6. `npm run test:live:product`, with a model key, drafts one artefact per stage; without one it skips.
 
 **Done when:** steps 1–6 pass.
+
+---
+
+## Phase 27 — The process as configuration
+
+> **Built 2026-10-26, waiting for your review** (asked: "Please complete phase 27"). Spec:
+> `nooblyjs-ai-host/.claude/specs/phase-27-process-as-configuration/`. Summary: `nooblyjs-ai-host/.claude/phases/phase-27-summary.md`.
+> The four questions below were answered with the proposed defaults, each still `[CONFIRM]`. **What was built differs
+> from the plan below in these ways:** a stage names a **kind** (the eight kinds of step the code knows, like the
+> Factory's station kinds) instead of `owner` / `perStory` / `releasable` properties, and the apps compare kinds
+> (`item.stageKind`); the evaluators are a catalogue in the lifecycle (`src/lifecycle/evaluators.js`) that apps can add
+> to (`host.service('workflows').registerEvaluators`), not one registration per app; the condition language is
+> imported from the Factory package (`nooblyjs-ai-factory/conditions`), since `nooblyjs-ai-common` is in another repo;
+> an action the file doesn't list needs the default permission the code names (so a data folder from before keeps
+> working), and an action mapped to a permission that doesn't exist refuses the file (27b step 2 tests that); the
+> Factory's line choice is `data/factory/lines.yaml` (`repositories:`, `itemTypes:`, `default:`), because `repos.yaml`
+> is a flat name → folder map; and Platform's actions table is on Settings · Workflow, not Members.
+
+**Where it came from:** the review of 2026-10-26 (`design.md` §13): roles are mostly configuration already, validations
+half, and the lifecycle's steps hardly at all, while the Software Factory's lines already show the way (the stations are
+data, the station kinds code). `product.md` §6 rule 17.
+**Goal:** an Owner changes the steps, the validations each gate needs and who may do each thing by editing files, with
+no release; the kinds of step and the evaluators behind checks stay code.
+**Repos:** `nooblyjs-ai-host` (the lifecycle engine, roles, Platform), `nooblyjs-ai-product`, `nooblyjs-ai-design`,
+`nooblyjs-ai-factory` (and `quality`), `nooblyjs-ai-operations` (their evaluators and stage tests).
+
+**Before you start** (defaults taken 2026-10-26, each `[CONFIRM]`)
+- Who may change the workflow files: Owners only (proposed: the `change-guardrails` permission), and whether as files
+  only or also in Platform · Settings (proposed: files, with a read-only **Workflow** page in Platform · Settings that
+  shows the definition in words and any error) `[CONFIRM]`.
+- What happens to items in a stage that a new definition removes (proposed: the file is refused while an active item is
+  in it, naming the items) `[CONFIRM]`.
+- Whether a repository may carry its own lines in `.factory/lines/` (proposed: no, a repository would change its own
+  gates; lines live in `data/factory/lines/` only) `[CONFIRM]`.
+- Which item facts a `when` check may read (proposed: the item's front matter, its spec's sections by heading, counts
+  of its stories, requirements, interfaces and findings) `[CONFIRM]`.
+
+### Phase 27a — The lifecycle from one file
+
+**Build**
+- **`data/workflows/lifecycle.yaml`** (seeded, and written for a data folder from before from today's built-ins): the
+  stages in order, each with its label, area, owning app, `perStory`, its exit gate (`{ rule, to }`) and its checks.
+  `src/lifecycle/stages.js` and `MOVES` / `LEAVES_BY` in `engine.js` read it; `LEGACY` stays code. Re-read on every
+  use like `approval-rules.yaml`.
+- **A registry of check evaluators**: `host.registerEvaluator(name, fn)` for each app; Product, Design, the Factory
+  (Engineering) and the pull request's checks register the ones they compute today under `product.*`, `design.*`,
+  `engineering.*`, `pr.*`, with the words they report (Product's and Design's own copies of the words go). A check may
+  instead be a `when` expression in the Factory's condition language (moved to `nooblyjs-ai-common`) over the item's facts.
+- **Validated on load, last good kept**: an unknown stage, rule, evaluator or permission, a duplicate key, a bad `when`
+  or a stage with no way out refuses the file, says which line and why (log and Platform · Settings · Workflow), and the
+  last good definition keeps running. `approval-rules.yaml`, `readiness.yaml` and `roles.yaml` get the same treatment.
+- **Built-ins are defaults**: a rule or stage listed with `enabled: false` stays off; `BUILT_IN_RULES` only fills in what
+  a file doesn't mention.
+- **Audit**: a changed definition is recorded (`workflow.changed`, who, what changed in words) and shown in Activity.
+
+**How you test it**
+1. With the seed, `lifecycle.yaml` describes today's eight stages and every existing test passes unchanged.
+2. Add a check to the Product stage, `when: spec.sections.owner != null`, worded "An owner is named": PRD-031 shows it,
+   failing, until Lerato adds an Owner section to the spec; then it passes. No restart.
+3. Add a **Security review** stage between Test and Release whose exit is a new rule `security-signoff` (permission
+   `accept-threat-model`): a story given its Test approval goes to Security review and waits on Thabo; once he signs
+   off it goes to Release. Lifecycle, Home · Approvals and Metrics show the new stage by its label.
+4. Name an evaluator that doesn't exist (`design.nope`): the file is refused, Platform · Settings · Workflow shows the
+   line and the reason, and approvals keep working on the last good definition.
+5. Set `enabled: false` on the `idea` rule: accepting an idea moves it with the plain stage approval; set it back.
+6. As an agent (test fixture), give any approval under the new definition: refused and audited, as before.
+
+**Done when:** steps 1–6 pass.
+**Guide points:** Is one file the right size, or should each stage be a file of its own?
+
+### Phase 27b — Who may do what, the lines and stage properties
+
+**Build**
+- **Actions name their permission in configuration**: `actions:` in `access/roles.yaml` (`send-back: approve`,
+  `change-stories: draft`, `nudge: draft`, …) for every `requirePermission` / `can` in the host and the hosted apps,
+  read through one helper in `nooblyjs-ai-common`. An action missing from the file is refused and logged, like an
+  unknown permission today. Platform · Settings · Members lists what each access role may do, in words.
+- **The Factory's lines from configuration**: lines load from `data/factory/lines/` as well as the package's; a
+  repository (`factory/repos.yaml`) or an item type names its line; the handoff stops asking for `default` by name.
+- **Stage properties, not stage names**: the about 70 `stage === '…'` tests in the apps read the stage's properties
+  from the definition (`perStory`, `owner`, `releasable`) through `host.service('workflows')`. A test fails the build if
+  a stage key is written in code outside `src/lifecycle/stages.js` and the seed.
+- **Homes follow the definition**: a For you panel that lists "items in Design" lists items in the stages its layout
+  names in `work-roles.yaml`.
+
+**How you test it**
+1. In `roles.yaml`, set `send-back: accept-decisions`: Lerato (Approver) can no longer send PRD-031 back and is told
+   which permission it needs; Thabo (Architect) can. No restart.
+2. An action mapped to a permission that doesn't exist (as built): the file is refused, the last good stays, and the
+   reason names the action.
+3. Set `web-storefront: quick` in `data/factory/lines.yaml` (as built): the next run from a story's Engineering sign-off goes
+   build → verify → deliver, and its run page shows those stations.
+4. Put a line with a bad `when` in `data/factory/lines/`: it is refused at load with the position of the mistake; runs
+   keep the line they had.
+5. Rename the Design stage's label to "Solution design": every screen, Activity and Metrics say it; nothing breaks.
+6. The stage-key test passes: no stage key is written in code outside `stages.js` and the seed.
+
+**Done when:** steps 1–6 pass, and no test that passed before fails.
+**Guide points:** Should Owners edit the workflow in the app (with a preview of what changes) rather than in files?
 
 ---
 

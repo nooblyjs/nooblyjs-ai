@@ -3,14 +3,15 @@
 // decision (it checks the person). The host audits every write; agents are refused every acceptance and handoff here
 // as well as in the services, and the refusal is audited.
 import { apiNotFound, apiErrors } from './util/errors.js';
+import { action } from './util/actions.js';
 
 const READS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
 export function createApi({ host, log, design, catalogue, drafter, about }) {
   const api = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
+  const read = action(host, 'design.read', 'read');
+  const draft = action(host, 'design.write', 'draft');
   api.use(host.auth);
   api.use((req, res, next) => (READS.has(req.method) ? next() : host.audit(req, res, next)));
 
@@ -28,7 +29,7 @@ export function createApi({ host, log, design, catalogue, drafter, about }) {
   }));
   api.post('/items/:id/draft/:part', draft, asyncRoute(async (req, res) => res.json(await design.draft(req.params.id, req.params.part, req.person))));
 
-  api.post('/items/:id/requirements/:brId/accept', host.requireRole('accept-requirement'), asyncRoute(async (req, res) => {
+  api.post('/items/:id/requirements/:brId/accept', action(host, 'design.requirement.accept', 'accept-requirement'), asyncRoute(async (req, res) => {
     res.json(await design.acceptRequirement(req.params.id, req.params.brId, req.person));
   }));
   api.patch('/items/:id/requirements/:brId', draft, asyncRoute(async (req, res) => res.json(await design.editRequirement(req.params.id, req.params.brId, req.body, req.person))));

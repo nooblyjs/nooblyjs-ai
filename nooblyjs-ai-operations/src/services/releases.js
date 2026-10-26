@@ -12,6 +12,10 @@ import { HttpError, badRequest, notFound, conflict } from '../util/errors.js';
 import { atLeast, isFeatureId, isItemId } from '../util/ids.js';
 import { needs, peopleOnly } from '../util/http.js';
 
+// NooblyJS Phase 27: an item's stage is compared by its KIND ('design'), which the lifecycle says (stageKind); a stage's
+// key and label are the workflow's (data/workflows/lifecycle.yaml). On a host from before, the key is the kind.
+const kindOf = (item) => item?.stageKind ?? item?.stage ?? null;
+
 const STATUS_TEXT = {
   draft: 'Draft: ask for the deploy approval', 'waiting-approval': 'Waiting for two approvers', 'changes-requested': 'Changes asked for',
   piloting: 'In production: pilot', complete: 'In production: everyone', 'rolled-back': 'Rolled back',
@@ -51,13 +55,13 @@ export function createReleases({ repos, host, log, policies, evidence, notes, de
    * product's Staging runs (Infrastructure), and its rollback is what Production runs now.
    */
   async function create(body = {}, person) {
-    await needs(host, person, 'draft', 'make a release');
+    await needs(host, person, 'draft', 'make a release', 'operations.release.make');
     const itemId = clean(body.itemId, 40);
     const featureId = clean(body.featureId, 40);
     if (!isItemId(itemId) || !isFeatureId(featureId)) throw badRequest('Name the item and the feature, like PRD-031 and FEAT-031-1.', { itemId: 'PRD-…', featureId: 'FEAT-…' });
     const feature = await featureOf(itemId, featureId);
-    const behind = feature.stories.filter((st) => st.status === 'active' && st.stage !== 'release');
-    if (feature.stage !== 'release') throw new HttpError(409, 'feature_not_ready', `${featureId} isn't ready to release: ${behind.map((st) => `${st.ref} is in ${st.stage}`).join(', ') || 'its stories have not passed Test'}.`);
+    const behind = feature.stories.filter((st) => st.status === 'active' && kindOf(st) !== 'release');
+    if (kindOf(feature) !== 'release') throw new HttpError(409, 'feature_not_ready', `${featureId} isn't ready to release: ${behind.map((st) => `${st.ref} is in ${st.stageLabel ?? st.stage}`).join(', ') || 'its stories have not passed Test'}.`);
     if ((await repos.releases.list()).some((r) => r.itemId === itemId && r.featureId === featureId && r.status !== 'rolled-back')) throw conflict(`${featureId} already has a release.`);
     const candidate = await Promise.resolve(svc('infrastructure')?.releaseCandidate?.({ itemId })).catch(() => null);
     if (!candidate?.production) throw new HttpError(409, 'no_production', `${itemId} has no infrastructure design with a Production environment, so there is nowhere to release it.`);
@@ -91,7 +95,7 @@ export function createReleases({ repos, host, log, policies, evidence, notes, de
 
   /** Ask for the lifecycle's deploy approval: two different people with deploy-production. */
   async function requestApproval(id, person) {
-    await needs(host, person, 'draft', `ask for ${id}'s deploy approval`);
+    await needs(host, person, 'draft', `ask for ${id}'s deploy approval`, 'operations.release.ask-deploy');
     const release = await getOr404(id);
     if (!['draft', 'changes-requested'].includes(release.status)) throw conflict(`${id} is ${STATUS_TEXT[release.status].toLowerCase()}: there is no approval to ask for.`);
     const { pack, holding, threshold } = await blockers(release);
@@ -127,7 +131,7 @@ export function createReleases({ repos, host, log, policies, evidence, notes, de
   async function decideApproval({ id, decision, person }) {
     // Whoever gives a deploy approval, for themselves or on someone's behalf, holds deploy-production (people only).
     await peopleOnly(host, person, `approve ${id} for production`);
-    await needs(host, person, 'deploy-production', `approve ${id} for production`);
+    await needs(host, person, 'deploy-production', `approve ${id} for production`, 'operations.release.deploy');
     const release = await getOr404(id);
     if (release.status !== 'waiting-approval') throw conflict(`${id} is ${STATUS_TEXT[release.status].toLowerCase()}: there is nothing to approve.`);
     if (decision === 'approve') {
@@ -194,7 +198,7 @@ export function createReleases({ repos, host, log, policies, evidence, notes, de
   /** The next step of the rollout (the pilot went well): a person with deploy-production. */
   async function advance(id, person) {
     await peopleOnly(host, person, `take ${id} to its next step`);
-    await needs(host, person, 'deploy-production', `take ${id} to its next step`);
+    await needs(host, person, 'deploy-production', `take ${id} to its next step`, 'operations.release.rollout');
     const release = await getOr404(id);
     if (release.status !== 'piloting') throw conflict(`${id} is ${STATUS_TEXT[release.status].toLowerCase()}: there is no next step.`);
     return deployStep(id, (release.step ?? 0) + 1, person);
@@ -203,7 +207,7 @@ export function createReleases({ repos, host, log, policies, evidence, notes, de
   /** Rollback in one action, with a reason: Production returns to what it ran before. */
   async function rollback(id, body = {}, person) {
     await peopleOnly(host, person, `roll ${id} back`);
-    await needs(host, person, 'deploy-production', `roll ${id} back`);
+    await needs(host, person, 'deploy-production', `roll ${id} back`, 'operations.release.roll-back');
     const release = await getOr404(id);
     if (!IN_PRODUCTION.has(release.status)) throw conflict(`${id} is ${STATUS_TEXT[release.status].toLowerCase()}: it isn't in production.`);
     const reason = clean(body.reason, 500);

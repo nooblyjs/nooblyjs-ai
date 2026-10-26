@@ -2,6 +2,7 @@
 // which share this handler), GET /drafts/:id, GET /drafts?itemId=. Progress also arrives as draft.progressed events.
 import { draftView } from '../services/drafting.js';
 import { notFound } from '../util/errors.js';
+import { action } from '../util/actions.js';
 
 /**
  * The POST handler for one stage's drafts: `kinds` are the draft kinds that route offers.
@@ -16,8 +17,8 @@ export function draftHandler(drafting, kinds, mountPath) {
 
 export function draftRoutes({ host, repos, drafting, specKindKeys, mountPath }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.drafts.write', 'draft');
 
   router.post('/specs/:id/drafts', draft, draftHandler(drafting, specKindKeys, mountPath));
 

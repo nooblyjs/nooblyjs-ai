@@ -39,7 +39,7 @@ export function specDetail(ctx, spec) {
     rolloutPlan: parts.rolloutPlan || null,
     sections: parts.other,
     tracker: trackerFor(spec.status, { youReview }),
-    readiness: readinessView(spec.readiness, spec.agent),
+    readiness: readinessView(spec.readiness, spec.agent, ctx.readinessChecks),
     knowledge: (spec.knowledge ?? []).map((k) => {
       const flag = (spec.knowledgeFlags ?? []).find((f) => f.id === k.id);
       return { ...knowledgeView(k), flagged: flag ? { reason: flag.reason, at: flag.at } : null };

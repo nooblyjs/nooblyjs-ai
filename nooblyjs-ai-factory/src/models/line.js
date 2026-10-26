@@ -3,7 +3,12 @@
 //
 //   lines/default.json    triage → build → verify → deliver
 //   lines/quick.json      build → verify → deliver
-//   <repo>/.factory/lines/*.json   a repo's own lines (later phases)
+//   <FACTORY_HOME>/lines/*.json   NooblyJS Phase 27: the operator's own lines (data/factory/lines/ when hosted). One
+//                         there wins over a built-in line of the same name. Never a repository's own: a repository
+//                         would then change its own gates (decided 2026-10-26).
+//
+// A run keeps the line it started with: the line as it was is saved in the run's request (`lineDef`), so editing a
+// line file changes the runs that start after it, never one under way (lineForRequest).
 //
 //   { "id": "spec", "kind": "spec", "when": "triage.size != 'small'", "retries": 1, "optional": false }
 //
@@ -21,8 +26,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compileCondition } from '../services/line/conditions.js';
+import { factoryHome } from '../utils/paths.js';
 
 const BUILT_IN = fileURLToPath(new URL('../../lines/', import.meta.url));
+const NAME = /^[a-z0-9][a-z0-9-]{0,62}$/;
+
+/** Where the operator's lines are: <FACTORY_HOME>/lines (data/factory/lines when hosted in NooblyJS). */
+export const dataLines = (env = process.env) => path.join(factoryHome(env), 'lines');
+
+/** Every line by name: the built-in ones, and the operator's (which win). */
+export function lineNames(env = process.env) {
+  const names = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')) : []);
+  return [...new Set([...names(BUILT_IN), ...names(dataLines(env))])].sort();
+}
 
 /**
  * @typedef {{ id: string, kind: string, role?: string, gate?: string, when?: string, retries: number, optional: boolean, applies: (ctx: object) => boolean }} Station
@@ -34,10 +50,38 @@ const BUILT_IN = fileURLToPath(new URL('../../lines/', import.meta.url));
  * @param {string[]} kinds     the station kinds that exist
  * @returns {Line}
  */
-export function loadLine(nameOrFile = 'default', kinds) {
-  const file = nameOrFile.endsWith('.json') ? path.resolve(nameOrFile) : path.join(BUILT_IN, `${nameOrFile}.json`);
-  if (!fs.existsSync(file)) throw new Error(`No line "${nameOrFile}". Built in: ${fs.readdirSync(BUILT_IN).map((f) => f.replace(/\.json$/, '')).join(', ')}.`);
-  return parseLine(JSON.parse(fs.readFileSync(file, 'utf8')), kinds, file);
+export function loadLine(nameOrFile = 'default', kinds, env = process.env) {
+  let file;
+  if (nameOrFile.endsWith('.json')) file = path.resolve(nameOrFile);
+  else {
+    if (!NAME.test(nameOrFile)) throw new Error(`"${nameOrFile}" is not a line's name (lower case, digits and dashes).`);
+    const own = path.join(dataLines(env), `${nameOrFile}.json`);
+    file = fs.existsSync(own) ? own : path.join(BUILT_IN, `${nameOrFile}.json`);
+  }
+  if (!fs.existsSync(file)) {
+    const builtIn = fs.readdirSync(BUILT_IN).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, ''));
+    const own = lineNames(env).filter((n) => !builtIn.includes(n));
+    throw new Error(`No line "${nameOrFile}". Built in: ${builtIn.join(', ')}${own.length ? `; your own: ${own.join(', ')}` : ''}.`);
+  }
+  let raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    throw new Error(`${file} is not valid JSON: ${error instanceof Error ? error.message : error}`);
+  }
+  return { ...parseLine(raw, kinds, file), raw };
+}
+
+/**
+ * The line a run follows: the one saved in its request when it was queued (NooblyJS Phase 27), else its line by name
+ * (a run from before).
+ * @param {{ line?: string, lineDef?: object }} [request]
+ * @param {string[]} kinds
+ * @returns {Line}
+ */
+export function lineForRequest(request, kinds) {
+  if (request?.lineDef) return parseLine(request.lineDef, kinds, `the line "${request.line ?? request.lineDef.name}" this run started with`);
+  return loadLine(request?.line ?? 'default', kinds);
 }
 
 /** @returns {Line} */

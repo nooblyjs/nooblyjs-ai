@@ -45,11 +45,13 @@ function traceView(t) {
     ${t.unplaced?.length ? card({ title: 'Not linked to the item', body: html`<ul role="list">${t.unplaced.map((u) => html`<li>${u.typeText} <strong>${u.id}</strong> ${u.title}</li>`)}</ul>` }) : ''}`;
 }
 
+// The lifecycle's stages come with the item (Phase 27: they are data/workflows/lifecycle.yaml's); these only when they don't.
 const STAGES = [['discover', 'Discover'], ['product', 'Product'], ['design', 'Design'], ['engineer', 'Engineer'], ['build', 'Build'], ['test', 'Test'], ['release', 'Release'], ['operate', 'Operate']];
 
-function tracker(item) {
-  const at = STAGES.findIndex(([key]) => key === item.stage);
-  return html`<ol class="tracker" aria-label="Stages">${STAGES.map(([key, label], i) => {
+function tracker(item, stages) {
+  const list = stages?.length ? stages.map((s) => [s.key, s.label]) : STAGES;
+  const at = list.findIndex(([key]) => key === item.stage);
+  return html`<ol class="tracker" aria-label="Stages">${list.map(([key, label], i) => {
     const cell = item.cells[key];
     const state = item.status === 'completed' ? 'done' : i < at ? 'done' : i === at ? (item.late ? 'waiting' : 'now') : 'todo';
     const words = { done: 'done', now: 'now', waiting: 'waiting too long', todo: 'not reached' }[state];
@@ -194,8 +196,8 @@ export async function render(view, { ctx, params, query }) {
     // Phase 16e: an item's features (each released on its own), a story's pull requests, and a story that passed Test.
     const featuresCard = item.features?.length
       ? card({
-        title: 'Features', meta: `${item.features.filter((f) => f.stage === 'release').length} of ${item.features.length} in Release`,
-        body: html`<ul class="waits" role="list">${item.features.map((f) => html`<li class="wait"><div class="wait__main"><span class="wait__title">${f.id} · ${f.title}</span><span class="row__meta">${f.stories.map((st) => html`<a href="/home/lifecycle/${encodeURIComponent(st.id)}">${st.ref}</a> `)}</span></div>${statusPill({ text: f.text, tone: f.stage === 'release' ? 'success' : 'neutral' })}</li>`)}</ul>`,
+        title: 'Features', meta: `${item.features.filter((f) => f.stageKind === 'release').length} of ${item.features.length} in ${(data.stages ?? []).find((s) => s.kind === 'release')?.label ?? 'Release'}`,
+        body: html`<ul class="waits" role="list">${item.features.map((f) => html`<li class="wait"><div class="wait__main"><span class="wait__title">${f.id} · ${f.title}</span><span class="row__meta">${f.stories.map((st) => html`<a href="/home/lifecycle/${encodeURIComponent(st.id)}">${st.ref}</a> `)}</span></div>${statusPill({ text: f.text, tone: f.stageKind === 'release' ? 'success' : 'neutral' })}</li>`)}</ul>`,
       })
       : '';
     const pullsCard = item.pullRequests?.length
@@ -248,7 +250,7 @@ export async function render(view, { ctx, params, query }) {
     ${message ? html`<p class="flash flash--${message.tone}" role="${message.tone === 'error' ? 'alert' : 'status'}">${message.text}</p>` : ''}
     ${tabsBar(tab)}
     ${earlyNote}
-    ${card({ title: 'Where this is', body: tracker(item) })}
+    ${card({ title: 'Where this is', body: tracker(item, data.stages) })}
     ${featuresCard}
     ${pullsCard}
     ${defectCard}

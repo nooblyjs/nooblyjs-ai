@@ -6,9 +6,10 @@
 // Every change is written to its file and emitted as an event in the same operation; NooblyJS's Activity, the event
 // stream and the other apps read the events. Business time comes from the host's clock (the dev clock moves it).
 import { HttpError, badRequest, forbidden, notFound, conflict, refused } from '../errors.js';
-import { STAGE_KEYS, LEGACY, stageKey, stageLabel, stageIndex, nextStage, currentStage } from '../stages.js';
+import { STAGE_KEYS, LEGACY, stageKey, stageLabel, stageIndex, currentStage, isKind, stageOfKind } from '../stages.js';
 import { addWorkingDays, dueFrom } from '../working-days.js';
-import { loadRules, loadReadiness, loadPullRequestReadiness } from '../config.js';
+import { createWorkflow } from '../workflow.js';
+import { createEvaluators } from '../evaluators.js';
 import { newId } from '../ids.js';
 import { ITEM_ID } from '../repos.js';
 import { createPullRequests } from './pull-requests.js';
@@ -19,21 +20,8 @@ const DECISIONS = new Set(['approve', 'request-changes']);
 const MAX_TEXT = 2000;
 const NUDGE_EVERY_MS = 4 * 3_600_000;
 
-/**
- * What an approved approval does to its item, by rule key. Rules not listed (adr, the app approvals) don't move it.
- * Lifecycle v3 (Phase 16b): the Product handoff (spec) → Design → Engineer → Build → Test → Release → Operate, and the
- * item is done after its outcome review. `merge` is the Build approval's key from before (an older open one moves too).
- */
-const MOVES = {
-  idea: 'product', spec: 'design', 'design-handoff': 'engineer', 'engineering-signoff': 'build', 'build-approval': 'test', merge: 'test',
-  'test-approval': 'release', deploy: 'operate', 'outcome-review': 'complete', stage: null,
-};
-
-/** The approval that leaves each stage when a person presses Approve & move (any other stage: a plain stage move). */
-const LEAVES_BY = {
-  discover: 'idea', product: 'spec', design: 'design-handoff', engineer: 'engineering-signoff', build: 'build-approval', test: 'test-approval',
-  release: 'deploy', operate: 'outcome-review',
-};
+// What an approved approval does to its item, and which approval leaves each stage, are the workflow's (Phase 27:
+// data/workflows/lifecycle.yaml, read by workflow.js). Rules that leave no stage (adr, the app approvals) move nothing.
 
 /** Open approvals of retired rules, withdrawn when the stages move (Phase 16b), and why. */
 const RETIRED_APPROVALS = {
@@ -69,9 +57,12 @@ const text = (value, max = MAX_TEXT) => {
 
 export function createEngine({ repos, host, log, clock }) {
   const now = () => new Date(clock.now()).toISOString();
-  const rules = () => loadRules(repos, log);
   const emit = (type, payload, actorId) => host.events.emit(type, payload, { actor: actorId ?? null });
   const audit = (entry) => host.audit.record(entry).catch((err) => log.error(`audit write failed: ${err.message}`));
+  // Phase 27: the stages, their gates and checks, and who approves what, from data/workflows/ (checked, last good kept).
+  const evaluators = createEvaluators({ host, repos, log });
+  const workflow = createWorkflow({ repos, host, log, evaluators, now, emit, audit });
+  const rules = async () => (await workflow.current()).rules;
 
   async function itemOr404(id) {
     const item = await repos.items.get(id);
@@ -116,18 +107,23 @@ export function createEngine({ repos, host, log, clock }) {
     throw forbidden('viewers_cannot_approve', `Viewers can't approve, for themselves or on anyone's behalf. Your access role is ${person.accessRole}.`, { accessRole: person.accessRole });
   }
 
-  async function requirePermission(person, rule, what) {
-    if (await host.can(person.accessRole, rule.permission)) return;
-    throw forbidden('forbidden', `You can't ${what}: it needs the "${rule.permission}" permission, and your access role is ${person.accessRole}.`, { permission: rule.permission, accessRole: person.accessRole });
+  /**
+   * Phase 27: the lifecycle's actions (send-back, nudge, change-stories, request-review, merge-pull-request) need the
+   * permission access/roles.yaml gives them, else their default. On a host without actions, the default.
+   */
+  async function permissionFor(action, permission) {
+    return typeof host.permissionFor === 'function' ? host.permissionFor(action, permission) : permission;
+  }
+
+  async function requirePermission(person, { action, permission }, what) {
+    const needs = action ? await permissionFor(action, permission) : permission;
+    if (await host.can(person.accessRole, needs)) return;
+    throw forbidden('forbidden', `You can't ${what}: it needs the "${needs}" permission, and your access role is ${person.accessRole}.`, { permission: needs, accessRole: person.accessRole, ...(action ? { action } : {}) });
   }
 
   // ---------------------------------------------------------------------------- readiness
 
   const NO_CHECKS = { passed: 0, total: 0, checks: [], failing: [], source: 'none' };
-  const factsOf = (facts) => ({
-    results: Object.fromEntries(Object.entries(facts).map(([key, fact]) => [key, fact?.value ?? null])),
-    details: Object.fromEntries(Object.entries(facts).filter(([, fact]) => fact?.detail).map(([key, fact]) => [key, fact.detail])),
-  });
 
   /**
    * Readiness for the item's current stage: n of m, each check in words, the failing ones named. In Design (Phase 16c)
@@ -151,83 +147,15 @@ export function createEngine({ repos, host, log, clock }) {
     return { ...readiness, passed: checks.length - failing.length, checks, failing };
   }
 
-  async function stageReadiness(item) {
-    // A pull request's Test approval (Phase 16e): worked out from the evidence of its commit.
-    if (item.stage === 'test' && item.type === 'pr' && item.pr) return pullRequestReadiness(item);
-    const checks = await loadReadiness(repos, item.stage);
-    if (!checks.length) return NO_CHECKS;
-    let results = item.readiness?.results ?? {};
-    let details = {};
-    let extraChecks = {};
-    let source = 'recorded';
-    if (item.stage === 'design') {
-      const design = host.service('design');
-      if (typeof design?.readinessFacts !== 'function') return NO_CHECKS;
-      try {
-        const facts = (await design.readinessFacts(item.parentId ?? item.id))?.facts;
-        if (!facts) return NO_CHECKS;
-        ({ results, details } = factsOf(facts));
-        source = 'design';
-      } catch (err) {
-        log.warn(`design readinessFacts(${item.id}) failed: ${err.message}`);
-        return NO_CHECKS;
-      }
-    }
-    if (item.stage === 'engineer') {
-      const factory = host.service('factory');
-      if (typeof factory?.engineeringReadiness !== 'function') return NO_CHECKS;
-      try {
-        const facts = (await factory.engineeringReadiness(item.id))?.facts;
-        if (!facts) return NO_CHECKS;
-        ({ results, details } = factsOf(facts));
-        source = 'factory';
-      } catch (err) {
-        log.warn(`engineering readiness(${item.id}) failed: ${err.message}`);
-        return NO_CHECKS;
-      }
-    }
-    const product = item.system === 'product' && !['design', 'engineer'].includes(item.stage) ? host.service('product') : null;
-    if (typeof product?.readinessFacts === 'function') {
-      try {
-        const facts = (await product.readinessFacts(item.id))?.facts;
-        if (facts) {
-          ({ results, details } = factsOf(facts));
-          extraChecks = Object.fromEntries(Object.entries(facts).filter(([, f]) => f?.check?.passed && f?.check?.failed).map(([k, f]) => [k, { passed: f.check.passed, failed: f.check.failed }]));
-          source = 'product';
-        } else if (item.stage === 'discover') return NO_CHECKS; // Phase 17: only an idea has a business case to check
-      } catch (err) {
-        log.warn(`readinessFacts(${item.id}) failed, using the recorded result: ${err.message}`);
-      }
-    } else if (item.stage === 'discover') return NO_CHECKS;
-    // A fact that carries its own words (Phase 18: a spec's open questions) is a check of that item only.
-    const extra = Object.entries(extraChecks).filter(([key]) => !checks.some((c) => c.key === key)).map(([key, words]) => ({ key, ...words }));
-    const view = [...checks, ...extra].map((c) => {
-      const result = results[c.key];
-      const failed = details[c.key] ? `${c.failed}: ${details[c.key]}` : c.failed;
-      return { key: c.key, passed: result === true, text: result === true ? c.passed : result === false ? failed : `${c.passed}: not checked yet` };
-    });
-    const failing = view.filter((c) => !c.passed);
-    return { passed: view.length - failing.length, total: view.length, checks: view, failing, source };
-  }
-
   /**
-   * A pull request's Test readiness (Phase 16e), from the evidence the Software Factory recorded for its commit: every
-   * required test present and passing, and the gates passed on that commit.
+   * The checks of the item's stage, worked out by their evaluators (Phase 27: which checks a stage has is the workflow's;
+   * evaluators.js works each one out). A pull request in the stage of the kind test has the pull request checks (16e).
    */
-  async function pullRequestReadiness(item) {
-    const checks = await loadPullRequestReadiness(repos);
-    const ev = item.pr.evidence ?? null;
-    const sha = String(item.pr.sha ?? '').slice(0, 7);
-    const facts = {
-      'required-tests': ev && !ev.missing?.length && !ev.failing?.length && !ev.unproven?.length
-        ? { value: true }
-        : { value: false, detail: ev ? ev.text : 'no evidence was recorded for this commit' },
-      'gates-passed': item.pr.gates === 'passed' ? { value: true } : { value: false, detail: item.pr.checking ? `the Factory is still checking ${sha}` : item.pr.gates === 'failed' ? `they failed on ${sha}` : `none ran on ${sha}` },
-    };
-    const { results, details } = factsOf(facts);
-    const view = checks.map((c) => ({ key: c.key, passed: results[c.key] === true, text: results[c.key] === true ? c.passed : details[c.key] ? `${c.failed}: ${details[c.key]}` : c.failed }));
-    const failing = view.filter((c) => !c.passed);
-    return { passed: view.length - failing.length, total: view.length, checks: view, failing, source: 'factory' };
+  async function stageReadiness(item) {
+    const wf = await workflow.current();
+    const checks = item.type === 'pr' && item.pr && isKind(item.stage, 'test') ? wf.pullRequestChecks : wf.checksOf(item.stage);
+    if (!checks.length) return NO_CHECKS;
+    return evaluators.evaluate(item, checks);
   }
 
   /** Refuses (422) when readiness fails, unless a person gives an override reason. Returns the override, if any. */
@@ -298,7 +226,7 @@ export function createEngine({ repos, host, log, clock }) {
     if (item.type === 'pr' && item.pr) {
       throw refused('per_pull_request', `${item.ref ?? item.id} moves on with its own Build and Test approvals: decide them in Approvals or on its page.`);
     }
-    if (item.type !== 'story' || !['build', 'test'].includes(item.stage)) return;
+    if (item.type !== 'story' || !(isKind(item.stage, 'build') || isKind(item.stage, 'test'))) return;
     const list = (await prs.prsOf(item.id)).filter((p) => p.pr);
     if (!list.length) return;
     throw refused('per_pull_request', `${item.ref ?? item.id} goes on pull request by pull request: ${what} each of ${list.map((p) => p.ref ?? p.id).join(', ')} with its Build and Test approvals instead.`, { pullRequests: list.map((p) => p.id) });
@@ -312,7 +240,8 @@ export function createEngine({ repos, host, log, clock }) {
   async function followStories(parentId) {
     const stories = (await storiesOf(parentId)).filter((st) => st.status === 'active');
     if (!stories.length) return null;
-    const to = stories.some((st) => st.stage === 'design') ? 'design' : stories.map((st) => st.stage).sort((a, b) => stageIndex(a) - stageIndex(b))[0];
+    const design = stories.find((st) => isKind(st.stage, 'design'));
+    const to = design ? design.stage : stories.map((st) => st.stage).sort((a, b) => stageIndex(a) - stageIndex(b))[0];
     const at = now();
     let from = null;
     const parent = await repos.items.update(parentId, (current) => {
@@ -336,10 +265,12 @@ export function createEngine({ repos, host, log, clock }) {
    */
   async function syncStories({ itemId, stories = [], reason = null, actor } = {}) {
     const person = await personFor(actor, { what: 'change the stories', target: `item ${itemId}` });
-    await requirePermission(person, { permission: 'draft' }, 'change the stories');
+    await requirePermission(person, { action: 'change-stories', permission: 'draft' }, 'change the stories');
     const parent = await itemOr404(itemId);
     if (parent.type === 'story') throw badRequest('A story has no stories of its own.');
-    if (parent.status !== 'active' || parent.stage !== 'design') {
+    await workflow.current();
+    const design = stageOfKind('design');
+    if (parent.status !== 'active' || parent.stage !== design) {
       throw conflict('wrong_stage', `${parent.ref ?? parent.id} is in ${stageLabel(parent.stage)}, so its stories can't change: stories are written in Design.`);
     }
     const listed = (Array.isArray(stories) ? stories : []).map((st) => ({
@@ -357,17 +288,17 @@ export function createEngine({ repos, host, log, clock }) {
         if (await repos.items.get(st.id)) throw conflict('exists', `${st.id} is already an item of another item.`);
         await repos.items.create({
           id: st.id, type: 'story', ref: st.id, title: st.title, system: 'factory', parentId: parent.id, feature: st.feature,
-          stage: 'design', status: 'active', owner: parent.owner ?? null, team: parent.team ?? null, createdAt: at, stageEnteredAt: at,
-          history: [{ stage: 'design', enteredAt: at, by: person.id }], version: 1, updatedAt: at,
+          stage: design, status: 'active', owner: parent.owner ?? null, team: parent.team ?? null, createdAt: at, stageEnteredAt: at,
+          history: [{ stage: design, enteredAt: at, by: person.id }], version: 1, updatedAt: at,
         });
-        await emit('item.created', { itemId: st.id, parentId: parent.id, system: 'factory', stage: 'design', summary: `opened ${st.id} · ${st.title}, a story of ${parent.ref ?? parent.id}` }, person.id);
+        await emit('item.created', { itemId: st.id, parentId: parent.id, system: 'factory', stage: design, summary: `opened ${st.id} · ${st.title}, a story of ${parent.ref ?? parent.id}` }, person.id);
         done.created.push(st.id);
-      } else if (found.status === 'active' && found.stage === 'design' && (found.title !== st.title || found.feature?.id !== st.feature?.id || found.feature?.title !== st.feature?.title)) {
+      } else if (found.status === 'active' && found.stage === design && (found.title !== st.title || found.feature?.id !== st.feature?.id || found.feature?.title !== st.feature?.title)) {
         await repos.items.update(found.id, (current) => ({ ...current, title: st.title, feature: st.feature, version: (current.version ?? 0) + 1, updatedAt: at }));
         done.updated.push(found.id);
       }
     }
-    for (const found of existing.filter((i) => i.status === 'active' && i.stage === 'design' && !listed.some((st) => st.id === i.id))) {
+    for (const found of existing.filter((i) => i.status === 'active' && i.stage === design && !listed.some((st) => st.id === i.id))) {
       const why = reason ?? `${found.ref ?? found.id} is no longer one of ${parent.ref ?? parent.id}'s stories`;
       await withdrawOpenApprovals(found, person, why);
       await repos.items.update(found.id, (current) => ({ ...current, status: 'withdrawn', withdrawnAt: at, withdrawnReason: why, version: (current.version ?? 0) + 1, updatedAt: at }));
@@ -386,17 +317,19 @@ export function createEngine({ repos, host, log, clock }) {
     const person = await personFor(actor, { what: 'hand work on to Engineering', target: `item ${storyId}` });
     const story = await itemOr404(storyId);
     if (story.type !== 'story') throw badRequest(`${story.ref ?? story.id} is not a story: hand it off from its own page.`);
-    if (story.status !== 'active' || story.stage !== 'design') {
+    const wf = await workflow.current();
+    if (story.status !== 'active' || !isKind(story.stage, 'design')) {
       throw conflict('wrong_stage', `${story.ref ?? story.id} is ${story.status !== 'active' ? story.status : `in ${stageLabel(story.stage)}`}, so it can't be handed to Engineering: the Design handoff leaves from Design.`);
     }
     const items = (Array.isArray(workItems) ? workItems : []).filter((w) => w?.repo && w?.title).map((w) => ({ repo: String(w.repo), title: String(w.title) }));
     const input = { comment: note, ...(override ? { override } : {}) };
-    const open = (await repos.approvals.list()).find((a) => a.itemId === story.id && a.type === 'design-handoff' && a.status === 'open');
+    const exit = wf.exitOf(story.stage);
+    const open = (await repos.approvals.list()).find((a) => a.itemId === story.id && a.type === exit.rule && a.status === 'open');
     if (open) {
       await repos.approvals.update(open.id, (a) => ({ ...a, workItems: items.length ? items : a.workItems }));
       return decideApproval(open.id, { decision: 'approve', ...input }, person);
     }
-    return openAndDecide({ item: story, type: 'design-handoff', to: 'engineer', person, input, extra: { subject: story.ref ?? story.id, workItems: items, repoCount: new Set(items.map((w) => w.repo)).size } });
+    return openAndDecide({ item: story, type: exit.rule, to: exit.to, person, input, extra: { subject: story.ref ?? story.id, workItems: items, repoCount: new Set(items.map((w) => w.repo)).size } });
   }
 
   async function complete(itemId, actor, summary) {
@@ -432,17 +365,19 @@ export function createEngine({ repos, host, log, clock }) {
     const at = now();
     const id = newId('hof');
     const plan = await plannedWork(item, approval);
+    const from = stageOfKind('engineer');
+    const to = stageOfKind('build');
     const workItems = (plan.workItems ?? []).map((w, i) => ({ id: `WI-${item.id}-${i + 1}`, repo: w.repo, title: w.title, status: 'new' }));
     const repoCount = new Set(workItems.map((w) => w.repo)).size;
     await repos.handoffs.create({
-      id, itemId: item.id, from: 'engineer', to: 'build', approvalId: approval.id, createdBy: actor.id, createdAt: at,
+      id, itemId: item.id, from, to, approvalId: approval.id, createdBy: actor.id, createdAt: at,
       workItems, repoCount, estimate: plan.estimate ?? null, openChecks: plan.openChecks ?? [],
       // Where the item may be built (Phase 11): the Software Factory starts runs only in these. None: any.
       ...(plan.repositories?.length ? { repositories: plan.repositories } : {}),
       body: `Signed off for the Software Factory by ${actor.name}. The work items sync to Jira in NooblyJS Phase 13.`,
     });
     await emit('handoff.created', {
-      handoffId: id, itemId: item.id, system: item.system, from: 'engineer', to: 'build', workItemIds: workItems.map((w) => w.id),
+      handoffId: id, itemId: item.id, system: item.system, from, to, workItemIds: workItems.map((w) => w.id),
       summary: `created ${workItems.length} work item${workItems.length === 1 ? '' : 's'} for ${item.ref ?? item.id} across ${repoCount} repo${repoCount === 1 ? '' : 's'}`,
     }, actor.id);
     return { id, workItems, repoCount };
@@ -577,7 +512,8 @@ export function createEngine({ repos, host, log, clock }) {
     let handoff = null;
     if (outcome === 'approved') {
       // A pull request's Test approval moves nothing: it may merge now, and a person merges it (Phase 16e).
-      const move = isAppApproval(approval) ? APP_MOVES[approval.type] ?? null : approval.type === 'stage' ? approval.to : item.type === 'pr' && item.pr && approval.type === 'test-approval' ? null : MOVES[approval.type];
+      const wf = await workflow.current();
+      const move = isAppApproval(approval) ? APP_MOVES[approval.type] ?? null : approval.type === 'stage' ? approval.to : item.type === 'pr' && item.pr && approval.type === 'test-approval' ? null : wf.moveFor(approval.type) ?? null;
       // The work goes to the Software Factory with the Engineering sign-off (Phase 16b), never before.
       if (approval.type === 'engineering-signoff') handoff = await createHandoff(item, updated, person);
       // Closed by its outcome review (Phase 23, decided 2026-10-21): what was never released is withdrawn with it.
@@ -649,7 +585,7 @@ export function createEngine({ repos, host, log, clock }) {
    */
   async function withdrawUnfinished(item, person, why) {
     const all = await repos.items.list();
-    const stories = all.filter((i) => i.type === 'story' && i.parentId === item.id && i.status === 'active' && i.stage !== 'operate');
+    const stories = all.filter((i) => i.type === 'story' && i.parentId === item.id && i.status === 'active' && !isKind(i.stage, 'operate'));
     const at = now();
     const withdrawn = [];
     for (const st of stories) {
@@ -669,7 +605,7 @@ export function createEngine({ repos, host, log, clock }) {
   /** Send an item back to an earlier stage with a reason (a person with the approve permission). */
   async function sendBack(itemId, input = {}, actor) {
     const person = await personFor(actor, { what: 'send work back', target: `item ${itemId}` });
-    await requirePermission(person, { permission: 'approve' }, 'send work back');
+    await requirePermission(person, { action: 'send-back', permission: 'approve' }, 'send work back');
     const reason = text(input.reason);
     if (!reason) throw badRequest('Say why it is going back: a reason is required.', { reason: 'required' });
     const to = stageKey(input.to);
@@ -695,7 +631,7 @@ export function createEngine({ repos, host, log, clock }) {
    */
   async function nudge(itemId, actor) {
     const person = await personFor(actor, { what: 'nudge a reviewer', target: `item ${itemId}` });
-    await requirePermission(person, { permission: 'draft' }, 'nudge a reviewer');
+    await requirePermission(person, { action: 'nudge', permission: 'draft' }, 'nudge a reviewer');
     const item = await itemOr404(itemId);
     if (item.status !== 'active') throw conflict('not_active', `${item.ref ?? item.id} is ${item.status}.`);
     const open = (await repos.approvals.list()).filter((a) => a.itemId === item.id && a.status === 'open');
@@ -795,8 +731,8 @@ export function createEngine({ repos, host, log, clock }) {
     await refuseWithPullRequests(item, 'move on');
     const open = (await repos.approvals.list()).filter((a) => a.itemId === item.id && a.status === 'open' && a.from === item.stage);
     if (open.length) throw conflict('approval_open', `${item.ref ?? item.id} already has an approval waiting for this step. Decide it in Approvals.`, { approvalIds: open.map((a) => a.id) });
-    const type = LEAVES_BY[item.stage] ?? 'stage';
-    const to = type === 'stage' ? nextStage(item.stage) : MOVES[type] === 'complete' ? null : MOVES[type];
+    const { rule: type, to: exitTo } = (await workflow.current()).exitOf(item.stage);
+    const to = exitTo === 'complete' ? null : exitTo;
     const extra = type === 'build-approval' || type === 'test-approval' ? { subject: item.ref ?? item.id } : {};
     return openAndDecide({ item, type, to, person, input, extra });
   }
@@ -810,16 +746,18 @@ export function createEngine({ repos, host, log, clock }) {
     const person = await personFor(actor, { what: 'accept an idea', target: `item ${itemId}` });
     if (!/^IDEA-\d{3,}$/.test(String(itemId ?? ''))) throw badRequest('Only an idea (IDEA-…) is accepted this way.');
     let item = await repos.items.get(itemId);
+    await workflow.current();
+    const discover = stageOfKind('discover');
     if (!item) {
       const at = now();
       const full = await host.people.get(person.id);
       item = await repos.items.create({
-        id: itemId, type: 'idea', ref: itemId, title: text(title, 200) ?? itemId, system: 'product', stage: 'discover', status: 'active',
-        owner: person.id, team: full?.teams?.[0] ?? null, createdAt: at, stageEnteredAt: at, history: [{ stage: 'discover', enteredAt: at, by: person.id }], version: 1, updatedAt: at,
+        id: itemId, type: 'idea', ref: itemId, title: text(title, 200) ?? itemId, system: 'product', stage: discover, status: 'active',
+        owner: person.id, team: full?.teams?.[0] ?? null, createdAt: at, stageEnteredAt: at, history: [{ stage: discover, enteredAt: at, by: person.id }], version: 1, updatedAt: at,
       });
-      await emit('item.created', { itemId, system: 'product', stage: 'discover', summary: `opened ${itemId} · ${item.title}` }, person.id);
+      await emit('item.created', { itemId, system: 'product', stage: discover, summary: `opened ${itemId} · ${item.title}` }, person.id);
     }
-    if (item.stage !== 'discover') throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}: an idea is accepted in Discover.`);
+    if (item.stage !== discover) throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}: an idea is accepted in Discover.`);
     return advance(itemId, { ...(override ? { override } : {}), ...(comment ? { comment } : {}) }, person);
   }
 
@@ -829,7 +767,8 @@ export function createEngine({ repos, host, log, clock }) {
    */
   async function signOffEngineering({ itemId, override = null, comment = null, actor } = {}) {
     const item = await itemOr404(itemId);
-    if (item.stage !== 'engineer') throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}: the Engineering sign-off is given in Engineer.`);
+    await workflow.current();
+    if (!isKind(item.stage, 'engineer')) throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}: the Engineering sign-off is given in Engineer.`);
     return advance(itemId, { ...(override ? { override } : {}), ...(comment ? { comment } : {}) }, actor);
   }
 
@@ -867,11 +806,11 @@ export function createEngine({ repos, host, log, clock }) {
    */
   async function requestApproval({ itemId, type = 'spec', title, team = null, version = null, cost = null, actor } = {}) {
     const person = await personFor(actor, { what: 'ask for an approval', target: `item ${itemId}` });
-    if (!(await host.can(person.accessRole, 'draft'))) {
-      throw forbidden('forbidden', `You can't ask for a review: it needs the "draft" permission, and your access role is ${person.accessRole}.`, { permission: 'draft', accessRole: person.accessRole });
-    }
+    await requirePermission(person, { action: 'request-review', permission: 'draft' }, 'ask for a review');
     if (type !== 'spec') throw badRequest('Only a spec approval can be requested this way.', { type: 'spec' });
     const rule = await ruleOr500(type);
+    const wf = await workflow.current();
+    const productStage = stageOfKind('product');
     const at = now();
     let item = await repos.items.get(itemId);
     if (!item) {
@@ -879,20 +818,20 @@ export function createEngine({ repos, host, log, clock }) {
       if (!cleanTitle) throw badRequest('A new item needs a title.', { title: 'required' });
       const full = await host.people.get(person.id);
       item = await repos.items.create({
-        id: itemId, type: 'spec', ref: itemId, title: cleanTitle, system: 'product', stage: 'product', status: 'active',
+        id: itemId, type: 'spec', ref: itemId, title: cleanTitle, system: 'product', stage: productStage, status: 'active',
         owner: person.id, team: team ?? full?.teams?.[0] ?? null, createdAt: at, stageEnteredAt: at,
-        history: [{ stage: 'product', enteredAt: at, by: person.id }], version: 1, updatedAt: at,
+        history: [{ stage: productStage, enteredAt: at, by: person.id }], version: 1, updatedAt: at,
       });
-      await emit('item.created', { itemId, system: 'product', stage: 'product', summary: `opened ${itemId} · ${cleanTitle}` }, person.id);
+      await emit('item.created', { itemId, system: 'product', stage: productStage, summary: `opened ${itemId} · ${cleanTitle}` }, person.id);
     }
     if (item.status !== 'active') throw conflict('not_active', `${item.ref ?? item.id} is ${item.status}.`);
-    if (item.stage !== 'product') throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}, so its spec isn't up for review.`);
+    if (item.stage !== productStage) throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}, so its spec isn't up for review.`);
     const open = (await repos.approvals.list()).find((a) => a.itemId === item.id && a.type === type && a.status === 'open');
     if (open) throw conflict('approval_open', `${item.ref ?? item.id} already has a spec approval waiting.`, { approvalIds: [open.id] });
     const reviewers = await reviewersFor(rule, item.team, person.id);
     if (!reviewers.length) throw conflict('no_reviewers', `Nobody has the "${rule.permission}" permission to review this. Ask an Owner to give someone the Approver role.`);
     const approval = await repos.approvals.create({
-      id: newId('apr'), type, itemId: item.id, title: item.title, from: item.stage, to: MOVES[type],
+      id: newId('apr'), type, itemId: item.id, title: item.title, from: item.stage, to: wf.moveFor(type) ?? null,
       requestedBy: { id: person.id, name: person.name, kind: 'person' }, requestedAt: at, dueAt: dueFrom(at, rule.target),
       artefactVersion: version, reviewers, status: 'open', ...(cost ? { cost } : {}),
     });
@@ -911,7 +850,8 @@ export function createEngine({ repos, host, log, clock }) {
   async function handoff({ itemId, workItems = [], repositories = [], estimate = null, repoCount, openChecks = [], note = null, actor } = {}) {
     const person = await personFor(actor, { what: 'hand work on to Engineering', target: `item ${itemId}` });
     const item = await itemOr404(itemId);
-    if (item.stage !== 'design') {
+    const wf = await workflow.current();
+    if (!isKind(item.stage, 'design')) {
       throw conflict('wrong_stage', `${item.ref ?? item.id} is in ${stageLabel(item.stage)}, so it can't be handed to Engineering yet: the Design handoff leaves from Design.`);
     }
     await refuseWithStories(item, 'hand off');
@@ -919,12 +859,13 @@ export function createEngine({ repos, host, log, clock }) {
     const where = (Array.isArray(repositories) ? repositories : []).map(String).filter(Boolean);
     const outside = where.length ? items.filter((w) => !where.some((r) => r === w.repo || r.split('/').pop() === w.repo)) : [];
     if (outside.length) throw refused('outside_repositories', `${outside.map((w) => w.repo).join(', ')} is not among the item's repositories.`, { outside: outside.map((w) => w.repo) });
-    const open = (await repos.approvals.list()).find((a) => a.itemId === item.id && a.type === 'design-handoff' && a.status === 'open');
+    const exit = wf.exitOf(item.stage);
+    const open = (await repos.approvals.list()).find((a) => a.itemId === item.id && a.type === exit.rule && a.status === 'open');
     if (open) {
       await repos.approvals.update(open.id, (a) => ({ ...a, workItems: items.length ? items : a.workItems, ...(where.length ? { repositories: where } : {}), estimate: estimate ?? a.estimate ?? null, openChecks }));
       return decideApproval(open.id, { decision: 'approve', comment: note }, person);
     }
-    return openAndDecide({ item, type: 'design-handoff', to: 'engineer', person, input: { comment: note }, extra: { workItems: items, ...(where.length ? { repositories: where } : {}), estimate, openChecks, repoCount: repoCount ?? null } });
+    return openAndDecide({ item, type: exit.rule, to: exit.to, person, input: { comment: note }, extra: { workItems: items, ...(where.length ? { repositories: where } : {}), estimate, openChecks, repoCount: repoCount ?? null } });
   }
 
   /** adr.accepted from the Product Factory (Accept on the Architecture screen): the open ADR approval is done. */
@@ -1078,9 +1019,10 @@ export function createEngine({ repos, host, log, clock }) {
       throw forbidden('people_only', 'Only a person\'s merge in Bitbucket counts.');
     }
     const item = await itemOr404(itemId);
-    if (item.status !== 'active' || !['build', 'test'].includes(item.stage)) return { moved: false, item, reason: `${item.ref ?? item.id} is not in Build or Test` };
+    await workflow.current();
+    if (item.status !== 'active' || !(isKind(item.stage, 'build') || isKind(item.stage, 'test'))) return { moved: false, item, reason: `${item.ref ?? item.id} is not in Build or Test` };
     const who = [...new Set(names)];
-    const missing = item.stage === 'build' ? ['the Build approval', 'the Test approval'] : ['the Test approval'];
+    const missing = isKind(item.stage, 'build') ? ['the Build approval', 'the Test approval'] : ['the Test approval'];
     const by = { id: 'bitbucket', name: `Bitbucket (merged by ${who.join(', ')})`, kind: 'system' };
     const at = now();
     const flagged = await repos.items.update(item.id, (current) => ({ ...current, mergedEarly: { at, by: who, pullRequests, missing }, updatedAt: at }));
@@ -1100,12 +1042,13 @@ export function createEngine({ repos, host, log, clock }) {
    * handoff); one audit record says what moved. Only old keys are looked at, so a second run changes nothing.
    */
   async function migrateStages() {
+    await workflow.current();
     const at = now();
     const items = [];
     for (const found of await repos.items.list()) {
       if (found.status !== 'active' || !LEGACY[found.stage]) continue;
       const updated = await repos.items.update(found.id, (current) => {
-        const to = LEGACY[current.stage];
+        const to = LEGACY[current.stage] ? currentStage(current.stage) : null;
         if (current.status !== 'active' || !to) return null;
         const history = (current.history ?? []).map((h) => ({ ...h }));
         const open = history.at(-1);
@@ -1134,7 +1077,7 @@ export function createEngine({ repos, host, log, clock }) {
         ...current,
         ...(current.from ? { from: currentStage(current.from) } : {}),
         ...(current.to ? { to: currentStage(current.to) } : {}),
-        ...(current.type === 'merge' ? { type: 'build-approval', from: 'build', to: 'test' } : {}),
+        ...(current.type === 'merge' ? { type: 'build-approval', from: stageOfKind('build'), to: stageOfKind('test') } : {}),
         updatedAt: at,
       }));
       if (updated) approvals.push(a.id);
@@ -1148,11 +1091,11 @@ export function createEngine({ repos, host, log, clock }) {
 
   // Pull requests as lifecycle items (Phase 16e): their Build and Test approvals, merges, and the stories and features
   // that follow them.
-  const prs = createPullRequests({ repos, host, log, now, emit, audit, personFor, requirePermission, reviewersFor, ruleOr500, itemOr404, storiesOf, followStories, moveStage });
+  const prs = createPullRequests({ repos, host, log, now, emit, audit, personFor, requirePermission, reviewersFor, ruleOr500, itemOr404, storiesOf, followStories, moveStage, workflow });
   // One shape for checks, and the trace (Phase 16f).
   const checks = createLifecycleChecks({ repos, host, now, emit, audit, personFor, requireApprover, readinessOf, storiesOf });
   // Defects as items of their own, each the child of the story it breaks (Phase 20).
-  const defects = createDefects({ repos, host, now, emit, audit, personFor, itemOr404 });
+  const defects = createDefects({ repos, host, now, emit, audit, personFor, itemOr404, permissionFor });
 
-  return { readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories, signOffEngineering, acceptIdea, pullRequests: prs, checks, defects };
+  return { workflow, evaluators, permissionFor, readinessOf, decideApproval, reassign, sendBack, advance, nudge, decide, requestApproval, handoff, sweep, onAdrAccepted, rules, now, requestAppApproval, closeAppApproval, withdrawAppApprovals, movedByMerge, migrateStages, storiesOf, syncStories, handoffStory, followStories, signOffEngineering, acceptIdea, pullRequests: prs, checks, defects };
 }

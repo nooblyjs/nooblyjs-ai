@@ -236,7 +236,7 @@ export function createSync({ store, config, jira, bitbucket, writes, links, serv
     const doc = await read();
     const mine = Object.values(doc).filter((e) => e.itemId === itemId);
     const item = await workflows()?.item?.({ itemId });
-    if (!item || !['build', 'test'].includes(item.stage) || item.status !== 'active') return { moved: false };
+    if (!item || !['build', 'test'].includes(item.stageKind ?? item.stage) || item.status !== 'active') return { moved: false };
     // Every work item of the item's latest handoff must have a pull request a person merged.
     const latest = mine.reduce((h, e) => (!h || String(e.handoffId) > String(h) ? e.handoffId : h), null);
     const scope = mine.filter((e) => e.handoffId === latest);

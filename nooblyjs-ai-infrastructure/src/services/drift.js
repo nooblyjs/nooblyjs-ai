@@ -43,7 +43,7 @@ export function createDrift({ repos, host, provisioner, designs, runs, approvals
     const rules = await repos.config.applyRules();
     const rule = rules.kinds?.[env.kind] ?? 'approval';
     if (rule === 'release') throw new HttpError(422, 'release_only', 'Production only changes through a release, with two approvers.');
-    await needs(host, person, rule === 'approval' ? rules.approval?.permission ?? 'change-repo-access' : 'draft', action);
+    await (rule === 'approval' ? needs(host, person, rules.approval?.permission ?? 'change-repo-access', action, 'infrastructure.environment.approve') : needs(host, person, 'draft', action, 'infrastructure.environment.change'));
     const design = await designs.at(drift.designId, env.designVersion);
     if (!design) throw notFound(`Design ${drift.designId} v${env.designVersion} is missing.`);
     if (env.status === 'provisioning') throw conflict(`${env.name} is being provisioned. Try again when that run has finished.`);
@@ -58,7 +58,7 @@ export function createDrift({ repos, host, provisioner, designs, runs, approvals
   async function keep(id, person) {
     const action = 'keep a change made by hand and update the design';
     const { drift, env } = await open(id, action, person);
-    await needs(host, person, 'draft', action);
+    await needs(host, person, 'draft', action, 'infrastructure.drift.check');
     const current = await designs.load(drift.designId);
     await repos.designs.keepVersion(current);
     const design = await repos.designs.update(drift.designId, (d) => ({

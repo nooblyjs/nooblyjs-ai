@@ -23,7 +23,7 @@ import { autonomyFor } from '../humans/autonomy.js';
 import { LEASE_LOST } from '../scheduler/worker.js';
 import { repoSlug } from '../../utils/paths.js';
 import { decide } from './engine.js';
-import { loadLine } from '../../models/line.js';
+import { lineForRequest } from '../../models/line.js';
 import * as build from './stations/build.js';
 import * as approval from './stations/approval.js';
 import * as merge from './stations/merge.js';
@@ -49,7 +49,7 @@ export async function executeLine(store, runId, { live = {}, forge, issue }) {
   const stream = `run:${runId}`;
   const log = live.log ?? (() => {});
   const first = store.get('runs', runId);
-  const line = loadLine(first.request.line ?? 'default', KINDS());
+  const line = lineForRequest(first.request, KINDS());
   const itemKey = `issue-${issue.number}`;
   const slug = repoSlug(first.request.repo);
   // Phase F09: the run's roles: built-in, then the repo's (.factory/roles at the base commit), then the operator's.

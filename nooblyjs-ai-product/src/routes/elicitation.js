@@ -9,12 +9,13 @@
 //   POST /elicitation/:id/questions                       { text, owner, kind } (draft) · PUT …/questions/:qid { answer }
 //   GET  /nfr-catalogue                                   the Design section's catalogue, with each category's prompt
 import { peopleOnly } from '../util/http.js';
+import { action } from '../util/actions.js';
 
 export function elicitationRoutes({ host, elicitation }) {
   const router = host.express.Router();
-  const read = host.requireRole('read');
-  const draft = host.requireRole('draft');
-  const decide = [host.requireRole('accept-requirement'), peopleOnly(host, 'decide a candidate requirement')];
+  const read = action(host, 'product.read', 'read');
+  const draft = action(host, 'product.elicitation.write', 'draft');
+  const decide = [action(host, 'product.requirement.accept', 'accept-requirement'), peopleOnly(host, 'decide a candidate requirement')];
 
   router.get('/elicitation/:id', read, async (req, res) => res.json(await elicitation.view(req.params.id)));
   router.post('/elicitation/:id/stakeholders', draft, async (req, res) => res.status(201).json(await elicitation.addStakeholder(req.params.id, req.body, req.person)));

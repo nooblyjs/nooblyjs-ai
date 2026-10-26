@@ -26,7 +26,7 @@ import { createUxService, uxKinds } from './src/services/ux.js';
 import { createUiService, uiKinds } from './src/services/ui.js';
 import { createFlowService } from './src/services/flow.js';
 import { seed as seedStory } from './src/seed/index.js';
-import { parseSpec } from './src/services/spec-format.js';
+import { parseSpec, specSections } from './src/services/spec-format.js';
 import { createProductChecks } from './src/services/checks-trace.js';
 import { createHierarchy } from './src/services/hierarchy.js';
 import { createBusinessCases } from './src/services/business-cases.js';
@@ -122,7 +122,7 @@ export async function register(app, serverManager, { mountPath = '/product', dat
   // NooblyJS Phase 18: where requirements come from, and who accepted them.
   const elicitation = createElicitation({ repos, host, architecture, log });
   // NooblyJS Phase 16f: this section's checks (the spec's readiness, the standards check) and its part of the trace.
-  const productChecks = createProductChecks({ repos, architecture, specWrites, mountPath });
+  const productChecks = createProductChecks({ repos, architecture, specWrites, host, mountPath });
   const ux = createUxService({ repos, host });
   const ui = createUiService({ repos, host, log, flow });
   const kinds = {
@@ -247,6 +247,14 @@ export async function register(app, serverManager, { mountPath = '/product', dat
       summary: (person) => summary.summary(person),
       // An idea's (Phase 17): "Business case complete", the Discover exit's check. A spec's: the spec's checks.
       // A spec with questions (Phase 18) also has "Every question is answered", failing while one is open.
+      /**
+       * NooblyJS Phase 27: the spec's `## ` sections by name (heading in lower case with dashes: "Rollout plan" →
+       * rollout-plan), each its text, or null when it is empty: what a lifecycle check's `when` reads as spec.sections.
+       */
+      specSections: async (itemId) => {
+        const spec = await repos.specs.get(itemId).catch(() => null);
+        return spec ? specSections(spec.body) : null;
+      },
       readinessFacts: async (itemId) => {
         if (/^IDEA-/.test(String(itemId))) return businessCases.facts(itemId);
         const spec = await specWrites.facts(itemId);

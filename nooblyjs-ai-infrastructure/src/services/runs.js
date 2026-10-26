@@ -136,7 +136,7 @@ export function createRuns({ repos, host, log, provisioner, queue, cost = null, 
     const action = `cancel the run on ${run.environment}`;
     await peopleOnly(host, person, action);
     const rules = await repos.config.applyRules();
-    await needs(host, person, rules.kinds?.[run.kind] === 'automatic' ? 'draft' : rules.approval?.permission ?? 'change-repo-access', action);
+    await (rules.kinds?.[run.kind] === 'automatic' ? needs(host, person, 'draft', action, 'infrastructure.environment.change') : needs(host, person, rules.approval?.permission ?? 'change-repo-access', action, 'infrastructure.environment.approve'));
     if (!inProgress(run)) throw new HttpError(409, 'conflict', `This run is already ${run.status}.`);
     const by = who(person);
     if (run.status === 'queued') {

@@ -166,7 +166,7 @@ export function createChat({ store, events, auditLog, people, agents, roles, ser
       chips: CHIPS[t.scope.kind] ?? [],
       mentionable: dir.filter((p) => p.id !== person.id).map(({ id: pid, name, kind: k, handle }) => ({ id: pid, name, kind: k, handle })),
       working: [...(working.get(t.id) ?? new Map())].map(([agentId, name]) => ({ id: agentId, name })),
-      canPost: await roles.can(person.accessRole, 'draft'),
+      canPost: await roles.canDo(person.accessRole, 'chat.post', 'draft'),
     };
   }
 
@@ -412,8 +412,10 @@ export function createChat({ store, events, auditLog, people, agents, roles, ser
     const decision = body?.decision;
     if (!['approve', 'decline'].includes(decision)) throw new HttpError(400, 'bad_request', 'decision must be "approve" or "decline".');
     const card = await openCard(cardId, 'approval');
-    if (!(await roles.can(person.accessRole, card.requires))) {
-      throw new HttpError(403, 'forbidden', `You can't answer this: it needs the "${card.requires}" permission, and your access role is ${person.accessRole}.`, { permission: card.requires });
+    // Phase 27: answering a card is the action chat.card.<the permission it asks for>, which roles.yaml may change.
+    const needs = await roles.permissionFor(`chat.card.${card.requires}`, card.requires);
+    if (!(await roles.can(person.accessRole, needs))) {
+      throw new HttpError(403, 'forbidden', `You can't answer this: it needs the "${needs}" permission, and your access role is ${person.accessRole}.`, { permission: needs });
     }
     const at = now();
     const saved = await closeCard(cardId, (data) => ({ ...data, status: decision === 'approve' ? 'approved' : 'declined', decidedBy: person.id, decidedByName: person.name, decidedAt: at }));
@@ -432,7 +434,8 @@ export function createChat({ store, events, auditLog, people, agents, roles, ser
   async function applyCard(cardId, actor) {
     const person = await personOnly(actor, 'apply a draft to the spec', cardId);
     const card = await openCard(cardId, 'plan');
-    if (!(await roles.can(person.accessRole, 'draft'))) throw new HttpError(403, 'forbidden', `You can't apply this: it needs the "draft" permission, and your access role is ${person.accessRole}.`, { permission: 'draft' });
+    const needs = await roles.permissionFor('chat.apply-to-spec', 'draft');
+    if (!(await roles.can(person.accessRole, needs))) throw new HttpError(403, 'forbidden', `You can't apply this: it needs the "${needs}" permission, and your access role is ${person.accessRole}.`, { permission: needs });
     const product = services.get('product');
     if (typeof product?.updateSpec !== 'function') throw new HttpError(503, 'product_unavailable', 'The Product Factory is not running here, so the spec can\'t be changed. Nothing was applied.');
     const section = card.apply?.section ?? 'rolloutPlan';

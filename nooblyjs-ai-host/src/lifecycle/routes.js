@@ -7,7 +7,7 @@ const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next
 
 export function createApi({ host, log, engine, views, about }) {
   const api = host.express.Router();
-  const read = host.requireRole('read');
+  const read = typeof host.requireAction === 'function' ? host.requireAction('lifecycle.read', 'read') : host.requireRole('read');
   api.use(host.auth);
   api.use((req, res, next) => (['GET', 'HEAD', 'OPTIONS'].includes(req.method) ? next() : host.audit(req, res, next)));
 

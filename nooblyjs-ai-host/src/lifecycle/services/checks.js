@@ -7,7 +7,7 @@
 //   trace(itemId)        the stories, work items and pull requests of an item, and the links items keep in their front
 //                        matter (`links: [{ rel, to }]`)
 import { badRequest, conflict, notFound, refused } from '../errors.js';
-import { stageLabel } from '../stages.js';
+import { stageLabel, isKind } from '../stages.js';
 
 const APPROVALS = { 'build-approval': 'Build approval', 'test-approval': 'Test approval' };
 const short = (repo) => String(repo ?? '').split('/').pop();
@@ -61,7 +61,7 @@ export function createLifecycleChecks({ repos, host, now, emit, audit, personFor
         for (const c of readiness.checks) {
           out.push({
             key: c.key, kind: 'readiness', stage: member.stage, subject: { item: member.id, ref: member.ref ?? member.id },
-            definedBy: { system: 'workflows', ref: `readiness.yaml#${member.type === 'pr' && member.stage === 'test' ? 'pull-request' : member.stage}.${c.key}` },
+            definedBy: { system: 'workflows', ref: `lifecycle.yaml#${member.type === 'pr' && isKind(member.stage, 'test') ? 'pull-request' : member.stage}.${c.key}` },
             verifiedBy: readiness.source === 'recorded' ? 'person' : `${readiness.source} facts`, severity: 'blocking',
             result: c.passed ? 'passed' : /not checked yet$/.test(c.text) ? 'not-run' : 'failed', text: c.text,
             evidence: { system: readiness.source === 'recorded' ? 'workflows' : readiness.source, summary: `${stageLabel(member.stage)} readiness: ${c.text}` },

@@ -219,7 +219,8 @@ async function build({
 
     // Role checks are the host's: each Teammates role stands for a NooblyJS permission (see services/auth.js).
     const roleGates = host.requireRole
-      ? Object.fromEntries(Object.entries(PERMISSION_FOR_ROLE).map(([role, permission]) => [role, host.requireRole(permission)]))
+      // NooblyJS Phase 27: each role gate is the action teammates.<role>, whose permission access/roles.yaml may change.
+      ? Object.fromEntries(Object.entries(PERMISSION_FOR_ROLE).map(([role, permission]) => [role, typeof host.requireAction === 'function' ? host.requireAction(`teammates.${role}`, permission) : host.requireRole(permission)]))
       : null;
     const people = host.people ?? { list: async () => [] };
 

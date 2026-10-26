@@ -14,7 +14,7 @@
 // Nobody decides the story's and the feature's moves: they are on record (history, audit) and emit no stage event, like
 // the item following its stories (Phase 16c).
 import { badRequest, conflict, notFound, refused } from '../errors.js';
-import { stageIndex, stageLabel } from '../stages.js';
+import { stageIndex, stageLabel, stageOfKind, isKind, kindOf } from '../stages.js';
 import { dueFrom } from '../working-days.js';
 import { newId } from '../ids.js';
 
@@ -24,7 +24,10 @@ const short = (repo) => String(repo ?? '').split('/').pop();
 const s7 = (sha) => String(sha ?? '').slice(0, 7);
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-export function createPullRequests({ repos, host, log, now, emit, audit, personFor, requirePermission, reviewersFor, ruleOr500, itemOr404, storiesOf, followStories, moveStage }) {
+export function createPullRequests({ repos, host, log, now, emit, audit, personFor, requirePermission, reviewersFor, ruleOr500, itemOr404, storiesOf, followStories, moveStage, workflow }) {
+  // The stages a pull request goes through are those of the kinds build and test (Phase 27: their keys are the workflow's).
+  const BUILD = () => stageOfKind('build');
+  const TEST = () => stageOfKind('test');
   const factory = () => host.service?.('factory') ?? null;
   const nameOf = async (id) => (id ? (await host.people.get(id))?.name ?? id : null);
 
@@ -85,7 +88,7 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
     const build = type === 'test-approval' ? givenFor(await approvalsOf(item.id), 'build-approval', item.pr.sha) : null;
     const buildBy = build ? `${await nameOf(build.decidedBy)}${build.reviewers?.some((r) => r.by && r.status === 'approved') ? ` for ${await nameOf(build.reviewers.find((r) => r.by && r.status === 'approved').id)}` : ''}` : null;
     const approval = await repos.approvals.create({
-      id: newId('apr'), type, itemId: item.id, subject: item.ref, title: item.title, from: item.stage, to: type === 'build-approval' ? 'test' : null,
+      id: newId('apr'), type, itemId: item.id, subject: item.ref, title: item.title, from: item.stage, to: type === 'build-approval' ? TEST() : null,
       requestedBy: FACTORY, requestedAt: at, dueAt: dueFrom(at, rule.target), reviewers, status: 'open', sha: item.pr.sha,
       link: `/factory/pull-requests/${encodeURIComponent(item.id)}`, body: bodyOf(item, type, buildBy),
     });
@@ -123,6 +126,7 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
   async function recordPullRequest({ itemId, runId, workItemId = null, repo, title, head, sha, href = null, forge = 'local', draft = false, gates = 'none', evidence = null, checking = false, why = null } = {}) {
     if (!runId || !sha || !repo) throw badRequest('A pull request needs its run, repository and commit.');
     const story = await itemOr404(itemId);
+    await workflow.current();
     if (story.type !== 'story') throw badRequest(`${story.ref ?? story.id} is not a story: its pull requests keep the item's own Build and Test approvals.`);
     const pr = { runId, workItemId, repo: short(repo), head, sha, forge, href, draft: Boolean(draft), gates, evidence, checking: Boolean(checking) };
     const at = now();
@@ -133,8 +137,8 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
       const id = await nextId(story);
       item = await repos.items.create({
         id, type: 'pr', ref: `${pr.repo} ${id}`, title: String(title ?? story.title).slice(0, 200), system: 'factory', parentId: story.id, feature: story.feature ?? null,
-        stage: 'build', status: 'active', owner: story.owner ?? null, team: story.team ?? null, createdAt: at, stageEnteredAt: at,
-        history: [{ stage: 'build', enteredAt: at, by: FACTORY.id }], pr, version: 1, updatedAt: at,
+        stage: BUILD(), status: 'active', owner: story.owner ?? null, team: story.team ?? null, createdAt: at, stageEnteredAt: at,
+        history: [{ stage: BUILD(), enteredAt: at, by: FACTORY.id }], pr, version: 1, updatedAt: at,
       });
       await emit('pr.recorded', { itemId: item.id, parentId: story.id, itemType: 'pr', system: 'factory', runId, sha, actorName: FACTORY.name, summary: `recorded ${item.ref} · ${item.title} for ${story.ref ?? story.id}: ${evidence?.text ?? 'no required tests recorded'}` }, FACTORY.id);
     } else {
@@ -142,13 +146,13 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
       if (newCommit) {
         const reason = why ?? `a new commit (${s7(sha)}) on the pull request`;
         cleared = await clearApprovals(item, sha, reason);
-        if (item.stage !== 'build') await movePr(item.id, 'build', { kind: 'new-commit', reason });
+        if (item.stage !== BUILD()) await movePr(item.id, BUILD(), { kind: 'new-commit', reason });
       }
       item = await repos.items.update(item.id, (cur) => ({ ...cur, pr: { ...cur.pr, ...pr }, title: String(title ?? cur.title).slice(0, 200), version: (cur.version ?? 0) + 1, updatedAt: at }));
       if (newCommit) await emit('pr.recorded', { itemId: item.id, parentId: story.id, itemType: 'pr', system: 'factory', runId, sha, actorName: FACTORY.name, summary: `${item.ref} has a new commit (${s7(sha)})${cleared ? `: ${plural(cleared, 'approval')} cleared` : ''}${checking ? '; the Factory is checking it' : `: ${evidence?.text ?? ''}`}` }, FACTORY.id);
     }
     let opened = null;
-    if (item.status === 'active' && item.stage === 'build' && !pr.checking && !pr.draft) {
+    if (item.status === 'active' && item.stage === BUILD() && !pr.checking && !pr.draft) {
       const list = await approvalsOf(item.id);
       if (!list.some((a) => a.type === 'build-approval' && (a.status === 'open' || (a.status === 'approved' && a.sha === sha)))) opened = await openApproval(item, 'build-approval');
     }
@@ -163,12 +167,12 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
   async function afterDecision({ approval, outcome, item, person, reason }) {
     if (approval.type === 'build-approval' && outcome === 'approved') {
       const fresh = await repos.items.get(item.id);
-      if (fresh?.stage === 'test' && !(await approvalsOf(item.id)).some((a) => a.type === 'test-approval' && a.status === 'open')) await openApproval(fresh, 'test-approval');
+      if (fresh?.stage === TEST() && !(await approvalsOf(item.id)).some((a) => a.type === 'test-approval' && a.status === 'open')) await openApproval(fresh, 'test-approval');
     }
     if (approval.type === 'test-approval' && outcome === 'changes-requested') {
-      const moved = await movePr(item.id, 'build', { kind: 'sent-back', reason, by: person.id });
+      const moved = await movePr(item.id, BUILD(), { kind: 'sent-back', reason, by: person.id });
       if (moved) {
-        await emit('item.sent_back', { itemId: item.id, parentId: item.parentId, itemType: 'pr', system: item.system, from: moved.from, to: 'build', reason, summary: `sent ${item.ref} · ${item.title} back to Build: ${reason}` }, person.id);
+        await emit('item.sent_back', { itemId: item.id, parentId: item.parentId, itemType: 'pr', system: item.system, from: moved.from, to: BUILD(), reason, summary: `sent ${item.ref} · ${item.title} back to ${stageLabel(BUILD())}: ${reason}` }, person.id);
       }
     }
     await followPullRequests(item.parentId);
@@ -204,7 +208,7 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
   /** A person may merge only after both approvals, for the pull request's commit, and passing checks. */
   async function canMerge({ prId, actor } = {}) {
     const person = await personFor(actor, { what: 'merge a pull request', target: `item ${prId}` });
-    await requirePermission(person, { permission: 'merge' }, 'merge a pull request');
+    await requirePermission(person, { action: 'merge-pull-request', permission: 'merge' }, 'merge a pull request');
     const item = await itemOr404(prId);
     const missing = await blockers(item);
     if (missing.length) {
@@ -291,19 +295,20 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
    */
   async function followPullRequests(storyId) {
     const story = await repos.items.get(storyId);
-    if (!story || story.type !== 'story' || story.status !== 'active' || !['build', 'test'].includes(story.stage) || story.passedTestAt) return null;
+    await workflow.current();
+    if (!story || story.type !== 'story' || story.status !== 'active' || !(isKind(story.stage, 'build') || isKind(story.stage, 'test')) || story.passedTestAt) return null;
     const prs = await prsOf(story.id);
     if (!prs.length) return null;
     const open = prs.filter((p) => p.status === 'active');
     const { building, waiting } = await workOf(story.id, prs);
     if (open.length || building.length) {
-      const to = open.some((p) => p.stage === 'build') || building.length ? 'build' : 'test';
+      const to = open.some((p) => p.stage === BUILD()) || building.length ? BUILD() : TEST();
       return moveStory(story, to, 'pull-requests');
     }
     if (!prs.every((p) => p.status === 'completed')) return null;
     const at = now();
     const notBuilt = waiting.map((w) => ({ workItemId: w.workItemId, repo: w.repo, reason: w.reason }));
-    if (story.stage === 'build') await moveStory(story, 'test', 'pull-requests');
+    if (story.stage === BUILD()) await moveStory(story, TEST(), 'pull-requests');
     await repos.items.update(story.id, (cur) => ({ ...cur, passedTestAt: at, ...(notBuilt.length ? { notBuiltHere: notBuilt } : {}), version: (cur.version ?? 0) + 1, updatedAt: at }));
     const last = prs.at(-1);
     await audit({ actor: 'system', action: 'story.passed_test', target: story.id, itemId: story.id, pullRequests: prs.map((p) => p.id), notBuiltHere: notBuilt.map((w) => w.workItemId) });
@@ -314,17 +319,21 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
     return releaseFeature(await repos.items.get(story.id));
   }
 
-  /** When every story of a feature has passed Test, they go to Release together; the item's other features don't wait. */
+  /**
+   * When every story of a feature has passed Test, they go on together (to Release, or wherever the workflow says the
+   * Test stage leads); the item's other features don't wait.
+   */
   async function releaseFeature(story) {
+    const next = (await workflow.current()).exitOf(TEST()).to;
     const siblings = story.parentId && story.feature?.id
       ? (await storiesOf(story.parentId)).filter((st) => st.feature?.id === story.feature.id && st.status === 'active')
       : [story];
     if (!siblings.every((st) => st.passedTestAt)) return { released: false, waitingOn: siblings.filter((st) => !st.passedTestAt).map((st) => st.id) };
-    for (const st of siblings) if (st.stage === 'test') await moveStory(st, 'release', 'feature');
+    for (const st of siblings) if (st.stage === TEST() && next && next !== 'complete') await moveStory(st, next, 'feature');
     const feature = story.feature ?? { id: story.id, title: story.title };
     await emit('feature.in_release', {
       itemId: story.parentId ?? story.id, featureId: feature.id, stories: siblings.map((st) => st.id), system: story.system,
-      summary: `${feature.id} · ${feature.title ?? story.title} is in Release: ${siblings.length === 1 ? 'its story' : `all ${siblings.length} of its stories`} passed Test`,
+      summary: `${feature.id} · ${feature.title ?? story.title} is in ${stageLabel(next)}: ${siblings.length === 1 ? 'its story' : `all ${siblings.length} of its stories`} passed Test`,
     }, 'system');
     if (story.parentId) await followStories(story.parentId);
     return { released: true, feature: feature.id, stories: siblings.map((st) => st.id) };
@@ -337,10 +346,13 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
   async function featureDeployed({ itemId, featureId, releaseId = null } = {}) {
     const stories = (await storiesOf(itemId)).filter((st) => (st.feature?.id ?? st.id) === featureId && st.status === 'active');
     if (!stories.length) throw notFound(`${itemId} has no story of ${featureId}.`);
+    const wf = await workflow.current();
+    const release = stageOfKind('release');
+    const operate = wf.exitOf(release).to;
     const moved = [];
-    for (const st of stories) if (st.stage === 'release' && await moveStory(st, 'operate', 'release')) moved.push(st.id);
+    for (const st of stories) if (st.stage === release && operate && operate !== 'complete' && await moveStory(st, operate, 'release')) moved.push(st.id);
     if (moved.length) {
-      await emit('feature.deployed', { itemId, featureId, releaseId, stories: moved, system: 'operations', summary: `${featureId} is in Operate: ${releaseId ?? 'its release'} is in production` }, 'system');
+      await emit('feature.deployed', { itemId, featureId, releaseId, stories: moved, system: 'operations', summary: `${featureId} is in ${stageLabel(operate)}: ${releaseId ?? 'its release'} is in production` }, 'system');
       await followStories(itemId);
     }
     return { moved };
@@ -353,15 +365,16 @@ export function createPullRequests({ repos, host, log, now, emit, audit, personF
     for (const st of stories) {
       const key = st.feature?.id ?? st.id;
       const row = byFeature.get(key) ?? { id: key, title: st.feature?.title ?? st.title, stories: [] };
-      row.stories.push({ id: st.id, ref: st.ref ?? st.id, title: st.title, stage: st.stage, status: st.status, passedTest: Boolean(st.passedTestAt) });
+      row.stories.push({ id: st.id, ref: st.ref ?? st.id, title: st.title, stage: st.stage, stageKind: kindOf(st.stage), stageLabel: stageLabel(st.stage), status: st.status, passedTest: Boolean(st.passedTestAt) });
       byFeature.set(key, row);
     }
     return [...byFeature.values()].map((f) => {
       const active = f.stories.filter((st) => st.status === 'active');
-      const stage = active.length && active.every((st) => st.stage === 'release') ? 'release'
+      const release = stageOfKind('release');
+      const stage = active.length && active.every((st) => st.stage === release) ? release
         : active.map((st) => st.stage).sort((a, b) => stageIndex(a) - stageIndex(b))[0] ?? null;
-      const behind = active.filter((st) => st.stage === stage && stage !== 'release').map((st) => st.ref);
-      return { ...f, stage, text: !stage ? 'No active story' : stage === 'release' ? 'In Release: all its stories passed Test' : `In ${stageLabel(stage)}${behind.length ? ` (${behind.join(', ')})` : ''}` };
+      const behind = active.filter((st) => st.stage === stage && stage !== release).map((st) => st.ref);
+      return { ...f, stage, stageKind: kindOf(stage), text: !stage ? 'No active story' : stage === release ? `In ${stageLabel(release)}: all its stories passed ${stageLabel(TEST())}` : `In ${stageLabel(stage)}${behind.length ? ` (${behind.join(', ')})` : ''}` };
     });
   }
 

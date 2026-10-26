@@ -44,6 +44,7 @@ import { spentToday } from './scheduler/budgets.js';
 import { cancelRun, isStopped, stopAll } from './scheduler/kill-switch.js';
 import { toExpressRouter } from './to-express.js';
 import { mountSections, sectionsFromEnv } from './sections.js';
+import { action, canDo, permissionFor } from './actions.js';
 
 const NAME = 'factory';
 const MOUNT = /^\/[a-z0-9][a-z0-9-]{0,62}$/;
@@ -101,6 +102,16 @@ export const PERMISSIONS = {
 };
 
 const words = (status) => String(status).replace(/_/g, ' ');
+
+/**
+ * NooblyJS Phase 27: a route's action name: `factory.` and its path without /api and its parameters, with `.edit` for a
+ * PUT and `.delete` for a DELETE (POST /api/engineering/architecture/:id/systems/:name/accept →
+ * factory.engineering.architecture.systems.accept).
+ */
+export function actionName(method, pattern) {
+  const parts = pattern.replace(/^\/api\//, '').split('/').filter((p) => p && !p.startsWith(':'));
+  return ['factory', ...parts].join('.') + (method === 'PUT' ? '.edit' : method === 'DELETE' ? '.delete' : method === 'PATCH' ? '.change' : '');
+}
 
 /**
  * The factory's events other NooblyJS apps hear about (Activity, Home, the item's page and thread),
@@ -186,8 +197,9 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       };
       if (req.person?.kind === 'agent') return refuse('Agents propose and people decide: an agent cannot answer the inbox.', 'people-only');
       const entry = store.get('inbox', req.params.id);
-      if (entry && !answerable(entry.kind) && !(await host.can?.(req.person?.accessRole, 'approve'))) {
-        return refuse(`This is an approval, so it needs the approve permission. Your access role is ${req.person?.accessRole ?? 'none'}.`, 'approve');
+      const needs = await permissionFor(host, 'factory.inbox.approve', 'approve');
+      if (entry && !answerable(entry.kind) && !(await host.can?.(req.person?.accessRole, needs))) {
+        return refuse(`This is an approval, so it needs the ${needs} permission. Your access role is ${req.person?.accessRole ?? 'none'}.`, needs);
       }
       next();
     } catch (error) {
@@ -252,10 +264,13 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
     router = host.express.Router();
     const routes = apiRoutes({ store, env, extra }).filter(([, pattern]) => pattern !== '/api/events'); // live updates are the host's stream
     const before = (method, pattern) => {
-      if (method === 'GET') return [host.requireRole('read')];
+      if (method === 'GET') return [action(host, 'factory.read', 'read')];
       const permission = PERMISSIONS[`${method} ${pattern}`] ?? ENGINEERING_PERMISSIONS[`${method} ${pattern}`] ?? PULL_REQUEST_PERMISSIONS[`${method} ${pattern}`];
       if (!permission) throw new Error(`${method} ${pattern} has no permission in PERMISSIONS.`);
-      return pattern === '/api/inbox/:id' ? [host.requireRole(permission), inboxGate, host.audit] : [host.requireRole(permission), host.audit];
+      // NooblyJS Phase 27: each route is an action (POST /api/runs/:id/:action → factory.runs) whose permission
+      // access/roles.yaml may change; PERMISSIONS says its default.
+      const named = action(host, actionName(method, pattern), permission);
+      return pattern === '/api/inbox/:id' ? [named, inboxGate, host.audit] : [named, host.audit];
     };
     const principal = (req) => ({ role: 'operator', by: `${req.person?.name ?? req.person?.id ?? 'someone'} (NooblyJS)` });
     router.use('/api/v1', host.auth, toExpressRouter(routes, { express: host.express, before, principal }));
@@ -442,8 +457,8 @@ export async function register(app, serverManager, { mountPath = '/factory', dat
       runsFor: async () => store.list('runs').map(runView),
       /** What stuck runs are asking, oldest first, and whether this person may answer each. */
       questionsFor: async (person) => {
-        const mayApprove = Boolean(await host.can?.(person?.accessRole, 'approve'));
-        const mayDraft = Boolean(await host.can?.(person?.accessRole, 'draft'));
+        const mayApprove = Boolean(await canDo(host, person?.accessRole, 'factory.inbox.approve', 'approve'));
+        const mayDraft = Boolean(await canDo(host, person?.accessRole, 'factory.inbox', 'draft'));
         return openEntries(store).map((entry) => {
           const run = store.get('runs', entry.runId);
           const canAnswer = answerable(entry.kind) ? mayDraft : false;

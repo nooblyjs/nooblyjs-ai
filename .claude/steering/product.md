@@ -410,6 +410,9 @@ secrets for agents; no outbound internet from sandboxes; status in words, WCAG 2
 16. **Mocks behind interfaces, never in the way.** Every outside dependency (cloud, scanner, monitoring) sits behind
     an adapter with an offline fake, so the factory can be demonstrated and tested before each decision is taken
     (the provisioner and container runtime already work this way).
+17. **The process is configuration.** The steps (stages, their order, the gate that leaves each), the validations each
+    gate needs and the roles that do the work are set in files an Owner can change without a release; only the kinds
+    of step and the evaluators behind checks are code (`design.md` §13, Phase 27).
 
 ## 7. Measures
 
@@ -466,6 +469,12 @@ system, agent vs people share) stay. Added, all computed from events:
   approve. The production deploy still needs two different people (§5).
 - Elicitation stays in Product (§3.4); Design writes the business requirements from it.
 - The Factory's sidebar: Product · Design · Engineering · Build · Test (§4).
+
+**Decided 2026-10-26**
+
+- The steps, the validations and the roles of the lifecycle are configuration (§6 rule 17): one workflow definition
+  names the stages, their gates and their checks; checks name an evaluator an app registers; actions name their
+  permission in `roles.yaml`. The step kinds and the evaluators stay code (`design.md` §13, Phase 27).
 
 **Open**
 

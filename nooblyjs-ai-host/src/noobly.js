@@ -101,7 +101,15 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   const teams = createTeams({ store, people });
   // The first-week checklist is ticked by events, never by a page (tech.md §7.1).
   events.on('*', (event) => { profiles.onEvent(event).catch((err) => log.error(`first week: ${err.message}`)); });
-  const roles = createRoles({ store });
+  // Phase 27: roles.yaml is checked whenever it changes; a change that applies is in Activity, a refusal in the audit log.
+  const roles = createRoles({
+    store, log,
+    onChange: async ({ changes, summary }) => {
+      await auditLog.record({ actor: 'system', action: 'workflow.changed', target: 'access/roles.yaml', changes });
+      await events.emit('workflow.changed', { file: 'access/roles.yaml', changes, actorName: 'Workflow', summary }, { actor: 'system' });
+    },
+    onRefuse: ({ errors }) => auditLog.record({ actor: 'system', action: 'workflow.refused', target: 'access/roles.yaml', errors: errors.map((e) => `${e.where}: ${e.message}`) }),
+  });
   const created = await ensureCoreAccounts({ authservice, people });
   if (created.length) log.info(`created sign-in accounts for ${created.join(', ')}`);
 
@@ -158,14 +166,14 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
   const checks = createChecks({ store, services, events, log });
   const trace = createTrace({ store, services, events, log });
   app.use(homeRoutes({
-    express, shell, services, activity, metrics, forYou, checks, trace, teams, agents, events, clock, requireSignIn: signedIn, requireRole: roles.requireRole,
+    express, shell, services, activity, metrics, forYou, checks, trace, teams, agents, events, clock, requireSignIn: signedIn, requireAction: roles.requireAction,
     // An invited person can sign in straight away: their nooblyjs-core account is made now, not at the next start.
     onInvited: () => ensureCoreAccounts({ authservice, people }),
   }));
   app.use(meRoutes({ express, profiles, workRoles, teams, agents, requireSignIn: signedIn }));
   // Team chat: threads next to the work. An agent's reply is a task run by Digital Teammates.
   const chat = createChat({ store, events, auditLog, people, agents, roles, services, clock, replyDelayMs: config.chatReplyMs, log });
-  app.use(chatRoutes({ express, chat, requireSignIn: signedIn, requireRole: roles.requireRole }));
+  app.use(chatRoutes({ express, chat, requireSignIn: signedIn, requireAction: roles.requireAction }));
   // Platform: repositories, containers, settings, environments, secrets, members and the audit log.
   const members = createMembers({ people, roles, agents });
   const auditQuery = createAuditQuery({ store, clock });
@@ -175,8 +183,8 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
       .then((r) => (r.ok ? log.info(`Bitbucket: ${r.added.length} repositories added, ${r.updated.length} refreshed${r.missing.length ? `, not found: ${r.missing.join(', ')}` : ''}`) : log.warn(`Bitbucket: repositories not imported (${r.message})`)))
       .catch((err) => log.warn(`Bitbucket: repositories not imported (${err.message})`));
   }
-  app.use(devtoolsRoutes({ express, devtools, auditLog, events, requireSignIn: signedIn, requireRole: roles.requireRole }));
-  app.use(platformRoutes({ express, platform, services, devtools, notify: { status: () => notify.status() }, teamsConfig: config.teams, members, auditQuery, events, store, clock, roles, requireSignIn: signedIn, requireRole: roles.requireRole }));
+  app.use(devtoolsRoutes({ express, devtools, auditLog, events, requireSignIn: signedIn, requireAction: roles.requireAction }));
+  app.use(platformRoutes({ express, platform, services, devtools, notify: { status: () => notify.status() }, teamsConfig: config.teams, members, auditQuery, events, store, clock, roles, requireSignIn: signedIn, requireAction: roles.requireAction }));
   // A signed-in person who hasn't been through onboarding (no profile.md) is sent there from any page. Skip for
   // now writes a profile too, so this happens once.
   const frame = (req, res, next) => signedIn(req, res, (err) => {
@@ -231,6 +239,13 @@ export async function mountNoobly({ app, express, config, store, serverManager, 
     requireRole: roles.requireRole,
     // The same check requireRole makes, for rules decided in a service (who may approve this approval).
     can: roles.can,
+    // Phase 27: an action and the permission it needs by default; access/roles.yaml's `actions:` wins where it names it.
+    requireAction: roles.requireAction,
+    canDo: roles.canDo,
+    permissionFor: roles.permissionFor,
+    // What exists, so the lifecycle can check approval-rules.yaml against it.
+    permissions: roles.permissions,
+    roleNames: roles.roleNames,
     audit,
     events: { emit: events.emit, on: events.on },
     store: new FsStore(appDir),

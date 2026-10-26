@@ -14,6 +14,20 @@ export const CHECKS = [
 
 const firstName = (agent) => String(agent?.name ?? 'the agent').split(' ')[0];
 
+/**
+ * NooblyJS Phase 27: which of these checks the Product stage needs, in what order and in what words, is the lifecycle's
+ * (data/workflows/lifecycle.yaml). This asks it, keeping each check's agent action from CHECKS; on a host without the
+ * lifecycle (the stand-in host of this app's own tests) it is CHECKS as they are.
+ */
+export async function configuredChecks(host) {
+  const listed = await Promise.resolve(host?.service?.('workflows')?.checksOf?.({ kind: 'product' })).catch(() => null);
+  if (!Array.isArray(listed)) return CHECKS;
+  return listed.filter((c) => String(c.evaluator ?? '').startsWith('product.')).map((c) => {
+    const own = CHECKS.find((x) => x.key === c.key);
+    return { key: c.key, passed: c.passed, failed: c.failed, action: own?.action ?? null, draft: own?.draft ?? null };
+  });
+}
+
 const PERFORMANCE = /\bp9\d\b|latency|load time|response time|throughput|\b\d+(\.\d+)?\s?(ms|s)\b/i;
 
 /**
@@ -56,15 +70,16 @@ export function readinessFromFacts(facts, checkedAt) {
  * @returns {{ passed: number, total: number, text: string, checkedAt: string|null, checks: object[] } | null}
  *   null when the spec hasn't been checked yet (e.g. it is awaiting a brief).
  */
-export function readinessView(readiness, agent) {
+export function readinessView(readiness, agent, list = CHECKS) {
   if (!readiness?.results) return null;
-  const checks = CHECKS.map((check) => {
+  const ask = (check) => (check.action ? { action: { label: `Ask ${firstName(agent)} to ${check.action}`, draft: check.draft } } : {});
+  const checks = list.map((check) => {
     const result = readiness.results[check.key];
     if (result === true) return { key: check.key, passed: true, text: check.passed };
     if (result === false) {
-      return { key: check.key, passed: false, text: check.failed, action: { label: `Ask ${firstName(agent)} to ${check.action}`, draft: check.draft } };
+      return { key: check.key, passed: false, text: check.failed, ...ask(check) };
     }
-    return { key: check.key, passed: null, text: `${check.passed}: not checked yet`, action: { label: `Ask ${firstName(agent)} to ${check.action}`, draft: check.draft } };
+    return { key: check.key, passed: null, text: `${check.passed}: not checked yet`, ...ask(check) };
   });
   const passed = checks.filter((c) => c.passed === true).length;
   return { passed, total: checks.length, text: `${passed} of ${checks.length}`, checkedAt: readiness.checkedAt ?? null, checks };

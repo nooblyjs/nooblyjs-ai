@@ -19,7 +19,7 @@ import { dueFrom } from '../working-days.js';
 export const ANCHOR = '2026-10-09T10:00:00.000Z';
 const MARKER = ['seed.yaml'];
 /** The lifecycle's system files; everything else in the seed is the sample story. */
-const SYSTEM = ['approval-rules.yaml', 'readiness.yaml'];
+const SYSTEM = ['approval-rules.yaml', 'lifecycle.yaml', 'readiness.yaml'];
 const DATA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data');
 const ISO = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z/g;
 
@@ -48,7 +48,7 @@ export async function seed(store, { reset = false, now = new Date().toISOString(
   }
   const shift = new Date(now).getTime() - new Date(ANCHOR).getTime();
   const move = (text) => text.replace(ISO, (iso) => new Date(new Date(iso).getTime() + shift).toISOString());
-  // Without sample content, only the rules people change at runtime: who approves what, and the readiness checks.
+  // Without sample content, only the rules people change at runtime: the stages, who approves what, the readiness checks.
   const files = (await storyFiles()).filter((segments) => content || SYSTEM.includes(segments.join('/')));
   for (const segments of files) {
     await store.writeText(segments, move(await fs.readFile(path.join(DATA_DIR, ...segments), 'utf8')));

@@ -52,7 +52,7 @@ export function createIncidents({ repos, host, log, policies, slos, now, mountPa
   /** A person declares an incident (or raises one from an SLO's alert). */
   async function declare(body = {}, person) {
     await peopleOnly(host, person, 'declare an incident');
-    await needs(host, person, 'draft', 'declare an incident');
+    await needs(host, person, 'draft', 'declare an incident', 'operations.incident.declare');
     const title = clean(body.title, 160);
     if (!title) throw badRequest('Say what is wrong, in a few words.', { title: 'required' });
     const severity = SEVERITIES[body.severity] ? body.severity : 'SEV2';
@@ -74,7 +74,7 @@ export function createIncidents({ repos, host, log, policies, slos, now, mountPa
 
   /** A line on the timeline (what was seen, what was tried). */
   async function note(id, body = {}, person) {
-    await needs(host, person, 'draft', `add to ${id}'s timeline`);
+    await needs(host, person, 'draft', `add to ${id}'s timeline`, 'operations.incident.update');
     const text = clean(body.text, 1000);
     if (!text) throw badRequest('Say what happened.', { text: 'required' });
     const at = iso();
@@ -110,7 +110,7 @@ export function createIncidents({ repos, host, log, policies, slos, now, mountPa
   /** A person resolves it: the SRE agent drafts the review. */
   async function resolve(id, body = {}, person) {
     await peopleOnly(host, person, `resolve ${id}`);
-    await needs(host, person, 'draft', `resolve ${id}`);
+    await needs(host, person, 'draft', `resolve ${id}`, 'operations.incident.resolve');
     const current = await getOr404(id);
     if (current.status !== 'open') throw conflict(`${id} is ${STATUS_TEXT[current.status].toLowerCase()} already.`);
     const at = iso();
@@ -126,7 +126,7 @@ export function createIncidents({ repos, host, log, policies, slos, now, mountPa
   /** A person accepts the review (edited or not): it is written to Knowledge. */
   async function acceptReview(id, body = {}, person) {
     await peopleOnly(host, person, `accept ${id}'s review`);
-    await needs(host, person, 'draft', `accept ${id}'s review`);
+    await needs(host, person, 'draft', `accept ${id}'s review`, 'operations.incident.accept-review');
     const current = await getOr404(id);
     if (current.status !== 'resolved' || current.review?.status !== 'draft') throw conflict(`${id} has no review waiting to be accepted.`);
     const text = typeof body.text === 'string' && body.text.trim() ? body.text.trim().slice(0, 20_000) : current.review.text;
@@ -142,7 +142,7 @@ export function createIncidents({ repos, host, log, policies, slos, now, mountPa
 
   /** A follow-up becomes an idea (the Product section) or a defect on a story (the lifecycle). */
   async function followUp(id, body = {}, person) {
-    await needs(host, person, 'draft', `add a follow-up to ${id}`);
+    await needs(host, person, 'draft', `add a follow-up to ${id}`, 'operations.incident.follow-up');
     const incident = await getOr404(id);
     const title = clean(body.title, 200);
     if (!title) throw badRequest('Say what to follow up.', { title: 'required' });
